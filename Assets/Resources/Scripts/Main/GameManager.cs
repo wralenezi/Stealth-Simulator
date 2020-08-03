@@ -25,7 +25,7 @@ public class GameManager : MonoBehaviour
     [Tooltip("Rendering")] public bool Render;
 
     [Tooltip("Number of areas ran at the same time")]
-    public int simultaneousAreasCount;
+    public int simultaneousAreasCount = 1;
 
     [Tooltip("Scenario Setup")] public Scenario testScenario;
 
@@ -90,7 +90,6 @@ public class GameManager : MonoBehaviour
             {
                 m_activeAreas.Add(CreateArea(testScenario));
                 Camera.main.orthographicSize = 5 * testScenario.GetMapScale();
-
             }
         }
         else
@@ -128,8 +127,8 @@ public enum Map
 {
     MgsDock,
     AlienIsolation,
-    Arkham,
-    Test
+    Arkham
+    
 }
 
 
@@ -144,10 +143,7 @@ public enum WorldRepType
 // Guard decision maker
 public enum NpcPlanner
 {
-    WeightedDistanceStaleness,
     Stalest,
-    ClosestStale,
-    WeightedStalest,
     Random,
     UserInput
 }
@@ -155,14 +151,12 @@ public enum NpcPlanner
 // Heuristic for path finding 
 public enum PathFindingHeursitic
 {
-    EuclideanDst,
-    StalenessVerse
+    EuclideanDst
 }
 
 // Path following algorithm
 public enum PathFollowing
 {
-    CentroidFollowing,
     SimpleFunnel
 }
 
@@ -228,7 +222,7 @@ public struct Scenario
     public Map map;
 
     // The map Scale
-    private int mapScale;
+    public int mapScale;
 
     // NPCs Data
     public List<NpcData> npcsList;

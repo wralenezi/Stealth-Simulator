@@ -236,14 +236,15 @@ MonoBehaviour:
   enableLogging: 1
   runTestScenario: 1
   Render: 0
-  simultaneousAreasCount: 5
+  simultaneousAreasCount: 1
   testScenario:
     gameCode: Test
     worldRepType: 0
     coveredReigonResetThreshold: 25
     map: 1
+    mapScale: 1
     npcsList:
-    - npcName: Test
+    - npcName: Gurad 1
       npcType: 0
       npcPlanner: 1
       npcHeuristic: 0

@@ -20,10 +20,6 @@ public class VisMeshGuard : Guard
 
         switch (Data.npcPlanner)
         {
-            case NpcPlanner.WeightedDistanceStaleness:
-                // goal = GetWeightedDistanceStaleNodePosition();
-                break;
-
             case NpcPlanner.Stalest:
                 goal = GetStalestPolygon().GetCentroidPosition();
                 break;

@@ -22,10 +22,6 @@ public class GridGuard : Guard
 
         switch (Data.npcPlanner)
         {
-            case NpcPlanner.WeightedDistanceStaleness:
-                goal = GetWeightedDistanceStaleNodePosition();
-                break;
-
             case NpcPlanner.Stalest:
                 goal = GetStalestNodePosition();
                 break;
@@ -39,32 +35,6 @@ public class GridGuard : Guard
     }
 
 
-    Vector2? GetWeightedDistanceStaleNodePosition()
-    {
-        float maxWeightedDistanceStaleness = Mathf.NegativeInfinity;
-        Vector2? position = null;
-
-        var position1 = transform.position;
-
-        foreach (var node in m_grid.NodeList)
-        {
-            if (node.GetStaleness() > Properties.StalenessLow)
-            {
-                float distance = Vector2.Distance(position1,
-                    node.worldPosition);
-
-                float weightedDistanceStaleness = (1 / distance) + node.GetStaleness() * 0.01f;
-
-                if (maxWeightedDistanceStaleness < weightedDistanceStaleness && distance > 0.2f)
-                {
-                    maxWeightedDistanceStaleness = weightedDistanceStaleness;
-                    position = node.worldPosition;
-                }
-            }
-        }
-
-        return position;
-    }
 
     Vector2? GetStalestNodePosition()
     {
