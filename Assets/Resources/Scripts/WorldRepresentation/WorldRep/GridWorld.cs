@@ -15,12 +15,10 @@ public class GridWorld : WorldRep
     // Values for the grid measures
     protected float nodeDiameter;
     protected Vector2 worldBottomLeft;
-
-
+    
     // Grid dimension 
     public int gridSizeX, gridSizeY;
-
-
+    
     private int walkableNodesCount;
 
     public override void InitiateWorld(float mapScale)
@@ -77,7 +75,7 @@ public class GridWorld : WorldRep
                 NodeList.Add(m_grid[x, y]);
         }
 
-        // Render
+        // Render the grid
         m_meshManager.InitializeGrid(NodeList);
     }
 
@@ -105,16 +103,16 @@ public class GridWorld : WorldRep
     }
 
 
-    public override void UpdateWorld(List<Guard> guards)
+    public override void UpdateWorld(GuardsManager guardsManager)
     {
         List<GridGuard> gridGuards = new List<GridGuard>();
 
-        foreach (var guard in guards)
+        foreach (var guard in guardsManager.GetGuards())
             gridGuards.Add((GridGuard) guard);
 
         UpdateGrid(gridGuards);
         
-        base.UpdateWorld(guards);
+        base.UpdateWorld(guardsManager);
         m_meshManager.RenderGrid(NodeList);
     }
     

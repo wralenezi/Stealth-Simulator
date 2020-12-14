@@ -1,7 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Numerics;
 using UnityEditor;
 using UnityEngine;
+using Vector2 = UnityEngine.Vector2;
 
 public class Polygon
 {
@@ -191,6 +193,25 @@ public class Polygon
         return inside;
     }
 
+    // Check if a circle colliding with the polygon or inside it
+    public bool IsCircleColliding(Vector2 center, float radius)
+    {
+        if (IsPointInPolygon(center, true))
+            return true;
+
+        for (int i = 0; i < GetVerticesCount(); i++)
+        {
+            Vector2 projection = GeometryHelper.ClosestProjectionOnSegment(GetPoint(i), GetPoint(i + 1), center);
+            float distance = Vector2.Distance(center, projection);
+
+            if (distance <= radius)
+                return true;
+        }
+
+        return false;
+    }
+
+
     // Get a random position inside the polygon
     public Vector2 GetRandomPosition()
     {
@@ -208,7 +229,7 @@ public class Polygon
         }
     }
 
-    public  bool IsPolygonInside(Polygon inPoly, bool includeBorder)
+    public bool IsPolygonInside(Polygon inPoly, bool includeBorder)
     {
         for (int i = 0; i < inPoly.GetVerticesCount(); i++)
         {
@@ -219,7 +240,34 @@ public class Polygon
         return true;
     }
 
-    
+    // Check if a line intersect a polygon and return the intersection position if exist along with a flag if the first point is outside the polygon 
+    public List<Vector2> GetIntersectionWithLine(Vector2 p1, Vector2 p2, out bool isP1in, out bool isP2in)
+    {
+        isP1in = IsPointInPolygon(p1, false);
+
+        isP2in = IsPointInPolygon(p2, false);
+
+        List<Vector2> intersections = new List<Vector2>();
+
+        if (isP1in && isP2in)
+            return intersections;
+        
+        // Loop through the edges to find intersections
+        for (int i = 0; i < GetVerticesCount(); i++)
+        {
+            Vector2 intersectionPoint =
+                GeometryHelper.GetIntersectionPointCoordinates(p1, p2, GetPoint(i), GetPoint(i + 1), false,
+                    out var isFound);
+
+            if (isFound)
+                intersections.Add(intersectionPoint);
+        }
+
+
+        return intersections;
+    }
+
+
     // Draw the polygon
     public virtual void Draw(string label)
     {
@@ -229,7 +277,7 @@ public class Polygon
             // Handles.Label(GetPoint(i), i.ToString());
         }
 
-        Handles.Label(GetCentroidPosition(), label);
+        // Handles.Label(GetCentroidPosition(), label);
     }
 
     // Get the centroid position of the polygon
@@ -254,7 +302,7 @@ public class Polygon
 
         for (int i = 0; i < GetVerticesCount(); i++)
         {
-            displacementDirections.Add(GeometryHelper.GetNormal(GetPoint(i-1),GetPoint(i),GetPoint(i+1)));
+            displacementDirections.Add(GeometryHelper.GetNormal(GetPoint(i - 1), GetPoint(i), GetPoint(i + 1)));
         }
 
         for (int i = 0; i < GetVerticesCount(); i++)

@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class FieldOfView : MonoBehaviour
 {
@@ -34,6 +35,7 @@ public class FieldOfView : MonoBehaviour
         m_ViewMeshFilter = gameObject.AddComponent<MeshFilter>();
         MeshRenderer meshRenderer = gameObject.AddComponent<MeshRenderer>();
         var material = new Material(Shader.Find("Sprites/Default")) {color = viewConeColor};
+        material.renderQueue = RenderQueue.Geometry.GetHashCode();
         meshRenderer.material = material;
 
         m_ViewMeshFilter.mesh = m_ViewMesh;

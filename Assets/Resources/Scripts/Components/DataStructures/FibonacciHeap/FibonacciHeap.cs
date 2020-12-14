@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace DataStructures.FibonacciHeap
 {
+    // https://github.com/sqeezy/FibonacciHeap
     public class FibonacciHeap<T, TKey> : IFibonacciHeap<T, TKey> where TKey : IComparable<TKey>
     {
         private readonly double OneOverLogPhi = 1.0 / Math.Log((1.0 + Math.Sqrt(5.0)) / 2.0);

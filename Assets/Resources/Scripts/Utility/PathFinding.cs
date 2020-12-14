@@ -7,8 +7,9 @@ using DataStructures.PriorityQueue;
 public static class PathFinding
 {
     // Simple Funnel Offset
-    static float offsetMultiplier = 0.3f;
+    static float offsetMultiplier = 0.35f;
 
+    // Return the shortest path as a sequence of points
     public static List<Vector2> GetShortestPath(List<MeshPolygon> navMesh, Vector2 startPoint, Vector2 destinationPoint)
     {
         // Get shortest path in polygons
@@ -18,6 +19,20 @@ public static class PathFinding
         List<Vector2> path = GetPathBySSFA(startPoint, destinationPoint, polygonPath);
 
         return path;
+    }
+
+    public static float GetShortestPathDistance(List<MeshPolygon> navMesh, Vector2 startPoint, Vector2 destinationPoint)
+    {
+        List<Vector2> path = GetShortestPath(navMesh, startPoint, destinationPoint);
+
+        float totalDistance = 0f;
+        
+        for (int i = 0; i < path.Count - 1; i++)
+        {
+            totalDistance += Vector2.Distance(path[i], path[i + 1]);
+        }
+
+        return totalDistance;
     }
 
 
@@ -113,7 +128,7 @@ public static class PathFinding
     }
 
 
-    // Get the Cost Value (G)
+    // Get the Cost Value (G) for the Mesh polygons
     static float GetCostValue(MeshPolygon previousPolygon, MeshPolygon currentPolygon, MeshPolygon destinationPolygon,
         Vector2 destination)
     {
@@ -139,10 +154,33 @@ public static class PathFinding
     }
 
 
-    // Get heuristic value 
+    // Get the Cost Value (G) for the Waypoints roadmap
+    static float GetCostValue(WayPoint previousWayPoint, WayPoint currentWayPoint)
+    {
+        float costValue = previousWayPoint.gDistance;
+
+        // Euclidean Distance
+        float distance = Vector2.Distance(previousWayPoint.GetPosition(), currentWayPoint.GetPosition());
+
+        costValue += distance;
+
+        return costValue;
+    }
+
+
+    // Get heuristic value for mesh polygons
     static float GetHeuristicValue(MeshPolygon currentPolygon, MeshPolygon goal)
     {
         float heuristicValue = Vector2.Distance(currentPolygon.GetCentroidPosition(), goal.GetCentroidPosition());
+
+        return heuristicValue;
+    }
+
+
+    // Get heuristic value for way points road map
+    static float GetHeuristicValue(WayPoint currentWayPoint, WayPoint goal)
+    {
+        float heuristicValue = Vector2.Distance(currentWayPoint.GetPosition(), goal.GetPosition());
 
         return heuristicValue;
     }
@@ -258,7 +296,7 @@ public static class PathFinding
                         }
 
                         // Reset the funnel 
-                        apex = newApex + normal * offsetDistance;
+                        apex = newApex;// + normal * offsetDistance;
                         right = next;
                         left = next;
                         i = next;
@@ -333,7 +371,7 @@ public static class PathFinding
                         }
 
                         // Reset the funnel
-                        apex = newApex - normal * offsetDistance;
+                        apex = newApex;// - normal * offsetDistance;
                         left = next;
                         right = next;
                         i = next;
@@ -353,6 +391,99 @@ public static class PathFinding
         return path;
     }
 
+
+    // Get shortest path on the road map
+    // The start node is a node on the road map and the goal is the position of the phantom 
+    // for ease of implementation we start the search from the goal to the start node
+    public static List<Vector2> GetShortestPath(List<WayPoint> roadmap, InterceptionPoint goalPh, WayPoint start)
+    {
+        WayPoint goal = goalPh.destination;
+
+        PriorityQueue<WayPoint, float> openList = new PriorityQueue<WayPoint, float>(0f);
+        List<WayPoint> closedList = new List<WayPoint>();
+
+        foreach (WayPoint p in roadmap)
+        {
+            p.gDistance = Mathf.Infinity;
+            p.hDistance = Mathf.Infinity;
+            p.parent = null;
+        }
+
+        // Set Cost of starting node
+        start.gDistance = 0f;
+        start.hDistance = Vector2.Distance(start.GetPosition(), goal.GetPosition());
+
+        while (!openList.IsEmpty())
+        {
+            WayPoint current = openList.Pop();
+
+            foreach (WayPoint p in current.GetConnections())
+            {
+                if (!closedList.Contains(p))
+                {
+                    float gDistance = GetCostValue(current, p);
+                    float hDistance = GetHeuristicValue(current, goal);
+
+                    if (p.gDistance + p.hDistance > gDistance + hDistance)
+                    {
+                        p.hDistance = hDistance;
+                        p.gDistance = gDistance;
+
+                        p.parent = current;
+                    }
+
+                    openList.Insert(p, p.gDistance + p.hDistance);
+                }
+            }
+
+            closedList.Add(current);
+
+            // Stop the search if we reached the destination way point
+            if (current.Equals(goal))
+                break;
+        }
+
+        List<Vector2> result = new List<Vector2>();
+
+        WayPoint currentWayPoint = goal;
+        while (currentWayPoint.parent != null)
+        {
+            result.Add(currentWayPoint.GetPosition());
+
+            if (currentWayPoint.parent == null)
+                break;
+
+            currentWayPoint = currentWayPoint.parent;
+        }
+
+        // Add the first waypoint to the path
+        result.Add(start.GetPosition());
+
+        // and add the actual phantom node position since we didn't include it in the A* search
+        result.Add(goalPh.position);
+
+        // reverse the path so it start from the start node
+        result.Reverse();
+
+
+        return result;
+    }
+
+
+
+    public static float GetShortestPathDistance(List<WayPoint> roadmap, InterceptionPoint goalPh, WayPoint start)
+    {
+        List<Vector2> path = GetShortestPath(roadmap, goalPh, start);
+
+        float totalDistance = 0f;
+        
+        for (int i = 0; i < path.Count - 1; i++)
+        {
+            totalDistance += Vector2.Distance(path[i], path[i + 1]);
+        }
+
+        return totalDistance;
+    }
 
     // Helper function
     public static T KeyByValue<T, W>(this Dictionary<T, W> dict, W val)

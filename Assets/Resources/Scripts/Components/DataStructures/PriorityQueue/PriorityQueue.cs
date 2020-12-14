@@ -3,6 +3,8 @@ using DataStructures.FibonacciHeap;
 
 namespace DataStructures.PriorityQueue
 {
+    // source: https://erdiizgi.com/data-structure-for-games-priority-queue-for-unity-in-c/
+    
     public class PriorityQueue<TElement, TPriority> : IPriorityQueue<TElement, TPriority>
         where TPriority : IComparable<TPriority>
     {

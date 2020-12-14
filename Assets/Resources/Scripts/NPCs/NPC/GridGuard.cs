@@ -20,13 +20,13 @@ public class GridGuard : Guard
     {
         Vector2? goal = null;
 
-        switch (Data.npcPlanner)
+        switch (Data.guardPlanner.Value.patrol)
         {
-            case NpcPlanner.Stalest:
+            case GuardPatrolPlanner.Stalest:
                 goal = GetStalestNodePosition();
                 break;
 
-            case NpcPlanner.UserInput:
+            case GuardPatrolPlanner.UserInput:
                 goal = null;
                 break;
         }
@@ -66,7 +66,7 @@ public class GridGuard : Guard
 
     public override LogSnapshot LogNpcProgress()
     {
-        return new LogSnapshot(GetTravelledDistance(), Area.episodeTime, Data, m_foundHidingSpots, m_grid.GetAverageStaleness());
+        return new LogSnapshot(GetTravelledDistance(), StealthArea.episodeTime, Data,"",0f,0f, m_foundHidingSpots, m_grid.GetAverageStaleness());
     }
 
     public void IncrementSeenNodes()

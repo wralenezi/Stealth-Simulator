@@ -29,14 +29,14 @@ public class MapRenderer : MonoBehaviour
 
 
     // Get the path to the map
-    private string GetPath(Map mapName)
+    private string GetPath(string mapName)
     {
         // Gets the path to the "Assets" folder 
         return Application.dataPath + "/MapData/" + mapName + ".csv";
     }
 
-    // Parse the map data 
-    private void ParseMapString(string mapData)
+    // Parse the map data where the map is stored in absolute coordinates 
+    private void ParseMapStringAbsolute(string mapData)
     {
         // Split data by lines
         var lines = mapData.Split('\n');
@@ -72,6 +72,59 @@ public class MapRenderer : MonoBehaviour
             }
     }
 
+    // Parse the map which is inspired by SVG syntax
+    private void ParseMapStringRelative(string mapData)
+    {
+        // Split data by lines
+        var lines = mapData.Split('\n');
+
+        // Each line represents a polygon
+        for (var lineIndex = 0; lineIndex < lines.Length; lineIndex++)
+            if (lines[lineIndex].Length > 0)
+            {
+                // Wall 
+                var wall = new Polygon();
+
+                Vector2 pointer = Vector2.zero;
+
+                // Split the line to points
+                var data = lines[lineIndex].Split(' ');
+
+                // Add the vertices to the wall
+                for (var i = 0; i < data.Length; i++)
+                {
+                    // split the point to coordinates
+                    var point = data[i].Split(',');
+
+                    // Debug.Log(point[0] + ", " + point[1]);
+
+                    // Vertex position
+                    var position = new Vector2(float.Parse(point[0]), -float.Parse(point[1]));
+
+                    // First point is the starting point
+                    if (i == 0)
+                        pointer = position;
+                    else
+                    {
+                        position = pointer + position;
+                        pointer = position;
+                    }
+
+                    position = transform.TransformPoint(position);
+
+                    // Add the point to the current wall
+                    wall.AddPoint(position);
+                }
+
+                // if the wall is not the first then it is a hole
+                if (lineIndex != 0)
+                    wall.EnsureWindingOrder(Properties.innerPolygonWinding);
+                else
+                    wall.EnsureWindingOrder(Properties.outerPolygonWinding);
+
+                m_walls.Add(wall);
+            }
+    }
 
     // Scale the map
     private void ScaleMap(float mapScale)
@@ -140,13 +193,19 @@ public class MapRenderer : MonoBehaviour
 
 
     // Load the map
-    public void LoadMap(Map mapName, float mapScale)
+    public void LoadMap(string mapName, float mapScale)
     {
         // Get the map data
         var mapData = CsvController.ReadString(GetPath(mapName));
 
+        var lines = mapName.Split('_');
+
         // Parse the map data
-        ParseMapString(mapData);
+        if (lines.Length == 1)
+            ParseMapStringAbsolute(mapData);
+        else
+            ParseMapStringRelative(mapData);
+
 
         // Scale the map
         ScaleMap(mapScale);
@@ -171,6 +230,21 @@ public class MapRenderer : MonoBehaviour
             m_interiorWalls.Add(interiorPoly);
         }
     }
+
+
+    // Visibility check for two points, a and b, on the map
+    public bool VisibilityCheck(Vector2 a, Vector2 b)
+    {
+        foreach (var wall in m_walls)
+            for (int i = 0; i < wall.GetVerticesCount(); i++)
+            {
+                if (GeometryHelper.DoLinesIntersect(a, b, wall.GetPoint(i), wall.GetPoint(i + 1), false))
+                    return false;
+            }
+
+        return true;
+    }
+
 
     public List<Polygon> GetInteriorWalls()
     {

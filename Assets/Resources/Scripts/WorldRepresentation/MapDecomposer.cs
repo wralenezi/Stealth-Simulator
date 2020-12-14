@@ -15,14 +15,14 @@ public class MapDecomposer : MonoBehaviour
     public bool showUnseenRegions;
 
     // Guard Manager to get incorporate the guards visibility
-    private NpcManager m_NpcManager;
+    private GuardsManager m_NpcManager;
 
     // Map Renderer 
     private MapRenderer m_MapRenderer;
 
     // Space Filler
-    private SpaceFiller m_SpaceFiller;
-
+    // private SpaceFiller m_SpaceFiller;
+    
     // NavMesh 
     private List<MeshPolygon> m_NavMesh;
 
@@ -45,7 +45,7 @@ public class MapDecomposer : MonoBehaviour
     {
         m_NavMesh = new List<MeshPolygon>();
         m_MapRenderer = GetComponent<MapRenderer>();
-        m_SpaceFiller = GetComponent<SpaceFiller>();
+        // m_SpaceFiller = GetComponent<SpaceFiller>();
         m_WallBorders = m_MapRenderer.GetInteriorWalls();
 
         m_SeenRegions = new List<List<Polygon>>();
@@ -54,9 +54,9 @@ public class MapDecomposer : MonoBehaviour
         m_SeenPolygons = new List<VisibilityPolygon>();
         m_UnseenPolygons = new List<VisibilityPolygon>();
 
-        m_NpcManager = transform.parent.Find("NpcManager").GetComponent<NpcManager>();
+        m_NpcManager = transform.parent.Find("NpcManager").GetComponent<GuardsManager>();
 
-        m_SpaceFiller.Initiate();
+        // m_SpaceFiller.Initiate();
     }
 
     // Create the NavMesh
@@ -67,8 +67,6 @@ public class MapDecomposer : MonoBehaviour
 
         // Decompose Space
         m_NavMesh = HertelMelDecomp.ConvexPartition(simplePolygon);
-        // m_NavMesh = EarClipDecomp.Triangulate(simplePolygon);
-        
         
         // Associate Polygons with each other
         HertelMelDecomp.BuildNavMesh(m_NavMesh);
@@ -113,7 +111,7 @@ public class MapDecomposer : MonoBehaviour
         }
 
         // Merge the guards seen areas if they intersect
-        //MergeGuardSeenAreas();
+        MergeGuardSeenAreas();
     }
 
     // Merge guards seen area
@@ -330,9 +328,6 @@ public class MapDecomposer : MonoBehaviour
                 }
         }
     }
-
-    
-    
     
 
     // Triangulate the unseen areas

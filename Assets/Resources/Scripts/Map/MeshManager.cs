@@ -5,7 +5,7 @@ using UnityEngine;
 public class MeshManager : MonoBehaviour
 {
     private GameManager m_gameManager;
-    
+
     // List of the materials of the nodes in the grid
     private List<Material> m_materials;
 
@@ -40,10 +40,10 @@ public class MeshManager : MonoBehaviour
     Vector2[] GetVertices(Polygon polygon)
     {
         Vector2[] result = new Vector2[polygon.GetVerticesCount()];
-    
+
         for (int i = 0; i < polygon.GetVerticesCount(); i++)
             result[i] = polygon.GetPoint(i);
-        
+
         return result;
     }
 
@@ -61,37 +61,55 @@ public class MeshManager : MonoBehaviour
         }
     }
 
-
+    // Draw the grid
     public void InitializeGrid(List<Node> nodes)
     {
         if (m_gameManager.Render)
         {
-            m_materials = new List<Material>();
-            foreach (var node in nodes)
-                InitiateNode(node);
+            DrawGrid(nodes);
         }
     }
 
-    public void InitiateNode(Node n)
+    // Test code for drawing the transform distance
+    public void DrawGrid(List<Node> nodes)
+    {
+        m_materials = new List<Material>();
+        foreach (var node in nodes)
+            InitiateNode(node.worldPosition, node.GetStaleness());
+    }
+
+    public void DrawGrid(DtNode[,] nodes)
+    {
+        m_materials = new List<Material>();
+        for (int x = 0; x < nodes.GetLength(0); x++)
+        for (int y = 0; y < nodes.GetLength(1); y++)
+        {
+            if (nodes[x, y].isSaddle)
+                InitiateNode(nodes[x, y].worldPosition, nodes[x, y].distanceTransform);
+        }
+    }
+
+
+    public void InitiateNode(Vector2 position, float value)
     {
         var sphere = new GameObject();
         var spriteRenderer = sphere.AddComponent<SpriteRenderer>();
         var sprite = Resources.Load<Sprite>(PixelPath);
         spriteRenderer.sprite = sprite;
         sphere.transform.parent = transform;
-        sphere.transform.position = n.worldPosition;
+        sphere.transform.position = position;
         float diameter = Properties.NodeRadius * 200f;
         sphere.transform.localScale =
             new Vector3(diameter, diameter, diameter);
 
         Material material = sphere.GetComponent<Renderer>().material;
-        
+
         m_materials.Add(material);
-        material.color = Properties.GetStalenessColor(n.GetStaleness());
+        material.color = Properties.GetStalenessColor(value);
     }
 
 
-    private void RenderNode(Node n,Material material)
+    private void RenderNode(Node n, Material material)
     {
         material.color = Properties.GetStalenessColor(n.GetStaleness());
     }
@@ -102,7 +120,7 @@ public class MeshManager : MonoBehaviour
         {
             for (int i = 0; i < nodes.Count; i++)
             {
-                RenderNode(nodes[i],m_materials[i]);
+                RenderNode(nodes[i], m_materials[i]);
             }
         }
     }

@@ -62,27 +62,26 @@ public class VisMesh : WorldRep
         ConstructVisMesh();
     }
 
-    public override void UpdateWorld(List<Guard> guards)
+    public override void UpdateWorld(GuardsManager guardsManager)
     {
-        // A flag to prevent redundancy of updating the world in patrolling.
-        bool IsUpdatedForPatrol = false;
-        
-        foreach (var guard in guards)
+        foreach (var guard in guardsManager.GetGuards())
         {
-            if (guard.GetState() is Patrol && !IsUpdatedForPatrol)
+            if (guardsManager.GetState() is Patrol)
             {
-                UpdateForPatrol(guards);
-                IsUpdatedForPatrol = true;
+                // Update the world once
+                UpdateForPatrol(guardsManager);
+                break;
             }
         }
+        
     }
 
 
     // Update the world for the patrol routine
-    public void UpdateForPatrol(List<Guard> guards)
+    public void UpdateForPatrol(GuardsManager guardsManager)
     {
         ConstructVisMesh();
-        base.UpdateWorld(guards);
+        base.UpdateWorld(guardsManager);
     }
 
     // Copy the current visibility polygons to the previous visibility polygons

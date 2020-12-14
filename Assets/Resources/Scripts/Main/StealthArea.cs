@@ -1,40 +1,54 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
+using UnityEngine.UI;
 
 
 public class StealthArea : MonoBehaviour
 {
     // Game Manager
     private GameManager m_gameManager;
-    private Scenario m_Scenario;
+    private Session m_Scenario;
 
     // Map renderer
     private MapRenderer m_MapRenderer;
-    
+
     // Convex decomposer of the space
     private MapDecomposer m_MapDecomposer;
 
     // Game world representation
     private WorldRep m_WorldRep;
 
+    private HidingSpots m_HidingSpots;
+
     // NPC manager
-    private NpcManager m_NpcManager;
+    private GuardsManager m_GuardsManager;
 
     // Isovists map
     private Isovists m_Isovists;
 
+    // Scale Area transform ( to get the skeletal graph of the map)
+    private SAT m_Sat;
+
+    private VisibilityGraph m_VisibilityGraph;
+
+    private Interceptor m_Interceptor;
+
     // Coroutine for updating world
     private IEnumerator worldCoroutine;
 
-    [Header("Elapsed Time")] public float episodeTime;
+    // To determine which perspective the game is viewed from
+    public GameView gameView;
+
+    [Header("Elapsed Time")] public static float episodeTime;
 
     public float lastLoggedTime;
 
     // Initiate the area
-    public void InitiateArea(Scenario scenario)
+    public void InitiateArea(Session scenario)
     {
         m_gameManager = GameObject.Find("GameSetUp").GetComponent<GameManager>();
 
@@ -43,11 +57,11 @@ public class StealthArea : MonoBehaviour
         // Get the map 
         Transform map = transform.Find("Map");
 
+
         // Draw the map
         m_MapRenderer = map.GetComponent<MapRenderer>();
         m_MapRenderer.Initiate();
         m_MapRenderer.LoadMap(m_Scenario.map, m_Scenario.GetMapScale());
-
 
         // Create the NavMesh
         m_MapDecomposer = map.GetComponent<MapDecomposer>();
@@ -68,35 +82,50 @@ public class StealthArea : MonoBehaviour
 
         m_WorldRep.InitiateWorld(m_Scenario.GetMapScale());
 
+        m_HidingSpots = map.GetComponent<HidingSpots>();
+        m_HidingSpots.Initiate(m_MapRenderer);
+
 
         // Assign NPC Manager
-        m_NpcManager = transform.Find("NpcManager").GetComponent<NpcManager>();
-        m_NpcManager.Initiate();
-        m_NpcManager.CreateNpcs(m_Scenario, m_MapDecomposer.GetNavMesh(), this);
-
+        m_GuardsManager = transform.Find("NpcManager").GetComponent<GuardsManager>();
+        m_GuardsManager.Initiate(transform.Find("Canvas").Find("Text").GetComponent<Text>());
+        m_GuardsManager.CreateNpcs(m_Scenario, m_MapDecomposer.GetNavMesh(), this);
 
         // Isovists map
         m_Isovists = map.GetComponent<Isovists>();
         // m_Isovists.Initiate(m_MapDecomposer.GetNavMesh());
 
+        // Scale Area Transform
+        m_Sat = map.GetComponent<SAT>();
+        m_Sat.Initiate(m_Scenario.GetMapScale(), m_Scenario.map);
+
+        // Visibility graph
+        m_VisibilityGraph = map.GetComponent<VisibilityGraph>();
+        m_VisibilityGraph.Initiate(m_MapRenderer);
+
+        m_Interceptor = map.GetComponent<Interceptor>();
+        m_Interceptor.Initiate(m_Sat.GetRoadMap());
+
         // The coroutine for updating the world representation
-        worldCoroutine = UpdateWorld(1f);
+        worldCoroutine = UpdateWorld(0.5f);
 
         // Reset World Representation and NPCs
         ResetArea();
+
+        EditorApplication.isPaused = true;
     }
 
     private void ResetArea()
     {
         episodeTime = 0f;
         lastLoggedTime = 0f;
-        m_NpcManager.ResetNpcs();
+        m_GuardsManager.ResetNpcs(m_MapDecomposer.GetNavMesh());
         m_WorldRep.ResetWorld();
         StartCoroutine(worldCoroutine);
     }
 
 
-    // every 2 seconds perform the print()
+    // Update the world every fixed time step
     private IEnumerator UpdateWorld(float waitTime)
     {
         while (true)
@@ -104,13 +133,10 @@ public class StealthArea : MonoBehaviour
             yield return new WaitForSeconds(waitTime);
 
             // World Update
-            m_WorldRep.UpdateWorld(m_NpcManager.GetGuards());
+            m_WorldRep.UpdateWorld(m_GuardsManager);
 
-            // Restrict Guards Seen Area
-            m_NpcManager.ResetGuardSeenArea(m_Scenario.coveredReigonResetThreshold);
-
-            // In the case of searching for an intruder
-            m_NpcManager.AddInterceptionPoints();
+            // Update 
+            m_GuardsManager.UpdateGuardManager(m_Scenario);
         }
     }
 
@@ -120,23 +146,25 @@ public class StealthArea : MonoBehaviour
         UpdateTime();
 
         // Update the guards vision
-        m_NpcManager.UpdateGuardVision();
+        m_GuardsManager.UpdateGuardVision();
 
         // Idle NPCs make decisions
-        m_NpcManager.MakeDecision();
+        m_GuardsManager.MakeDecision();
 
         // Execute existing plans for NPCs
-        m_NpcManager.MoveNpcs();
+        m_GuardsManager.MoveNpcs();
+
+        // Update metrics for logging
+        m_GuardsManager.UpdateMetrics();
 
         // Check for game end
         CheckGameEnd();
-        
+
         // Replenish hiding spots 
         m_WorldRep.ReplenishHidingSpots();
-
     }
 
-    public Scenario GetScenario()
+    public Session GetScenario()
     {
         return m_Scenario;
     }
@@ -149,12 +177,12 @@ public class StealthArea : MonoBehaviour
 
     void CheckGameEnd()
     {
-        bool finished = episodeTime >= Properties.TimeRequiredToCoverOneUnit * m_MapDecomposer.GetNavMeshArea();
+        bool finished = episodeTime >= 200f; //Properties.TimeRequiredToCoverOneUnit * m_MapDecomposer.GetNavMeshArea();
 
         // Log Guards progress
         if (m_gameManager.enableLogging && IsTimeToLog())
         {
-            m_NpcManager.LogGuardsPerformance();
+            m_GuardsManager.LogPerformance();
         }
 
 
@@ -164,9 +192,10 @@ public class StealthArea : MonoBehaviour
             // Log the overall performance
             if (m_gameManager.enableLogging)
             {
-                if (m_NpcManager.FinalizeLogging())
-                    Destroy(gameObject);
-
+                if (m_GuardsManager.FinalizeLogging())
+                {
+                    EndArea();
+                }
             }
 
             // EditorApplication.isPaused = true;
@@ -175,6 +204,11 @@ public class StealthArea : MonoBehaviour
 
             ResetArea();
         }
+    }
+
+    public void EndArea()
+    {
+        m_gameManager.RemoveArea(gameObject);
     }
 
     void UpdateTime()
@@ -192,4 +226,12 @@ public class StealthArea : MonoBehaviour
 
         return false;
     }
+}
+
+// The view of the game based on the perspective
+public enum GameView
+{
+    Spectator,
+    Intruder,
+    Guard
 }

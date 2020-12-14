@@ -5,6 +5,7 @@ using ClipperLib;
 using Unity.MLAgents.Policies;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.Serialization;
 
 public abstract class Guard : NPC
@@ -12,13 +13,8 @@ public abstract class Guard : NPC
     [Header("Debug")] [Tooltip("Seen Area")]
     public bool drawSeenArea;
 
-    private FieldOfView m_Fov;
-
-    // To model the search planner
-    private SpaceFiller m_SpaceFiller;
-
-    // npc state
-    private StateMachine m_state;
+    // Guard's role assigned by the manager
+    public GuardRole role = GuardRole.Patrol;
 
     //************ Guard's Vision *****************//
 
@@ -30,7 +26,7 @@ public abstract class Guard : NPC
 
     // the percentage of the seen area by this guard
     protected int m_guardSeenAreaPercentage;
-    
+
     protected int m_foundHidingSpots;
 
 
@@ -39,13 +35,8 @@ public abstract class Guard : NPC
         base.Initialize();
         AddFoV();
 
-        m_SpaceFiller = transform.parent.parent.Find("Map").GetComponent<SpaceFiller>();
-
         m_FovPolygon = new List<Polygon>() {new Polygon()};
         SeenArea = new List<Polygon>();
-
-        m_state = new StateMachine();
-        m_state.ChangeState(new Patrol(this));
     }
 
     public void RestrictSeenArea(float resetThreshold)
@@ -57,8 +48,8 @@ public abstract class Guard : NPC
 
     public void RestrictSearchArea()
     {
-        m_SpaceFiller.RemoveFromCircle(m_FovPolygon);
-        m_SpaceFiller.RemoveSpottedInterceptionPoints(m_FovPolygon);
+        // m_SpaceFiller.RemoveFromCircle(m_FovPolygon);
+        // m_SpaceFiller.RemoveSpottedInterceptionPoints(m_FovPolygon);
     }
 
 
@@ -70,7 +61,7 @@ public abstract class Guard : NPC
     public override void OnEpisodeBegin()
     {
         base.OnEpisodeBegin();
-        Goal = null;
+        ClearGoal();
         m_FovPolygon[0].Clear();
         SeenArea.Clear();
     }
@@ -78,101 +69,21 @@ public abstract class Guard : NPC
     public override void Heuristic(float[] actionsOut)
     {
         // Execute the current state
-        m_state.Update();
-    }
-
-    public IState GetState()
-    {
-        return m_state.GetState();
-    }
-
-    public override void ExecutePlan()
-    {
-        if (PathToTake.Count > 0)
-            if (GoStraightTo(PathToTake[0], m_state.GetState()))
-            {
-                PathToTake.RemoveAt(0);
-
-                if (PathToTake.Count == 0)
-                    Goal = null;
-            }
+        //m_state.Update();
     }
 
 
-    // Clear the designated goal and path to take
-    public void ClearGoal()
-    {
-        Goal = null;
-        PathToTake.Clear();
-    }
+    // public override void ExecutePlan(IState state)
+    // {
+    //
+    // }
 
     public void Patrol()
     {
-        Goal = GetPatrolGoal();
+        if (Goal == null)
+            Goal = GetPatrolGoal();
 
-        if (Goal != null)
-        {
-            PathToTake = PathFinding.GetShortestPath(World.GetNavMesh(),
-                transform.position, Goal.Value);
-
-            // EditorApplication.isPaused = true;
-        }
-    }
-
-    // In case of an intruder is located order the guard to chase to that assigned @param: target
-    public void UpdateChasingTarget(Vector2 target)
-    {
-        if (m_state.GetState() is Chase)
-        {
-            Goal = target;
-            RequestDecision();
-        }
-        else
-            // Switch to chase state
-            m_state.ChangeState(new Chase(this));
-    }
-
-
-    public void Chase()
-    {
-        if (Goal != null)
-        {
-            PathToTake = PathFinding.GetShortestPath(World.GetNavMesh(),
-                transform.position, Goal.Value);
-
-            // EditorApplication.isPaused = true;
-        }
-    }
-
-    // Start searching for the intruder if the guard was chasing
-    public void StartSearch()
-    {
-        // if we were chasing then switch to search
-        if (m_state.GetState() is Chase)
-        {
-            // Goal = intruder.transform.position;
-            m_state.ChangeState(new Search(this));
-            RequestDecision();
-        }
-    }
-
-
-    public void Search()
-    {
-        Goal = m_SpaceFiller.GetGoal(transform.position);
-
-        if (Goal != null)
-        {
-            PathToTake = PathFinding.GetShortestPath(World.GetNavMesh(),
-                transform.position, Goal.Value);
-
-            // EditorApplication.isPaused = true;
-        }
-    }
-
-    public void EndSearch()
-    {
-        m_SpaceFiller.Clear();
+        SetPathToGoal();
     }
 
 
@@ -181,12 +92,48 @@ public abstract class Guard : NPC
     {
         foreach (var intruder in intruders)
         {
-            if (m_FovPolygon[0].IsPointInPolygon(intruder.transform.position, true))
-
+            if (m_FovPolygon[0].IsCircleColliding(intruder.transform.position, 0.03f))
+            {
+                intruder.Seen();
+                RenderIntruder(intruder, true);
                 return true;
+            }
+
+            RenderIntruder(intruder, false);
         }
 
         return false;
+    }
+    
+    // Get field of vision
+    public Polygon GetFoV()
+    {
+        return m_FovPolygon[0];
+    }
+
+    // Rendering the intuder
+    public void RenderIntruder(Intruder intruder, bool seen)
+    {
+        if (Area.gameView == GameView.Spectator)
+        {
+            intruder.RenderIntruder(true);
+            RenderGuard(true);
+        }
+        else if (Area.gameView == GameView.Guard)
+        {
+            RenderGuard(true);
+            if (seen)
+                intruder.RenderIntruder(true);
+            else
+                intruder.RenderIntruder(false);
+        }
+    }
+
+    // Render the guard and the FoV if seen by the intruder
+    public void RenderGuard(bool isSeen)
+    {
+        Renderer.enabled = isSeen;
+        FovRenderer.enabled = isSeen;
     }
 
 
@@ -204,21 +151,26 @@ public abstract class Guard : NPC
         fovGameObject.transform.parent = transform1;
         fovGameObject.transform.position = transform1.position;
 
-        m_Fov = fovGameObject.AddComponent<FieldOfView>();
-        m_Fov.Initiate(Properties.ViewAngle, Properties.ViewRadius, new Color32(0, 100, 100, 100));
+        Fov = fovGameObject.AddComponent<FieldOfView>();
+        Fov.Initiate(Properties.ViewAngle, Properties.ViewRadius, new Color32(0, 100, 100, 100));
     }
 
     private void LoadFovPolygon()
     {
         m_FovPolygon[0].Clear();
-        foreach (var vertex in m_Fov.GetFovVertices())
+        foreach (var vertex in Fov.GetFovVertices())
             m_FovPolygon[0].AddPoint(vertex);
+    }
+
+    public void LateUpdate()
+    {
+        CastVision();
     }
 
     // Cast the guard field of view
     public void CastVision()
     {
-        m_Fov.CastFieldOfView();
+        Fov.CastFieldOfView();
         LoadFovPolygon();
     }
 
@@ -238,6 +190,8 @@ public abstract class Guard : NPC
 
         CheckForFoundHidingSpots();
     }
+    
+
 
     public List<Polygon> CopySeenArea()
     {
@@ -270,14 +224,14 @@ public abstract class Guard : NPC
             }
         }
     }
-    
+
     public bool IsNodeInFoV(Vector2 point)
     {
         bool isIn = false;
 
         if (m_FovPolygon.Count > 0)
             for (int i = 0; i < m_FovPolygon.Count; i++)
-                if (m_FovPolygon[i].IsPointInPolygon(point,true))
+                if (m_FovPolygon[i].IsPointInPolygon(point, true))
                 {
                     isIn = true;
                 }
@@ -286,7 +240,7 @@ public abstract class Guard : NPC
         return isIn;
     }
 
-    
+
     public virtual void SetSeenPortion()
     {
     }
@@ -298,18 +252,12 @@ public abstract class Guard : NPC
 
     private void OnDrawGizmos()
     {
+        base.OnDrawGizmos();
+        
         if (drawSeenArea)
         {
             foreach (var p in SeenArea)
                 p.Draw(p.DetermineWindingOrder().ToString());
         }
-
-        if (PathToTake.Count > 0)
-            for (int i = 0; i < PathToTake.Count; i++)
-            {
-                if (i < PathToTake.Count - 1)
-                    Gizmos.DrawLine(PathToTake[i], PathToTake[i + 1]);
-                Gizmos.DrawSphere(PathToTake[i], 0.05f);
-            }
     }
 }

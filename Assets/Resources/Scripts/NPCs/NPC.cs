@@ -21,10 +21,22 @@ public abstract class NPC : Agent
     // The area of the game
     protected StealthArea Area;
 
-
     // The plan to follow
     protected List<Vector2> PathToTake;
     protected Vector2? Goal;
+
+    // NPC movement variables
+    protected float NpcSpeed = 2f;
+    protected float NpcRotationSpeed = 200f;
+
+    // The game perspective
+    protected GameView GameView;
+
+    protected Renderer Renderer;
+    protected Renderer FovRenderer;
+
+    // Field of View object
+    protected FieldOfView Fov;
 
     //************** Logging data ***************//
     // Variables for the distance travelled by a character
@@ -33,6 +45,10 @@ public abstract class NPC : Agent
 
     // The total distance the guard travelled
     [SerializeField] private float m_TotalDistanceTravelled;
+
+    // show the NPCs path to take
+    public bool ShowPath;
+
 
     public override void Initialize()
     {
@@ -50,17 +66,28 @@ public abstract class NPC : Agent
         m_LastPosition = transform.position;
     }
 
+    // Get a vector that represents the agents orientation around the z-axis
+    public Vector2 GetDirection()
+    {
+        Vector2 dir = -Vector2.right;
+        float rad = transform.eulerAngles.z * Mathf.Deg2Rad;
+        float s = Mathf.Sin(rad);
+        float c = Mathf.Cos(rad);
+        return new Vector2(
+            dir.y * c + dir.x * s, dir.y * s - dir.x * c
+        );
+    }
+
     // The set up of the start of the episode
     public override void OnEpisodeBegin()
     {
         PathToTake.Clear();
         m_TotalDistanceTravelled = 0f;
-        
-        // Randomly place the NPC on the map
-        int polygonIndex = Random.Range(0, Area.GetNavMesh().Count);
-        transform.position = Area.GetNavMesh()[polygonIndex].GetRandomPosition();
-        
+
         SetPosition();
+
+        Renderer = GetComponent<Renderer>();
+        FovRenderer = Fov.GetComponent<Renderer>();
     }
 
     // Set the NPC data
@@ -70,6 +97,23 @@ public abstract class NPC : Agent
         m_NpcRb = GetComponent<Rigidbody2D>();
     }
 
+    // Reset NPC location
+    public void ResetLocation(List<MeshPolygon> navMesh)
+    {
+        if (Data.location == null)
+        {
+            // Randomly place the NPC on the map
+            int polygonIndex = Random.Range(0, navMesh.Count);
+            transform.position = navMesh[polygonIndex].GetRandomPosition();
+        }
+        else
+        {
+            transform.position = (Vector2) Data.location.Value.position;
+            transform.rotation = Quaternion.AngleAxis(Data.location.Value.rotation, Vector3.forward);
+        }
+    }
+
+
     public void AssignGoal()
     {
         if (Goal == null)
@@ -78,16 +122,53 @@ public abstract class NPC : Agent
         }
     }
 
+    // Define a goal for the agent and set the path to navigate to it,
+    public void SetGoal(Vector2 _goal, bool isForced)
+    {
+        if (Goal == null || isForced)
+            Goal = _goal;
+
+        SetPathToGoal();
+    }
+
+    // Set the path to the goal
+    public void SetPathToGoal()
+    {
+        if (Goal != null)
+            PathToTake = PathFinding.GetShortestPath(World.GetNavMesh(),
+                transform.position, Goal.Value);
+    }
+
+    public Vector2? GetGoal()
+    {
+        return Goal;
+    }
+
     public abstract LogSnapshot LogNpcProgress();
 
-    public virtual void ExecutePlan()
+    // Update NPC metrics
+    public virtual void UpdateMetrics()
     {
     }
 
+    public virtual void ExecutePlan(IState state, GuardRole? guardRole)
+    {
+        if (PathToTake.Count > 0)
+            if (GoStraightTo(PathToTake[0], state, guardRole))
+            {
+                PathToTake.RemoveAt(0);
+
+                if (PathToTake.Count == 0)
+                    Goal = null;
+            }
+    }
 
     // Rotate to a specific target and then move towards it; return a boolean if the point is reached or not
-    protected bool GoStraightTo(Vector3 target, IState state)
+    protected bool GoStraightTo(Vector3 target, IState state, GuardRole? guardRole)
     {
+        // if(guardRole == null)
+        //     Debug.Log("Move");
+
         // Calculate how much rotation must be done
         Vector2 rotateDir = (target - transform.position).normalized;
         float m_goalAngle = Vector2.SignedAngle(Vector2.up, rotateDir);
@@ -98,17 +179,18 @@ public abstract class NPC : Agent
         if (Mathf.Abs(angleLeft) > 0f)
         {
             transform.rotation = Quaternion.RotateTowards(transform.rotation, toRotation,
-                Properties.NpcRotationSpeed * Time.fixedDeltaTime);
+                NpcRotationSpeed * Time.fixedDeltaTime);
             return false;
         }
 
         // Handle movement
         float distanceLeft = Vector2.Distance(transform.position, target);
 
-        // The guard doesn't need to visit the goal on the path. Just see it
+        // How to behavior when heading for the last way point (goal)
         if (PathToTake[PathToTake.Count - 1] == (Vector2) target)
         {
-            if (!(state is Chase))
+            // If the guard is in patrol, it doesn't need to visit the goal on the path. Just see it
+            if (state is Patrol || state is Search)
                 distanceLeft -= Properties.ViewRadius - 0.5f;
         }
 
@@ -116,7 +198,7 @@ public abstract class NPC : Agent
         {
             // Vector2 dir = (target - transform.position).normalized;
             m_NpcRb.MovePosition(m_NpcRb.position +
-                                 ((Vector2) transform.up * (Properties.NpcSpeed * Time.fixedDeltaTime)));
+                                 ((Vector2) transform.up * (NpcSpeed * Time.fixedDeltaTime)));
 
             // Update the total distance traveled
             if (m_LastPosition != null)
@@ -148,14 +230,34 @@ public abstract class NPC : Agent
             float m_goalAngle = Vector2.SignedAngle(Vector2.up, dir);
             Quaternion toRotation = Quaternion.AngleAxis(m_goalAngle, Vector3.forward);
             transform.rotation = Quaternion.RotateTowards(transform.rotation, toRotation,
-                Properties.NpcRotationSpeed * Time.fixedDeltaTime * 10f);
+                NpcRotationSpeed * Time.fixedDeltaTime * 10f);
         }
 
-        m_NpcRb.MovePosition(m_NpcRb.position + (dir.normalized * (Properties.NpcSpeed * Time.fixedDeltaTime)));
+        m_NpcRb.MovePosition(m_NpcRb.position + (dir.normalized * (NpcSpeed * Time.fixedDeltaTime)));
+    }
+
+    // Clear the designated goal and path to take
+    public void ClearGoal()
+    {
+        Goal = null;
+        PathToTake.Clear();
     }
 
 
-    // Update the total distance travelled by the NPC
+    // Remaining distance to goal
+    public float GetRemainingDistanceToGoal()
+    {
+        float totalDistance = 0;
+        for (int i = 0; i < PathToTake.Count - 1; i++)
+        {
+            totalDistance += Vector2.Distance(PathToTake[i], PathToTake[i + 1]);
+        }
+
+        return totalDistance;
+    }
+
+
+    // Update the total distance travelled by the NPC for logging purposes
     private void UpdateDistance()
     {
         var position = transform.position;
@@ -169,13 +271,38 @@ public abstract class NPC : Agent
         m_LastPosition = transform.position;
     }
 
+    public bool IsIdle()
+    {
+        return Goal == null;
+    }
+
     public float GetTravelledDistance()
     {
         return m_TotalDistanceTravelled;
     }
 
-    public NpcType GetNpcType()
+    public NpcData GetNpcData()
     {
-        return Data.npcType;
+        return Data;
+    }
+
+    public float GetNpcSpeed()
+    {
+        return NpcSpeed;
+    }
+
+
+    public void OnDrawGizmos()
+    {
+        if (ShowPath && PathToTake != null & PathToTake.Count > 0)
+        {
+            for (int i = 0; i < PathToTake.Count - 1; i++)
+            {
+                Gizmos.DrawLine(PathToTake[i], PathToTake[i + 1]);
+                Gizmos.DrawSphere(PathToTake[i], 0.1f);
+            }
+
+            Gizmos.DrawSphere(PathToTake[PathToTake.Count - 1], 0.1f);
+        }
     }
 }

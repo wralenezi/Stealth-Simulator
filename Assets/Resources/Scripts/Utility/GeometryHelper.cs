@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System;
+using System.Collections.Generic;
+using UnityEngine;
 
 public static class GeometryHelper
 {
@@ -111,7 +113,7 @@ public static class GeometryHelper
 
         return !(hasNeg && hasPos);
     }
-    
+
     /// <summary>
     /// Gets the coordinates of the intersection point of two lines.
     /// source : https://blog.dakwamine.fr/?p=1943
@@ -122,7 +124,8 @@ public static class GeometryHelper
     /// <param name="B2">Another point on the second line.</param>
     /// <param name="found">Is set to false of there are no solution. true otherwise.</param>
     /// <returns>The intersection point coordinates. Returns Vector2.zero if there is no solution.</returns>
-    public static Vector2 GetIntersectionPointCoordinates(Vector2 A1, Vector2 A2, Vector2 B1, Vector2 B2, bool includeVertices , out bool found)
+    public static Vector2 GetIntersectionPointCoordinates(Vector2 A1, Vector2 A2, Vector2 B1, Vector2 B2,
+        bool includeVertices, out bool found)
     {
         float tmp = (B2.x - B1.x) * (A2.y - A1.y) - (B2.y - B1.y) * (A2.x - A1.x);
 
@@ -142,5 +145,55 @@ public static class GeometryHelper
         found = DoLinesIntersect(A1, A2, B1, B2, includeVertices);
 
         return point;
+    }
+
+    // Check if point c lies on the lines a,b
+    public static bool IsPointOnLine(Vector2 a, Vector2 b, Vector2 c)
+    {
+        float ab = Vector2.Distance(a, b);
+
+        float ac = Vector2.Distance(a, c);
+        
+        float bc = Vector2.Distance(b, c);
+
+        return Math.Abs(ab - (ac + bc)) < 0.01f;
+    }
+
+    // Get the closest point to a point from a list
+    public static Vector2 GetClosestPointFromList(Vector2 origin, List<Vector2> points)
+    {
+        Vector2 closestIntersection = points[0];
+        float minDist = Mathf.Infinity;
+                        
+        foreach (var inter in points)
+        {
+            float dist = Vector2.Distance(origin, inter);
+
+            if (dist < minDist)
+            {
+                closestIntersection = inter;
+                minDist = dist;
+            }
+
+        }
+
+        return closestIntersection;
+    }
+
+    // Return minimum distance between line segment qr and point p
+    public static Vector2 ClosestProjectionOnSegment(Vector2 q, Vector2 r, Vector2 p)
+    {
+        float length2 = Mathf.Pow(Vector2.Distance(q, r), 2);
+
+        if (length2 == 0f) return p; // q == r case
+
+        // Consider the line extending the segment, parameterized as r + t (q - r).
+        // We find projection of point p onto the line. 
+        // It falls where t = [(p-r) . (q-r)] / |w-v|^2
+        // We clamp t from [0,1] to handle points outside the segment vw.
+        float t = Mathf.Max(0, Mathf.Min(1, Vector2.Dot(p - r, q - r) / length2));
+        Vector2 projection = r + t * (q - r); // Projection falls on the segment
+
+        return projection;
     }
 }

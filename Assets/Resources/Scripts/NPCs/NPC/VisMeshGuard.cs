@@ -18,13 +18,13 @@ public class VisMeshGuard : Guard
     {
         Vector2? goal = null;
 
-        switch (Data.npcPlanner)
+        switch (Data.guardPlanner.Value.patrol)
         {
-            case NpcPlanner.Stalest:
+            case GuardPatrolPlanner.Stalest:
                 goal = GetStalestPolygon().GetCentroidPosition();
                 break;
 
-            case NpcPlanner.UserInput:
+            case GuardPatrolPlanner.UserInput:
                 goal = GetInputPoint();
                 break;
         }
@@ -34,7 +34,7 @@ public class VisMeshGuard : Guard
 
     public override LogSnapshot LogNpcProgress()
     {
-        return new LogSnapshot(GetTravelledDistance(), Area.episodeTime, Data, m_foundHidingSpots, m_VisMesh.GetAverageStaleness());
+        return new LogSnapshot(GetTravelledDistance(), StealthArea.episodeTime, Data,"",0f,0f, m_foundHidingSpots, m_VisMesh.GetAverageStaleness());
     }
 
     // Get the stalest Polygon in the whole map
