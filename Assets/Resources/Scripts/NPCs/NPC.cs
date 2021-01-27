@@ -12,7 +12,7 @@ public abstract class NPC : Agent
     // NPC data
     protected NpcData Data;
 
-    // NPC Rigid body
+    // NPC Rigid body for physics
     private Rigidbody2D m_NpcRb;
 
     // The world representation
@@ -21,7 +21,7 @@ public abstract class NPC : Agent
     // The area of the game
     protected StealthArea Area;
 
-    // The plan to follow
+    // The path the agent is meant to follow
     protected List<Vector2> PathToTake;
     protected Vector2? Goal;
 
@@ -32,6 +32,7 @@ public abstract class NPC : Agent
     // The game perspective
     protected GameView GameView;
 
+    // Renderers for hiding the NPC when not needed
     protected Renderer Renderer;
     protected Renderer FovRenderer;
 
@@ -50,17 +51,33 @@ public abstract class NPC : Agent
     public bool ShowPath;
 
 
+    // Called when the agent is first created
     public override void Initialize()
     {
         PathToTake = new List<Vector2>();
         World = transform.parent.parent.Find("Map").GetComponent<WorldRep>();
     }
 
+    // The set up of the start of the episode
+    public override void OnEpisodeBegin()
+    {
+        PathToTake.Clear();
+        m_TotalDistanceTravelled = 0f;
+
+        SetPosition();
+
+        Renderer = GetComponent<Renderer>();
+        FovRenderer = Fov.GetComponent<Renderer>();
+    }
+
+
+    // Set the area the agent will be using
     public void SetArea(StealthArea area)
     {
         Area = area;
     }
 
+    // Update the agent's last position
     public void SetPosition()
     {
         m_LastPosition = transform.position;
@@ -78,18 +95,6 @@ public abstract class NPC : Agent
         );
     }
 
-    // The set up of the start of the episode
-    public override void OnEpisodeBegin()
-    {
-        PathToTake.Clear();
-        m_TotalDistanceTravelled = 0f;
-
-        SetPosition();
-
-        Renderer = GetComponent<Renderer>();
-        FovRenderer = Fov.GetComponent<Renderer>();
-    }
-
     // Set the NPC data
     public void SetNpcData(NpcData data)
     {
@@ -97,20 +102,60 @@ public abstract class NPC : Agent
         m_NpcRb = GetComponent<Rigidbody2D>();
     }
 
-    // Reset NPC location
-    public void ResetLocation(List<MeshPolygon> navMesh)
+    // Place the NPC's start position
+    public void ResetLocation(List<MeshPolygon> navMesh, List<Guard> guards, List<Polygon> mapWalls, Session sessionInfo)
     {
         if (Data.location == null)
         {
-            // Randomly place the NPC on the map
-            int polygonIndex = Random.Range(0, navMesh.Count);
-            transform.position = navMesh[polygonIndex].GetRandomPosition();
+            // if the npc is a guard then place them at the center of a navmesh polygon
+            if (Data.npcType == NpcType.Guard)
+            {
+                // Randomly place the NPC on the map
+                int polygonIndex = Random.Range(0, navMesh.Count);
+                transform.position = navMesh[polygonIndex].GetCentroidPosition();
+            }
+            // if the npc is an intruder then place in front of one of the guards
+            else if (Data.npcType == NpcType.Intruder)
+            {
+                // If the scenario is a chase then place the intruder somewhere a guard can see
+                if (sessionInfo.scenario == Scenario.Chase)
+                {
+                    int guardIndex = Random.Range(0, guards.Count);
+                    Guard guard = guards[guardIndex];
+                    transform.position = GetPositionNearNpc(guard.transform, mapWalls);
+
+                    // Find the angle needed to rotate to face the desired direction
+                    Vector2 rotateDir = (transform.position - guard.transform.position).normalized;
+                    float m_goalAngle = Vector2.SignedAngle(Vector2.up, rotateDir);
+
+                    Quaternion toRotation = Quaternion.AngleAxis(m_goalAngle, Vector3.forward);
+                    guard.transform.rotation = toRotation;
+                }
+            }
         }
         else
         {
+            // Set the agent to the specified location
             transform.position = (Vector2) Data.location.Value.position;
             transform.rotation = Quaternion.AngleAxis(Data.location.Value.rotation, Vector3.forward);
         }
+    }
+
+    private Vector2 GetPositionNearNpc(Transform transform, List<Polygon> mapWalls)
+    {
+        if (PolygonHelper.IsPointInPolygons(mapWalls, transform.position + transform.up))
+            return transform.position + transform.up;
+
+        if (PolygonHelper.IsPointInPolygons(mapWalls, transform.position - transform.up))
+            return transform.position - transform.up;
+
+        if (PolygonHelper.IsPointInPolygons(mapWalls, transform.position + transform.right))
+            return transform.position + transform.right;
+        
+        if (PolygonHelper.IsPointInPolygons(mapWalls, transform.position - transform.right))
+            return transform.position - transform.right;
+
+        return transform.position;
     }
 
 
@@ -131,7 +176,7 @@ public abstract class NPC : Agent
         SetPathToGoal();
     }
 
-    // Set the path to the goal
+    // Set the path to the goal using the NavMesh
     public void SetPathToGoal()
     {
         if (Goal != null)
@@ -139,11 +184,13 @@ public abstract class NPC : Agent
                 transform.position, Goal.Value);
     }
 
+    // Get the agents goal
     public Vector2? GetGoal()
     {
         return Goal;
     }
 
+    // Get the current metrics of the agent's performance
     public abstract LogSnapshot LogNpcProgress();
 
     // Update NPC metrics
@@ -151,7 +198,8 @@ public abstract class NPC : Agent
     {
     }
 
-    public virtual void ExecutePlan(IState state, GuardRole? guardRole)
+    // Move the NPC through it's path
+    public void ExecutePlan(IState state, GuardRole? guardRole)
     {
         if (PathToTake.Count > 0)
             if (GoStraightTo(PathToTake[0], state, guardRole))
@@ -166,12 +214,10 @@ public abstract class NPC : Agent
     // Rotate to a specific target and then move towards it; return a boolean if the point is reached or not
     protected bool GoStraightTo(Vector3 target, IState state, GuardRole? guardRole)
     {
-        // if(guardRole == null)
-        //     Debug.Log("Move");
-
-        // Calculate how much rotation must be done
+        // Find the angle needed to rotate to face the desired direction
         Vector2 rotateDir = (target - transform.position).normalized;
         float m_goalAngle = Vector2.SignedAngle(Vector2.up, rotateDir);
+
         Quaternion toRotation = Quaternion.AngleAxis(m_goalAngle, Vector3.forward);
         float angleLeft = Mathf.Round(toRotation.eulerAngles.z - transform.rotation.eulerAngles.z);
 
@@ -212,6 +258,7 @@ public abstract class NPC : Agent
         return true;
     }
 
+    // Move the NPC by user input.
     public void MoveByInput()
     {
         Vector2 dir = new Vector2(0f, 0f);
@@ -233,7 +280,7 @@ public abstract class NPC : Agent
                 NpcRotationSpeed * Time.fixedDeltaTime * 10f);
         }
 
-        m_NpcRb.MovePosition(m_NpcRb.position + (dir.normalized * (NpcSpeed * Time.fixedDeltaTime)));
+        m_NpcRb.MovePosition(m_NpcRb.position + dir.normalized * (NpcSpeed * Time.fixedDeltaTime));
     }
 
     // Clear the designated goal and path to take
@@ -244,7 +291,7 @@ public abstract class NPC : Agent
     }
 
 
-    // Remaining distance to goal
+    // Get the remaining distance to goal
     public float GetRemainingDistanceToGoal()
     {
         float totalDistance = 0;
@@ -264,11 +311,6 @@ public abstract class NPC : Agent
         var distanceTravelled = Vector2.Distance(position, m_LastPosition.Value);
         m_TotalDistanceTravelled += distanceTravelled;
         m_LastPosition = position;
-    }
-
-    public void SetLastPositionPosition()
-    {
-        m_LastPosition = transform.position;
     }
 
     public bool IsIdle()

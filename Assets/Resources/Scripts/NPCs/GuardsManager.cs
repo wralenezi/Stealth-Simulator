@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using Random = UnityEngine.Random;
+
 
 public class GuardsManager : MonoBehaviour
 {
@@ -32,7 +30,7 @@ public class GuardsManager : MonoBehaviour
     // Possible locations to search for the intruder in
     private List<InterceptionPoint> m_possiblePositions;
 
-
+    // The npc layer to ignore collisions between npcs
     private LayerMask m_npcLayer;
 
     // The number of updates done for the possible interception points
@@ -47,7 +45,6 @@ public class GuardsManager : MonoBehaviour
     {
         m_Guards = new List<Guard>();
         m_Intruders = new List<Intruder>();
-
 
         m_WorldRep = transform.parent.Find("Map").GetComponent<WorldRep>();
         m_interceptor = transform.parent.Find("Map").GetComponent<Interceptor>();
@@ -105,7 +102,6 @@ public class GuardsManager : MonoBehaviour
         // Set the NPC as a child to the manager
         var npcGameObject = Instantiate(npcPrefab, transform);
 
-
         // Add the sprite
         Sprite npcSprite = Resources.Load("Sprites/npc_sprite", typeof(Sprite)) as Sprite;
         SpriteRenderer spriteRenderer = npcGameObject.AddComponent<SpriteRenderer>();
@@ -148,8 +144,8 @@ public class GuardsManager : MonoBehaviour
                 break;
         }
 
-        // Allocate the NPC on specified location else place it randomly on the map
-        npc.ResetLocation(navMesh);
+        // Allocate the NPC based on the specified scenario
+        npc.ResetLocation(navMesh, m_Guards, area.GetMap().GetWalls(), area.GetSessionInfo());
 
         npcGameObject.layer = m_npcLayer;
 
@@ -175,19 +171,19 @@ public class GuardsManager : MonoBehaviour
 
 
     // Reset NPCs at the end of the round
-    public void ResetNpcs(List<MeshPolygon> navMesh)
+    public void ResetNpcs(List<MeshPolygon> navMesh, StealthArea area)
     {
         // Reset guards
         foreach (var guard in m_Guards)
         {
-            guard.ResetLocation(navMesh);
+            guard.ResetLocation(navMesh, m_Guards, area.GetMap().GetWalls(), area.GetSessionInfo());
             guard.EndEpisode();
         }
 
         // Reset Intruders
         foreach (var intruder in m_Intruders)
         {
-            intruder.ResetLocation(navMesh);
+            intruder.ResetLocation(navMesh, m_Guards, area.GetMap().GetWalls(), area.GetSessionInfo());
             intruder.EndEpisode();
         }
 
@@ -201,6 +197,7 @@ public class GuardsManager : MonoBehaviour
         // In the case of searching for an intruder
         UpdateSearchArea();
 
+
         bool intruderSpotted = false;
         foreach (var guard in m_Guards)
         {
@@ -212,7 +209,7 @@ public class GuardsManager : MonoBehaviour
                 intruderSpotted = guard.SpotIntruders(m_Intruders);
         }
 
-
+        // Render guards if the intruder can see them
         foreach (var intruder in m_Intruders)
         {
             intruder.SpotGuards(m_Guards);
@@ -226,7 +223,7 @@ public class GuardsManager : MonoBehaviour
         }
         else if (m_state.GetState() is Chase)
         {
-            // if the intruder is not seen the guards were chasing then start searching
+            // if the intruder is not seen and the guards were chasing then start searching
             StartSearch();
         }
     }
@@ -258,7 +255,6 @@ public class GuardsManager : MonoBehaviour
         // Move and propagate the possible intruder position (phantoms)
         if (GetState() is Search)
             m_interceptor.ExpandSearch(m_Intruders[0].GetNpcSpeed(), m_Guards);
-        // m_interceptor.PropagatePhantoms();
     }
 
     // Update the guards observations to react properly to changes
@@ -394,7 +390,6 @@ public class GuardsManager : MonoBehaviour
         }
     }
 
-
     // Order guards to chase
     public void Chase()
     {
@@ -492,7 +487,9 @@ public class GuardsManager : MonoBehaviour
                 if (m_guardPlanner.search == GuardSearchPlanner.Interception)
                 {
                     // AssignGuardToInterceptionPoint();
-                    guard.SetGoal(m_interceptor.GetSearchSegment(guard, m_Guards, m_WorldRep.GetNavMesh()), false);
+                    guard.SetGoal(
+                        m_interceptor.GetSearchSegment(guard, m_Guards, m_Intruders[0], m_WorldRep.GetNavMesh()),
+                        false);
                 }
                 else if (m_guardPlanner.search == GuardSearchPlanner.Random)
                 {
@@ -553,11 +550,15 @@ public class GuardsManager : MonoBehaviour
     }
 
     // Log the episode's performance and check if required number of episodes is recorded
-    public bool FinalizeLogging()
+    // Upload 
+    public bool FinalizeLogging(bool isUpload)
     {
         LogPerformance();
 
-        m_performanceMonitor.LogEpisodeFinish();
+        if (!isUpload)
+            m_performanceMonitor.LogEpisodeFinish();
+        else
+            m_performanceMonitor.UploadEpisodeData();
 
         return IsDone();
     }

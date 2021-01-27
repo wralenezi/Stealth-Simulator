@@ -80,7 +80,7 @@ public class Intruder : NPC
         {
             m_AlertTime += Time.fixedDeltaTime;
         }
-        else if (m_state.GetState() is Hidden)
+        else if (m_state.GetState() is Hide)
         {
             m_SearchedTime += Time.fixedDeltaTime;
         }
@@ -199,7 +199,7 @@ public class Intruder : NPC
     // To start hiding from guards searching for the intruder
     public void StartHiding()
     {
-        m_state.ChangeState(new Hidden(this));
+        m_state.ChangeState(new Hide(this));
 
         // Find a place to hide
         if (GetNpcData().intruderPlanner == IntruderPlanner.Random)

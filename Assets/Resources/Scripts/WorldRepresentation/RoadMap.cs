@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -74,6 +71,12 @@ public class RoadMap
     }
 
 
+    public List<RoadMapLine> GetLines()
+    {
+        return m_Lines;
+    }
+
+
     // Find the projection point on the road map
     // Find the closest projection point 
     public InterceptionPoint GetInterceptionPointOnRoadMap(Vector2 position, Vector2 dir)
@@ -82,7 +85,7 @@ public class RoadMap
         // Position
         Vector2? projectionOnRoadMap = null;
         // Direction of the phantom node movement
-        Vector2? direction = null;
+        //Vector2? direction = null;
         // Destination of the phantom node
         WayPoint destination = null;
         // Source of the phantom
@@ -114,8 +117,6 @@ public class RoadMap
                 // The closer to one the more aligned 
                 float cosineAngle = Vector2.Dot(edgeDir, velocityNorm);
 
-                direction = edgeDir * cosineAngle;
-
                 destination = (cosineAngle > 0) ? line.wp2 : line.wp1;
                 source = (cosineAngle > 0) ? line.wp1 : line.wp2;
             }
@@ -130,10 +131,10 @@ public class RoadMap
     public void InsertSearchLineSegment(Vector2 position, Vector2 dir)
     {
         float minDistance = Mathf.Infinity;
-        // Position
-        Vector2? projectionOnRoadMap = null;
+        // Positions
+        List<Vector2> projections = new List<Vector2>();
         // Direction of the phantom node movement
-        Vector2? direction = null;
+        List<Vector2> directions = new List<Vector2>();
 
         // Line the search segment lies on
         RoadMapLine closestRoadMapLine = null;
@@ -150,6 +151,7 @@ public class RoadMap
             // Get the point projection on the line
             Vector2 pro = GeometryHelper.ClosestProjectionOnSegment(line.wp1.GetPosition(), line.wp2.GetPosition(),
                 position);
+            projections.Add(pro);
 
             // The distance from the projection point to the intruder position
             float distance = Vector2.Distance(position, pro);
@@ -158,6 +160,7 @@ public class RoadMap
             // Get the normalized direction of the road map edge
             Vector2 edgeDir = line.wp1.GetPosition() - line.wp2.GetPosition();
             edgeDir = edgeDir.normalized;
+            directions.Add(edgeDir);
 
             // Get the normalized Velocity of the intruder
             Vector2 velocityNorm = dir.normalized;
@@ -166,16 +169,6 @@ public class RoadMap
             // The closer to one the more aligned 
             float cosineAngle = Vector2.Dot(edgeDir, velocityNorm);
             angleDiffs.Add(Mathf.Abs(cosineAngle));
-
-
-            if (distance < minDistance)
-            {
-                minDistance = distance;
-                projectionOnRoadMap = pro;
-                direction = edgeDir * cosineAngle;
-
-                closestRoadMapLine = line;
-            }
         }
 
 
@@ -213,16 +206,24 @@ public class RoadMap
 
         closestRoadMapLine = m_Lines[bestFit];
 
-        closestRoadMapLine.AddSearchSegment(projectionOnRoadMap.Value + direction.Value,
-            projectionOnRoadMap.Value + direction.Value,
-            direction.Value, 1f);
+
+        // check if the distance to both lines are similar then create two segments on both projections.
+        // if (Mathf.Abs(distances[closestLineIndex] - distances[secondClosestLineIndex]) < 0.5f)
+        // {
+        //     m_Lines[closestLineIndex].AddSearchSegment();
+        // }
+
+        // 
+        closestRoadMapLine.AddSearchSegment(projections[bestFit] + directions[bestFit],
+            projections[bestFit] - directions[bestFit],
+            directions[bestFit], 1f);
     }
 
 
     // Trim and remove search segments seen by guards
     public void SeePossibleIntruderPaths(List<Guard> guards)
     {
-        // Modify the search segments
+        // Cut the search segments when seen or add new ones.
         foreach (var line in m_Lines)
             line.ModSearchSegments(guards);
 
@@ -231,8 +232,9 @@ public class RoadMap
             wp.Seen(guards);
     }
 
-    // Get the best search segment
-    public Vector2 GetBestSearchSegment(Guard requestingGuard, List<Guard> guards, List<MeshPolygon> navMesh)
+    // Get the mid point of the best search segment
+    public Vector2 GetBestSearchSegment(Guard requestingGuard, List<Guard> guards, Intruder intruder,
+        List<MeshPolygon> navMesh)
     {
         SearchSegment bestSs = null;
         float maxFitnessValue = Mathf.NegativeInfinity;
@@ -266,7 +268,7 @@ public class RoadMap
 
             // Calculate the fitness of the search segment
             // start with the probability
-            float ssFitness = sS.GetProbability();
+            float ssFitness = sS.GetAge();
 
             // Reduce the fitness if there are other guards going there
             if (minGoalDistance != Mathf.Infinity)
@@ -278,6 +280,9 @@ public class RoadMap
                 bestSs = sS;
             }
         }
+
+        if (bestSs == null)
+            return intruder.GetLastKnownLocation();
 
         return (bestSs.position1 + bestSs.position2) / 2f;
     }
@@ -400,7 +405,7 @@ public class RoadMapLine
         // Expand the search segments
         foreach (var searchSegment in m_SearchSegments)
         {
-            searchSegment.IncreaseProbability();
+            //searchSegment.IncreaseProbability();
             searchSegment.Expand(speed);
         }
 
@@ -409,7 +414,7 @@ public class RoadMapLine
         for (int j = i + 1; j < m_SearchSegments.Count; j++)
             if (CheckForOverlapping(i, j))
             {
-                i--;
+                i = 0;
                 break;
             }
     }
@@ -435,11 +440,13 @@ public class RoadMapLine
         // Check the distance from one side
         float distanceSs1mid = Vector2.Distance(sS1.destination1.GetPosition(), sS1mid);
         float distanceSs2mid = Vector2.Distance(sS1.destination1.GetPosition(), sS2mid);
-        bool sS1LeftSs2 = distanceSs1mid < distanceSs2mid;
 
+        // Check the orientation of the line segments to each other.
+        bool sS1LeftSs2 = distanceSs1mid < distanceSs2mid;
 
         if (sS1LeftSs2)
         {
+            // Check if the left side of the right segment intersect the left/ 
             bool isIntersect = GeometryHelper.IsPointOnLine(sS1.position1, sS1.position2,
                 sS2.position1);
 
@@ -476,10 +483,12 @@ public class RoadMapLine
         // else keep them from overlapping
         Vector2 temp = leftSegment.position2;
         leftSegment.position2 = rightSegment.position1;
-        rightSegment.position1 = temp;
+        rightSegment.position1 = temp + (temp - leftSegment.position2) * 0.1f;
+
         return false;
     }
 
+    // Adjust the search segment if seen by guards
     public void ModSearchSegments(List<Guard> guards)
     {
         for (int i = 0; i < m_SearchSegments.Count; i++)
@@ -492,8 +501,13 @@ public class RoadMapLine
 
                 // Trim the parts seen by the guards and remove the section if it is all seen 
                 if (TrimSearchSegment(curSeg, foV))
+                {
                     i--;
+                }
             }
+
+            if (i < 0)
+                break;
         }
     }
 
@@ -503,6 +517,7 @@ public class RoadMapLine
         List<Vector2> intersections = foV.GetIntersectionWithLine(curSeg.position1, curSeg.position2,
             out var isIp1In, out var isIp2In);
 
+        // Check if the segment is completely is in the field of vision
         if (isIp1In && isIp2In && foV.IsPointInPolygon((curSeg.position1 + curSeg.position2) / 2f, false))
         {
             m_SearchSegments.Remove(curSeg);
@@ -533,8 +548,8 @@ public class RoadMapLine
                 Vector2 newPosition1 = GeometryHelper.GetClosestPointFromList(tempPosition2, intersections);
 
                 // Create a new search segment to be at the other side
-                AddSearchSegment(newPosition1, tempPosition2, curSeg.direction, curSeg.GetProbability(),
-                    curSeg.GetTimeStamp());
+                // AddSearchSegment(newPosition1, tempPosition2, curSeg.direction, curSeg.GetProbability(),
+                //     curSeg.GetTimeStamp());
             }
         }
 

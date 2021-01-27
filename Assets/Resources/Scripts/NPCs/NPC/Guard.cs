@@ -1,19 +1,14 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using ClipperLib;
-using Unity.MLAgents.Policies;
-using UnityEditor;
 using UnityEngine;
-using UnityEngine.Rendering;
-using UnityEngine.Serialization;
+
 
 public abstract class Guard : NPC
 {
     [Header("Debug")] [Tooltip("Seen Area")]
     public bool drawSeenArea;
 
-    // Guard's role assigned by the manager
+    // Guard's role assigned by the manager; default is in patrol
     public GuardRole role = GuardRole.Patrol;
 
     //************ Guard's Vision *****************//
@@ -25,11 +20,12 @@ public abstract class Guard : NPC
     private List<Polygon> m_FovPolygon;
 
     // the percentage of the seen area by this guard
-    protected int m_guardSeenAreaPercentage;
+    protected int m_GuardSeenAreaPercentage;
 
-    protected int m_foundHidingSpots;
+    // Number of pellets found
+    protected int m_FoundHidingSpots;
 
-
+    // Initialize the guard
     public override void Initialize()
     {
         base.Initialize();
@@ -38,26 +34,7 @@ public abstract class Guard : NPC
         m_FovPolygon = new List<Polygon>() {new Polygon()};
         SeenArea = new List<Polygon>();
     }
-
-    public void RestrictSeenArea(float resetThreshold)
-    {
-        if (m_guardSeenAreaPercentage > resetThreshold)
-            ClearSeenArea();
-    }
-
-
-    public void RestrictSearchArea()
-    {
-        // m_SpaceFiller.RemoveFromCircle(m_FovPolygon);
-        // m_SpaceFiller.RemoveSpottedInterceptionPoints(m_FovPolygon);
-    }
-
-
-    public void ClearSeenArea()
-    {
-        SeenArea.Clear();
-    }
-
+    
     public override void OnEpisodeBegin()
     {
         base.OnEpisodeBegin();
@@ -66,18 +43,29 @@ public abstract class Guard : NPC
         SeenArea.Clear();
     }
 
+    // resets the guards covered area
+    public void RestrictSeenArea(float resetThreshold)
+    {
+        if (m_GuardSeenAreaPercentage > resetThreshold)
+            ClearSeenArea();
+    }
+    
+    public void RestrictSearchArea()
+    {
+        // m_SpaceFiller.RemoveFromCircle(m_FovPolygon);
+        // m_SpaceFiller.RemoveSpottedInterceptionPoints(m_FovPolygon);
+    }
+    
+    public void ClearSeenArea()
+    {
+        SeenArea.Clear();
+    }
+    
     public override void Heuristic(float[] actionsOut)
     {
-        // Execute the current state
-        //m_state.Update();
     }
-
-
-    // public override void ExecutePlan(IState state)
-    // {
-    //
-    // }
-
+ 
+    // Get the guard to patrol 
     public void Patrol()
     {
         if (Goal == null)
@@ -85,8 +73,7 @@ public abstract class Guard : NPC
 
         SetPathToGoal();
     }
-
-
+    
     // Check if any intruder is spotted, return true if at least one is spotted
     public bool SpotIntruders(List<Intruder> intruders)
     {
@@ -111,7 +98,7 @@ public abstract class Guard : NPC
         return m_FovPolygon[0];
     }
 
-    // Rendering the intuder
+    // Rendering the intruder
     public void RenderIntruder(Intruder intruder, bool seen)
     {
         if (Area.gameView == GameView.Spectator)
@@ -191,8 +178,7 @@ public abstract class Guard : NPC
         CheckForFoundHidingSpots();
     }
     
-
-
+    // 
     public List<Polygon> CopySeenArea()
     {
         List<Polygon> seenArea = new List<Polygon>();
@@ -205,7 +191,8 @@ public abstract class Guard : NPC
 
         return seenArea;
     }
-
+    
+    // Check if a spot is seen
     void CheckForFoundHidingSpots()
     {
         List<Vector2> hidingSpots = World.GetHidingSpots();
@@ -213,10 +200,10 @@ public abstract class Guard : NPC
         int index = 0;
         while (index < hidingSpots.Count)
         {
-            if (IsNodeInFoV(hidingSpots[index]))
+            if (IsPointInFoV(hidingSpots[index]))
             {
                 hidingSpots.RemoveAt(index);
-                m_foundHidingSpots++;
+                m_FoundHidingSpots++;
             }
             else
             {
@@ -225,7 +212,8 @@ public abstract class Guard : NPC
         }
     }
 
-    public bool IsNodeInFoV(Vector2 point)
+    // Check if a point is in the FoV
+    public bool IsPointInFoV(Vector2 point)
     {
         bool isIn = false;
 

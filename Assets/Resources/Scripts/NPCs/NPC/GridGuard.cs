@@ -15,7 +15,7 @@ public class GridGuard : Guard
         base.Initialize();
         m_grid = transform.parent.parent.Find("Map").GetComponent<GridWorld>();
     }
-
+    
     public override Vector2? GetPatrolGoal()
     {
         Vector2? goal = null;
@@ -66,7 +66,7 @@ public class GridGuard : Guard
 
     public override LogSnapshot LogNpcProgress()
     {
-        return new LogSnapshot(GetTravelledDistance(), StealthArea.episodeTime, Data,"",0f,0f, m_foundHidingSpots, m_grid.GetAverageStaleness());
+        return new LogSnapshot(GetTravelledDistance(), StealthArea.episodeTime, Data,"",0f,0f, m_FoundHidingSpots, m_grid.GetAverageStaleness());
     }
 
     public void IncrementSeenNodes()
@@ -81,7 +81,7 @@ public class GridGuard : Guard
 
     public override void SetSeenPortion()
     {
-        m_guardSeenAreaPercentage = Mathf.RoundToInt(Mathf.Min(m_seenNodes / m_grid.GetTotalArea(), 1) * 100f);
+        m_GuardSeenAreaPercentage = Mathf.RoundToInt(Mathf.Min(m_seenNodes / m_grid.GetTotalArea(), 1) * 100f);
     }
 
     public bool IsNodeInSeenRegion(Vector2 point)

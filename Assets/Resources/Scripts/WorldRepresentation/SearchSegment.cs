@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -80,21 +78,24 @@ public class SearchSegment
     // Expand the line segment and propagate them
     public void Expand(float speed)
     {
+        // Expand from one side
         float distance1 = Vector2.Distance(position1, destination1.GetPosition());
-
-        if (distance1 > 0.1f &&
+        
+        if (distance1 > 0.2f &&
             GeometryHelper.IsPointOnLine(destination1.GetPosition(), destination2.GetPosition(), position1))
         {
-            position1 += m_movementDir * speed * Time.fixedDeltaTime * 1.2f;
+            position1 += m_movementDir * (speed * Time.deltaTime * 1.2f);
         }
         else
             PropagateDestination(destination2, destination1);
 
+        // Expand to the other
         float distance2 = Vector2.Distance(position2, destination2.GetPosition());
-        if (distance2 > 0.1f &&
+        
+        if (distance2 > 0.2f &&
             GeometryHelper.IsPointOnLine(destination1.GetPosition(), destination2.GetPosition(), position1))
         {
-            position2 += -m_movementDir * speed * Time.fixedDeltaTime * 1.2f;
+            position2 += -m_movementDir * (speed * Time.deltaTime * 1.2f);
         }
         else
             PropagateDestination(destination1, destination2);
@@ -135,7 +136,7 @@ public class SearchSegment
     // Draw the search segment
     public void Draw()
     {
-        var thickness = 20;
+        var thickness = 40;
 
         Vector2 expansion = m_movementDir * 0.035f;
         Handles.DrawBezier(position1 + expansion, position2 - expansion, position1 + expansion, position2 - expansion,

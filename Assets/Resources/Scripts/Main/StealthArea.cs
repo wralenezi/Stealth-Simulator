@@ -3,15 +3,19 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 
 public class StealthArea : MonoBehaviour
 {
+    // Session data
+    private Session m_SessionInfo;
+
     // Game Manager
     private GameManager m_gameManager;
-    private Session m_Scenario;
+
+    // NPC manager
+    private GuardsManager m_GuardsManager;
 
     // Map renderer
     private MapRenderer m_MapRenderer;
@@ -22,12 +26,10 @@ public class StealthArea : MonoBehaviour
     // Game world representation
     private WorldRep m_WorldRep;
 
+    // The hiding spots controller
     private HidingSpots m_HidingSpots;
 
-    // NPC manager
-    private GuardsManager m_GuardsManager;
-
-    // Isovists map
+    // Isovist map
     private Isovists m_Isovists;
 
     // Scale Area transform ( to get the skeletal graph of the map)
@@ -35,6 +37,7 @@ public class StealthArea : MonoBehaviour
 
     private VisibilityGraph m_VisibilityGraph;
 
+    // Interceptor controller
     private Interceptor m_Interceptor;
 
     // Coroutine for updating world
@@ -43,25 +46,34 @@ public class StealthArea : MonoBehaviour
     // To determine which perspective the game is viewed from
     public GameView gameView;
 
-    [Header("Elapsed Time")] public static float episodeTime;
+    // Score prefab location
+    private readonly string m_ScorePrefabLocation = "Prefabs/Score";
+    private GameObject m_scoreGameObject = null;
+    private Score m_score;
 
+    // The episode time 
+    public static float episodeTime;
+    private float episodeMaxTime = 50f;
+
+    // Last timestamp the game was logged.
     public float lastLoggedTime;
 
+    public int searchSegments;
+    
     // Initiate the area
     public void InitiateArea(Session scenario)
     {
         m_gameManager = GameObject.Find("GameSetUp").GetComponent<GameManager>();
 
-        m_Scenario = scenario;
+        m_SessionInfo = scenario;
 
         // Get the map 
         Transform map = transform.Find("Map");
 
-
         // Draw the map
         m_MapRenderer = map.GetComponent<MapRenderer>();
         m_MapRenderer.Initiate();
-        m_MapRenderer.LoadMap(m_Scenario.map, m_Scenario.GetMapScale());
+        m_MapRenderer.LoadMap(m_SessionInfo.map, m_SessionInfo.GetMapScale());
 
         // Create the NavMesh
         m_MapDecomposer = map.GetComponent<MapDecomposer>();
@@ -69,7 +81,7 @@ public class StealthArea : MonoBehaviour
         m_MapDecomposer.CreateNavMesh();
 
         // Assign the world representation
-        switch (m_Scenario.worldRepType)
+        switch (m_SessionInfo.worldRepType)
         {
             case WorldRepType.VisMesh:
                 m_WorldRep = m_MapRenderer.gameObject.AddComponent<VisMesh>();
@@ -80,16 +92,11 @@ public class StealthArea : MonoBehaviour
                 break;
         }
 
-        m_WorldRep.InitiateWorld(m_Scenario.GetMapScale());
+        m_WorldRep.InitiateWorld(m_SessionInfo.GetMapScale());
 
+        // The hiding spots manager
         m_HidingSpots = map.GetComponent<HidingSpots>();
         m_HidingSpots.Initiate(m_MapRenderer);
-
-
-        // Assign NPC Manager
-        m_GuardsManager = transform.Find("NpcManager").GetComponent<GuardsManager>();
-        m_GuardsManager.Initiate(transform.Find("Canvas").Find("Text").GetComponent<Text>());
-        m_GuardsManager.CreateNpcs(m_Scenario, m_MapDecomposer.GetNavMesh(), this);
 
         // Isovists map
         m_Isovists = map.GetComponent<Isovists>();
@@ -97,14 +104,20 @@ public class StealthArea : MonoBehaviour
 
         // Scale Area Transform
         m_Sat = map.GetComponent<SAT>();
-        m_Sat.Initiate(m_Scenario.GetMapScale(), m_Scenario.map);
+        m_Sat.Initiate(m_SessionInfo.GetMapScale(), m_SessionInfo.map);
 
         // Visibility graph
-        m_VisibilityGraph = map.GetComponent<VisibilityGraph>();
-        m_VisibilityGraph.Initiate(m_MapRenderer);
+        // m_VisibilityGraph = map.GetComponent<VisibilityGraph>();
+        // m_VisibilityGraph.Initiate(m_MapRenderer);
 
+        // Interception controller
         m_Interceptor = map.GetComponent<Interceptor>();
         m_Interceptor.Initiate(m_Sat.GetRoadMap());
+
+        // Assign NPC Manager
+        m_GuardsManager = transform.Find("NpcManager").GetComponent<GuardsManager>();
+        m_GuardsManager.Initiate(transform.Find("Canvas").Find("Guard state label").GetComponent<Text>());
+        m_GuardsManager.CreateNpcs(m_SessionInfo, m_MapDecomposer.GetNavMesh(), this);
 
         // The coroutine for updating the world representation
         worldCoroutine = UpdateWorld(0.5f);
@@ -119,7 +132,7 @@ public class StealthArea : MonoBehaviour
     {
         episodeTime = 0f;
         lastLoggedTime = 0f;
-        m_GuardsManager.ResetNpcs(m_MapDecomposer.GetNavMesh());
+        m_GuardsManager.ResetNpcs(m_MapDecomposer.GetNavMesh(), this);
         m_WorldRep.ResetWorld();
         StartCoroutine(worldCoroutine);
     }
@@ -136,11 +149,12 @@ public class StealthArea : MonoBehaviour
             m_WorldRep.UpdateWorld(m_GuardsManager);
 
             // Update 
-            m_GuardsManager.UpdateGuardManager(m_Scenario);
+            m_GuardsManager.UpdateGuardManager(m_SessionInfo);
         }
     }
 
-    private void FixedUpdate()
+
+    private void Update()
     {
         // Update the episode time
         UpdateTime();
@@ -152,21 +166,54 @@ public class StealthArea : MonoBehaviour
         m_GuardsManager.MakeDecision();
 
         // Execute existing plans for NPCs
-        m_GuardsManager.MoveNpcs();
+        // m_GuardsManager.MoveNpcs();
 
         // Update metrics for logging
         m_GuardsManager.UpdateMetrics();
 
         // Check for game end
         CheckGameEnd();
+        
+        // Print number of search segments
+        searchSegments = m_Interceptor.GetSearchSegmentCount();
 
         // Replenish hiding spots 
         m_WorldRep.ReplenishHidingSpots();
     }
 
-    public Session GetScenario()
+
+    private void FixedUpdate()
     {
-        return m_Scenario;
+        // Update the episode time
+        //UpdateTime();
+
+        // Update the guards vision
+        //m_GuardsManager.UpdateGuardVision();
+
+        // Idle NPCs make decisions
+        //m_GuardsManager.MakeDecision();
+
+        // Execute existing plans for NPCs
+        m_GuardsManager.MoveNpcs();
+
+        // Update metrics for logging
+        //m_GuardsManager.UpdateMetrics();
+
+        // Check for game end
+        //CheckGameEnd();
+
+        // Replenish hiding spots 
+        //m_WorldRep.ReplenishHidingSpots();
+    }
+
+    public Session GetSessionInfo()
+    {
+        return m_SessionInfo;
+    }
+
+    public MapRenderer GetMap()
+    {
+        return m_MapRenderer;
     }
 
     public List<MeshPolygon> GetNavMesh()
@@ -174,38 +221,57 @@ public class StealthArea : MonoBehaviour
         return m_MapDecomposer.GetNavMesh();
     }
 
+    // display the score board
+    void DisplayScore()
+    {
+        // Get the score prefab
+        var scorePrefab = (GameObject) Resources.Load(m_ScorePrefabLocation);
+        m_scoreGameObject = Instantiate(scorePrefab, transform, true);
+
+        m_score = m_scoreGameObject.GetComponent<Score>();
+        m_score.Initiate(this);
+    }
+
 
     void CheckGameEnd()
     {
-        bool finished = episodeTime >= 200f; //Properties.TimeRequiredToCoverOneUnit * m_MapDecomposer.GetNavMeshArea();
+        bool finished =
+            episodeTime >= episodeMaxTime; //Properties.TimeRequiredToCoverOneUnit * m_MapDecomposer.GetNavMeshArea();
 
         // Log Guards progress
-        if (m_gameManager.enableLogging && IsTimeToLog())
+        if ((m_gameManager.enableLogging || m_gameManager.uploadData) && IsTimeToLog())
         {
             m_GuardsManager.LogPerformance();
         }
 
-
         // Check if there are no more nodes to see and end the episodes
         if (finished)
         {
-            // Log the overall performance
-            if (m_gameManager.enableLogging)
-            {
-                if (m_GuardsManager.FinalizeLogging())
-                {
-                    EndArea();
-                }
-            }
+            bool endArea = false;
 
-            // EditorApplication.isPaused = true;
+            // Log the overall performance in case of local logging.
+            if (m_gameManager.enableLogging)
+                endArea = m_GuardsManager.FinalizeLogging(false);
+
+            // Log the performance of this episode and upload it to the server.
+            if (m_gameManager.uploadData)
+                endArea = m_GuardsManager.FinalizeLogging(true);
+
+
+            if (endArea)
+            {
+                // EndArea();
+              //  DisplayScore();
+            }
+            
             StopCoroutine(worldCoroutine);
 
-
             ResetArea();
+            
         }
     }
 
+    // Destroy the area
     public void EndArea()
     {
         m_gameManager.RemoveArea(gameObject);

@@ -14,6 +14,7 @@ public class VisMeshGuard : Guard
         m_VisMesh = transform.parent.parent.Find("Map").GetComponent<VisMesh>();
     }
 
+    // Get the next target the guard should observe
     public override Vector2? GetPatrolGoal()
     {
         Vector2? goal = null;
@@ -30,11 +31,6 @@ public class VisMeshGuard : Guard
         }
 
         return goal;
-    }
-
-    public override LogSnapshot LogNpcProgress()
-    {
-        return new LogSnapshot(GetTravelledDistance(), StealthArea.episodeTime, Data,"",0f,0f, m_foundHidingSpots, m_VisMesh.GetAverageStaleness());
     }
 
     // Get the stalest Polygon in the whole map
@@ -69,7 +65,7 @@ public class VisMeshGuard : Guard
         return stalestPolygon;
     }
 
-
+    // Go see where the mouse pointed
     Vector2? GetInputPoint()
     {
         if (Input.GetMouseButtonDown(0))
@@ -78,10 +74,14 @@ public class VisMeshGuard : Guard
         return null;
     }
 
+    public override LogSnapshot LogNpcProgress()
+    {
+        return new LogSnapshot(GetTravelledDistance(), StealthArea.episodeTime, Data,"",0f,0f, m_FoundHidingSpots, m_VisMesh.GetAverageStaleness());
+    }
 
     public override void SetSeenPortion()
     {
-        m_guardSeenAreaPercentage =
+        m_GuardSeenAreaPercentage =
             Mathf.RoundToInt(PolygonHelper.GetPolygonArea(SeenArea) * 100f / World.GetTotalArea());
     }
 }

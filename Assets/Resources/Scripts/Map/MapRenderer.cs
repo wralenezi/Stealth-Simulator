@@ -201,6 +201,7 @@ public class MapRenderer : MonoBehaviour
         var lines = mapName.Split('_');
 
         // Parse the map data
+        // if the file name has underscores then it is an SVG inspired coordinate system.
         if (lines.Length == 1)
             ParseMapStringAbsolute(mapData);
         else

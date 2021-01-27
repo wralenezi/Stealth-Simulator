@@ -84,7 +84,7 @@ public class MeshManager : MonoBehaviour
         for (int x = 0; x < nodes.GetLength(0); x++)
         for (int y = 0; y < nodes.GetLength(1); y++)
         {
-            if (nodes[x, y].isSaddle)
+            if (nodes[x, y].walkable)
                 InitiateNode(nodes[x, y].worldPosition, nodes[x, y].distanceTransform);
         }
     }

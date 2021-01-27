@@ -251,7 +251,7 @@ public class Polygon
 
         if (isP1in && isP2in)
             return intersections;
-        
+
         // Loop through the edges to find intersections
         for (int i = 0; i < GetVerticesCount(); i++)
         {
@@ -265,6 +265,13 @@ public class Polygon
 
 
         return intersections;
+    }
+
+
+    // Check intersection polygon and the line of a point and centroid.
+    public Vector2 GetClosestIntersectionPoint(Vector2 point)
+    {
+        return GetIntersectionWithLine(GetCentroidPosition(), point, out bool isP1In, out bool isP2In)[0];
     }
 
 

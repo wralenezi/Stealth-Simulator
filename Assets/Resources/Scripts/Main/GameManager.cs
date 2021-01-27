@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 public class GameManager : MonoBehaviour
 {
@@ -10,41 +9,91 @@ public class GameManager : MonoBehaviour
     [Header("Logging")] [Tooltip("Log the performance")]
     public bool enableLogging;
 
-    // Number of episode to run in each session    
+    [Tooltip("Upload data to the server")]
+    public bool uploadData;
+    
+    // Number of episode to run in each session
     [Tooltip("Log the performance")] public int NumberOfEpisodesPerSession;
 
     [Header("Time")] [Tooltip("Simulation speed")] [Range(1, 100)]
     public int SimulationSpeed;
 
-    // Active areas
-    private List<GameObject> m_activeAreas;
+    // The path to the stealth area prefab
+    private readonly string m_StealthArea = "Prefabs/StealthArea";
+
+    // Active area
+    private GameObject m_activeArea;
 
     // The Scenarios to be executed
     private List<Session> m_scenarios;
 
-    // The path to the stealth area prefab
-    private readonly string m_stealthArea = "Prefabs/StealthArea";
+    [Tooltip("Rendering")] public bool Render;
 
     [Header("Scenario Setup")] [Tooltip("If checked run the specified scenario")]
     public bool runTestScenario;
-
-    [Tooltip("Rendering")] public bool Render;
-
-    [Tooltip("Number of areas ran at the same time")]
-    public int simultaneousAreasCount = 1;
 
     [Tooltip("Scenario Setup")] public Session testScenario;
 
     private void Start()
     {
-        m_activeAreas = new List<GameObject>();
+        m_activeArea = null;
         m_scenarios = new List<Session>();
 
         // Load sessions
-        LoadUserControlledChaseSessions();
-
-
+        //LoadUserControlledChaseSessions();
+        LoadSavedSessions();
+        
+        // Set the simulation speed
         Time.timeScale = SimulationSpeed;
+
+        // Load the next session
+        LoadNextScenario();
+    }
+
+    private void LoadSavedSessions()
+    {
+        // Get the path to the sessions records
+        string path = Application.dataPath + "/Sessions.csv";
+
+        // Load the sessions file
+        var sessionsString = CsvController.ReadString(path);
+
+        // Split data by lines
+        var lines = sessionsString.Split('\n');
+
+        // Each line represents a session
+        for (var lineIndex = 1; lineIndex < lines.Length; lineIndex++)
+            if (lines[lineIndex].Length > 0)
+            {
+                // Split the elements
+                var data = lines[lineIndex].Split(',');
+
+                // Get the session info
+                var sc = new Session(data[0], (Scenario) Enum.Parse(typeof(Scenario), data[1], true),
+                    int.Parse(data[2]), (WorldRepType) Enum.Parse(typeof(WorldRepType), data[3], true), data[4],
+                    float.Parse(data[5]));
+
+                // Set the guard behavior
+                GuardBehavior guardBehavior = new GuardBehavior(
+                    (GuardPatrolPlanner) Enum.Parse(typeof(GuardPatrolPlanner), data[6], true),
+                    (GuardChasePlanner) Enum.Parse(typeof(GuardChasePlanner), data[7], true),
+                    (GuardSearchPlanner) Enum.Parse(typeof(GuardSearchPlanner), data[8], true));
+
+                // Add the guards
+                for (int i = 0; i < int.Parse(data[9]); i++)
+                    sc.AddNpc(NpcType.Guard, guardBehavior, null,
+                        (PathFindingHeursitic) Enum.Parse(typeof(PathFindingHeursitic), data[10], true),
+                        (PathFollowing) Enum.Parse(typeof(PathFollowing), data[11], true),
+                        null);
+
+                // Add the intruders
+                for (int i = 0; i < int.Parse(data[12]); i++)
+                    sc.AddNpc(NpcType.Intruder, null, (IntruderPlanner) Enum.Parse(typeof(IntruderPlanner), data[13], true), (PathFindingHeursitic) Enum.Parse(typeof(PathFindingHeursitic), data[14], true),
+                        (PathFollowing) Enum.Parse(typeof(PathFollowing), data[15], true),
+                        null);
+                
+                m_scenarios.Add(sc);
+            }
     }
 
 
@@ -65,15 +114,15 @@ public class GameManager : MonoBehaviour
         // var sc = new Session("SimpleRandom", Scenario.Manual, 100, WorldRepType.VisMesh, "CoD_svg2",
         //       0.1f); 
 
-        var sc = new Session("SimpleRandom", Scenario.Manual, 100, WorldRepType.VisMesh, "Boxes", 
-            1f);
-        
-        // var sc = new Session("SimpleRandom", Scenario.Manual, 100, WorldRepType.VisMesh, "MgsDock",
-        //     2f);
-        
+        // var sc = new Session("SimpleRandom", Scenario.Manual, 100, WorldRepType.VisMesh, "Boxes", 
+        //     1f);
+
+        var sc = new Session("SimpleRandom", Scenario.Manual, 100, WorldRepType.VisMesh, "MgsDock",
+            2f);
+
         // var sc = new Session("SimpleRandom", Scenario.Manual, 100, WorldRepType.VisMesh, "LevelA",
         //     1f);
-        
+
         GuardBehavior guardBehavior = new GuardBehavior(GuardPatrolPlanner.Stalest, GuardChasePlanner.Simple,
             GuardSearchPlanner.Interception);
 
@@ -144,7 +193,7 @@ public class GameManager : MonoBehaviour
     private GameObject CreateArea(Session scenario)
     {
         // Get the area prefab
-        var areaPrefab = (GameObject) Resources.Load(m_stealthArea);
+        var areaPrefab = (GameObject) Resources.Load(m_StealthArea);
         var areaGameObject = Instantiate(areaPrefab, transform, true);
 
         // Get the script
@@ -157,23 +206,20 @@ public class GameManager : MonoBehaviour
     }
 
     // Replenish the scenarios
-    private void ReplenishScenarios()
+    private void LoadNextScenario()
     {
-        if (runTestScenario)
+        if (m_activeArea == null)
         {
-            if (m_activeAreas.Count == 0)
+            if (runTestScenario)
             {
-                m_activeAreas.Add(CreateArea(testScenario));
+                m_activeArea = CreateArea(testScenario);
                 Camera.main.orthographicSize = 5 * testScenario.GetMapScale();
             }
-        }
-        else
-        {
-            if (m_activeAreas.Count < simultaneousAreasCount)
+            else
             {
                 if (m_scenarios.Count > 0)
                 {
-                    m_activeAreas.Add(CreateArea(m_scenarios[0]));
+                    m_activeArea = CreateArea(m_scenarios[0]);
                     Camera.main.orthographicSize = 5 * m_scenarios[0].GetMapScale();
 
                     m_scenarios.RemoveAt(0);
@@ -189,35 +235,17 @@ public class GameManager : MonoBehaviour
 #endif
                 }
             }
-            else
-            {
-                // Debug.Log(m_activeAreas[0].GetComponent<StealthArea>().GetScenario().gameCode);
-            }
         }
     }
 
-    private void FixedUpdate()
-    {
-        ReplenishScenarios();
-    }
-
-
+    // Remove the current area and load the next scenario
     public void RemoveArea(GameObject area)
     {
-        m_activeAreas.Remove(area);
+        m_activeArea = null;
         Destroy(area);
+        LoadNextScenario();
     }
 }
-
-
-// Maps and their values are their default scale 
-public enum Map
-{
-    MgsDock,
-    AlienIsolation,
-    Arkham
-}
-
 
 // World Representation Type 
 public enum WorldRepType
@@ -369,6 +397,7 @@ public struct NpcLocation
     }
 }
 
+// Session info
 [Serializable]
 public struct Session
 {
@@ -394,7 +423,8 @@ public struct Session
     public List<NpcData> npcsList;
 
 
-    public Session(string pGameCode, Scenario pScenario, int pCoveredRegionResetThreshold, WorldRepType pWorldRepType,
+    public Session(string pGameCode, Scenario pScenario, int pCoveredRegionResetThreshold,
+        WorldRepType pWorldRepType,
         string pMap,
         float pMapScale = 1f)
     {

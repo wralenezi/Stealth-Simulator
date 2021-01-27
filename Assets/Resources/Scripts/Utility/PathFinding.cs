@@ -26,7 +26,7 @@ public static class PathFinding
         List<Vector2> path = GetShortestPath(navMesh, startPoint, destinationPoint);
 
         float totalDistance = 0f;
-        
+
         for (int i = 0; i < path.Count - 1; i++)
         {
             totalDistance += Vector2.Distance(path[i], path[i + 1]);
@@ -188,11 +188,31 @@ public static class PathFinding
     // Get the polygon that contains the specified point
     private static MeshPolygon GetCorrespondingPolygon(List<MeshPolygon> navMesh, Vector2 point)
     {
+        // Check all polygons in the navmesh if they contain the point 
         foreach (var p in navMesh)
             if (p.IsPointInPolygon(point, true))
                 return p;
 
-        return null;
+        // In case the point is out of all polygons 
+        // Loop through the polygons and intersect them with the point to their centroids and return the closest intersection point
+
+        float minDistance = Mathf.Infinity;
+        MeshPolygon closestPolygon = null;
+
+        foreach (var p in navMesh)
+        {
+            Vector2 intersection = p.GetClosestIntersectionPoint(point);
+            float distance = Vector2.Distance(intersection, point);
+
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+                closestPolygon = p;
+            }
+        }
+
+
+        return closestPolygon;
     }
 
     public static Polygon GetCorrespondingPolygon(List<VisibilityPolygon> navMesh, Vector2 point)
@@ -296,7 +316,7 @@ public static class PathFinding
                         }
 
                         // Reset the funnel 
-                        apex = newApex;// + normal * offsetDistance;
+                        apex = newApex; // + normal * offsetDistance;
                         right = next;
                         left = next;
                         i = next;
@@ -371,7 +391,7 @@ public static class PathFinding
                         }
 
                         // Reset the funnel
-                        apex = newApex;// - normal * offsetDistance;
+                        apex = newApex; // - normal * offsetDistance;
                         left = next;
                         right = next;
                         i = next;
@@ -470,13 +490,12 @@ public static class PathFinding
     }
 
 
-
     public static float GetShortestPathDistance(List<WayPoint> roadmap, InterceptionPoint goalPh, WayPoint start)
     {
         List<Vector2> path = GetShortestPath(roadmap, goalPh, start);
 
         float totalDistance = 0f;
-        
+
         for (int i = 0; i < path.Count - 1; i++)
         {
             totalDistance += Vector2.Distance(path[i], path[i + 1]);

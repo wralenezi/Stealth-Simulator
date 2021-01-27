@@ -37,12 +37,11 @@ public class SAT : MonoBehaviour
 
         // CreateSkeletal(mapScale);
 
-
         // Divide long edges to smaller edges
         DivideRoadMap();
 
         // Render the grid
-        // m_meshManager.DrawGrid(m_grid);
+       // m_meshManager.DrawGrid(m_grid);
     }
 
     // This is to create the skeleton of the map using this reference
@@ -180,11 +179,10 @@ public class SAT : MonoBehaviour
                     // Make the final connection
                     newWayPoints[newWayPoints.Count - 1].AddEdge(connection);
                     connection.AddEdge(newWayPoints[newWayPoints.Count - 1]);
-                    
                 }
             }
         }
-        
+
         m_roadMap.AddRange(newWayPoints);
     }
 
@@ -294,7 +292,6 @@ public class SAT : MonoBehaviour
             if (!m_grid[x, y].walkable)
                 continue;
 
-
             int[] xs = {-1, 0, 1};
             int[] ys = {-1, 0, 1};
             bool isLocalMaxima = true;
@@ -303,7 +300,7 @@ public class SAT : MonoBehaviour
             foreach (var xi in xs)
             foreach (var yi in ys)
             {
-                if (xi == yi && xi == 0)
+                if ((xi == yi && xi == 0) || !m_grid[x + xi, y + yi].walkable)
                     continue;
 
                 // Check if the pixel is not a local maxima

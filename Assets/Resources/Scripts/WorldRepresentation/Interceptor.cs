@@ -51,11 +51,23 @@ public class Interceptor : MonoBehaviour
     }
 
     
-    // Start moving the phantoms across the road map
+    // Start moving the phantoms across the road map and trim them if seen by guards
     public void ExpandSearch(float speed, List<Guard> guards)
     {
         m_roadMap.ExpandSearchSegments(speed);
         m_roadMap.SeePossibleIntruderPaths(guards);
+    }
+    
+    public int GetSearchSegmentCount()
+    {
+        int count = 0;
+        foreach (var roadMapLine in m_roadMap.GetLines())
+        foreach (var ss in roadMapLine.GetSearchSegments())
+        {
+            count++;
+        }
+
+        return count;
     }
     
     public Vector2 GetRandomRoadMapNode()
@@ -63,45 +75,11 @@ public class Interceptor : MonoBehaviour
         return m_roadMap.GetRandomRoadMapNode();
     }
 
-    public Vector2 GetSearchSegment(Guard requestingGuard, List<Guard> guards, List<MeshPolygon> navMesh)
+    public Vector2 GetSearchSegment(Guard requestingGuard, List<Guard> guards, Intruder intruder, List<MeshPolygon> navMesh)
     {
-        return m_roadMap.GetBestSearchSegment(requestingGuard, guards, navMesh);
+        return m_roadMap.GetBestSearchSegment(requestingGuard, guards, intruder, navMesh);
     }
-
-    // Loop through the interception points and mark them as visited if they are in certain range from guards
-    // public void MarkVisitedInterceptionPoints(List<Guard> guards, IState state)
-    // {
-    //     for (int i = 0; i < m_interceptionPoints.Count; i++)
-    //     {
-    //         if (state is Chase)
-    //         {
-    //             foreach (var guard in guards)
-    //                 if (Vector2.Distance(guard.transform.position, m_interceptionPoints[i].position) < 2f)
-    //                 {
-    //                     VisitInterceptionPoint(m_interceptionPoints[i]);
-    //                     i--;
-    //                     break;
-    //                 }
-    //         }
-    //         else if (state is Search)
-    //             foreach (var guard in guards)
-    //                 if (guard.IsNodeInFoV(m_interceptionPoints[i].position))
-    //                 {
-    //                     VisitInterceptionPoint(m_interceptionPoints[i]);
-    //                     i--;
-    //                     break;
-    //                 }
-    //     }
-    // }
-
-
-    // public void VisitInterceptionPoint(InterceptionPoint iP)
-    // {
-    //     PlacePossiblePositions(iP, iP.generationIndex + 1, m_futureDistance);
-    //     m_interceptionPoints.Remove(iP);
-    // }
-
-
+    
     // Return interception points and if all are visited propagate them and return the new interceptions points
     public List<InterceptionPoint> GetPossiblePositions()
     {
@@ -240,6 +218,41 @@ public class Interceptor : MonoBehaviour
             if (m_roadMap != null)
                 m_roadMap.DrawRoadMap();
     }
+    
+    
+    // Loop through the interception points and mark them as visited if they are in certain range from guards
+    // public void MarkVisitedInterceptionPoints(List<Guard> guards, IState state)
+    // {
+    //     for (int i = 0; i < m_interceptionPoints.Count; i++)
+    //     {
+    //         if (state is Chase)
+    //         {
+    //             foreach (var guard in guards)
+    //                 if (Vector2.Distance(guard.transform.position, m_interceptionPoints[i].position) < 2f)
+    //                 {
+    //                     VisitInterceptionPoint(m_interceptionPoints[i]);
+    //                     i--;
+    //                     break;
+    //                 }
+    //         }
+    //         else if (state is Search)
+    //             foreach (var guard in guards)
+    //                 if (guard.IsNodeInFoV(m_interceptionPoints[i].position))
+    //                 {
+    //                     VisitInterceptionPoint(m_interceptionPoints[i]);
+    //                     i--;
+    //                     break;
+    //                 }
+    //     }
+    // }
+
+
+    // public void VisitInterceptionPoint(InterceptionPoint iP)
+    // {
+    //     PlacePossiblePositions(iP, iP.generationIndex + 1, m_futureDistance);
+    //     m_interceptionPoints.Remove(iP);
+    // }
+
 }
 
 // Interception point class

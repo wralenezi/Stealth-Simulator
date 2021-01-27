@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 295112950147299848}
   - component: {fileID: 7962451862824199986}
   m_Layer: 5
-  m_Name: Text
+  m_Name: Guard state label
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -60,6 +60,7 @@ MonoBehaviour:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
@@ -268,7 +269,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 963d96054f063b2459dcfa9de92b6d25, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  episodeTime: 0
+  gameView: 0
+  episodeMaxTime: 25
   lastLoggedTime: 0
 --- !u!1 &8135231640483412729
 GameObject:
@@ -452,4 +454,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff68265a909eadf4388378e594f4dd53, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  IsRenderInterceptionPoints: 0
+  IsRenderInterceptionPoints: 1
+  RenderRoadMap: 0
