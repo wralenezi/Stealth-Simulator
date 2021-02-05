@@ -14,6 +14,9 @@ public class Wall : MonoBehaviour
     private float m_ColliderRadius = 0.08f; 
 
     EdgeCollider2D m_edgeCollider2D;
+    
+    // The ID of the wall
+    public int WallId;
 
     private void Awake()
     {

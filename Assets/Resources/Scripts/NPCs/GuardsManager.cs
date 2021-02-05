@@ -187,6 +187,8 @@ public class GuardsManager : MonoBehaviour
             intruder.EndEpisode();
         }
 
+        
+        // Set the guards to the default mode (patrol)
         m_state.ChangeState(new Patrol(this));
     }
 
@@ -196,7 +198,6 @@ public class GuardsManager : MonoBehaviour
     {
         // In the case of searching for an intruder
         UpdateSearchArea();
-
 
         bool intruderSpotted = false;
         foreach (var guard in m_Guards)
@@ -215,7 +216,7 @@ public class GuardsManager : MonoBehaviour
             intruder.SpotGuards(m_Guards);
         }
 
-
+        // Switch the state of the guards 
         if (intruderSpotted)
         {
             // Guards knows the intruders location
@@ -279,7 +280,7 @@ public class GuardsManager : MonoBehaviour
     }
 
 
-    // Assign interception points
+    // Once a intruder is seen one guard will be chasing and the others will be intercepting by being assigned "interception" locations.
     public void AssignGuardRoles()
     {
         // Assign the guard closest to the intruder's last position to chase them
@@ -479,14 +480,22 @@ public class GuardsManager : MonoBehaviour
     {
         foreach (var guard in m_Guards)
         {
+            // Don't wait till the guard is free and just guide them 
+            if (m_guardPlanner.search == GuardSearchPlanner.Cheating)
+            {
+                guard.SetGoal(m_Intruders[0].transform.position, true);
+                continue;
+            }
+            
+            
             // Once the chaser is idle that means that the intruder is still not seen
             // Now Guards should start visiting the nodes with distance more than zero
             if (guard.IsIdle())
             {
-                // 
-                if (m_guardPlanner.search == GuardSearchPlanner.Interception)
+                // Search behavior based on the planner type 
+                if (m_guardPlanner.search == GuardSearchPlanner.RoadMapPropagation)
                 {
-                    // AssignGuardToInterceptionPoint();
+                    // Get the search segment the guard should see
                     guard.SetGoal(
                         m_interceptor.GetSearchSegment(guard, m_Guards, m_Intruders[0], m_WorldRep.GetNavMesh()),
                         false);
@@ -494,7 +503,6 @@ public class GuardsManager : MonoBehaviour
                 else if (m_guardPlanner.search == GuardSearchPlanner.Random)
                 {
                     Vector2 randomRoadmap = m_interceptor.GetRandomRoadMapNode();
-
                     guard.SetGoal(randomRoadmap, false);
                 }
             }
@@ -513,6 +521,7 @@ public class GuardsManager : MonoBehaviour
     // NPCs decide plans if idle
     public void MakeDecision()
     {
+        // Update the state of the guards manager
         m_state.Update();
 
         foreach (var intruder in m_Intruders)

@@ -53,7 +53,7 @@ public class StealthArea : MonoBehaviour
 
     // The episode time 
     public static float episodeTime;
-    private float episodeMaxTime = 50f;
+    private float episodeMaxTime = 250f;
 
     // Last timestamp the game was logged.
     public float lastLoggedTime;
@@ -93,6 +93,7 @@ public class StealthArea : MonoBehaviour
         }
 
         m_WorldRep.InitiateWorld(m_SessionInfo.GetMapScale());
+        
 
         // The hiding spots manager
         m_HidingSpots = map.GetComponent<HidingSpots>();
@@ -107,12 +108,12 @@ public class StealthArea : MonoBehaviour
         m_Sat.Initiate(m_SessionInfo.GetMapScale(), m_SessionInfo.map);
 
         // Visibility graph
-        // m_VisibilityGraph = map.GetComponent<VisibilityGraph>();
-        // m_VisibilityGraph.Initiate(m_MapRenderer);
+        m_VisibilityGraph = map.GetComponent<VisibilityGraph>();
+        m_VisibilityGraph.Initiate(m_MapRenderer);
 
         // Interception controller
         m_Interceptor = map.GetComponent<Interceptor>();
-        m_Interceptor.Initiate(m_Sat.GetRoadMap());
+        m_Interceptor.Initiate(m_Sat.GetRoadMap(),m_MapRenderer);
 
         // Assign NPC Manager
         m_GuardsManager = transform.Find("NpcManager").GetComponent<GuardsManager>();
@@ -120,7 +121,7 @@ public class StealthArea : MonoBehaviour
         m_GuardsManager.CreateNpcs(m_SessionInfo, m_MapDecomposer.GetNavMesh(), this);
 
         // The coroutine for updating the world representation
-        worldCoroutine = UpdateWorld(0.5f);
+        worldCoroutine = UpdateWorld(2f);
 
         // Reset World Representation and NPCs
         ResetArea();
@@ -159,7 +160,7 @@ public class StealthArea : MonoBehaviour
         // Update the episode time
         UpdateTime();
 
-        // Update the guards vision
+        // Update the guards vision and apply the vision affects (seeing intruders,etc) 
         m_GuardsManager.UpdateGuardVision();
 
         // Idle NPCs make decisions

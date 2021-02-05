@@ -185,7 +185,7 @@ public static class GeometryHelper
     {
         float length2 = Mathf.Pow(Vector2.Distance(q, r), 2);
 
-        if (length2 == 0f) return p; // q == r case
+        if (length2 == 0f) return q; // q == r case
 
         // Consider the line extending the segment, parameterized as r + t (q - r).
         // We find projection of point p onto the line. 

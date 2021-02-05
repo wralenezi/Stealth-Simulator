@@ -43,7 +43,7 @@ public class Intruder : NPC
         m_state = new StateMachine();
         m_state.ChangeState(new Incognito(this));
 
-        // Set the intruder's speed
+        // Multiply the intruder's speed
         NpcSpeed *= 1.5f;
         NpcRotationSpeed *= 2f;
     }

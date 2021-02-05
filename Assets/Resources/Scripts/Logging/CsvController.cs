@@ -42,8 +42,7 @@ public static class CsvController
     public static int ReadEpisodesCount(string path)
     {
         int episodesCount = 0;
-
-       
+        
         if (File.Exists(path))
         {
             //Read the text from directly from the test.txt file

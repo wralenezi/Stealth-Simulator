@@ -8,16 +8,22 @@ public class WayPoint
 {
     // Position
     private readonly Vector2 m_Position;
-    
+
     private readonly List<WayPoint> m_Connections;
 
     private readonly List<RoadMapLine> m_MapLines;
-    
+
     // Distance to incoming possible intruder position
     private float m_Distance;
 
     // Probability of finding the intruder in this region
     private float m_Probability;
+
+    // The ID of the way point
+    public readonly int Id;
+    
+    // the ID of the wall this way point belong to. This is for the visibility graph
+    public int WallId;
 
     // Which guard targeted this way point to intercept in. If it is null then there is no incoming guard
     public Guard InterceptingGuard;
@@ -27,12 +33,13 @@ public class WayPoint
     public float gDistance;
     public WayPoint parent;
 
-    public WayPoint(Vector2 _position)
+    public WayPoint(Vector2 _position, int _id = 0)
     {
         m_Position = _position;
         m_Connections = new List<WayPoint>();
         m_MapLines = new List<RoadMapLine>();
         m_Probability = 0f;
+        Id = _id;
     }
 
     public void AddEdge(WayPoint wp)
@@ -64,7 +71,7 @@ public class WayPoint
     {
         foreach (var line in lines)
         {
-            if(line.IsPointPartOfLine(this))
+            if (line.IsPointPartOfLine(this))
                 m_MapLines.Add(line);
         }
     }
@@ -78,7 +85,7 @@ public class WayPoint
     {
         return m_Probability;
     }
-    
+
 
     public List<WayPoint> GetConnections()
     {
@@ -90,7 +97,7 @@ public class WayPoint
     {
         foreach (var guard in guards)
         {
-            if(guard.GetFoV().IsCircleColliding(m_Position,0.05f))
+            if (guard.GetFoV().IsCircleColliding(m_Position, 0.05f))
                 SetProbability(0f);
         }
     }

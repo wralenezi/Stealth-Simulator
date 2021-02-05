@@ -124,7 +124,7 @@ public class GameManager : MonoBehaviour
         //     1f);
 
         GuardBehavior guardBehavior = new GuardBehavior(GuardPatrolPlanner.Stalest, GuardChasePlanner.Simple,
-            GuardSearchPlanner.Interception);
+            GuardSearchPlanner.RoadMapPropagation);
 
         // Add NPCs
         sc.AddNpc(NpcType.Intruder, null, IntruderPlanner.Heuristic, PathFindingHeursitic.EuclideanDst,
@@ -275,8 +275,11 @@ public enum GuardSearchPlanner
     // Randomly traverse the nodes of the Abstraction graph
     Random,
 
-    // Assign roles to guard; one to chase and the others to intercept
-    Interception
+    // The guards search the roadmap while propagating the probability of the intruder's presence.
+    RoadMapPropagation,
+    
+    // The guards know the intruder's position at all times.
+    Cheating
 }
 
 // Intruder behavior 

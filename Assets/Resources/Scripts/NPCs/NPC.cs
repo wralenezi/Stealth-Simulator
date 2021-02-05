@@ -62,6 +62,7 @@ public abstract class NPC : Agent
     public override void OnEpisodeBegin()
     {
         PathToTake.Clear();
+        Goal = null;
         m_TotalDistanceTravelled = 0f;
 
         SetPosition();

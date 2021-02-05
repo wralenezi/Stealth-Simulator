@@ -3,7 +3,6 @@
   <component name="NewModuleRootManager">
     <content url="file://$USER_HOME$/AppData/Local/Unity/cache/packages/packages.unity.com/com.unity.mathematics@1.1.0" />
     <content url="file://$MODULE_DIR$/../.." />
-    <content url="file://$MODULE_DIR$/../../../../../Repos/Unity/ml-agents/com.unity.ml-agents" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

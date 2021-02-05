@@ -19,6 +19,6 @@ public class Hide : IState
 
     public void Exit()
     {
-        m_Intruder.ClearGoal();
+        //m_Intruder.ClearGoal();
     }
 }

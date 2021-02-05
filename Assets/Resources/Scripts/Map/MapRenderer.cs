@@ -143,6 +143,7 @@ public class MapRenderer : MonoBehaviour
     // Create Collider for the walls
     private void CreateCollider()
     {
+        int wallId = 0;
         foreach (var wall in m_walls)
         {
             var wallObject = Instantiate(m_wallPrefab, transform, true);
@@ -160,6 +161,8 @@ public class MapRenderer : MonoBehaviour
 
             wallCollider.points = colliderVertices;
 
+            wallObject.GetComponent<Wall>().WallId = wallId++;
+            
             // Draw a solid color in an obstacle
             if (wall.DetermineWindingOrder() != Properties.outerPolygonWinding)
                 wallObject.GetComponent<Wall>().Draw();

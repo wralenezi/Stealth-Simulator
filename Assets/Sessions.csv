@@ -1,2 +1,3 @@
 GameCode,Scenario,CoverageResetThreshold,WorldRep,Map,MapScale,GuardPatrolPlanner,GuardChasePlanner,GuardSearchPlanner,GuardsCount,PathFindingHeursitic,PathFollowing,IntudersCount,IntruderPlanner,PathFindingHeursitic,PathFollowing
-SimpleRandom,Chase,100,VisMesh,MgsDock,2,Stalest,Simple,Interception,2,EuclideanDst,SimpleFunnel,1,Heuristic,EuclideanDst,SimpleFunnel
+SimpleRandom,Chase,100,VisMesh,MgsDock,2,Stalest,Simple,RoadMapPropagation,2,EuclideanDst,SimpleFunnel,1,Heuristic,EuclideanDst,SimpleFunnel
+SimpleRandom,Chase,100,VisMesh,CoD_svg2,0.1,Stalest,Simple,RoadMapPropagation,2,EuclideanDst,SimpleFunnel,1,Heuristic,EuclideanDst,SimpleFunnel

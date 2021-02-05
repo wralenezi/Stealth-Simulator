@@ -41,7 +41,7 @@ public class SAT : MonoBehaviour
         DivideRoadMap();
 
         // Render the grid
-       // m_meshManager.DrawGrid(m_grid);
+        // m_meshManager.DrawGrid(m_grid);
     }
 
     // This is to create the skeleton of the map using this reference
@@ -109,7 +109,7 @@ public class SAT : MonoBehaviour
                     var position = new Vector2(float.Parse(data[0]), float.Parse(data[1]));
                     position = transform.TransformPoint(position);
 
-                    m_roadMap.Add(new WayPoint(position));
+                    m_roadMap.Add(new WayPoint(position,lineIndex));
                 }
                 else
                 {
@@ -139,7 +139,7 @@ public class SAT : MonoBehaviour
                 float totalDistance = Vector2.Distance(wp.GetPosition(), connection.GetPosition());
                 if (totalDistance > Properties.MaxEdgeLength)
                 {
-                    // Remove the connections
+                    // Remove the two way connection
                     wp.RemoveEdge(connection);
                     connection.RemoveEdge(wp);
 

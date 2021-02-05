@@ -17,7 +17,7 @@ public static class Properties
     public static float MaxAngle = 170f;
     
     // The walkable area offset from the actual map
-    public static float InterPolygonOffset = 0.15f;
+    public static float InterPolygonOffset = 0.3f;
     
     // The number of episodes to record
     public static int EpisodesCount = 102;
@@ -62,6 +62,7 @@ public static class Properties
     // Search Parameters
     public static Color32 GetSegmentColor(float age)
     {
+        if (age < 0f) age = 0f;
         //byte colorLevel = (byte) Math.Round((age/MaxAge) * 255);
         byte colorLevel = (byte) Math.Round(age * 255);
         // return new Color32(255, (byte) (255 - colorLevel), (byte) (255 - colorLevel), 255);
@@ -77,5 +78,5 @@ public static class Properties
     public static readonly int MaxEdgeLength = 3;
     
     // Rate of increase of the probability value of search segment
-    public static readonly float ProbabilityIncreaseRate = 0.01f;
+    public static readonly float ProbabilityIncreaseRate = 0.005f;
 }

@@ -22,10 +22,10 @@ public class Interceptor : MonoBehaviour
     public bool RenderRoadMap;
 
     // Start is called before the first frame update
-    public void Initiate(List<WayPoint> roadMap)
+    public void Initiate(List<WayPoint> roadMap, MapRenderer mapRenderer)
     {
         m_interceptionPoints = new List<InterceptionPoint>();
-        m_roadMap = new RoadMap(roadMap);
+        m_roadMap = new RoadMap(roadMap, mapRenderer);
     }
 
 
@@ -47,17 +47,18 @@ public class Interceptor : MonoBehaviour
         Clear();
 
         // Insert the search segment 
-        m_roadMap.InsertSearchLineSegment(position, dir);
+        //m_roadMap.InsertSearchLineSegment(position, dir);
+        m_roadMap.CreateArbitrarySearchSegment(position, dir);
     }
 
-    
+
     // Start moving the phantoms across the road map and trim them if seen by guards
     public void ExpandSearch(float speed, List<Guard> guards)
     {
         m_roadMap.ExpandSearchSegments(speed);
         m_roadMap.SeePossibleIntruderPaths(guards);
     }
-    
+
     public int GetSearchSegmentCount()
     {
         int count = 0;
@@ -69,17 +70,18 @@ public class Interceptor : MonoBehaviour
 
         return count;
     }
-    
+
     public Vector2 GetRandomRoadMapNode()
     {
         return m_roadMap.GetRandomRoadMapNode();
     }
 
-    public Vector2 GetSearchSegment(Guard requestingGuard, List<Guard> guards, Intruder intruder, List<MeshPolygon> navMesh)
+    public Vector2 GetSearchSegment(Guard requestingGuard, List<Guard> guards, Intruder intruder,
+        List<MeshPolygon> navMesh)
     {
         return m_roadMap.GetBestSearchSegment(requestingGuard, guards, intruder, navMesh);
     }
-    
+
     // Return interception points and if all are visited propagate them and return the new interceptions points
     public List<InterceptionPoint> GetPossiblePositions()
     {
@@ -99,7 +101,6 @@ public class Interceptor : MonoBehaviour
         m_roadMap.ClearProbabilities();
         m_roadMap.ClearSearchSegments();
     }
-
 
 
     // Add priorities to the interception point
@@ -128,19 +129,19 @@ public class Interceptor : MonoBehaviour
     {
         // Get the distance from the interception point to the next node on the road map
         float distanceToDestination = Vector2.Distance(phNode.position, phNode.destination.GetPosition());
-    
+
         Vector2 direction = (phNode.destination.GetPosition() - phNode.source.GetPosition()).normalized;
-    
+
         // Don't add anything if this is at the end line.
         if (distanceToDestination == 0f)
             return;
-    
+
         // If the distance to expand to the interception point is shorter then simply insert it. 
         if (distanceToDestination >= distance)
         {
             InterceptionPoint newPhNode = new InterceptionPoint(phNode.position + direction * distance,
-                 phNode.destination, phNode.source, generation);
-    
+                phNode.destination, phNode.source, generation);
+
             // AddDistancesToEndNodes(newPhNode);
             m_interceptionPoints.Add(newPhNode);
         }
@@ -148,31 +149,31 @@ public class Interceptor : MonoBehaviour
         else
         {
             float remainingDistance = distance - distanceToDestination;
-    
+
             if (phNode.destination.GetConnections().Count == 1)
             {
-                InterceptionPoint newPhNode = new InterceptionPoint(phNode.destination.GetPosition(), 
+                InterceptionPoint newPhNode = new InterceptionPoint(phNode.destination.GetPosition(),
                     phNode.destination, phNode.source, generation);
-    
+
                 // Add metrics to the interception point
                 // AddDistancesToEndNodes(newPhNode);
                 m_interceptionPoints.Add(newPhNode);
                 return;
             }
-    
+
             // for each connection recursively place the possible position
             foreach (var wayPoint in phNode.destination.GetConnections())
             {
                 if (phNode.source == wayPoint)
                     continue;
-    
-                InterceptionPoint newPhNode = new InterceptionPoint(phNode.destination.GetPosition(), 
+
+                InterceptionPoint newPhNode = new InterceptionPoint(phNode.destination.GetPosition(),
                     wayPoint, phNode.destination, generation);
-    
+
                 PlacePossiblePositions(newPhNode, generation, remainingDistance);
             }
         }
-    
+
         // Remove interception points that are too close
         AggregateInterceptionPoints();
     }
@@ -205,7 +206,10 @@ public class Interceptor : MonoBehaviour
         if (IsRenderInterceptionPoints)
         {
             if (m_roadMap != null)
+            {
                 m_roadMap.DrawSearchSegments();
+                // m_roadMap.DrawWayPoints();
+            }
 
             if (m_interceptionPoints != null)
                 foreach (var iP in m_interceptionPoints)
@@ -218,8 +222,8 @@ public class Interceptor : MonoBehaviour
             if (m_roadMap != null)
                 m_roadMap.DrawRoadMap();
     }
-    
-    
+
+
     // Loop through the interception points and mark them as visited if they are in certain range from guards
     // public void MarkVisitedInterceptionPoints(List<Guard> guards, IState state)
     // {
@@ -252,7 +256,6 @@ public class Interceptor : MonoBehaviour
     //     PlacePossiblePositions(iP, iP.generationIndex + 1, m_futureDistance);
     //     m_interceptionPoints.Remove(iP);
     // }
-
 }
 
 // Interception point class
@@ -295,7 +298,7 @@ public class InterceptionPoint
 
     public void DrawInterceptionPoint()
     {
-        DrawArrow.ForGizmo(position,direction, 0.2f);
+        DrawArrow.ForGizmo(position, direction, 0.2f);
         Handles.Label(position + Vector2.up, (probability).ToString());
     }
 }

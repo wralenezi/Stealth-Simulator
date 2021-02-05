@@ -6,7 +6,7 @@ using System.Text;
 
 public static class FileUploader
 {
-    public static string server = "http://127.0.0.1/";
+    public static string server = "http://127.0.0.1/stealth_simulator/";
 
     public static IEnumerator UploadLevel(Session sessionInfo, string gameData)
     {

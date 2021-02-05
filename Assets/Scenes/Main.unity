@@ -362,7 +362,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1722de4dc5c895f49bc1260249bc33f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enableLogging: 1
+  enableLogging: 0
   uploadData: 0
   NumberOfEpisodesPerSession: 0
   SimulationSpeed: 1

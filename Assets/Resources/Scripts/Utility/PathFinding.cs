@@ -7,7 +7,7 @@ using DataStructures.PriorityQueue;
 public static class PathFinding
 {
     // Simple Funnel Offset
-    static float offsetMultiplier = 0.35f;
+    static float offsetMultiplier = 0.25f;
 
     // Return the shortest path as a sequence of points
     public static List<Vector2> GetShortestPath(List<MeshPolygon> navMesh, Vector2 startPoint, Vector2 destinationPoint)

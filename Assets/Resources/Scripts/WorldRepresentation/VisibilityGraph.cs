@@ -14,10 +14,10 @@ public class VisibilityGraph : MonoBehaviour
 
 
     // The radius the determine the neighborhood of a node
-    private float m_NeighborhoodRadius = 5f;
-    
+    private float m_NeighborhoodRadius = 10f;
+
     // The merge threshold
-    private float m_MergeThreshold = 3f;
+    private float m_MergeThreshold = 1f;
 
     // Initiate 
     public void Initiate(MapRenderer mapRenderer)
@@ -25,35 +25,45 @@ public class VisibilityGraph : MonoBehaviour
         m_mapRenderer = mapRenderer;
         m_graphNodes = new List<WayPoint>();
 
+        // Create the nodes on the interior of the map for each point in the map.
         CreateNodes();
-        //SimplifyNodes();
+
+        SimplifyNodes();
+
         ConnectNodes();
     }
 
     // Distribute the nodes on the angles of the graph
     private void CreateNodes()
     {
+        // Get the walls data
         List<Polygon> walls = m_mapRenderer.GetWalls();
+
+        // Go through the points
         for (int i = 0; i < walls.Count; i++)
         for (int j = 0; j < walls[i].GetVerticesCount(); j++)
         {
             Polygon wall = walls[i];
+
+            // Get the normal vector of that angle (point)
             Vector2 angleNormal =
                 GeometryHelper.GetNormal(wall.GetPoint(j - 1), wall.GetPoint(j), wall.GetPoint(j + 1));
 
-            angleNormal *= 0.6f;
-            float distanceFromCorner = 2f;
-            
-            if (i > 0)
-                if (GeometryHelper.IsReflex(wall.GetPoint(j - 1), wall.GetPoint(j), wall.GetPoint(j + 1)))
-                    m_graphNodes.Add(new WayPoint(wall.GetPoint(j) - angleNormal));
-                else
-                    m_graphNodes.Add(new WayPoint(wall.GetPoint(j) + angleNormal));
+            // Shorten the distance
+            angleNormal *= 0.5f;
 
-            else if (GeometryHelper.IsReflex(wall.GetPoint(j - 1), wall.GetPoint(j), wall.GetPoint(j + 1)))
-                m_graphNodes.Add(new WayPoint(wall.GetPoint(j) - angleNormal));
+            float distanceFromCorner = 2f;
+
+            Vector2 position = wall.GetPoint(j);
+
+            if (GeometryHelper.IsReflex(wall.GetPoint(j - 1), wall.GetPoint(j), wall.GetPoint(j + 1)))
+                position -= angleNormal;
             else
-                m_graphNodes.Add(new WayPoint(wall.GetPoint(j) + angleNormal));
+                position += angleNormal;
+
+            WayPoint wp = new WayPoint(position) {WallId = i};
+
+            m_graphNodes.Add(wp);
         }
     }
 
@@ -64,12 +74,11 @@ public class VisibilityGraph : MonoBehaviour
         for (int j = i + 1; j < m_graphNodes.Count; j++)
         {
             if (m_mapRenderer.VisibilityCheck(m_graphNodes[i].GetPosition(), m_graphNodes[j].GetPosition()) &&
-                Vector2.Distance(m_graphNodes[i].GetPosition(), m_graphNodes[j].GetPosition()) < m_MergeThreshold)
+                Vector2.Distance(m_graphNodes[i].GetPosition(), m_graphNodes[j].GetPosition()) <= m_MergeThreshold)
             {
-                
-                Vector2 midPoint = (m_graphNodes[i].GetPosition() + m_graphNodes[j].GetPosition())/2f;
+                Vector2 midPoint = (m_graphNodes[i].GetPosition() + m_graphNodes[j].GetPosition()) / 2f;
                 m_graphNodes.RemoveAt(i);
-                m_graphNodes.RemoveAt(j-1);
+                m_graphNodes.RemoveAt(j - 1);
 
                 m_graphNodes.Add(new WayPoint(midPoint));
                 i = 0;
@@ -85,7 +94,37 @@ public class VisibilityGraph : MonoBehaviour
         for (int i = 0; i < m_graphNodes.Count; i++)
         for (int j = i + 1; j < m_graphNodes.Count; j++)
         {
-            if (m_mapRenderer.VisibilityCheck(m_graphNodes[i].GetPosition(), m_graphNodes[j].GetPosition()) && Vector2.Distance(m_graphNodes[i].GetPosition(), m_graphNodes[j].GetPosition()) < m_NeighborhoodRadius)
+            // Check if the are mutually visible
+
+            // Get the direction
+            Vector2 direction = (m_graphNodes[i].GetPosition() - m_graphNodes[j].GetPosition()).normalized;
+
+
+            float extension = 2f;
+
+            // Extend the length of the line check by both sides
+            Vector2 firstPoint = m_graphNodes[i].GetPosition() + direction * extension;
+            Vector2 secPoint = m_graphNodes[j].GetPosition() - direction * extension;
+
+            bool isVisible = true;
+
+            RaycastHit2D[] hits = Physics2D.LinecastAll(firstPoint, secPoint);
+
+            foreach (var hit in hits)
+            {
+                int hitWallId = hit.collider.gameObject.GetComponent<Wall>().WallId;
+
+                if (hitWallId == i)
+                {
+                    isVisible = false;
+                    break;
+                }
+            }
+
+            bool isClose = Vector2.Distance(m_graphNodes[i].GetPosition(), m_graphNodes[j].GetPosition()) <
+                           m_NeighborhoodRadius;
+
+            if (isVisible) // && isClose)
             {
                 m_graphNodes[i].AddEdge(m_graphNodes[j]);
                 m_graphNodes[j].AddEdge(m_graphNodes[i]);
@@ -105,7 +144,7 @@ public class VisibilityGraph : MonoBehaviour
             foreach (var spot in m_graphNodes)
             {
                 Gizmos.DrawSphere(spot.GetPosition(), 0.1f);
-                
+
                 foreach (var node1 in spot.GetConnections())
                 {
                     Gizmos.DrawLine(spot.GetPosition(), node1.GetPosition());
