@@ -9,16 +9,15 @@ public class HidingSpots : MonoBehaviour
 {
     public bool IsRenderHidingSpots;
 
-    // To get the map geometry
-    private MapRenderer m_mapRenderer;
+    private StealthArea m_stealthArea;
 
     // the hiding spots
     private List<HidingSpot> m_hidingSpots;
 
     // Initiate 
-    public void Initiate(MapRenderer mapRenderer)
+    public void Initiate(StealthArea _stealthArea)
     {
-        m_mapRenderer = mapRenderer;
+        m_stealthArea = _stealthArea;
         m_hidingSpots = new List<HidingSpot>();
 
         CreateHidingSpots();
@@ -27,37 +26,57 @@ public class HidingSpots : MonoBehaviour
     // Place the hiding spots
     private void CreateHidingSpots()
     {
-        List<Polygon> walls = m_mapRenderer.GetWalls();
+        List<Polygon> walls = m_stealthArea.mapRenderer.GetWalls();
         for (int i = 0; i < walls.Count; i++)
-        for (int j = 0; j < walls[i].GetVerticesCount(); j++)
         {
-            Polygon wall = walls[i];
-            Vector2 angleNormal =
-                GeometryHelper.GetNormal(wall.GetPoint(j - 1), wall.GetPoint(j), wall.GetPoint(j + 1));
-
-            angleNormal *= 0.8f;
-            float distanceFromCorner = 1f;
-
-            // Inverse the sign for the inner polygons which are obstacles 
-            if (GeometryHelper.IsReflex(wall.GetPoint(j - 1), wall.GetPoint(j), wall.GetPoint(j + 1)))
+            for (int j = 0; j < walls[i].GetVerticesCount(); j++)
             {
-                HidingSpot hS = new HidingSpot(wall.GetPoint(j) - angleNormal);
-                if (PolygonHelper.IsPointInPolygons(m_mapRenderer.GetInteriorWalls(), hS.Position))
-                    m_hidingSpots.Add(hS);
+                Polygon wall = walls[i];
+                Vector2 angleNormal =
+                    GeometryHelper.GetNormal(wall.GetPoint(j - 1), wall.GetPoint(j), wall.GetPoint(j + 1));
+
+                angleNormal *= 0.8f;
+                float distanceFromCorner = 1f;
+
+                // Inverse the sign for the inner polygons which are obstacles 
+                if (GeometryHelper.IsReflex(wall.GetPoint(j - 1), wall.GetPoint(j), wall.GetPoint(j + 1)))
+                {
+                    HidingSpot hS = new HidingSpot(wall.GetPoint(j) - angleNormal);
+                    if (PolygonHelper.IsPointInPolygons(m_stealthArea.mapRenderer.GetInteriorWalls(), hS.Position))
+                        m_hidingSpots.Add(hS);
+                }
+                else
+                {
+                    Vector2 rightSide = (wall.GetPoint(j) - wall.GetPoint(j - 1)).normalized * distanceFromCorner;
+                    Vector2 leftSide = (wall.GetPoint(j + 1) - wall.GetPoint(j)).normalized * distanceFromCorner;
+
+                    HidingSpot hSr = new HidingSpot(wall.GetPoint(j) + angleNormal - rightSide);
+                    HidingSpot hSl = new HidingSpot(wall.GetPoint(j) + angleNormal + leftSide);
+
+                    if (PolygonHelper.IsPointInPolygons(m_stealthArea.mapRenderer.GetInteriorWalls(), hSr.Position))
+                        m_hidingSpots.Add(hSr);
+
+                    if (PolygonHelper.IsPointInPolygons(m_stealthArea.mapRenderer.GetInteriorWalls(), hSl.Position))
+                        m_hidingSpots.Add(hSl);
+                }
             }
-            else
+
+            // Calculate the longest possible path in the map
+            // Compare the pair-wise path distance between the hiding spots along the outer wall.
+            if (i == 0)
             {
-                Vector2 rightSide = (wall.GetPoint(j) - wall.GetPoint(j - 1)).normalized * distanceFromCorner;
-                Vector2 leftSide = (wall.GetPoint(j + 1) - wall.GetPoint(j)).normalized * distanceFromCorner;
+                float maxDistance = Mathf.NegativeInfinity;
+                for (int j = 0; j < m_hidingSpots.Count; j++)
+                for (int k = j + 1; k < m_hidingSpots.Count; k++)
+                {
+                    float distance = PathFinding.GetShortestPathDistance(m_stealthArea.mapDecomposer.GetNavMesh(),
+                        m_hidingSpots[j].Position, m_hidingSpots[k].Position);
 
-                HidingSpot hSr = new HidingSpot(wall.GetPoint(j) + angleNormal - rightSide);
-                HidingSpot hSl = new HidingSpot(wall.GetPoint(j) + angleNormal + leftSide);
+                    if (maxDistance < distance)
+                        maxDistance = distance;
+                }
 
-                if (PolygonHelper.IsPointInPolygons(m_mapRenderer.GetInteriorWalls(), hSr.Position))
-                    m_hidingSpots.Add(hSr);
-
-                if (PolygonHelper.IsPointInPolygons(m_mapRenderer.GetInteriorWalls(), hSl.Position))
-                    m_hidingSpots.Add(hSl);
+                Properties.MaxPathDistance = maxDistance;
             }
         }
     }

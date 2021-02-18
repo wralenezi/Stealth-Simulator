@@ -7,28 +7,18 @@ using UnityEngine;
 public class MapDecomposer : MonoBehaviour
 {
     [Header("Debug")] [Tooltip("NavMesh")] public bool showNavMesh;
+    [Tooltip("Seen Regions")] public bool showSeenRegions;
+    [Tooltip("Unseen Regions")] public bool showUnseenRegions;
 
-    [Header("Debug")] [Tooltip("Seen Regions")]
-    public bool showSeenRegions;
+    // The main area
+    private StealthArea m_StealthArea;
 
-    [Header("Debug")] [Tooltip("Unseen Regions")]
-    public bool showUnseenRegions;
-
-    // Guard Manager to get incorporate the guards visibility
-    private GuardsManager m_NpcManager;
-
-    // Map Renderer 
-    private MapRenderer m_MapRenderer;
-
-    // Space Filler
-    // private SpaceFiller m_SpaceFiller;
-    
     // NavMesh 
     private List<MeshPolygon> m_NavMesh;
 
     // Decomposition Borders (Actual walls or interior walls)
     private List<Polygon> m_WallBorders;
-    
+
     // Walkable area
     private float m_WalakbleArea;
 
@@ -41,22 +31,18 @@ public class MapDecomposer : MonoBehaviour
     private List<VisibilityPolygon> m_UnseenPolygons;
 
 
-    public void Initiate()
+    public void Initiate(StealthArea stealthArea)
     {
+        m_StealthArea = stealthArea;
+
         m_NavMesh = new List<MeshPolygon>();
-        m_MapRenderer = GetComponent<MapRenderer>();
-        // m_SpaceFiller = GetComponent<SpaceFiller>();
-        m_WallBorders = m_MapRenderer.GetInteriorWalls();
+        m_WallBorders = m_StealthArea.mapRenderer.GetInteriorWalls();
 
         m_SeenRegions = new List<List<Polygon>>();
         m_UnseenRegions = new List<List<Polygon>>();
 
         m_SeenPolygons = new List<VisibilityPolygon>();
         m_UnseenPolygons = new List<VisibilityPolygon>();
-
-        m_NpcManager = transform.parent.Find("NpcManager").GetComponent<GuardsManager>();
-
-        // m_SpaceFiller.Initiate();
     }
 
     // Create the NavMesh
@@ -67,16 +53,15 @@ public class MapDecomposer : MonoBehaviour
 
         // Decompose Space
         m_NavMesh = HertelMelDecomp.ConvexPartition(simplePolygon);
-        
+
         // Associate Polygons with each other
         HertelMelDecomp.BuildNavMesh(m_NavMesh);
-        
-        m_WalakbleArea = 0f;
 
+        // Calculate the area of the interior
+        m_WalakbleArea = 0f;
         foreach (var p in GetNavMesh())
             m_WalakbleArea += p.GetArea();
     }
-
 
     // Create the VisMesh
     public void CreateVisMesh()
@@ -87,6 +72,7 @@ public class MapDecomposer : MonoBehaviour
         // Modify the regions to facilitate triangulation
         PrepareRegions();
 
+        
         RegularizePolygons();
 
         // Decompose the unseen area
@@ -96,19 +82,19 @@ public class MapDecomposer : MonoBehaviour
         DecomposeSeenArea();
     }
 
-
     // Model and Aggregate the guards seen region
     void ConsiderGuardVision()
     {
         m_SeenRegions.Clear();
 
         // Go through the guards
-        foreach (var guard in m_NpcManager.GetGuards())
-        {
-            if (guard.GetSeenArea() != null && guard.GetSeenArea().Count > 0 &&
-                guard.GetSeenArea()[0].GetVerticesCount() > 0)
-                m_SeenRegions.Add(guard.CopySeenArea());
-        }
+        if (m_StealthArea.guardsManager != null)
+            foreach (var guard in m_StealthArea.guardsManager.GetGuards())
+            {
+                if (guard.GetSeenArea() != null && guard.GetSeenArea().Count > 0 &&
+                    guard.GetSeenArea()[0].GetVerticesCount() > 0)
+                    m_SeenRegions.Add(guard.CopySeenArea());
+            }
 
         // Merge the guards seen areas if they intersect
         MergeGuardSeenAreas();
@@ -166,7 +152,6 @@ public class MapDecomposer : MonoBehaviour
         }
     }
 
-    
     public Polygon GetRandomPolygon()
     {
         int randPoly = UnityEngine.Random.Range(0, GetNavMesh().Count);
@@ -195,7 +180,7 @@ public class MapDecomposer : MonoBehaviour
         }
 
         // The result of the difference can contain complex polygons which will ruin the triangulation. This will simplify them
-         // PolygonHelper.SimplifyComplexPolygons(differenceResult);
+        // PolygonHelper.SimplifyComplexPolygons(differenceResult);
 
         // Remove the tiny shards 
         // CleanPolygons(differenceResult);
@@ -283,12 +268,6 @@ public class MapDecomposer : MonoBehaviour
 
     private void RegularizePolygons()
     {
-        // foreach (var unseenRegion in m_UnseenRegions)
-        //     PolygonHelper.SmoothPolygons(unseenRegion,  0.5f);
-        //
-        // foreach (var seenRegion in m_SeenRegions)
-        //     PolygonHelper.SmoothPolygons(seenRegion,  0.5f);
-        
         for (int i = 0; i < m_UnseenRegions.Count; i++)
         {
             if (m_UnseenRegions[i].Count == 0)
@@ -297,8 +276,7 @@ public class MapDecomposer : MonoBehaviour
                 i = 0;
                 continue;
             }
-
-
+            
             for (int j = 0; j < m_UnseenRegions[i].Count; j++)
                 if (m_UnseenRegions[i][j].GetVerticesCount() < 3)
                 {
@@ -318,7 +296,6 @@ public class MapDecomposer : MonoBehaviour
                 continue;
             }
 
-
             for (int j = 0; j < m_SeenRegions[i].Count; j++)
                 if (m_SeenRegions[i][j].GetVerticesCount() < 3)
                 {
@@ -328,7 +305,6 @@ public class MapDecomposer : MonoBehaviour
                 }
         }
     }
-    
 
     // Triangulate the unseen areas
     void DecomposeUnseenArea()
@@ -366,6 +342,7 @@ public class MapDecomposer : MonoBehaviour
         return m_NavMesh;
     }
 
+    // Get the walkable area 
     public float GetNavMeshArea()
     {
         return m_WalakbleArea;
@@ -380,8 +357,7 @@ public class MapDecomposer : MonoBehaviour
     {
         return m_UnseenPolygons;
     }
-
-
+    
     private void OnDrawGizmos()
     {
         if (showNavMesh)

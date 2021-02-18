@@ -22,10 +22,10 @@ public class Interceptor : MonoBehaviour
     public bool RenderRoadMap;
 
     // Start is called before the first frame update
-    public void Initiate(List<WayPoint> roadMap, MapRenderer mapRenderer)
+    public void Initiate(SAT sat, MapRenderer mapRenderer)
     {
         m_interceptionPoints = new List<InterceptionPoint>();
-        m_roadMap = new RoadMap(roadMap, mapRenderer);
+        m_roadMap = new RoadMap(sat, mapRenderer);
     }
 
 
@@ -53,10 +53,10 @@ public class Interceptor : MonoBehaviour
 
 
     // Start moving the phantoms across the road map and trim them if seen by guards
-    public void ExpandSearch(float speed, List<Guard> guards)
+    public void ExpandSearch(float speed, List<Guard> guards, float timeDelta)
     {
-        m_roadMap.ExpandSearchSegments(speed);
-        m_roadMap.SeePossibleIntruderPaths(guards);
+        m_roadMap.ExpandSearchSegments(speed, timeDelta);
+        m_roadMap.SeeSearchSegments(guards);
     }
 
     public int GetSearchSegmentCount()
@@ -77,9 +77,9 @@ public class Interceptor : MonoBehaviour
     }
 
     public Vector2 GetSearchSegment(Guard requestingGuard, List<Guard> guards, Intruder intruder,
-        List<MeshPolygon> navMesh)
+        List<MeshPolygon> navMesh, SearchWeights searchWeights)
     {
-        return m_roadMap.GetBestSearchSegment(requestingGuard, guards, intruder, navMesh);
+        return m_roadMap.GetBestSearchSegment(requestingGuard, guards, intruder, navMesh, searchWeights);
     }
 
     // Return interception points and if all are visited propagate them and return the new interceptions points
@@ -299,6 +299,6 @@ public class InterceptionPoint
     public void DrawInterceptionPoint()
     {
         DrawArrow.ForGizmo(position, direction, 0.2f);
-        Handles.Label(position + Vector2.up, (probability).ToString());
+        // Handles.Label(position + Vector2.up, (probability).ToString());
     }
 }

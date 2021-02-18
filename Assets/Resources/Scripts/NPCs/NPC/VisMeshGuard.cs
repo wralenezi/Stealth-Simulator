@@ -8,9 +8,9 @@ public class VisMeshGuard : Guard
 {
     private VisMesh m_VisMesh;
 
-    public override void Initialize()
+    public override void Initiate()
     {
-        base.Initialize();
+        base.Initiate();
         m_VisMesh = transform.parent.parent.Find("Map").GetComponent<VisMesh>();
     }
 
@@ -76,7 +76,7 @@ public class VisMeshGuard : Guard
 
     public override LogSnapshot LogNpcProgress()
     {
-        return new LogSnapshot(GetTravelledDistance(), StealthArea.episodeTime, Data,"",0f,0f, m_FoundHidingSpots, m_VisMesh.GetAverageStaleness());
+        return new LogSnapshot(GetTravelledDistance(), StealthArea.episodeTime, Data,"",0,0f,0f, m_FoundHidingSpots, m_VisMesh.GetAverageStaleness());
     }
 
     public override void SetSeenPortion()

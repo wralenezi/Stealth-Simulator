@@ -26,18 +26,18 @@ public abstract class Guard : NPC
     protected int m_FoundHidingSpots;
 
     // Initialize the guard
-    public override void Initialize()
+    public override void Initiate()
     {
-        base.Initialize();
+        base.Initiate();
         AddFoV();
 
         m_FovPolygon = new List<Polygon>() {new Polygon()};
         SeenArea = new List<Polygon>();
     }
-    
-    public override void OnEpisodeBegin()
+
+    public override void ResetNpc()
     {
-        base.OnEpisodeBegin();
+        base.ResetNpc();
         ClearGoal();
         m_FovPolygon[0].Clear();
         SeenArea.Clear();
@@ -61,10 +61,6 @@ public abstract class Guard : NPC
         SeenArea.Clear();
     }
     
-    public override void Heuristic(float[] actionsOut)
-    {
-    }
- 
     // Get the guard to patrol 
     public void Patrol()
     {
@@ -79,7 +75,7 @@ public abstract class Guard : NPC
     {
         foreach (var intruder in intruders)
         {
-            if (m_FovPolygon[0].IsCircleColliding(intruder.transform.position, 0.03f))
+            if (m_FovPolygon[0].IsCircleInPolygon(intruder.transform.position, 0.03f))
             {
                 intruder.Seen();
                 RenderIntruder(intruder, true);
@@ -147,11 +143,6 @@ public abstract class Guard : NPC
         m_FovPolygon[0].Clear();
         foreach (var vertex in Fov.GetFovVertices())
             m_FovPolygon[0].AddPoint(vertex);
-    }
-
-    public void LateUpdate()
-    {
-        CastVision();
     }
 
     // Cast the guard field of view

@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.MLAgents;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
 
 // Abstract class of an NPC
-public abstract class NPC : Agent
+public abstract class NPC : MonoBehaviour
 {
     // NPC data
     protected NpcData Data;
@@ -26,8 +25,8 @@ public abstract class NPC : Agent
     protected Vector2? Goal;
 
     // NPC movement variables
-    protected float NpcSpeed = 2f;
-    protected float NpcRotationSpeed = 200f;
+    protected float NpcSpeed = Properties.NpcSpeed;
+    protected float NpcRotationSpeed = Properties.NpcRotationSpeed;
 
     // The game perspective
     protected GameView GameView;
@@ -50,16 +49,15 @@ public abstract class NPC : Agent
     // show the NPCs path to take
     public bool ShowPath;
 
-
     // Called when the agent is first created
-    public override void Initialize()
+    public virtual void Initiate()
     {
         PathToTake = new List<Vector2>();
         World = transform.parent.parent.Find("Map").GetComponent<WorldRep>();
     }
 
     // The set up of the start of the episode
-    public override void OnEpisodeBegin()
+    public virtual void ResetNpc()
     {
         PathToTake.Clear();
         Goal = null;
@@ -70,7 +68,6 @@ public abstract class NPC : Agent
         Renderer = GetComponent<Renderer>();
         FovRenderer = Fov.GetComponent<Renderer>();
     }
-
 
     // Set the area the agent will be using
     public void SetArea(StealthArea area)
@@ -104,11 +101,13 @@ public abstract class NPC : Agent
     }
 
     // Place the NPC's start position
-    public void ResetLocation(List<MeshPolygon> navMesh, List<Guard> guards, List<Polygon> mapWalls, Session sessionInfo)
+    public void ResetLocation(List<MeshPolygon> navMesh, List<Guard> guards, List<Polygon> mapWalls,
+        Session sessionInfo)
     {
+        // If there is no location specified for the agent to be set in; place them randomly.
         if (Data.location == null)
         {
-            // if the npc is a guard then place them at the center of a navmesh polygon
+            // if the npc is a guard then place them at the center of a NavMesh polygon
             if (Data.npcType == NpcType.Guard)
             {
                 // Randomly place the NPC on the map
@@ -142,32 +141,31 @@ public abstract class NPC : Agent
         }
     }
 
+
     private Vector2 GetPositionNearNpc(Transform transform, List<Polygon> mapWalls)
     {
-        if (PolygonHelper.IsPointInPolygons(mapWalls, transform.position + transform.up))
-            return transform.position + transform.up;
+        float distanceMultiplier = 0.2f;
 
-        if (PolygonHelper.IsPointInPolygons(mapWalls, transform.position - transform.up))
-            return transform.position - transform.up;
-
-        if (PolygonHelper.IsPointInPolygons(mapWalls, transform.position + transform.right))
-            return transform.position + transform.right;
+        Vector2 place = transform.position + transform.up * distanceMultiplier;
+        if (PolygonHelper.IsPointInPolygons(mapWalls, place))
+            return place;
         
-        if (PolygonHelper.IsPointInPolygons(mapWalls, transform.position - transform.right))
-            return transform.position - transform.right;
+        place = transform.position - transform.up * distanceMultiplier;
+        if (PolygonHelper.IsPointInPolygons(mapWalls, place))
+            return place;
+
+        place = transform.position + transform.right * distanceMultiplier;
+        if (PolygonHelper.IsPointInPolygons(mapWalls, place))
+            return place;
+
+        place = transform.position - transform.right * distanceMultiplier;
+        if (PolygonHelper.IsPointInPolygons(mapWalls, place))
+            return place;
 
         return transform.position;
     }
 
-
-    public void AssignGoal()
-    {
-        if (Goal == null)
-        {
-            RequestDecision();
-        }
-    }
-
+    
     // Define a goal for the agent and set the path to navigate to it,
     public void SetGoal(Vector2 _goal, bool isForced)
     {
@@ -195,15 +193,15 @@ public abstract class NPC : Agent
     public abstract LogSnapshot LogNpcProgress();
 
     // Update NPC metrics
-    public virtual void UpdateMetrics()
+    public virtual void UpdateMetrics(float timeDelta)
     {
     }
 
     // Move the NPC through it's path
-    public void ExecutePlan(IState state, GuardRole? guardRole)
+    public void ExecutePlan(IState state, GuardRole? guardRole, float deltaTime)
     {
         if (PathToTake.Count > 0)
-            if (GoStraightTo(PathToTake[0], state, guardRole))
+            if (GoStraightTo(PathToTake[0], state, guardRole, deltaTime))
             {
                 PathToTake.RemoveAt(0);
 
@@ -213,7 +211,7 @@ public abstract class NPC : Agent
     }
 
     // Rotate to a specific target and then move towards it; return a boolean if the point is reached or not
-    protected bool GoStraightTo(Vector3 target, IState state, GuardRole? guardRole)
+    protected bool GoStraightTo(Vector3 target, IState state, GuardRole? guardRole, float deltaTime)
     {
         // Find the angle needed to rotate to face the desired direction
         Vector2 rotateDir = (target - transform.position).normalized;
@@ -225,8 +223,9 @@ public abstract class NPC : Agent
         // Make sure no rotation is due before moving
         if (Mathf.Abs(angleLeft) > 0f)
         {
+            float rotationStep = Mathf.Min(Mathf.Abs(angleLeft), NpcRotationSpeed * deltaTime);
             transform.rotation = Quaternion.RotateTowards(transform.rotation, toRotation,
-                NpcRotationSpeed * Time.fixedDeltaTime);
+                rotationStep);
             return false;
         }
 
@@ -238,19 +237,18 @@ public abstract class NPC : Agent
         {
             // If the guard is in patrol, it doesn't need to visit the goal on the path. Just see it
             if (state is Patrol || state is Search)
-                distanceLeft -= Properties.ViewRadius - 0.5f;
+                distanceLeft -= Properties.ViewRadius - 1f;
         }
 
         if (distanceLeft > 0.1f)
         {
-            // Vector2 dir = (target - transform.position).normalized;
+            float distanceToMove = Mathf.Min(NpcSpeed * deltaTime, distanceLeft);
             m_NpcRb.MovePosition(m_NpcRb.position +
-                                 ((Vector2) transform.up * (NpcSpeed * Time.fixedDeltaTime)));
+                                 ((Vector2) transform.up * distanceToMove));
 
             // Update the total distance traveled
             if (m_LastPosition != null)
                 UpdateDistance();
-
 
             return false;
         }

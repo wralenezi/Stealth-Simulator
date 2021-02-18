@@ -1,21 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using Unity.MLAgents.Policies;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class GameManager : MonoBehaviour
 {
-    // Logging Enabled 
+    // Logging Variables 
     [Header("Logging")] [Tooltip("Log the performance")]
-    public bool enableLogging;
+    public Logging loggingMethod;
 
-    [Tooltip("Upload data to the server")]
-    public bool uploadData;
-    
-    // Number of episode to run in each session
-    [Tooltip("Log the performance")] public int NumberOfEpisodesPerSession;
-
-    [Header("Time")] [Tooltip("Simulation speed")] [Range(1, 100)]
+    [Header("Time")] [Tooltip("Simulation speed")] [Range(1, 20)]
     public int SimulationSpeed;
 
     // The path to the stealth area prefab
@@ -29,20 +25,37 @@ public class GameManager : MonoBehaviour
 
     [Tooltip("Rendering")] public bool Render;
 
-    [Header("Scenario Setup")] [Tooltip("If checked run the specified scenario")]
-    public bool runTestScenario;
+    // Location of the data for the game
+    public static string DataPath;
+    public static string LogsPath = "Logs/";
+    public static string MapsDataPath = "MapsData/";
+    public static string MapsPath = "Maps/";
+    public static string RoadMapsPath = "RoadMaps/";
 
-    [Tooltip("Scenario Setup")] public Session testScenario;
+    // The main camera
+    public static Camera MainCamera;
 
     private void Start()
     {
         m_activeArea = null;
         m_scenarios = new List<Session>();
 
+        // Define the paths for the game
+        // Main path
+        DataPath = Application.dataPath + "/Data/";
+        // Logs path
+        LogsPath = DataPath + LogsPath;
+        // Map related data paths
+        MapsDataPath = DataPath + MapsDataPath;
+        MapsPath = MapsDataPath + MapsPath;
+        RoadMapsPath = MapsDataPath + RoadMapsPath;
+
+        // Camera
+        MainCamera = Camera.main;
+
         // Load sessions
-        //LoadUserControlledChaseSessions();
         LoadSavedSessions();
-        
+
         // Set the simulation speed
         Time.timeScale = SimulationSpeed;
 
@@ -53,7 +66,7 @@ public class GameManager : MonoBehaviour
     private void LoadSavedSessions()
     {
         // Get the path to the sessions records
-        string path = Application.dataPath + "/Sessions.csv";
+        string path = DataPath + "/Sessions.csv";
 
         // Load the sessions file
         var sessionsString = CsvController.ReadString(path);
@@ -70,6 +83,7 @@ public class GameManager : MonoBehaviour
 
                 // Get the session info
                 var sc = new Session(data[0], (Scenario) Enum.Parse(typeof(Scenario), data[1], true),
+                    int.Parse(data[9]), int.Parse(data[12]),
                     int.Parse(data[2]), (WorldRepType) Enum.Parse(typeof(WorldRepType), data[3], true), data[4],
                     float.Parse(data[5]));
 
@@ -88,105 +102,14 @@ public class GameManager : MonoBehaviour
 
                 // Add the intruders
                 for (int i = 0; i < int.Parse(data[12]); i++)
-                    sc.AddNpc(NpcType.Intruder, null, (IntruderPlanner) Enum.Parse(typeof(IntruderPlanner), data[13], true), (PathFindingHeursitic) Enum.Parse(typeof(PathFindingHeursitic), data[14], true),
+                    sc.AddNpc(NpcType.Intruder, null,
+                        (IntruderPlanner) Enum.Parse(typeof(IntruderPlanner), data[13], true),
+                        (PathFindingHeursitic) Enum.Parse(typeof(PathFindingHeursitic), data[14], true),
                         (PathFollowing) Enum.Parse(typeof(PathFollowing), data[15], true),
                         null);
-                
+
                 m_scenarios.Add(sc);
             }
-    }
-
-
-    // Load a set of predefined sessions
-    private void LoadUserControlledChaseSessions()
-    {
-        // Set the starting location for the npcs
-        List<NpcLocation> guard1Locations = new List<NpcLocation>();
-        List<NpcLocation> guard2Locations = new List<NpcLocation>();
-        List<NpcLocation> intruderLocations = new List<NpcLocation>();
-
-        guard1Locations.Add(new NpcLocation(new Vector2(0.5f, 0f), 90f));
-        guard2Locations.Add(new NpcLocation(new Vector2(0f, 0f), 90f));
-        intruderLocations.Add(new NpcLocation(new Vector2(0f, 3f), 0f));
-
-
-        // Add scenarios to list
-        // var sc = new Session("SimpleRandom", Scenario.Manual, 100, WorldRepType.VisMesh, "CoD_svg2",
-        //       0.1f); 
-
-        // var sc = new Session("SimpleRandom", Scenario.Manual, 100, WorldRepType.VisMesh, "Boxes", 
-        //     1f);
-
-        var sc = new Session("SimpleRandom", Scenario.Manual, 100, WorldRepType.VisMesh, "MgsDock",
-            2f);
-
-        // var sc = new Session("SimpleRandom", Scenario.Manual, 100, WorldRepType.VisMesh, "LevelA",
-        //     1f);
-
-        GuardBehavior guardBehavior = new GuardBehavior(GuardPatrolPlanner.Stalest, GuardChasePlanner.Simple,
-            GuardSearchPlanner.RoadMapPropagation);
-
-        // Add NPCs
-        sc.AddNpc(NpcType.Intruder, null, IntruderPlanner.Heuristic, PathFindingHeursitic.EuclideanDst,
-            PathFollowing.SimpleFunnel,
-            null);
-
-        for (int i = 0; i < 2; i++)
-            sc.AddNpc(NpcType.Guard, guardBehavior, null, PathFindingHeursitic.EuclideanDst, PathFollowing.SimpleFunnel,
-                null);
-
-
-        // Add Scenario
-        m_scenarios.Add(sc);
-
-
-        //   sc = new Session("SimpleHeurisitic", Scenario.Manual, 100, WorldRepType.VisMesh, "CoD_svg");
-        //
-        //   guardBehavior = new GuardBehavior(GuardPatrolPlanner.Stalest, GuardChasePlanner.Simple,
-        //       GuardSearchPlanner.Random); 
-        //   
-        //   // Add NPCs
-        //   sc.AddNpc(NpcType.Intruder, null,IntruderPlanner.Heuristic, PathFindingHeursitic.EuclideanDst, PathFollowing.SimpleFunnel,
-        //       intruderLocations[0]);
-        //   sc.AddNpc(NpcType.Guard, guardBehavior,null, PathFindingHeursitic.EuclideanDst, PathFollowing.SimpleFunnel,
-        //       guard1Locations[0]);
-        //   sc.AddNpc(NpcType.Guard, guardBehavior,null, PathFindingHeursitic.EuclideanDst, PathFollowing.SimpleFunnel,
-        //       guard2Locations[0]);
-        //   
-        //   
-        // //  m_scenarios.Add(sc);
-        //   
-        //   sc = new Session("InterceptionHeuristic", Scenario.Manual, 100, WorldRepType.VisMesh, "CoD_svg");
-        //
-        //   guardBehavior = new GuardBehavior(GuardPatrolPlanner.Stalest, GuardChasePlanner.Intercepting,
-        //       GuardSearchPlanner.Interception); 
-        //   
-        //   // Add NPCs
-        //   sc.AddNpc(NpcType.Intruder, null,IntruderPlanner.Heuristic, PathFindingHeursitic.EuclideanDst, PathFollowing.SimpleFunnel,
-        //       intruderLocations[0]);
-        //   sc.AddNpc(NpcType.Guard, guardBehavior,null, PathFindingHeursitic.EuclideanDst, PathFollowing.SimpleFunnel,
-        //       guard1Locations[0]);
-        //   sc.AddNpc(NpcType.Guard, guardBehavior,null, PathFindingHeursitic.EuclideanDst, PathFollowing.SimpleFunnel,
-        //       guard2Locations[0]);
-        //   
-        //   
-        //   m_scenarios.Add(sc);
-        //   
-        //   sc = new Session("InterceptionRandom", Scenario.Manual, 100, WorldRepType.VisMesh, "CoD_svg");
-        //
-        //   guardBehavior = new GuardBehavior(GuardPatrolPlanner.Stalest, GuardChasePlanner.Intercepting,
-        //       GuardSearchPlanner.Interception); 
-        //   
-        //   // Add NPCs
-        //   sc.AddNpc(NpcType.Intruder, null,IntruderPlanner.Random, PathFindingHeursitic.EuclideanDst, PathFollowing.SimpleFunnel,
-        //       intruderLocations[0]);
-        //   sc.AddNpc(NpcType.Guard, guardBehavior,null, PathFindingHeursitic.EuclideanDst, PathFollowing.SimpleFunnel,
-        //       guard1Locations[0]);
-        //   sc.AddNpc(NpcType.Guard, guardBehavior,null, PathFindingHeursitic.EuclideanDst, PathFollowing.SimpleFunnel,
-        //       guard2Locations[0]);
-        //   
-        //   
-        //   m_scenarios.Add(sc);
     }
 
     // Create the area and load it with the scenario
@@ -210,30 +133,22 @@ public class GameManager : MonoBehaviour
     {
         if (m_activeArea == null)
         {
-            if (runTestScenario)
+            if (m_scenarios.Count > 0)
             {
-                m_activeArea = CreateArea(testScenario);
-                Camera.main.orthographicSize = 5 * testScenario.GetMapScale();
+                m_activeArea = CreateArea(m_scenarios[0]);
+                Camera.main.orthographicSize = 10;
+
+                m_scenarios.RemoveAt(0);
             }
             else
             {
-                if (m_scenarios.Count > 0)
-                {
-                    m_activeArea = CreateArea(m_scenarios[0]);
-                    Camera.main.orthographicSize = 5 * m_scenarios[0].GetMapScale();
-
-                    m_scenarios.RemoveAt(0);
-                }
-                else
-                {
 #if UNITY_STANDALONE_WIN
-                    Application.Quit();
+                Application.Quit();
 #endif
 
 #if UNITY_EDITOR
-                    EditorApplication.isPlaying = false;
+                EditorApplication.isPlaying = false;
 #endif
-                }
             }
         }
     }
@@ -241,10 +156,23 @@ public class GameManager : MonoBehaviour
     // Remove the current area and load the next scenario
     public void RemoveArea(GameObject area)
     {
-        m_activeArea = null;
         Destroy(area);
+        m_activeArea = null;
         LoadNextScenario();
     }
+}
+
+// Logging modes
+public enum Logging
+{
+    // Save log files locally.
+    Locally,
+
+    // Upload log files to a server.
+    Cloud,
+
+    // No logging.
+    None
 }
 
 // World Representation Type 
@@ -275,9 +203,9 @@ public enum GuardSearchPlanner
     // Randomly traverse the nodes of the Abstraction graph
     Random,
 
-    // The guards search the roadmap while propagating the probability of the intruder's presence.
+    // The guards search the road map while propagating the probability of the intruder's presence.
     RoadMapPropagation,
-    
+
     // The guards know the intruder's position at all times.
     Cheating
 }
@@ -321,6 +249,21 @@ public enum Scenario
     // The NPCs are Manually set in the map
     Manual
 }
+
+
+// The view of the game based on the perspective
+public enum GameView
+{
+    // The game renders all NPCs at all times.
+    Spectator,
+
+    // The game only renders the guards when they are seen by the intruder.
+    Intruder,
+
+    // The game only renders the intruder when seen by the guards.
+    Guard
+}
+
 
 // Struct for the guard planners
 public struct GuardBehavior
@@ -416,6 +359,12 @@ public struct Session
     // The Threshold at which the covered region is reset 
     public int coveredRegionResetThreshold;
 
+    // Number of guards
+    public int guardsCount;
+
+    // Number of Intruders
+    public int intruderCount;
+
     // The map 
     public string map;
 
@@ -426,19 +375,23 @@ public struct Session
     public List<NpcData> npcsList;
 
 
-    public Session(string pGameCode, Scenario pScenario, int pCoveredRegionResetThreshold,
+    public Session(string pGameCode, Scenario pScenario, int pGuardsCount, int pIntruderCount,
+        int pCoveredRegionResetThreshold,
         WorldRepType pWorldRepType,
         string pMap,
         float pMapScale = 1f)
     {
         gameCode = pGameCode;
         scenario = pScenario;
+        guardsCount = pGuardsCount;
+        intruderCount = pIntruderCount;
         coveredRegionResetThreshold = pCoveredRegionResetThreshold;
         worldRepType = pWorldRepType;
         map = pMap;
         npcsList = new List<NpcData>();
         mapScale = pMapScale;
     }
+
 
     public float GetMapScale()
     {
@@ -458,5 +411,15 @@ public struct Session
     public List<NpcData> GetNpcsData()
     {
         return npcsList;
+    }
+
+    public override string ToString()
+    {
+        // Separator
+        string sep = " ";
+
+        return gameCode + sep + GetMapScale() + sep + GetNpcsData()[0].guardPlanner.Value.search + sep + guardsCount +
+               sep + map +
+               sep + Properties.EpisodeLength;
     }
 }

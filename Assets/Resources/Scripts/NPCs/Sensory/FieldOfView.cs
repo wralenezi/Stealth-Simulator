@@ -19,7 +19,6 @@ public class FieldOfView : MonoBehaviour
     MeshFilter m_ViewMeshFilter;
     Mesh m_ViewMesh;
 
-
     // Vertices of the field of view mesh
     private List<Vector3> m_ViewPoints = new List<Vector3>();
 
@@ -93,12 +92,6 @@ public class FieldOfView : MonoBehaviour
             m_ViewPoints.Add(newViewCast.point);
             oldViewCast = newViewCast;
         }
-
-        // if (m_ViewAngle >= 360f)
-        // {
-        //     m_ViewPoints.RemoveAt(0);
-        //     m_ViewPoints.RemoveAt(m_ViewPoints.Count - 1);
-        // }
 
         // Draw mesh
         int vertexCount = m_ViewPoints.Count;

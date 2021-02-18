@@ -10,6 +10,10 @@
 /[Ll]ogs/
 /[Mm]emoryCaptures/
 
+
+# Stealth Simulator ignore list
+/[Aa]ssets/Data/Logs
+
 # Never ignore Asset meta data
 !/[Aa]ssets/**/*.meta
 

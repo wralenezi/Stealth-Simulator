@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 public class RoadMapLine
@@ -17,18 +18,13 @@ public class RoadMapLine
 
     // The segments that lies in this line
     private List<SearchSegment> m_SearchSegments;
-
-    private float m_lineLength;
-
+    
     public RoadMapLine(WayPoint _wp1, WayPoint _wp2)
     {
         wp1 = _wp1;
         wp2 = _wp2;
 
-        m_lineLength = Vector2.Distance(wp1.GetPosition(), wp2.GetPosition());
-
         m_SearchSegments = new List<SearchSegment>();
-
 
         wp1Cons = new List<RoadMapLine>();
         wp2Cons = new List<RoadMapLine>();
@@ -53,11 +49,11 @@ public class RoadMapLine
     }
 
     // Add a possible line where the intruder might be in
-    public void AddSearchSegment(Vector2 startingPos1, Vector2 startingPos2, Vector2 dir, float prob,
+    public void AddSearchSegment(Vector2 startingPos1, Vector2 startingPos2, float prob,
         float timestamp = 0f)
     {
-        SearchSegment searchSegment = new SearchSegment(wp1, startingPos1, wp2, startingPos2, dir, prob,
-            m_lineLength, (wp1.GetPosition() + wp2.GetPosition()) / 2f);
+        SearchSegment searchSegment = new SearchSegment(wp1, startingPos1, wp2, startingPos2, prob,
+            (wp1.GetPosition() + wp2.GetPosition()) / 2f);
 
         if (timestamp != 0f)
             searchSegment.SetTimestamp(timestamp);
@@ -73,13 +69,13 @@ public class RoadMapLine
     }
 
     // Expand the search segments
-    public void ExpandSearch(float speed)
+    public void ExpandSearch(float speed, float deltaTime)
     {
         // Expand the search segments
         foreach (var searchSegment in m_SearchSegments)
         {
-            searchSegment.IncreaseProbability();
-            searchSegment.Expand(speed);
+            searchSegment.IncreaseProbability(deltaTime);
+            searchSegment.Expand(speed, deltaTime);
         }
 
         // Resolve the collision between the search segments
@@ -164,6 +160,7 @@ public class RoadMapLine
     // Adjust the search segment if seen by guards
     public void ModSearchSegments(List<Guard> guards)
     {
+        // Loop through the search segments
         for (int i = 0; i < m_SearchSegments.Count; i++)
         {
             SearchSegment curSeg = m_SearchSegments[i];
@@ -172,31 +169,22 @@ public class RoadMapLine
             {
                 Polygon foV = guard.GetFoV();
 
-                // Trim the parts seen by the guards and remove the section if it is all seen 
-                if (TrimSearchSegment(curSeg, foV))
-                {
-                    i--;
-                }
+                // Trim the parts seen by the guards and reset the section if it is all seen 
+                TrimSearchSegment(curSeg, foV);
             }
-
-            if (i < 0)
-                break;
         }
     }
 
     // Remove part of the old search segment to add a new one
-    private bool TrimSearchSegment(SearchSegment curSeg, Polygon foV)
+    private void TrimSearchSegment(SearchSegment curSeg, Polygon foV)
     {
         List<Vector2> intersections = foV.GetIntersectionWithLine(curSeg.position1, curSeg.position2,
             out var isIp1In, out var isIp2In);
 
+        // isIp1In && isIp2In &&
         // Check if the segment is completely is in the field of vision
-        if (isIp1In && isIp2In && foV.IsPointInPolygon((curSeg.position1 + curSeg.position2) / 2f, false))
-        {
-            //m_SearchSegments.Remove(curSeg);
+        if (isIp1In && isIp2In && foV.IsPointInPolygon(curSeg.GetMidPoint(), false))
             curSeg.Reset();
-            // return true;
-        }
 
         // if there is an intersection
         if (intersections.Count > 0)
@@ -226,8 +214,6 @@ public class RoadMapLine
             //     //     curSeg.GetTimeStamp());
             // }
         }
-
-        return false;
     }
 
     // Expand the search segment; return true if the segment is not removed, else false 
@@ -287,5 +273,8 @@ public class RoadMapLine
     public void DrawLine()
     {
         Gizmos.DrawLine(wp1.GetPosition(), wp2.GetPosition());
+        // Handles.Label(wp1.GetPosition(), wp1.Id.ToString());
+        // Handles.Label((wp1.GetPosition() + wp2.GetPosition()) / 2f,
+        //     Vector2.Distance(wp1.GetPosition(), wp2.GetPosition()).ToString());
     }
 }

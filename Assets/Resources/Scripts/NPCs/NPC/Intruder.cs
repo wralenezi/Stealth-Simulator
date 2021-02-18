@@ -14,10 +14,11 @@ public class Intruder : NPC
     // The place the intruder was last seen in 
     private Vector2? m_lastKnownLocation;
 
-
     // The Current FoV
     private List<Polygon> m_FovPolygon;
 
+    private int m_NoTimesSpotted;
+    
     // Total time being chased and visible
     private float m_AlertTime;
 
@@ -26,11 +27,10 @@ public class Intruder : NPC
 
     // List of guards; to assess the fitness of the hiding spots
     private List<Guard> m_guards;
-
-
-    public override void Initialize()
+    
+    public override void Initiate()
     {
-        base.Initialize();
+        base.Initiate();
 
         m_HidingSpots = transform.parent.parent.Find("Map").GetComponent<HidingSpots>();
         m_guards = transform.parent.parent.Find("NpcManager").GetComponent<GuardsManager>().GetGuards();
@@ -47,21 +47,16 @@ public class Intruder : NPC
         NpcSpeed *= 1.5f;
         NpcRotationSpeed *= 2f;
     }
-
-
-    public override void OnEpisodeBegin()
+    
+    public override void ResetNpc()
     {
-        base.OnEpisodeBegin();
+        base.ResetNpc();
 
+        m_NoTimesSpotted = 0;
         m_AlertTime = 0f;
         m_SearchedTime = 0f;
     }
-
-    public override void Heuristic(float[] actionsOut)
-    {
-        // MoveByInput();
-    }
-
+    
     // Run the state the intruder is in
     public void ExecuteState()
     {
@@ -73,16 +68,16 @@ public class Intruder : NPC
         }
     }
 
-    public override void UpdateMetrics()
+    public override void UpdateMetrics(float timeDelta)
     {
-        base.UpdateMetrics();
+        base.UpdateMetrics(timeDelta);
         if (m_state.GetState() is Chased)
         {
-            m_AlertTime += Time.fixedDeltaTime;
+            m_AlertTime += timeDelta;
         }
         else if (m_state.GetState() is Hide)
         {
-            m_SearchedTime += Time.fixedDeltaTime;
+            m_SearchedTime += timeDelta;
         }
     }
 
@@ -105,7 +100,6 @@ public class Intruder : NPC
             m_FovPolygon[0].AddPoint(vertex);
     }
 
-
     public Vector2 GetLastKnownLocation()
     {
         return m_lastKnownLocation.Value;
@@ -126,7 +120,6 @@ public class Intruder : NPC
         Fov.Initiate(361f, 50f, new Color32(200, 200, 200, 150));
     }
 
-
     // Render the guard and the FoV if seen by the intruder
     public void RenderIntruder(bool isSeen)
     {
@@ -134,14 +127,12 @@ public class Intruder : NPC
         FovRenderer.enabled = isSeen;
     }
 
-
     // Intruder is seen so update the known location of the intruder 
     public void Seen()
     {
         m_lastKnownLocation = transform.position;
     }
-
-
+    
     // Rendering 
     public void SpotGuards(List<Guard> guards)
     {
@@ -156,15 +147,14 @@ public class Intruder : NPC
             {
                 RenderIntruder(true);
 
-                if (m_FovPolygon[0].IsCircleColliding(guard.transform.position, 0.5f))
+                if (m_FovPolygon[0].IsCircleInPolygon(guard.transform.position, 0.5f))
                     guard.RenderGuard(true);
                 else
                     guard.RenderGuard(false);
             }
         }
     }
-
-
+    
     // Incognito behavior
     public void Incognito()
     {
@@ -177,9 +167,11 @@ public class Intruder : NPC
         }
     }
 
+    // Called when the intruder is spotted
     public void StartRunningAway()
     {
         m_state.ChangeState(new Chased(this));
+        m_NoTimesSpotted++;
     }
 
     // Intruder behavior when being chased
@@ -194,7 +186,6 @@ public class Intruder : NPC
                 SetGoal(m_HidingSpots.GetBestHidingSpot().Value, false);
             }
     }
-
 
     // To start hiding from guards searching for the intruder
     public void StartHiding()
@@ -212,6 +203,17 @@ public class Intruder : NPC
             }
     }
 
+    public float GetPercentAlertTime()
+    {
+        return m_AlertTime / Properties.EpisodeLength;
+    }
+
+    public int GetNumberOfTimesSpotted()
+    {
+        return m_NoTimesSpotted;
+    }
+
+
     public IState GetState()
     {
         return m_state.GetState();
@@ -225,7 +227,7 @@ public class Intruder : NPC
 
     public override LogSnapshot LogNpcProgress()
     {
-        return new LogSnapshot(GetTravelledDistance(), StealthArea.episodeTime, Data, m_state.GetState().ToString(),
+        return new LogSnapshot(GetTravelledDistance(), StealthArea.episodeTime, Data, m_state.GetState().ToString(),m_NoTimesSpotted,
             m_AlertTime, m_SearchedTime, 0, 0f);
     }
 }

@@ -75,7 +75,7 @@ public class SAT : MonoBehaviour
     private string GetPath(string mapName)
     {
         // Gets the path to the "Assets" folder 
-        return Application.dataPath + "/RoadMapData/" + mapName + ".csv";
+        return GameManager.RoadMapsPath + mapName + ".csv";
     }
 
     // Parse the map data
@@ -109,7 +109,7 @@ public class SAT : MonoBehaviour
                     var position = new Vector2(float.Parse(data[0]), float.Parse(data[1]));
                     position = transform.TransformPoint(position);
 
-                    m_roadMap.Add(new WayPoint(position,lineIndex));
+                    m_roadMap.Add(new WayPoint(position, lineIndex));
                 }
                 else
                 {
@@ -129,16 +129,22 @@ public class SAT : MonoBehaviour
     {
         List<WayPoint> newWayPoints = new List<WayPoint>();
 
-        foreach (var wp in m_roadMap)
+        for (int w = 0; w < m_roadMap.Count; w++)
         {
+            WayPoint wp = m_roadMap[w];
+
             for (int i = 0; i < wp.GetConnections().Count; i++)
             {
                 WayPoint connection = wp.GetConnections()[i];
 
+
                 // Divide the edge if it is longer than the max length
                 float totalDistance = Vector2.Distance(wp.GetPosition(), connection.GetPosition());
+
                 if (totalDistance > Properties.MaxEdgeLength)
                 {
+                    WayPoint prevWayPoint = null;
+
                     // Remove the two way connection
                     wp.RemoveEdge(connection);
                     connection.RemoveEdge(wp);
@@ -149,12 +155,13 @@ public class SAT : MonoBehaviour
                     // Define number of intermediate edges
                     int edgesCount = Mathf.CeilToInt(totalDistance / Properties.MaxEdgeLength);
 
-                    WayPoint prevWayPoint = null;
+                    float length = totalDistance / edgesCount;
+
                     // Place way points and the last way point will connect to original connection
                     for (int j = 1; j < edgesCount; j++)
                     {
                         // Place the way point
-                        Vector2 wayPointPos = wp.GetPosition() + dir * (j * Properties.MaxEdgeLength);
+                        Vector2 wayPointPos = wp.GetPosition() + dir * (j * length);
                         WayPoint wayPoint = new WayPoint(wayPointPos);
 
                         // Connect the first way point to the source way point and the rest with the previous
@@ -162,23 +169,25 @@ public class SAT : MonoBehaviour
                         {
                             wayPoint.AddEdge(wp);
                             wp.AddEdge(wayPoint);
-                            prevWayPoint = wayPoint;
                         }
                         else
                         {
                             wayPoint.AddEdge(prevWayPoint);
                             prevWayPoint.AddEdge(wayPoint);
-
-                            prevWayPoint = wayPoint;
                         }
 
+                        prevWayPoint = wayPoint;
                         // Add to a separate list
                         newWayPoints.Add(wayPoint);
                     }
 
                     // Make the final connection
-                    newWayPoints[newWayPoints.Count - 1].AddEdge(connection);
-                    connection.AddEdge(newWayPoints[newWayPoints.Count - 1]);
+                    prevWayPoint.AddEdge(connection);
+                    connection.AddEdge(prevWayPoint);
+
+                    // Reset the counter since the connections were changed.
+                    w = 0;
+                    break;
                 }
             }
         }

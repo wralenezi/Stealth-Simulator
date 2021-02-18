@@ -4,39 +4,28 @@ using UnityEngine;
 
 public class PerformanceMonitor : MonoBehaviour
 {
-    private StealthArea m_stealthArea;
+    public Session Sa;
 
     public List<LogSnapshot> snapshots;
 
     // Number of episodes done
-    private int m_episodeCount = 0;
-
-    private bool m_addHeader = false;
-
+    private int m_episodeCount;
 
     public void ResetResults()
     {
         snapshots = new List<LogSnapshot>();
     }
 
-    public void SetArea()
+    public void SetArea(Session sa)
     {
-        m_stealthArea = transform.parent.GetComponent<StealthArea>();
+        Sa = sa;
         GetEpisodesCountInLogs();
     }
 
     // Update the Episode count if there are any before
     public void GetEpisodesCountInLogs()
     {
-        Session sa = m_stealthArea.GetSessionInfo();
-
-        m_episodeCount = CsvController.ReadEpisodesCount(CsvController.GetPath(sa.gameCode, sa.GetMapScale(),
-            sa.worldRepType.ToString(), sa.map, sa.coveredRegionResetThreshold, "summary"));
-
-        if (m_episodeCount == 0)
-            m_addHeader = true;
-        else
-            m_addHeader = false;
+        m_episodeCount = CsvController.ReadFileStartWith(Sa);
     }
 
     // Did the scenario recorded the required number of episodes
@@ -50,25 +39,23 @@ public class PerformanceMonitor : MonoBehaviour
         snapshots.Add(logSnapshot);
     }
 
+    public void IncrementEpisode()
+    {
+        // Increment the episode counter
+        m_episodeCount++;
+    }
+
     // Append the Episode performance to the log
     public void LogEpisodeFinish()
     {
-        Session sa = m_stealthArea.GetSessionInfo();
-
-        // Increment the episode counter
-        m_episodeCount++;
+        IncrementEpisode();
 
         // make sure the data list is non empty
         if (snapshots.Count > 0)
         {
             CsvController.WriteString(
-                CsvController.GetPath(sa.gameCode, sa.GetMapScale(), sa.worldRepType.ToString(), sa.map,
-                    sa.coveredRegionResetThreshold, "details"),
+                CsvController.GetPath(Sa, m_episodeCount),
                 GetEpisodeResults(), true);
-
-            // Update latest episode count
-            UpdateEpisodeCount(sa.gameCode, sa.GetMapScale(), sa.worldRepType.ToString(), sa.map,
-                sa.coveredRegionResetThreshold);
         }
 
         // Reset results
@@ -78,8 +65,7 @@ public class PerformanceMonitor : MonoBehaviour
     // Upload the results to the server
     public void UploadEpisodeData()
     {
-        Session sa = m_stealthArea.GetSessionInfo();
-        StartCoroutine(FileUploader.UploadLevel(sa, GetEpisodeData()));
+        StartCoroutine(FileUploader.UploadLevel(Sa, GetEpisodeResults()));
     }
 
 
@@ -91,62 +77,18 @@ public class PerformanceMonitor : MonoBehaviour
             // Write the exploration results for this episode
             string data = "";
 
-            if (m_addHeader)
-            {
-                data +=
-                    "episodeID,guardType,guardId,guardPlanner,guardHeuristic,guardPathFollowing,elapsedTime,distanceTravelled,state,alertTime,searchedTime,foundHidingSpots,stalenessAverages\n";
-                m_addHeader = false;
-            }
+            data +=
+                "gameCode,guardType,guardId,guardPlanner,guardHeuristic,guardPathFollowing,elapsedTime,distanceTravelled,state,NoTimesSpotted,alertTime,searchedTime,foundHidingSpots,stalenessAverages\n";
 
             for (int i = 0; i < snapshots.Count; i++)
             {
-                data += m_episodeCount + "," + snapshots[i] + "\n";
+                data += Sa.gameCode + "," + snapshots[i] + "\n";
             }
 
             return data;
         }
 
-
         return "";
-    }
-
-    // return the data of the episode's result into a string
-    public string GetEpisodeData()
-    {
-        if (snapshots != null)
-        {
-            // Write the exploration results for this episode
-            string data = "";
-
-            if (m_addHeader)
-            {
-                data +=
-                    "guardType,guardId,guardPlanner,guardHeuristic,guardPathFollowing,elapsedTime,distanceTravelled,state,alertTime,searchedTime,foundHidingSpots,stalenessAverages\n";
-                m_addHeader = false;
-            }
-
-            for (int i = 0; i < snapshots.Count; i++)
-            {
-                data +=  snapshots[i] + "\n";
-            }
-
-            return data;
-        }
-
-
-        return "";
-    }
-
-    
-    
-    
-    // Log Episode data and reset
-    public void UpdateEpisodeCount(string gameCode, float mapScale, string worldRep, string mapName, int resetThreshold)
-    {
-        CsvController.WriteString(
-            CsvController.GetPath(gameCode, mapScale, worldRep, mapName, resetThreshold, "summary"),
-            m_episodeCount.ToString(),
-            false);
     }
 }
 
@@ -165,6 +107,9 @@ public struct LogSnapshot
     // Current state of the NPC
     public string State;
 
+    // Number of times and intruder is spotted
+    public int NoTimesSpotted;
+
     // Total time under alert
     public float AlertTime;
 
@@ -178,7 +123,8 @@ public struct LogSnapshot
     public float StalenessAverage;
 
 
-    public LogSnapshot(float travelledDistance, float elapsedTime, NpcData npcData, string npcState, float alertTime,
+    public LogSnapshot(float travelledDistance, float elapsedTime, NpcData npcData, string npcState, int noTimesSpotted,
+        float alertTime,
         float searchTime, int foundHidingSpots,
         float stalenessAverage)
     {
@@ -190,14 +136,15 @@ public struct LogSnapshot
         SearchTime = searchTime;
         FoundHidingSpots = foundHidingSpots;
         StalenessAverage = stalenessAverage;
+        NoTimesSpotted = noTimesSpotted;
     }
 
     public override string ToString()
     {
         string output = NpcDetail + "," + ElapsedTime + "," +
-                        TravelledDistance + "," + State + "," + AlertTime + "," + SearchTime + "," + FoundHidingSpots +
+                        TravelledDistance + "," + State + "," + NoTimesSpotted + "," + AlertTime + "," + SearchTime +
+                        "," + FoundHidingSpots +
                         "," + StalenessAverage;
-
 
         return output;
     }

@@ -27,12 +27,11 @@ public class MapRenderer : MonoBehaviour
         m_interiorWalls = new List<Polygon>();
     }
 
-
     // Get the path to the map
     private string GetPath(string mapName)
     {
         // Gets the path to the "Assets" folder 
-        return Application.dataPath + "/MapData/" + mapName + ".csv";
+        return GameManager.MapsPath + mapName + ".csv";
     }
 
     // Parse the map data where the map is stored in absolute coordinates 
@@ -95,8 +94,6 @@ public class MapRenderer : MonoBehaviour
                 {
                     // split the point to coordinates
                     var point = data[i].Split(',');
-
-                    // Debug.Log(point[0] + ", " + point[1]);
 
                     // Vertex position
                     var position = new Vector2(float.Parse(point[0]), -float.Parse(point[1]));
@@ -162,7 +159,7 @@ public class MapRenderer : MonoBehaviour
             wallCollider.points = colliderVertices;
 
             wallObject.GetComponent<Wall>().WallId = wallId++;
-            
+
             // Draw a solid color in an obstacle
             if (wall.DetermineWindingOrder() != Properties.outerPolygonWinding)
                 wallObject.GetComponent<Wall>().Draw();
@@ -201,15 +198,12 @@ public class MapRenderer : MonoBehaviour
         // Get the map data
         var mapData = CsvController.ReadString(GetPath(mapName));
 
-        var lines = mapName.Split('_');
-
         // Parse the map data
-        // if the file name has underscores then it is an SVG inspired coordinate system.
-        if (lines.Length == 1)
+        // if the file name has the world "_relative" then it is an SVG inspired coordinate system
+        if (!mapName.Contains("_relative"))
             ParseMapStringAbsolute(mapData);
         else
             ParseMapStringRelative(mapData);
-
 
         // Scale the map
         ScaleMap(mapScale);
@@ -224,6 +218,17 @@ public class MapRenderer : MonoBehaviour
     }
 
 
+    public void SetNpcDefaultRadius()
+    {
+        m_walls[0].BoundingBox(out float minX, out float maxX, out float minY, out float maxY);
+
+        float maxWidth = Mathf.Abs(maxX - minX) > Mathf.Abs(maxY - minY)
+            ? Mathf.Abs(maxX - minX)
+            : Mathf.Abs(maxY - minY);
+
+        Properties.SetViewRadius(maxWidth);
+    }
+
     // Modify the walls size, the holes to be larger and the outer wall to be smaller. This is hack to prevent triangulation from crashing when there are touching polygons
     public void CreateIntWalls()
     {
@@ -234,7 +239,6 @@ public class MapRenderer : MonoBehaviour
             m_interiorWalls.Add(interiorPoly);
         }
     }
-
 
     // Visibility check for two points, a and b, on the map
     public bool VisibilityCheck(Vector2 a, Vector2 b)

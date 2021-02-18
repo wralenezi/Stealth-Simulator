@@ -97,7 +97,7 @@ public class WayPoint
     {
         foreach (var guard in guards)
         {
-            if (guard.GetFoV().IsCircleColliding(m_Position, 0.05f))
+            if (guard.GetFoV().IsCircleInPolygon(m_Position, 0.05f))
                 SetProbability(0f);
         }
     }

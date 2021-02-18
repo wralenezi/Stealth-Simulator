@@ -15,10 +15,10 @@ public class GridWorld : WorldRep
     // Values for the grid measures
     protected float nodeDiameter;
     protected Vector2 worldBottomLeft;
-    
+
     // Grid dimension 
     public int gridSizeX, gridSizeY;
-    
+
     private int walkableNodesCount;
 
     public override void InitiateWorld(float mapScale)
@@ -111,14 +111,11 @@ public class GridWorld : WorldRep
             gridGuards.Add((GridGuard) guard);
 
         UpdateGrid(gridGuards);
-        
+
         base.UpdateWorld(guardsManager);
         m_meshManager.RenderGrid(NodeList);
     }
-    
 
-    
-    
 
     // Update the grid 
     void UpdateGrid(List<GridGuard> guards)
@@ -173,7 +170,7 @@ public class GridWorld : WorldRep
             else
                 SeenPortion++;
         }
-        
+
         AverageStaleness = totalStaleness / UnseenPortion;
     }
 }

@@ -194,7 +194,7 @@ public class Polygon
     }
 
     // Check if a circle colliding with the polygon or inside it
-    public bool IsCircleColliding(Vector2 center, float radius)
+    public bool IsCircleInPolygon(Vector2 center, float radius)
     {
         if (IsPointInPolygon(center, true))
             return true;

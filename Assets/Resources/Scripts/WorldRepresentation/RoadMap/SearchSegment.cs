@@ -5,14 +5,8 @@ using UnityEngine;
 // A line segment that represents a possible area to search in for an intruder
 public class SearchSegment
 {
-    // the direction the segment expand to
-    private Vector2 m_movementDir;
-
     // Probability of the intruder is in this segment
     private float m_Probability;
-
-    // Maximum length of the search segment divided by two
-    private float m_halfMaxLength;
 
     // The midpoint of the segment when its length is maxed.
     private Vector2 m_segmentMidPoint;
@@ -23,31 +17,27 @@ public class SearchSegment
     // The first destination of the line segment 
     private WayPoint m_destination1;
     public Vector2 position1;
-
-    // direction of movement the agent last showed
-    public Vector2 direction;
+    // If the segment reached it's first destination
+    private bool reached1;
 
     // The second destination of the line segment
     private WayPoint m_destination2;
     public Vector2 position2;
+    // If the segment reached it's second destination
+    private bool reached2;
 
-
-    public SearchSegment(WayPoint dst1, Vector2 startingPos1, WayPoint dst2, Vector2 startingPos2, Vector2 dir,
-        float prob, float maxLength, Vector2 segmentMidPoint)
+    public SearchSegment(WayPoint dst1, Vector2 startingPos1, WayPoint dst2, Vector2 startingPos2,
+        float prob, Vector2 segmentMidPoint)
     {
         m_destination1 = dst1;
         position1 = startingPos1;
 
         m_destination2 = dst2;
         position2 = startingPos2;
-        direction = dir;
         m_Probability = prob;
 
-        m_halfMaxLength = maxLength / 2f;
         m_segmentMidPoint = segmentMidPoint;
-
-        m_movementDir = (m_destination1.GetPosition() - m_segmentMidPoint).normalized;
-
+        
         SetTimestamp(StealthArea.episodeTime);
     }
 
@@ -57,17 +47,22 @@ public class SearchSegment
         timestamp = Mathf.RoundToInt(tstamp);
     }
 
+    public Vector2 GetMidPoint()
+    {
+        return m_segmentMidPoint;
+    }
+
     public float GetTimeStamp()
     {
         return timestamp;
     }
 
     // Get the age of the search segment
-    public int GetAge()
+    public float GetAge()
     {
-        int age = 2 * (Mathf.RoundToInt(StealthArea.episodeTime) - timestamp);
+        int age = (Mathf.RoundToInt(StealthArea.episodeTime) - timestamp);
 
-        return Math.Min(age, Properties.MaxAge);
+        return Mathf.Min(age, Properties.MaxAge);
     }
 
     // Get the fitness value of the search segment
@@ -85,15 +80,14 @@ public class SearchSegment
     public void Reset()
     {
         SetTimestamp(StealthArea.episodeTime);
-        m_Probability = -0.02f;
+        m_Probability = -0.1f;
     }
 
-    public void IncreaseProbability()
+    public void IncreaseProbability(float deltaTime)
     {
-        m_Probability += Properties.ProbabilityIncreaseRate * Time.deltaTime;
-
-
-        if (m_Probability > 1f)
+        if (m_Probability < 1f)
+            m_Probability += Properties.ProbabilityIncreaseRate * deltaTime;
+        else
             m_Probability = 1f;
     }
 
@@ -102,57 +96,72 @@ public class SearchSegment
         return Mathf.Round(m_Probability * 100f) / 100f;
     }
 
-    // Expand the line segment and propagate them
-    public void Expand(float speed)
+    public void Expand(float speed, float timeDelta)
     {
-        float probagationMultiplier = 4f;
-
+        float slowSpeed = 0.01f;
+        
         // Expand from one side
-        float distance1 = Vector2.Distance(m_segmentMidPoint, position1);
+        float distance1 = Vector2.Distance(m_destination1.GetPosition(), position1);
 
-        Vector2 positionDir1 = (position1 - m_segmentMidPoint).normalized;
+        Vector2 positionDir1 = (m_destination1.GetPosition() - position1).normalized;
 
+        float expansionSpeed1 = reached1 ? slowSpeed : speed;
+        
         // Expand the search segment to the right.
-        position1 += m_movementDir * (speed * Time.deltaTime * probagationMultiplier);
+        float expansionStep1 = Mathf.Min(distance1, expansionSpeed1 * timeDelta * Properties.ProbagationMultiplier);
 
-        if (distance1 >= m_halfMaxLength && m_movementDir == positionDir1)
+        position1 += positionDir1 * (expansionStep1);
+
+        if (distance1 < 0.1f)
         {
+            reached1 = true;
             position1 = m_destination1.GetPosition();
 
             // Place a new search segment
-            PropagateDestination(m_destination2, m_destination1);
+            PropagateDestination(m_destination2, m_destination1, speed);
         }
 
         // Expand to the other
-        float distance2 = Vector2.Distance(m_segmentMidPoint, position2);
+        float distance2 = Vector2.Distance(m_destination2.GetPosition(), position2);
 
-        Vector2 positionDir2 = (position2 - m_segmentMidPoint).normalized;
+        Vector2 positionDir2 = (m_destination2.GetPosition() - position2).normalized;
+
+        float expansionSpeed2 = reached2 ? slowSpeed : speed;
 
         // Expand the search segment to the left.
-        position2 += -m_movementDir * (speed * Time.deltaTime * probagationMultiplier);
+        float expansionStep2 = Mathf.Min(distance2, expansionSpeed2 * timeDelta * Properties.ProbagationMultiplier);
 
-        if (distance2 >= m_halfMaxLength && -m_movementDir == positionDir2)
+        position2 += positionDir2 * (expansionStep2);
+
+        if (distance2 < 0.1f)
         {
+            reached2 = true;
             position2 = m_destination2.GetPosition();
 
             // Place a new search segment
-            PropagateDestination(m_destination1, m_destination2);
+            PropagateDestination(m_destination1, m_destination2, speed);
         }
     }
 
+
     // Once the search reach an end node then propagate new search segments in the adjacent lines
     // param: source is the source of the movement, destination is the point the movement reached and to be propagated from 
-    public void PropagateDestination(WayPoint source, WayPoint destination)
+    public void PropagateDestination(WayPoint source, WayPoint destination, float speed)
     {
         // Don't propagate if the way point already propagated search segments
-        if (destination.GetProbability() > 0f || m_Probability <= 0f)
+        if (m_Probability < 0f)
             return;
 
         // Count the connections except the one the movement came from
         int count = destination.GetLines().Count - 1;
 
         // if there are several conjunctions distribute the portability among them, if there is only one then decrease it by a fixed value. 
-        float newProb = count == 1 ? m_Probability - 0.01f : Mathf.Round((m_Probability / count) * 100f) / 100f;
+        // float newProb =
+        //     m_Probability - Properties.ProbabilityIncreaseRate / (0.5f * Properties.SpeedMultiplyer); //0.2f / speed;
+
+        // float newProb = count == 1 ? m_Probability : Mathf.Round((m_Probability / count) * 100f) / 100f;
+        
+        float newProb = count == 1 ? m_Probability : m_Probability - 0.1f;
 
         // Assign probability to that road map point to mark it
         destination.SetProbability(newProb);
@@ -173,7 +182,7 @@ public class SearchSegment
                 continue;
 
             // Create the new search segment 
-            line.AddSearchSegment(destination.GetPosition(), destination.GetPosition(), dir, newProb);
+            line.AddSearchSegment(destination.GetPosition(), destination.GetPosition(), newProb);
         }
     }
 
@@ -195,7 +204,8 @@ public class SearchSegment
         //
 
         // Handles.Label(position1, Vector2.Distance(position1,m_segmentMidPoint).ToString());
-        Handles.Label(m_segmentMidPoint, (Mathf.Round(GetProbability() * 100) / 100f).ToString());
+        // if (GetProbability() > 0f)
+        //     Handles.Label(m_segmentMidPoint, (Mathf.Round(GetProbability() * 100) / 100f).ToString());
 
 
         // Handles.Label(position2, Vector2.Distance(position2,m_segmentMidPoint).ToString());

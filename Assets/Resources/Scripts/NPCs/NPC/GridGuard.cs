@@ -10,9 +10,9 @@ public class GridGuard : Guard
 
     private int m_seenNodes;
 
-    public override void Initialize()
+    public override void Initiate()
     {
-        base.Initialize();
+        base.Initiate();
         m_grid = transform.parent.parent.Find("Map").GetComponent<GridWorld>();
     }
     
@@ -66,7 +66,7 @@ public class GridGuard : Guard
 
     public override LogSnapshot LogNpcProgress()
     {
-        return new LogSnapshot(GetTravelledDistance(), StealthArea.episodeTime, Data,"",0f,0f, m_FoundHidingSpots, m_grid.GetAverageStaleness());
+        return new LogSnapshot(GetTravelledDistance(), StealthArea.episodeTime, Data,"",0,0f,0f, m_FoundHidingSpots, m_grid.GetAverageStaleness());
     }
 
     public void IncrementSeenNodes()

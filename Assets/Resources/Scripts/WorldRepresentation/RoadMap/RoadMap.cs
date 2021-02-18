@@ -12,6 +12,8 @@ public class RoadMap
     // Way points that are dead ends
     private List<WayPoint> m_endPoints;
 
+    private SAT m_Sat;
+
     // Line Segments of the road map
     private List<RoadMapLine> m_Lines;
 
@@ -22,9 +24,10 @@ public class RoadMap
     private MapRenderer m_mapRenderer;
 
 
-    public RoadMap(List<WayPoint> wayPoints, MapRenderer _mapRenderer)
+    public RoadMap(SAT sat, MapRenderer _mapRenderer)
     {
-        m_WayPoints = wayPoints;
+        m_Sat = sat;
+        m_WayPoints = m_Sat.GetRoadMap();
         m_mapRenderer = _mapRenderer;
 
         PopulateEndNodes();
@@ -36,6 +39,7 @@ public class RoadMap
     private void PopulateEndNodes()
     {
         m_endPoints = new List<WayPoint>();
+
 
         foreach (var wp in m_WayPoints)
             if (wp.GetConnections().Count == 1)
@@ -226,12 +230,12 @@ public class RoadMap
         // 
         closestRoadMapLine.AddSearchSegment(projections[bestFit] + directions[bestFit],
             projections[bestFit] - directions[bestFit],
-            directions[bestFit], 1f);
+            1f);
 
         // for (int i = 0; i < 5; i++)
         //     ExpandSearchSegments(0.5f);
 
-        EditorApplication.isPaused = true;
+        // EditorApplication.isPaused = true;
     }
 
     // Create a search segment that doesn't belong to the road map.
@@ -287,16 +291,21 @@ public class RoadMap
         }
 
         // Add a new line to the road map.
-        AddRoadLineMap(position, m_WayPoints[closestWpIndex]);
+        // AddRoadLineMap(position, m_WayPoints[closestWpIndex]);
+        //
+        // m_AdHocRmLine.AddSearchSegment(position,
+        //     m_WayPoints[closestWpIndex].GetPosition(),
+        //     1f);
+
+        foreach (var rdLine in m_WayPoints[closestWpIndex].GetLines())
+        {
+            rdLine.AddSearchSegment(rdLine.wp1.GetPosition(), rdLine.wp1.GetPosition(),
+                m_WayPoints[closestWpIndex].GetLines().Count / 1f);
+        }
 
 
-        // 
-        m_AdHocRmLine.AddSearchSegment(position,
-            m_WayPoints[closestWpIndex].GetPosition(),
-            directions[closestWpIndex], 1f);
-
-        for (int i = 0; i < 2; i++)
-            ExpandSearchSegments(0.5f);
+        // for (int i = 0; i < 2; i++)
+        //     ExpandSearchSegments(0.5f);
 
         // EditorApplication.isPaused = true;
     }
@@ -310,8 +319,9 @@ public class RoadMap
         m_AdHocWp.AddEdge(destWp);
         destWp.AddEdge(m_AdHocWp);
 
-        // Add the line to the list of lines of the road map.
         m_AdHocRmLine = new RoadMapLine(m_AdHocWp, destWp);
+
+        // Add the line to the list of lines of the road map.
         m_Lines.Add(m_AdHocRmLine);
     }
 
@@ -323,6 +333,7 @@ public class RoadMap
 
         m_Lines.Remove(m_AdHocRmLine);
 
+
         m_AdHocWp.GetConnections()[0].RemoveEdge(m_AdHocWp);
         m_AdHocWp.RemoveEdge(m_AdHocWp.GetConnections()[0]);
 
@@ -332,7 +343,7 @@ public class RoadMap
 
 
     // Trim and remove search segments seen by guards
-    public void SeePossibleIntruderPaths(List<Guard> guards)
+    public void SeeSearchSegments(List<Guard> guards)
     {
         // Cut the search segments when seen or add new ones.
         foreach (var line in m_Lines)
@@ -343,20 +354,22 @@ public class RoadMap
             wp.Seen(guards);
     }
 
-    // Get the mid point of the best search segment
+
     public Vector2 GetBestSearchSegment(Guard requestingGuard, List<Guard> guards, Intruder intruder,
-        List<MeshPolygon> navMesh)
+        List<MeshPolygon> navMesh, SearchWeights searchWeights)
     {
         SearchSegment bestSs = null;
         float maxFitnessValue = Mathf.NegativeInfinity;
 
-        // the weights for the properties of the search segment
-        
-        
+
         // Loop through the search segments in the lines
         foreach (var line in m_Lines)
         foreach (var sS in line.GetSearchSegments())
         {
+            // Skip the segment if it has a probability of zero or less
+            if (sS.GetProbability() <= 0f)
+                continue;
+
             // Get the distance of the closest goal other guards are coming to visit
             float minGoalDistance = Mathf.Infinity;
 
@@ -375,6 +388,7 @@ public class RoadMap
                 }
             }
 
+            minGoalDistance = minGoalDistance == Mathf.Infinity ? 0f : minGoalDistance;
 
             // Get the distance from the requesting guard
             float distanceToGuard = PathFinding.GetShortestPathDistance(navMesh, (sS.position1 + sS.position2) / 2f,
@@ -383,12 +397,13 @@ public class RoadMap
             // Calculate the fitness of the search segment
             // start with the probability
             float ssFitness = sS.GetFitness();
+            
+            // Calculate the overall heuristic of this search segment
+            ssFitness = ssFitness * searchWeights.probWeight +
+                        (sS.GetAge()/Properties.MaxAge) * searchWeights.ageWeight + 
+                        (minGoalDistance / Properties.MaxPathDistance) * searchWeights.dstToGuardsWeight +
+                        (distanceToGuard / Properties.MaxPathDistance) * searchWeights.dstFromOwnWeight;
 
-            // Reduce the fitness if there are other guards going there
-            if (minGoalDistance != Mathf.Infinity)
-                ssFitness = ssFitness + minGoalDistance * 0.01f;
-
-            // ssFitness = ssFitness * (1 / distanceToGuard);
 
             if (maxFitnessValue < ssFitness)
             {
@@ -405,10 +420,10 @@ public class RoadMap
 
 
     // Expand the search segments
-    public void ExpandSearchSegments(float speed)
+    public void ExpandSearchSegments(float speed, float timeDelta)
     {
         foreach (var line in m_Lines)
-            line.ExpandSearch(speed);
+            line.ExpandSearch(speed, timeDelta);
     }
 
     public void ClearSearchSegments()
@@ -443,7 +458,7 @@ public class RoadMap
     {
         foreach (var wp in m_WayPoints)
         {
-            Handles.Label(wp.GetPosition(), wp.Id.ToString());
+            // Handles.Label(wp.GetPosition(), wp.Id.ToString());
         }
     }
 

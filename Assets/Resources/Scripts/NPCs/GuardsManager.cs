@@ -1,12 +1,17 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Unity.MLAgents;
+using Unity.MLAgents.Actuators;
+using Unity.MLAgents.Policies;
+using Unity.MLAgents.Sensors;
 using UnityEngine;
 using UnityEngine.UI;
 
 
-public class GuardsManager : MonoBehaviour
+public class GuardsManager : Agent
 {
-    // World Representation
-    private WorldRep m_WorldRep;
+    private StealthArea m_StealthArea;
 
     // List of Guards
     private List<Guard> m_Guards;
@@ -14,18 +19,12 @@ public class GuardsManager : MonoBehaviour
     // List of Intruders
     private List<Intruder> m_Intruders;
 
-    // Logging manager
-    private PerformanceMonitor m_performanceMonitor;
-
     // Guards state
     private StateMachine m_state;
     public string StateName;
 
     // Guards planner
     private GuardBehavior m_guardPlanner;
-
-    // For calculating interception points
-    private Interceptor m_interceptor;
 
     // Possible locations to search for the intruder in
     private List<InterceptionPoint> m_possiblePositions;
@@ -39,27 +38,18 @@ public class GuardsManager : MonoBehaviour
     // Text label to display important messages to human players
     private Text m_Text;
 
+    // The weights for deciding the heuristic
+    public SearchWeights searchWeights;
 
     // Start the NPC manager
-    public void Initiate(Text text)
+    public void Initiate(StealthArea _stealthArea, Text text)
     {
+        m_StealthArea = _stealthArea;
+
         m_Guards = new List<Guard>();
         m_Intruders = new List<Intruder>();
 
-        m_WorldRep = transform.parent.Find("Map").GetComponent<WorldRep>();
-        m_interceptor = transform.parent.Find("Map").GetComponent<Interceptor>();
-
         m_Text = text;
-
-        m_performanceMonitor = transform.parent.Find("Map").GetComponent<PerformanceMonitor>();
-        m_performanceMonitor.SetArea();
-        m_performanceMonitor.ResetResults();
-
-        // Destroy the arena if the logging is over
-        if (m_performanceMonitor.IsDone())
-        {
-            transform.parent.transform.GetComponent<StealthArea>().EndArea();
-        }
 
         // Initiate the FSM to patrol for the guards
         m_state = new StateMachine();
@@ -76,31 +66,77 @@ public class GuardsManager : MonoBehaviour
     }
 
 
+    // This part controls the Reinforcement Learning part of the behavior
+
+    #region RL behavior
+
+    public override void OnEpisodeBegin()
+    {
+        base.OnEpisodeBegin();
+
+        RequestDecision();
+    }
+
+    public override void CollectObservations(VectorSensor sensor)
+    {
+        base.CollectObservations(sensor);
+
+        // The fraction of the guards count.
+        sensor.AddObservation(m_StealthArea.GetSessionInfo().guardsCount / Properties.MaxGuardCount);
+
+        // 
+        sensor.AddObservation(m_StealthArea.mapDecomposer.GetNavMeshArea() / Properties.MaxWalkableArea);
+    }
+
+    // Called when the action is received.
+    public override void OnActionReceived(ActionBuffers actionBuffers)
+    {
+        base.OnActionReceived(actionBuffers);
+
+        searchWeights.probWeight = Mathf.Clamp(actionBuffers.ContinuousActions[0], -1f, 1f);
+        searchWeights.ageWeight = Mathf.Clamp(actionBuffers.ContinuousActions[1], -1f, 1f);
+        searchWeights.dstToGuardsWeight = Mathf.Clamp(actionBuffers.ContinuousActions[2], -1f, 1f);
+        searchWeights.dstFromOwnWeight = Mathf.Clamp(actionBuffers.ContinuousActions[3], -1f, 1f);
+    }
+
+    // What to do when there is no Learning behavior
+    public override void Heuristic(in ActionBuffers actionsOut)
+    {
+        base.Heuristic(actionsOut);
+
+        var continuousActionsOut = actionsOut.ContinuousActions;
+
+        // Default weight for the probability of the segment
+        continuousActionsOut[0] = 1f;
+        // Default weight for the age of the segment
+        continuousActionsOut[1] = 0f;
+        // Default weight for the distance to other guards' closest goal of the segment
+        continuousActionsOut[2] = 1f;
+        // Default weight for the distance of the segment
+        continuousActionsOut[3] = 0f;
+    }
+
+    // End the episode.
+    public void Done()
+    {
+        float reward = m_Intruders[0].GetPercentAlertTime();
+        reward += m_Intruders[0].GetNumberOfTimesSpotted() * 0.01f;
+
+
+        SetReward(reward);
+        EndEpisode();
+    }
+
+    #endregion
+
+
     // Create an NPC
     private void CreateNpc(NpcData npcData, WorldRepType world, List<MeshPolygon> navMesh, StealthArea area)
     {
         // Create the gameObject 
-        GameObject npcPrefab;
-        switch (npcData.npcType)
-        {
-            case NpcType.Intruder:
-                npcPrefab = Resources.Load("Prefabs/NPCs/Intruder") as GameObject;
-                break;
-
-            case NpcType.Guard:
-                if (world == WorldRepType.Grid)
-                    npcPrefab = Resources.Load("Prefabs/NPCs/GridGuard") as GameObject;
-                else
-                    npcPrefab = Resources.Load("Prefabs/NPCs/VisMeshGuard") as GameObject;
-                break;
-
-            default:
-                npcPrefab = Resources.Load("Prefabs/NPCs/Intruder") as GameObject;
-                break;
-        }
-
         // Set the NPC as a child to the manager
-        var npcGameObject = Instantiate(npcPrefab, transform);
+        GameObject npcGameObject = new GameObject();
+        npcGameObject.transform.parent = transform;
 
         // Add the sprite
         Sprite npcSprite = Resources.Load("Sprites/npc_sprite", typeof(Sprite)) as Sprite;
@@ -122,19 +158,22 @@ public class GuardsManager : MonoBehaviour
         CircleCollider2D cd = npcGameObject.AddComponent<CircleCollider2D>();
         cd.radius = npcSprite.rect.width * 0.003f;
 
-
         NPC npc;
         // Add the appropriate script according to the NPC type
         switch (npcData.npcType)
         {
             case NpcType.Intruder:
-                npc = npcGameObject.GetComponent<Intruder>();
+                npc = npcGameObject.AddComponent<Intruder>();
                 spriteRenderer.color = Color.blue;
                 m_Intruders.Add((Intruder) npc);
                 break;
 
             case NpcType.Guard:
-                npc = npcGameObject.GetComponent<Guard>();
+                if (world != WorldRepType.Grid)
+                    npc = npcGameObject.AddComponent<VisMeshGuard>();
+                else
+                    npc = npcGameObject.AddComponent<GridGuard>();
+
                 spriteRenderer.color = Color.red;
                 m_Guards.Add((Guard) npc);
                 break;
@@ -143,6 +182,9 @@ public class GuardsManager : MonoBehaviour
                 npc = npcGameObject.GetComponent<Intruder>();
                 break;
         }
+
+        // 
+        npc.Initiate();
 
         // Allocate the NPC based on the specified scenario
         npc.ResetLocation(navMesh, m_Guards, area.GetMap().GetWalls(), area.GetSessionInfo());
@@ -177,17 +219,17 @@ public class GuardsManager : MonoBehaviour
         foreach (var guard in m_Guards)
         {
             guard.ResetLocation(navMesh, m_Guards, area.GetMap().GetWalls(), area.GetSessionInfo());
-            guard.EndEpisode();
+            guard.ResetNpc();
         }
 
         // Reset Intruders
         foreach (var intruder in m_Intruders)
         {
             intruder.ResetLocation(navMesh, m_Guards, area.GetMap().GetWalls(), area.GetSessionInfo());
-            intruder.EndEpisode();
+            intruder.ResetNpc();
         }
 
-        
+
         // Set the guards to the default mode (patrol)
         m_state.ChangeState(new Patrol(this));
     }
@@ -196,9 +238,6 @@ public class GuardsManager : MonoBehaviour
     // Update the guards FoV
     public void UpdateGuardVision()
     {
-        // In the case of searching for an intruder
-        UpdateSearchArea();
-
         bool intruderSpotted = false;
         foreach (var guard in m_Guards)
         {
@@ -229,6 +268,13 @@ public class GuardsManager : MonoBehaviour
         }
     }
 
+    // Set the Camera to follow the intruder
+    public void FollowIntruder()
+    {
+        Vector2 pos = m_Intruders[0].transform.position;
+        GameManager.MainCamera.transform.position = new Vector3(pos.x, pos.y, -1f);
+    }
+
     // 
     public void UpdateGuiLabel()
     {
@@ -251,11 +297,11 @@ public class GuardsManager : MonoBehaviour
 
 
     // Update the search area in case the guards are searching for an intruder
-    public void UpdateSearchArea()
+    public void UpdateSearchArea(float timeDelta)
     {
         // Move and propagate the possible intruder position (phantoms)
         if (GetState() is Search)
-            m_interceptor.ExpandSearch(m_Intruders[0].GetNpcSpeed(), m_Guards);
+            m_StealthArea.interceptor.ExpandSearch(m_Intruders[0].GetNpcSpeed(), m_Guards, timeDelta);
     }
 
     // Update the guards observations to react properly to changes
@@ -289,7 +335,8 @@ public class GuardsManager : MonoBehaviour
 
         foreach (var guard in m_Guards)
         {
-            float distance = PathFinding.GetShortestPathDistance(m_WorldRep.GetNavMesh(), guard.transform.position,
+            float distance = PathFinding.GetShortestPathDistance(m_StealthArea.worldRep.GetNavMesh(),
+                guard.transform.position,
                 m_Intruders[0].GetLastKnownLocation());
 
             if (distance < minDistance)
@@ -317,7 +364,7 @@ public class GuardsManager : MonoBehaviour
     public void AssignGuardToInterceptionPoint()
     {
         // Calculate the distance to each future possible position of the intruder and choose the closest to the guard's current position to intercept. 
-        m_possiblePositions = m_interceptor.GetPossiblePositions();
+        m_possiblePositions = m_StealthArea.interceptor.GetPossiblePositions();
 
         foreach (var guard in m_Guards)
         {
@@ -348,11 +395,11 @@ public class GuardsManager : MonoBehaviour
                 }
 
                 // The distance from the guard
-                float distanceToNode = PathFinding.GetShortestPathDistance(m_WorldRep.GetNavMesh(),
+                float distanceToNode = PathFinding.GetShortestPathDistance(m_StealthArea.worldRep.GetNavMesh(),
                     guard.transform.position, node.position);
 
                 // Distance from the intruder's last seen position
-                float distanceFromIntruder = PathFinding.GetShortestPathDistance(m_WorldRep.GetNavMesh(),
+                float distanceFromIntruder = PathFinding.GetShortestPathDistance(m_StealthArea.worldRep.GetNavMesh(),
                     m_Intruders[0].GetLastKnownLocation(), node.position);
 
                 float score = (1f / (node.generationIndex + 1f)) * 0.6f +
@@ -382,7 +429,7 @@ public class GuardsManager : MonoBehaviour
         if (!(m_state.GetState() is Chase))
         {
             m_state.ChangeState(new Chase(this));
-            m_interceptor.Clear();
+            m_StealthArea.interceptor.Clear();
 
             foreach (var intruder in m_Intruders)
             {
@@ -452,7 +499,7 @@ public class GuardsManager : MonoBehaviour
             }
 
             // Flow the probability 
-            m_interceptor.PlaceInterceptionForSearch(m_Intruders[0].GetLastKnownLocation(),
+            m_StealthArea.interceptor.PlaceInterceptionForSearch(m_Intruders[0].GetLastKnownLocation(),
                 m_Intruders[0].GetDirection());
 
             AssignGuardRoles();
@@ -466,7 +513,7 @@ public class GuardsManager : MonoBehaviour
             if (m_state.GetState() is Chase)
             {
                 // Calculate the distances to possible future positions of the intruder
-                m_interceptor.CreatePossiblePositions(m_Intruders[0].GetLastKnownLocation(),
+                m_StealthArea.interceptor.CreatePossiblePositions(m_Intruders[0].GetLastKnownLocation(),
                     m_Intruders[0].GetDirection());
                 AssignGuardRoles();
             }
@@ -486,8 +533,7 @@ public class GuardsManager : MonoBehaviour
                 guard.SetGoal(m_Intruders[0].transform.position, true);
                 continue;
             }
-            
-            
+
             // Once the chaser is idle that means that the intruder is still not seen
             // Now Guards should start visiting the nodes with distance more than zero
             if (guard.IsIdle())
@@ -497,12 +543,14 @@ public class GuardsManager : MonoBehaviour
                 {
                     // Get the search segment the guard should see
                     guard.SetGoal(
-                        m_interceptor.GetSearchSegment(guard, m_Guards, m_Intruders[0], m_WorldRep.GetNavMesh()),
+                        m_StealthArea.interceptor.GetSearchSegment(guard, m_Guards, m_Intruders[0],
+                            m_StealthArea.worldRep.GetNavMesh(),
+                            searchWeights),
                         false);
                 }
                 else if (m_guardPlanner.search == GuardSearchPlanner.Random)
                 {
-                    Vector2 randomRoadmap = m_interceptor.GetRandomRoadMapNode();
+                    Vector2 randomRoadmap = m_StealthArea.interceptor.GetRandomRoadMapNode();
                     guard.SetGoal(randomRoadmap, false);
                 }
             }
@@ -512,11 +560,21 @@ public class GuardsManager : MonoBehaviour
 
     public void EndSearch()
     {
-        m_interceptor.Clear();
+        m_StealthArea.interceptor.Clear();
     }
 
     #endregion
 
+
+    // Let NPCs cast their vision
+    public void CastVision()
+    {
+        foreach (var guard in m_Guards)
+            guard.CastVision();
+
+        foreach (var intruder in m_Intruders)
+            intruder.CastVision();
+    }
 
     // NPCs decide plans if idle
     public void MakeDecision()
@@ -530,51 +588,21 @@ public class GuardsManager : MonoBehaviour
 
 
     // Execute NPCs plans
-    public void MoveNpcs()
+    public void MoveNpcs(float deltaTime)
     {
         foreach (var guard in m_Guards)
-            guard.ExecutePlan(m_state.GetState(), guard.role);
+            guard.ExecutePlan(m_state.GetState(), guard.role, deltaTime);
 
         foreach (var intruder in m_Intruders)
-            intruder.ExecutePlan(intruder.GetState(), null);
+            intruder.ExecutePlan(intruder.GetState(), null, deltaTime);
     }
 
 
     // Update performance metrics
-    public void UpdateMetrics()
+    public void UpdateMetrics(float deltaTime)
     {
         foreach (var intruder in m_Intruders)
-            intruder.UpdateMetrics();
-    }
-
-    public void LogPerformance()
-    {
-        if (m_Guards != null)
-            foreach (var guard in m_Guards)
-                m_performanceMonitor.UpdateProgress(guard.LogNpcProgress());
-
-        if (m_Intruders != null)
-            foreach (var intruder in m_Intruders)
-                m_performanceMonitor.UpdateProgress(intruder.LogNpcProgress());
-    }
-
-    // Log the episode's performance and check if required number of episodes is recorded
-    // Upload 
-    public bool FinalizeLogging(bool isUpload)
-    {
-        LogPerformance();
-
-        if (!isUpload)
-            m_performanceMonitor.LogEpisodeFinish();
-        else
-            m_performanceMonitor.UploadEpisodeData();
-
-        return IsDone();
-    }
-
-    public bool IsDone()
-    {
-        return m_performanceMonitor.IsDone();
+            intruder.UpdateMetrics(deltaTime);
     }
 
     // Update the guard manager for every 
@@ -600,10 +628,14 @@ public class GuardsManager : MonoBehaviour
         }
     }
 
-
     public List<Guard> GetGuards()
     {
         return m_Guards;
+    }
+
+    public List<Intruder> GetIntruders()
+    {
+        return m_Intruders;
     }
 }
 
@@ -616,4 +648,29 @@ public enum GuardRole
     Patrol,
     Chase,
     Intercept
+}
+
+[Serializable]
+// the weights for the feature functions of the search segments
+public struct SearchWeights
+{
+    // The staleness of the search segment
+    public float probWeight;
+
+    // The search segment's age weight
+    public float ageWeight;
+
+    // Path distance of the search segment to the guard
+    public float dstToGuardsWeight;
+
+    // Path distance of the closest goal other guards are coming to visit
+    public float dstFromOwnWeight;
+
+    public SearchWeights(float _probWeight, float _ageWeight, float _dstToGuardsWeight, float _dstFromOwnWeight)
+    {
+        probWeight = _probWeight;
+        ageWeight = _ageWeight;
+        dstToGuardsWeight = _dstToGuardsWeight;
+        dstFromOwnWeight = _dstFromOwnWeight;
+    }
 }

@@ -18,7 +18,7 @@ public class Isovists : MonoBehaviour
         m_NavMesh = navMesh;
 
         // Create the Isovists
-       CreateIsovists();
+        CreateIsovists();
 
         //  Separate the isovists
         // CalculateVisibility();
@@ -26,7 +26,6 @@ public class Isovists : MonoBehaviour
 
     public void CreateIsovists()
     {
-
         foreach (var navMeshPolygon in m_NavMesh)
         {
             AddFoV();
@@ -121,7 +120,7 @@ public class Isovists : MonoBehaviour
 
         m_FovGameObject = fovGameObject;
         m_Fov = fovGameObject.AddComponent<FieldOfView>();
-        m_Fov.Initiate(361f, 100f,new Color32(255,255,255,50));
+        m_Fov.Initiate(361f, 100f, new Color32(255, 255, 255, 50));
     }
 
 

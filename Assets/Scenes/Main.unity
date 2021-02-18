@@ -362,32 +362,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1722de4dc5c895f49bc1260249bc33f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enableLogging: 0
-  uploadData: 0
-  NumberOfEpisodesPerSession: 0
-  SimulationSpeed: 1
+  loggingType: 2
+  SimulationSpeed: 8
   Render: 0
-  runTestScenario: 0
-  testScenario:
-    gameCode: Test
-    scenario: 0
-    worldRepType: 0
-    coveredRegionResetThreshold: 0
-    map: 
-    mapScale: 0
-    npcsList:
-    - id: 0
-      npcType: 1
-      npcHeuristic: 0
-      npcPathFollowing: 0
-    - id: 0
-      npcType: 0
-      npcHeuristic: 0
-      npcPathFollowing: 0
-    - id: 0
-      npcType: 0
-      npcHeuristic: 0
-      npcPathFollowing: 0
 --- !u!4 &1776927360
 Transform:
   m_ObjectHideFlags: 0
