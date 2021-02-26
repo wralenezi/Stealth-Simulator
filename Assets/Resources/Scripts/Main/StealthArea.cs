@@ -38,8 +38,14 @@ public class StealthArea : MonoBehaviour
 
     public VisibilityGraph visibilityGraph;
 
+    // Roadmap of the level
+    public RoadMap roadMap;
+
     // Interceptor controller
     public Interceptor interceptor;
+
+    // Search representation controller
+    public Searcher searcher;
 
     // Logging manager
     public PerformanceMonitor performanceMonitor;
@@ -85,7 +91,7 @@ public class StealthArea : MonoBehaviour
         // Assign the world representation
         switch (m_SessionInfo.worldRepType)
         {
-            case WorldRepType.VisMesh:
+            case WorldRepType.Continuous:
                 worldRep = mapRenderer.gameObject.AddComponent<VisMesh>();
                 break;
 
@@ -113,9 +119,16 @@ public class StealthArea : MonoBehaviour
         // m_VisibilityGraph = map.GetComponent<VisibilityGraph>();
         // m_VisibilityGraph.Initiate(m_MapRenderer);
 
+        // Build the road map based on the Scale Area Transform
+        roadMap = new RoadMap(sat, mapRenderer);
+
         // Interception controller
         interceptor = map.GetComponent<Interceptor>();
-        interceptor.Initiate(sat, mapRenderer);
+        interceptor.Initiate(this);
+
+        // Search Controller
+        searcher = map.gameObject.AddComponent<Searcher>();
+        searcher.Initiate(this);
 
         // Assign NPC Manager
         guardsManager = transform.Find("NpcManager").GetComponent<GuardsManager>();
@@ -176,22 +189,19 @@ public class StealthArea : MonoBehaviour
         }
     }
 
-    
+
     private void Update()
     {
         float deltaTime = Time.deltaTime;
 
         // Update the episode time
         UpdateTime(deltaTime);
-
-        // Let the agents cast their visions
-        guardsManager.CastVision();
-
+        
         // Update the guards vision and apply the vision affects (seeing intruders,etc) 
         guardsManager.UpdateGuardVision();
 
         // In the case of searching for an intruder
-        guardsManager.UpdateSearchArea(deltaTime);
+        guardsManager.UpdateSearcher(deltaTime);
 
         // Idle NPCs make decisions
         guardsManager.MakeDecision();
@@ -223,6 +233,8 @@ public class StealthArea : MonoBehaviour
 
     private void LateUpdate()
     {
+        // Let the agents cast their visions
+        guardsManager.CastVision();
     }
 
 
