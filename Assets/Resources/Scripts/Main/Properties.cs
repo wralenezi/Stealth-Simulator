@@ -3,6 +3,12 @@ using UnityEngine;
 
 public static class Properties
 {
+    //-------------------------------------------------
+    // File Directories
+
+
+    //-------------------------------------------------------------------------//
+    // Geometry Parameters
     // Winding order for outer polygons; inner polygon is opposite.
     public static WindingOrder outerPolygonWinding = WindingOrder.CounterClockwise;
     public static WindingOrder innerPolygonWinding = WindingOrder.Clockwise;
@@ -14,9 +20,15 @@ public static class Properties
     // The walkable area offset from the actual map
     public static float InterPolygonOffset = 0.3f;
 
-    // The number of episodes to record
-    public static int EpisodesCount = 100;
+    //------------------------------------------------------------------------------------------------------
+    // Grid parameters representation
+    static readonly int GridMultiplier = 1;
+    public static readonly int GridDefaultSizeX = 16 * GridMultiplier;
+    public static readonly int GridDefaultSizeY = 10 * GridMultiplier;
+    public static readonly float NodeRadius = 0.1f;
 
+
+    //---------------------------------------------------//
     // Staleness Properties
     // Staleness range
     // Colors for view point state
@@ -46,10 +58,9 @@ public static class Properties
     public const float NpcSpeed = 4f * SpeedMultiplyer;
     public const float NpcRotationSpeed = 200f * SpeedMultiplyer;
 
-    // ************************************
     // Field of View Properties
     private const float viewRadiusFractionOfMap = 0.1f;
-    
+
     // Set the default value for view radius for the Npcs
     public static void SetViewRadius(float maxWidth)
     {
@@ -60,48 +71,49 @@ public static class Properties
     public const float ViewAngle = 90f;
 
 
-    //------------------------------------------------------------------------------------------------------
-    // Grid parameters representation
-    static readonly int GridMultiplier = 1;
-    public static readonly int GridDefaultSizeX = 16 * GridMultiplier;
-    public static readonly int GridDefaultSizeY = 10 * GridMultiplier;
-    public static readonly float NodeRadius = 0.1f;
-
-
+    //-----------------------------------------------------------------------------
     // Search Parameters
-    public static Color32 GetSegmentColor(float age)
-    {
-        if (age < 0f) age = 0f;
-        byte colorLevel = (byte) Math.Round((age/MaxAge) * 255);
-        //byte colorLevel = (byte) Math.Round(age * 255);
-        // return new Color32(255, (byte) (255 - colorLevel), (byte) (255 - colorLevel), 255);
-        return new Color32(255, 0, 0, colorLevel);
-    }
-    
-    //----------------------------------------------------------
+    // Rate of increase of the probability value of search segment
+    public static readonly float ProbabilityIncreaseRate = 0.002f * NpcSpeed;
+    public static readonly float DiscountFactor = 0.9f;
+    public static readonly float PropagationMultiplier = 4f;
 
-    // The duration of an episode.
-    public static float EpisodeLength = 100f;
+    // Parameters of Damian Isla implementation
+    // Probability Diffuse factor; it tunes how fast the probability is propagated.
+    public static readonly float ProbDiffFac = 0.05f * NpcSpeed;
 
-    // The agent difference threshold
-    public static readonly int AgeThreshold = 10;
+    // Max length a search segment can have
+    public static readonly float MaxEdgeLength = 2f;
 
     // Max age a search segment can have
-    public static float MaxAge = EpisodeLength * 0.75f;
+    public static float MaxAge = 255f;
+
+    // The maximum walkable area; This acts as a denominator for normalizing the map size.
+    public static float MaxWalkableArea = 5000f;
+
+    // The Maximum number of guards available.
+    public static int MaxGuardCount = 10;
 
     // The Max path distance of the map, for normalization purposes. 
     public static float MaxPathDistance;
 
-    // Max length an edge can have
-    public static readonly float MaxEdgeLength = 2f;
-    
-    // The Maximum number of guards available.
-    public static int MaxGuardCount = 10;
-    
-    // The maximum walkable area; This acts as a denominator for normalizing the map size.
-    public static float MaxWalkableArea = 60000f;
+    public static Color32 GetSegmentColor(float feature)
+    {
+        if (feature < 0f) feature = 0f;
 
-    // Rate of increase of the probability value of search segment
-    public static readonly float ProbabilityIncreaseRate = 0.0005f * NpcSpeed;
-    public static readonly float ProbagationMultiplier = 4f;
+        // In case of using the age feature
+        // byte colorLevel = (byte) Math.Round((age/MaxAge) * 255);
+
+        // In case of using the likelihood feature
+        byte colorLevel = (byte) Mathf.Round(feature * 255);
+
+        return new Color32(255, 0, 0, colorLevel);
+    }
+
+    //----------------------------------------------------------
+    // The number of episodes to record
+    public static int EpisodesCount = 50;
+
+    // The duration of an episode.
+    public static float EpisodeLength = 400f;
 }
