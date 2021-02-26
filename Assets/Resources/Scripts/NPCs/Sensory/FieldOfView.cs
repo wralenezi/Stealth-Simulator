@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Numerics;
 using UnityEngine;
 using UnityEngine.Rendering;
+using Vector3 = UnityEngine.Vector3;
 
 public class FieldOfView : MonoBehaviour
 {
@@ -21,6 +23,9 @@ public class FieldOfView : MonoBehaviour
 
     // Vertices of the field of view mesh
     private List<Vector3> m_ViewPoints = new List<Vector3>();
+
+    private List<Vector3> m_Vertices = new List<Vector3>();
+    private List<int> m_Triangles = new List<int>();
 
     // Obstacle Layer
     private LayerMask m_ObstacleMask;
@@ -95,26 +100,26 @@ public class FieldOfView : MonoBehaviour
 
         // Draw mesh
         int vertexCount = m_ViewPoints.Count;
-        Vector3[] vertices = new Vector3[vertexCount];
-        int[] triangles = new int[(vertexCount - 2) * 3];
-
-        vertices[0] = Vector3.zero;
+        m_Vertices.Clear();
+        m_Triangles.Clear();
+        
+        m_Vertices.Add(Vector3.zero);
         for (int i = 0; i < vertexCount - 1; i++)
         {
-            vertices[i + 1] = transform.InverseTransformPoint(m_ViewPoints[i]);
+            m_Vertices.Add(transform.InverseTransformPoint(m_ViewPoints[i]));
 
             if (i < vertexCount - 2)
             {
-                triangles[i * 3] = 0;
-                triangles[i * 3 + 1] = i + 1;
-                triangles[i * 3 + 2] = i + 2;
+                m_Triangles.Add(0);
+                m_Triangles.Add(i + 1);
+                m_Triangles.Add(i + 2);
             }
         }
 
-        m_ViewMesh.Clear();
 
-        m_ViewMesh.vertices = vertices;
-        m_ViewMesh.triangles = triangles;
+        m_ViewMesh.Clear();
+        m_ViewMesh.SetVertices(m_Vertices);
+        m_ViewMesh.SetTriangles(m_Triangles, 0);
         m_ViewMesh.RecalculateNormals();
     }
 

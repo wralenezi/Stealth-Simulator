@@ -9,45 +9,76 @@ public static class PathFinding
     // Simple Funnel Offset
     static float offsetMultiplier = 0.25f;
 
+    // Containers for the pathfinding
+    private static List<MeshPolygon> openListMesh;
+    private static List<MeshPolygon> closedListMesh;
+    private static List<MeshPolygon> pathMesh;
+
+    // Temp path (used for just finding the shortest path distance
+    private static List<Vector2> shortestPath;
+
+    // Simple stupid funnel variables
+    private static List<Vector2> leftVertices;
+    private static List<Vector2> rightVertices;
+
+    // For road map path finding
+    private static List<WayPoint> openListRoadMap;
+    private static List<WayPoint> closedListRoadMap;
+    private static List<Vector2> pathRoadMap;
+
+    // Initiate containers; to improve garbage collection
+    public static void Initiate()
+    {
+        openListMesh = new List<MeshPolygon>();
+        closedListMesh = new List<MeshPolygon>();
+        pathMesh = new List<MeshPolygon>();
+
+        shortestPath = new List<Vector2>();
+
+        leftVertices = new List<Vector2>();
+        rightVertices = new List<Vector2>();
+
+        openListRoadMap = new List<WayPoint>();
+        closedListRoadMap = new List<WayPoint>();
+        pathRoadMap = new List<Vector2>();
+    }
+
+
     // Return the shortest path as a sequence of points
-    public static List<Vector2> GetShortestPath(List<MeshPolygon> navMesh, Vector2 startPoint, Vector2 destinationPoint)
+    public static void GetShortestPath(List<MeshPolygon> navMesh, Vector2 startPoint, Vector2 destinationPoint,
+        List<Vector2> resultPath)
     {
         // Get shortest path in polygons
-        List<MeshPolygon> polygonPath =
-            GetShortestPathPolygons(navMesh, startPoint, destinationPoint);
+        SetShortestPathPolygons(navMesh, startPoint, destinationPoint);
 
-        List<Vector2> path = GetPathBySSFA(startPoint, destinationPoint, polygonPath);
-
-        return path;
+        GetPathBySSFA(startPoint, destinationPoint, resultPath);
     }
 
     public static float GetShortestPathDistance(List<MeshPolygon> navMesh, Vector2 startPoint, Vector2 destinationPoint)
     {
-        List<Vector2> path = GetShortestPath(navMesh, startPoint, destinationPoint);
+        GetShortestPath(navMesh, startPoint, destinationPoint, shortestPath);
 
         float totalDistance = 0f;
 
-        for (int i = 0; i < path.Count - 1; i++)
-        {
-            totalDistance += Vector2.Distance(path[i], path[i + 1]);
-        }
+        for (int i = 0; i < shortestPath.Count - 1; i++)
+            totalDistance += Vector2.Distance(shortestPath[i], shortestPath[i + 1]);
 
         return totalDistance;
     }
 
 
     // Receive Polygon start and end position and return Polygon based path
-    private static List<MeshPolygon> GetShortestPathPolygons(List<MeshPolygon> navMesh, Vector2 start,
+    private static void SetShortestPathPolygons(List<MeshPolygon> navMesh, Vector2 start,
         Vector2 destination)
     {
         MeshPolygon startPolygon = GetCorrespondingPolygon(navMesh, start);
         MeshPolygon destinationPolygon = GetCorrespondingPolygon(navMesh, destination);
 
         if (startPolygon == null)
-            return null;
+            return;
 
-        PriorityQueue<MeshPolygon, float> openList = new PriorityQueue<MeshPolygon, float>(0f);
-        List<MeshPolygon> closedList = new List<MeshPolygon>();
+        openListMesh.Clear();
+        closedListMesh.Clear();
 
         foreach (MeshPolygon p in navMesh)
         {
@@ -58,17 +89,18 @@ public static class PathFinding
 
         // Set Cost of starting Polygon
         startPolygon.SetgDistance(0f);
-        // startPolygon.SethDistance(GetHeuristicValue(startPolygon, destinationPolygon));
         startPolygon.SethDistance(Vector2.Distance(start, destination));
         startPolygon.SetEntryPoint(start);
 
 
         // Add the starting polygon to the open list
-        openList.Insert(startPolygon, startPolygon.GetgDistance() + startPolygon.GethDistance());
+        openListMesh.Add(startPolygon);
 
-        while (!openList.IsEmpty())
+        while (openListMesh.Count > 0)
         {
-            MeshPolygon current = openList.Pop();
+            MeshPolygon current = openListMesh[0];
+            openListMesh.RemoveAt(0);
+
 
             foreach (KeyValuePair<int, MeshPolygon> pPair in current.GetAdjcentPolygons())
             {
@@ -76,10 +108,9 @@ public static class PathFinding
 
                 Vector2 possibleNextWaypoint = current.GetMidPointOfDiagonalNeighbor(p);
 
-                if (!closedList.Contains(p))
+                if (!closedListMesh.Contains(p))
                 {
                     float gDistance = GetCostValue(current, p, destinationPolygon, destination);
-                    // float hDistance = GetHeuristicValue(p, destinationPolygon);
 
                     float hDistance = Vector2.Distance(possibleNextWaypoint, destination);
 
@@ -92,11 +123,12 @@ public static class PathFinding
                         p.SetEntryPoint(possibleNextWaypoint);
                     }
 
-                    openList.Insert(p, p.GetgDistance() + p.GethDistance());
+                    openListMesh.InsertIntoSortedList(p,
+                        delegate(MeshPolygon x, MeshPolygon y) { return x.GetFvalue().CompareTo(y.GetFvalue()); });
                 }
             }
 
-            closedList.Add(current);
+            closedListMesh.Add(current);
 
             // Stop the search if we reached the destination polygon
             if (current.Equals(destinationPolygon))
@@ -104,12 +136,12 @@ public static class PathFinding
         }
 
         // Get the path starting from the goal node to the last polygon before the starting polygon
-        List<MeshPolygon> path = new List<MeshPolygon>();
+        pathMesh.Clear();
 
         MeshPolygon currentPolygon = destinationPolygon;
         while (currentPolygon.GetPreviousPolygon() != null)
         {
-            path.Add(currentPolygon);
+            pathMesh.Add(currentPolygon);
 
             if (currentPolygon.GetPreviousPolygon() == null)
                 break;
@@ -118,13 +150,10 @@ public static class PathFinding
         }
 
         // Add the first polygon to the path
-        path.Add(startPolygon);
+        pathMesh.Add(startPolygon);
 
         // reverse the path so it start from the start node
-        path.Reverse();
-
-
-        return path;
+        pathMesh.Reverse();
     }
 
 
@@ -145,7 +174,6 @@ public static class PathFinding
 
         // Euclidean Distance
         float
-            // distance = Vector2.Distance(previousPolygon.GetCentroidPosition(), currentPolygon.GetCentroidPosition());
             distance = Vector2.Distance(previousWaypoint.Value, possibleNextWaypoint);
 
         costValue += distance;
@@ -188,7 +216,7 @@ public static class PathFinding
     // Get the polygon that contains the specified point
     private static MeshPolygon GetCorrespondingPolygon(List<MeshPolygon> navMesh, Vector2 point)
     {
-        // Check all polygons in the navmesh if they contain the point 
+        // Check all polygons in the NavMesh if they contain the point 
         foreach (var p in navMesh)
             if (p.IsPointInPolygon(point, true))
                 return p;
@@ -227,24 +255,30 @@ public static class PathFinding
 
     // Get the path using the simple stupid funnel algorithm
     // http://ahamnett.blogspot.com/2012/10/funnel-algorithm.html
-    static List<Vector2> GetPathBySSFA(Vector2 startPoint, Vector2 destinationPoint, List<MeshPolygon> polygonPath)
+    static void GetPathBySSFA(Vector2 startPoint, Vector2 destinationPoint, List<Vector2> path)
     {
-        List<Vector2> path = new List<Vector2>();
-        Vector2[] leftVertices = new Vector2[polygonPath.Count + 1];
-        Vector2[] rightVertices = new Vector2[polygonPath.Count + 1];
+        path.Clear();
+
+        leftVertices.Clear();
+        rightVertices.Clear();
 
         // Initialise portal vertices first point.
-        leftVertices[0] = startPoint;
-        rightVertices[0] = startPoint;
+        leftVertices.Add(startPoint);
+        rightVertices.Add(startPoint);
 
+        Vector2 leftV;
+        Vector2 rightV;
         // Add the gates vertices
-        for (int i = 0; i < polygonPath.Count - 1; i++)
-            polygonPath[i]
-                .GetDiagonalOfNeighbor(polygonPath[i + 1], out leftVertices[i + 1], out rightVertices[i + 1]);
+        for (int i = 0; i < pathMesh.Count - 1; i++)
+        {
+            pathMesh[i].GetDiagonalOfNeighbor(pathMesh[i + 1], out leftV, out rightV);
+            leftVertices.Add(leftV);
+            rightVertices.Add(rightV);
+        }
 
-        // Initialise portal vertices last point.
-        leftVertices[polygonPath.Count] = destinationPoint;
-        rightVertices[polygonPath.Count] = destinationPoint;
+        leftVertices.Add(destinationPoint);
+        rightVertices.Add(destinationPoint);
+
 
         int left = 1;
         int right = 1;
@@ -252,7 +286,7 @@ public static class PathFinding
         // Step through channel.
 
         // Go through the polygons
-        for (int i = 1; i <= polygonPath.Count; i++)
+        for (int i = 1; i <= pathMesh.Count; i++)
         {
             // If new left vertex is different from the current, the check
             if (leftVertices[i] != leftVertices[left] && i > left)
@@ -267,7 +301,7 @@ public static class PathFinding
                         int prev = right;
 
                         // Find next vertex.
-                        for (int j = next; j <= polygonPath.Count; j++)
+                        for (int j = next; j <= pathMesh.Count; j++)
                         {
                             if (rightVertices[j] != rightVertices[next])
                             {
@@ -310,13 +344,13 @@ public static class PathFinding
                         Vector2 newApex = rightVertices[right];
 
                         // Add new offset apex to list and update right side.
-                        if (left != polygonPath.Count && right != polygonPath.Count)
+                        if (left != pathMesh.Count && right != pathMesh.Count)
                         {
                             path.Add(newApex + normal * offsetDistance);
                         }
 
                         // Reset the funnel 
-                        apex = newApex; // + normal * offsetDistance;
+                        apex = newApex;
                         right = next;
                         left = next;
                         i = next;
@@ -342,7 +376,7 @@ public static class PathFinding
                         int prev = left;
 
                         // Find next vertex.
-                        for (int j = next; j <= polygonPath.Count; j++)
+                        for (int j = next; j <= pathMesh.Count; j++)
                         {
                             if (leftVertices[j] != leftVertices[next])
                             {
@@ -385,7 +419,7 @@ public static class PathFinding
                         Vector2 newApex = leftVertices[left];
 
                         // Add new offset apex to list and update right side.
-                        if (left != polygonPath.Count && right != polygonPath.Count)
+                        if (left != pathMesh.Count && right != pathMesh.Count)
                         {
                             path.Add(newApex - normal * offsetDistance);
                         }
@@ -407,8 +441,6 @@ public static class PathFinding
 
 
         path.Add(destinationPoint);
-
-        return path;
     }
 
 
@@ -419,8 +451,8 @@ public static class PathFinding
     {
         WayPoint goal = goalPh.destination;
 
-        PriorityQueue<WayPoint, float> openList = new PriorityQueue<WayPoint, float>(0f);
-        List<WayPoint> closedList = new List<WayPoint>();
+        openListRoadMap.Clear();
+        closedListRoadMap.Clear();
 
         foreach (WayPoint p in roadmap)
         {
@@ -433,13 +465,14 @@ public static class PathFinding
         start.gDistance = 0f;
         start.hDistance = Vector2.Distance(start.GetPosition(), goal.GetPosition());
 
-        while (!openList.IsEmpty())
+        while (openListRoadMap.Count > 0)
         {
-            WayPoint current = openList.Pop();
+            WayPoint current = openListRoadMap[0];
+            openListMesh.RemoveAt(0);
 
             foreach (WayPoint p in current.GetConnections())
             {
-                if (!closedList.Contains(p))
+                if (!closedListRoadMap.Contains(p))
                 {
                     float gDistance = GetCostValue(current, p);
                     float hDistance = GetHeuristicValue(current, goal);
@@ -452,23 +485,25 @@ public static class PathFinding
                         p.parent = current;
                     }
 
-                    openList.Insert(p, p.gDistance + p.hDistance);
+
+                    openListRoadMap.InsertIntoSortedList(p,
+                        delegate(WayPoint x, WayPoint y) { return x.GetFvalue().CompareTo(y.GetFvalue()); });
                 }
             }
 
-            closedList.Add(current);
+            closedListRoadMap.Add(current);
 
             // Stop the search if we reached the destination way point
             if (current.Equals(goal))
                 break;
         }
 
-        List<Vector2> result = new List<Vector2>();
+        pathRoadMap.Clear();
 
         WayPoint currentWayPoint = goal;
         while (currentWayPoint.parent != null)
         {
-            result.Add(currentWayPoint.GetPosition());
+            pathRoadMap.Add(currentWayPoint.GetPosition());
 
             if (currentWayPoint.parent == null)
                 break;
@@ -476,17 +511,17 @@ public static class PathFinding
             currentWayPoint = currentWayPoint.parent;
         }
 
-        // Add the first waypoint to the path
-        result.Add(start.GetPosition());
+        // Add the first way point to the path
+        pathRoadMap.Add(start.GetPosition());
 
         // and add the actual phantom node position since we didn't include it in the A* search
-        result.Add(goalPh.position);
+        pathRoadMap.Add(goalPh.position);
 
         // reverse the path so it start from the start node
-        result.Reverse();
+        pathRoadMap.Reverse();
 
 
-        return result;
+        return pathRoadMap;
     }
 
 

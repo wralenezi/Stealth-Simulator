@@ -22,7 +22,7 @@ public class StateMachine
         m_CurrentState.Enter();
     }
 
-    public void Update()
+    public void UpdateState()
     {
         m_CurrentState?.Execute();
     }

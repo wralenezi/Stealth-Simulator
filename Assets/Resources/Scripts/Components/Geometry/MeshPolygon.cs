@@ -96,6 +96,11 @@ public class MeshPolygon : Polygon
         return m_hDistance;
     }
 
+    public float GetFvalue()
+    {
+        return m_gDistance + m_hDistance;
+    }
+
     public void SetPreviousPolygon(MeshPolygon prev)
     {
         m_previousPolygon = prev;
@@ -111,9 +116,6 @@ public class MeshPolygon : Polygon
         base.Draw(label);
 
         Gizmos.color = Color.green;
-        
-        // if (m_entryPoint != null)
-        //     Gizmos.DrawSphere(m_entryPoint.Value, 0.2f);
     }
 
 
@@ -125,6 +127,4 @@ public class MeshPolygon : Polygon
 
         m_NeighborPolygons.Add(vertexIndex, poly);
     }
-    
 }
-

@@ -23,7 +23,6 @@ public class RoadMap
 
     private MapRenderer m_mapRenderer;
 
-
     public RoadMap(SAT sat, MapRenderer _mapRenderer)
     {
         m_Sat = sat;
@@ -65,20 +64,10 @@ public class RoadMap
                 }
 
             if (!isFound)
-            {
-                // Prioritize adding left to right, top to down
-                if ((wp.GetPosition().x < con.GetPosition().x) ||
-                    ((wp.GetPosition().x == con.GetPosition().x) && (wp.GetPosition().y > con.GetPosition().y)))
-                    m_Lines.Add(new RoadMapLine(wp, con));
-                else
-                    m_Lines.Add(new RoadMapLine(con, wp));
-            }
+                m_Lines.Add(new RoadMapLine(con, wp));
         }
 
-        foreach (var line in m_Lines)
-            line.AddLineConnections(m_Lines);
-
-
+        // Add the line connected to the way point
         foreach (var wp in m_WayPoints)
             wp.AddLines(m_Lines);
     }
@@ -90,67 +79,63 @@ public class RoadMap
     }
 
 
-    // Find the projection point on the road map
-    // Find the closest projection point 
-    public InterceptionPoint GetInterceptionPointOnRoadMap(Vector2 position, Vector2 dir)
+    // // Find the projection point on the road map
+    // // Find the closest projection point 
+    // public InterceptionPoint GetInterceptionPointOnRoadMap(Vector2 position, Vector2 dir)
+    // {
+    //     float minDistance = Mathf.Infinity;
+    //     // Position
+    //     Vector2? projectionOnRoadMap = null;
+    //     // Direction of the phantom node movement
+    //     //Vector2? direction = null;
+    //     // Destination of the phantom node
+    //     WayPoint destination = null;
+    //     // Source of the phantom
+    //     WayPoint source = null;
+    //
+    //
+    //     foreach (var line in m_Lines)
+    //     {
+    //         // Get the point projection on the line
+    //         Vector2 pro = GeometryHelper.ClosestProjectionOnSegment(line.wp1.GetPosition(), line.wp2.GetPosition(),
+    //             position);
+    //
+    //         // The distance from the projection point to the intruder position
+    //         float distance = Vector2.Distance(position, pro);
+    //
+    //         if (distance < minDistance)
+    //         {
+    //             minDistance = distance;
+    //             projectionOnRoadMap = pro;
+    //
+    //             // Get the normalized direction of the road map edge
+    //             Vector2 edgeDir = line.wp1.GetPosition() - line.wp2.GetPosition();
+    //             edgeDir = edgeDir.normalized;
+    //
+    //             // Get the normalized Velocity of the intruder
+    //             Vector2 velocityNorm = dir.normalized;
+    //
+    //             // Get the cosine of the smalled angel between the road map edge and velocity; to measure the alignment between the vectors
+    //             // The closer to one the more aligned 
+    //             float cosineAngle = Vector2.Dot(edgeDir, velocityNorm);
+    //
+    //             destination = (cosineAngle > 0) ? line.wp2 : line.wp1;
+    //             source = (cosineAngle > 0) ? line.wp1 : line.wp2;
+    //         }
+    //     }
+    //
+    //     return new InterceptionPoint(projectionOnRoadMap.Value,
+    //         source, destination, 0);
+    // }
+
+
+    // Get the closest projection point to a position@param on the road map.
+    // The closest two points will be considered, and the tie breaker will be the how the road map line is aligned with dir@param 
+    public Vector2 GetClosestProjectionOnRoadMap(Vector2 position, Vector2 dir)
     {
-        float minDistance = Mathf.Infinity;
-        // Position
-        Vector2? projectionOnRoadMap = null;
-        // Direction of the phantom node movement
-        //Vector2? direction = null;
-        // Destination of the phantom node
-        WayPoint destination = null;
-        // Source of the phantom
-        WayPoint source = null;
-
-
-        foreach (var line in m_Lines)
-        {
-            // Get the point projection on the line
-            Vector2 pro = GeometryHelper.ClosestProjectionOnSegment(line.wp1.GetPosition(), line.wp2.GetPosition(),
-                position);
-
-            // The distance from the projection point to the intruder position
-            float distance = Vector2.Distance(position, pro);
-
-            if (distance < minDistance)
-            {
-                minDistance = distance;
-                projectionOnRoadMap = pro;
-
-                // Get the normalized direction of the road map edge
-                Vector2 edgeDir = line.wp1.GetPosition() - line.wp2.GetPosition();
-                edgeDir = edgeDir.normalized;
-
-                // Get the normalized Velocity of the intruder
-                Vector2 velocityNorm = dir.normalized;
-
-                // Get the cosine of the smalled angel between the road map edge and velocity; to measure the alignment between the vectors
-                // The closer to one the more aligned 
-                float cosineAngle = Vector2.Dot(edgeDir, velocityNorm);
-
-                destination = (cosineAngle > 0) ? line.wp2 : line.wp1;
-                source = (cosineAngle > 0) ? line.wp1 : line.wp2;
-            }
-        }
-
-        return new InterceptionPoint(projectionOnRoadMap.Value,
-            source, destination, 0);
-    }
-
-
-    // Add the search line segment for searching for an intruder in the search phase
-    // This is done by finding the closest point to the intruder on the road map
-    public void InsertSearchLineSegment(Vector2 position, Vector2 dir)
-    {
-        float minDistance = Mathf.Infinity;
-        // Positions
+        // Projection Positions
         List<Vector2> projections = new List<Vector2>();
-        // Direction of the phantom node movement
-        List<Vector2> directions = new List<Vector2>();
 
-        // Line the search segment lies on
         RoadMapLine closestRoadMapLine = null;
 
         // List of distance and direction difference of the lines and agent
@@ -174,7 +159,6 @@ public class RoadMap
             // Get the normalized direction of the road map edge
             Vector2 edgeDir = line.wp1.GetPosition() - line.wp2.GetPosition();
             edgeDir = edgeDir.normalized;
-            directions.Add(edgeDir);
 
             // Get the normalized Velocity of the intruder
             Vector2 velocityNorm = dir.normalized;
@@ -185,9 +169,8 @@ public class RoadMap
             angleDiffs.Add(Mathf.Abs(cosineAngle));
         }
 
-
         // Get the index of the closest line
-        minDistance = Mathf.Infinity;
+        float minDistance = Mathf.Infinity;
         for (int i = 0; i < distances.Count; i++)
         {
             if (minDistance > distances[i])
@@ -220,50 +203,30 @@ public class RoadMap
 
         closestRoadMapLine = m_Lines[bestFit];
 
-
-        // check if the distance to both lines are similar then create two segments on both projections.
-        // if (Mathf.Abs(distances[closestLineIndex] - distances[secondClosestLineIndex]) < 0.5f)
-        // {
-        //     m_Lines[closestLineIndex].AddSearchSegment();
-        // }
-
-        // 
-        closestRoadMapLine.AddSearchSegment(projections[bestFit] + directions[bestFit],
-            projections[bestFit] - directions[bestFit],
-            1f);
-
-        // for (int i = 0; i < 5; i++)
-        //     ExpandSearchSegments(0.5f);
-
-        // EditorApplication.isPaused = true;
+        return projections[bestFit];
     }
 
-    // Create a search segment that doesn't belong to the road map.
-    public void CreateArbitrarySearchSegment(Vector2 position, Vector2 dir)
+    // Create a search segment that doesn't belong to the road map. The line starts from position@param and connects to the closest roadMap node
+    // in the direction of dir@param. 
+    public void CreateArbitraryRoadMapLine(Vector2 position, Vector2 dir)
     {
+        // Remove the old arbitrary road map line.
         RemoveRoadLineMap();
 
-        float minDistance = Mathf.Infinity;
-        // Direction of the phantom node movement
-        List<Vector2> directions = new List<Vector2>();
-
-        // Line the search segment lies on
-        RoadMapLine closestRoadMapLine = null;
-
-        // List of distance and direction difference of the lines and agent
+        // List of distances and direction differences of the parameters.
         List<float> distances = new List<float>();
         List<float> angleDiffs = new List<float>();
 
+        // Loop through the way points
         foreach (var wp in m_WayPoints)
         {
             // The distance from the way point to the intruder position
             float distance = Vector2.Distance(position, wp.GetPosition());
             distances.Add(distance);
 
-            // Get the normalized direction of intruder's position to the waypoint
+            // Get the normalized direction of intruder's position to the way point.
             Vector2 toWayPointDir = wp.GetPosition() - position;
             toWayPointDir = toWayPointDir.normalized;
-            directions.Add(toWayPointDir);
 
             // Get the normalized Velocity of the intruder
             Vector2 velocityNorm = dir.normalized;
@@ -277,7 +240,7 @@ public class RoadMap
         int closestWpIndex = 0;
 
         // Get the index of the closest way point that is in front of intruder 
-        minDistance = Mathf.Infinity;
+        float minDistance = Mathf.Infinity;
         for (int i = 0; i < distances.Count; i++)
         {
             if (!m_mapRenderer.VisibilityCheck(position, m_WayPoints[i].GetPosition()) || angleDiffs[i] < 0.7f)
@@ -291,23 +254,11 @@ public class RoadMap
         }
 
         // Add a new line to the road map.
-        // AddRoadLineMap(position, m_WayPoints[closestWpIndex]);
-        //
-        // m_AdHocRmLine.AddSearchSegment(position,
-        //     m_WayPoints[closestWpIndex].GetPosition(),
-        //     1f);
+        AddRoadLineMap(position, m_WayPoints[closestWpIndex]);
 
-        foreach (var rdLine in m_WayPoints[closestWpIndex].GetLines())
-        {
-            rdLine.AddSearchSegment(rdLine.wp1.GetPosition(), rdLine.wp1.GetPosition(),
-                m_WayPoints[closestWpIndex].GetLines().Count / 1f);
-        }
-
-
-        // for (int i = 0; i < 2; i++)
-        //     ExpandSearchSegments(0.5f);
-
-        // EditorApplication.isPaused = true;
+        m_AdHocRmLine.SetSearchSegment(position,
+            m_WayPoints[closestWpIndex].GetPosition(),
+            1f);
     }
 
     // Add the adhoc roadMap line to the road map, and connect it to an existing way point.
@@ -321,6 +272,9 @@ public class RoadMap
 
         m_AdHocRmLine = new RoadMapLine(m_AdHocWp, destWp);
 
+        m_AdHocWp.AddLine(m_AdHocRmLine);
+        destWp.AddLine(m_AdHocRmLine);
+
         // Add the line to the list of lines of the road map.
         m_Lines.Add(m_AdHocRmLine);
     }
@@ -333,6 +287,9 @@ public class RoadMap
 
         m_Lines.Remove(m_AdHocRmLine);
 
+        m_AdHocWp.RemoveLine(m_AdHocRmLine);
+        m_AdHocWp.GetConnections()[0].RemoveLine(m_AdHocRmLine);
+
 
         m_AdHocWp.GetConnections()[0].RemoveEdge(m_AdHocWp);
         m_AdHocWp.RemoveEdge(m_AdHocWp.GetConnections()[0]);
@@ -341,91 +298,7 @@ public class RoadMap
         m_AdHocWp = null;
     }
 
-
-    // Trim and remove search segments seen by guards
-    public void SeeSearchSegments(List<Guard> guards)
-    {
-        // Cut the search segments when seen or add new ones.
-        foreach (var line in m_Lines)
-            line.ModSearchSegments(guards);
-
-        // Modify the seen road map nodes
-        foreach (var wp in m_WayPoints)
-            wp.Seen(guards);
-    }
-
-
-    public Vector2 GetBestSearchSegment(Guard requestingGuard, List<Guard> guards, Intruder intruder,
-        List<MeshPolygon> navMesh, SearchWeights searchWeights)
-    {
-        SearchSegment bestSs = null;
-        float maxFitnessValue = Mathf.NegativeInfinity;
-
-
-        // Loop through the search segments in the lines
-        foreach (var line in m_Lines)
-        foreach (var sS in line.GetSearchSegments())
-        {
-            // Skip the segment if it has a probability of zero or less
-            if (sS.GetProbability() <= 0f)
-                continue;
-
-            // Get the distance of the closest goal other guards are coming to visit
-            float minGoalDistance = Mathf.Infinity;
-
-            foreach (var guard in guards)
-            {
-                // Skip the guard without a goal
-                if (guard.GetGoal() == null)
-                    continue;
-
-                float distanceToGuardGoal = PathFinding.GetShortestPathDistance(navMesh,
-                    (sS.position1 + sS.position2) / 2f, guard.GetGoal().Value);
-
-                if (minGoalDistance > distanceToGuardGoal)
-                {
-                    minGoalDistance = distanceToGuardGoal;
-                }
-            }
-
-            minGoalDistance = minGoalDistance == Mathf.Infinity ? 0f : minGoalDistance;
-
-            // Get the distance from the requesting guard
-            float distanceToGuard = PathFinding.GetShortestPathDistance(navMesh, (sS.position1 + sS.position2) / 2f,
-                requestingGuard.transform.position);
-
-            // Calculate the fitness of the search segment
-            // start with the probability
-            float ssFitness = sS.GetFitness();
-            
-            // Calculate the overall heuristic of this search segment
-            ssFitness = ssFitness * searchWeights.probWeight +
-                        (sS.GetAge()/Properties.MaxAge) * searchWeights.ageWeight + 
-                        (minGoalDistance / Properties.MaxPathDistance) * searchWeights.dstToGuardsWeight +
-                        (distanceToGuard / Properties.MaxPathDistance) * searchWeights.dstFromOwnWeight;
-
-
-            if (maxFitnessValue < ssFitness)
-            {
-                maxFitnessValue = ssFitness;
-                bestSs = sS;
-            }
-        }
-
-        if (bestSs == null)
-            return intruder.GetLastKnownLocation();
-
-        return (bestSs.position1 + bestSs.position2) / 2f;
-    }
-
-
-    // Expand the search segments
-    public void ExpandSearchSegments(float speed, float timeDelta)
-    {
-        foreach (var line in m_Lines)
-            line.ExpandSearch(speed, timeDelta);
-    }
-
+    
     public void ClearSearchSegments()
     {
         foreach (var line in m_Lines)
@@ -437,13 +310,6 @@ public class RoadMap
     {
         int randomIndex = Random.Range(0, m_WayPoints.Count);
         return m_WayPoints[randomIndex].GetPosition();
-    }
-
-    // Clear the probabilities in the road map nodes
-    public void ClearProbabilities()
-    {
-        foreach (var wp in m_WayPoints)
-            wp.SetProbability(0f);
     }
 
     // Render the draw interception points & search segments 

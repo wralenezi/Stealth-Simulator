@@ -73,7 +73,6 @@ public class GuardsManager : Agent
     public override void OnEpisodeBegin()
     {
         base.OnEpisodeBegin();
-
         RequestDecision();
     }
 
@@ -84,8 +83,8 @@ public class GuardsManager : Agent
         // The fraction of the guards count.
         sensor.AddObservation(m_StealthArea.GetSessionInfo().guardsCount / Properties.MaxGuardCount);
 
-        // 
-        sensor.AddObservation(m_StealthArea.mapDecomposer.GetNavMeshArea() / Properties.MaxWalkableArea);
+        // The normalized area of the map 
+        // sensor.AddObservation(m_StealthArea.mapDecomposer.GetNavMeshArea() / Properties.MaxWalkableArea);
     }
 
     // Called when the action is received.
@@ -93,10 +92,17 @@ public class GuardsManager : Agent
     {
         base.OnActionReceived(actionBuffers);
 
-        searchWeights.probWeight = Mathf.Clamp(actionBuffers.ContinuousActions[0], -1f, 1f);
-        searchWeights.ageWeight = Mathf.Clamp(actionBuffers.ContinuousActions[1], -1f, 1f);
-        searchWeights.dstToGuardsWeight = Mathf.Clamp(actionBuffers.ContinuousActions[2], -1f, 1f);
-        searchWeights.dstFromOwnWeight = Mathf.Clamp(actionBuffers.ContinuousActions[3], -1f, 1f);
+        float minBound = -1f;
+        float maxBound = 1f;
+
+        float scaleFactor = 10f;
+
+        searchWeights.probWeight = Mathf.Clamp(actionBuffers.ContinuousActions[0], minBound, maxBound) * scaleFactor;
+        searchWeights.ageWeight = Mathf.Clamp(actionBuffers.ContinuousActions[1], minBound, maxBound) * scaleFactor;
+        searchWeights.dstToGuardsWeight =
+            Mathf.Clamp(actionBuffers.ContinuousActions[2], minBound, maxBound) * scaleFactor;
+        searchWeights.dstFromOwnWeight =
+            Mathf.Clamp(actionBuffers.ContinuousActions[3], minBound, maxBound) * scaleFactor;
     }
 
     // What to do when there is no Learning behavior
@@ -109,11 +115,11 @@ public class GuardsManager : Agent
         // Default weight for the probability of the segment
         continuousActionsOut[0] = 1f;
         // Default weight for the age of the segment
-        continuousActionsOut[1] = 0f;
+        continuousActionsOut[1] = 0.3f;
         // Default weight for the distance to other guards' closest goal of the segment
         continuousActionsOut[2] = 1f;
         // Default weight for the distance of the segment
-        continuousActionsOut[3] = 0f;
+        continuousActionsOut[3] = -0.8f;
     }
 
     // End the episode.
@@ -122,13 +128,14 @@ public class GuardsManager : Agent
         float reward = m_Intruders[0].GetPercentAlertTime();
         reward += m_Intruders[0].GetNumberOfTimesSpotted() * 0.01f;
 
-
         SetReward(reward);
         EndEpisode();
     }
 
     #endregion
 
+
+    #region NPC creation
 
     // Create an NPC
     private void CreateNpc(NpcData npcData, WorldRepType world, List<MeshPolygon> navMesh, StealthArea area)
@@ -234,6 +241,8 @@ public class GuardsManager : Agent
         m_state.ChangeState(new Patrol(this));
     }
 
+    #endregion
+
 
     // Update the guards FoV
     public void UpdateGuardVision()
@@ -275,7 +284,31 @@ public class GuardsManager : Agent
         GameManager.MainCamera.transform.position = new Vector3(pos.x, pos.y, -1f);
     }
 
-    // 
+    // Update the search area in case the guards are searching for an intruder
+    public void UpdateSearcher(float timeDelta)
+    {
+        // Move and propagate the possible intruder position (phantoms)
+        if (GetState() is Search)
+        {
+            m_StealthArea.searcher.UpdateSearcher(m_Intruders[0].GetNpcSpeed(), m_Guards, timeDelta);
+        }
+    }
+
+    // Update the guards observations to react properly to changes
+    public void UpdateObservations()
+    {
+        StopIntercepting();
+    }
+
+    #region FSM functions
+
+    // Get current state
+    public IState GetState()
+    {
+        return m_state.GetState();
+    }
+
+    // Update the label of the status of the game.
     public void UpdateGuiLabel()
     {
         if (GetState() is Chase)
@@ -295,36 +328,12 @@ public class GuardsManager : Agent
         }
     }
 
-
-    // Update the search area in case the guards are searching for an intruder
-    public void UpdateSearchArea(float timeDelta)
-    {
-        // Move and propagate the possible intruder position (phantoms)
-        if (GetState() is Search)
-            m_StealthArea.interceptor.ExpandSearch(m_Intruders[0].GetNpcSpeed(), m_Guards, timeDelta);
-    }
-
-    // Update the guards observations to react properly to changes
-    public void UpdateObservations()
-    {
-        StopIntercepting();
-    }
-
-    #region FSM functions
-
-    // Get current state
-    public IState GetState()
-    {
-        return m_state.GetState();
-    }
-
     // Order Guards to patrol
     public void Patrol()
     {
         foreach (var guard in m_Guards)
             guard.Patrol();
     }
-
 
     // Once a intruder is seen one guard will be chasing and the others will be intercepting by being assigned "interception" locations.
     public void AssignGuardRoles()
@@ -479,11 +488,6 @@ public class GuardsManager : Agent
             guard.ClearGoal();
     }
 
-    // In case of an intruder is located order the guard to chase to that assigned @param: target
-    public void UpdateChasingTarget(Vector2 target)
-    {
-    }
-
     // In case the intruder is not seen and the guards were on alert, start the search or keep doing it.
     public void StartSearch()
     {
@@ -492,14 +496,12 @@ public class GuardsManager : Agent
         {
             m_state.ChangeState(new Search(this));
 
-
+            // Intruders will start their hiding behavior.
             foreach (var intruders in m_Intruders)
-            {
                 intruders.StartHiding();
-            }
 
             // Flow the probability 
-            m_StealthArea.interceptor.PlaceInterceptionForSearch(m_Intruders[0].GetLastKnownLocation(),
+            m_StealthArea.searcher.PlaceSsForSearch(m_Intruders[0].GetLastKnownLocation(),
                 m_Intruders[0].GetDirection());
 
             AssignGuardRoles();
@@ -527,7 +529,7 @@ public class GuardsManager : Agent
     {
         foreach (var guard in m_Guards)
         {
-            // Don't wait till the guard is free and just guide them 
+            // Don't wait till the guard is free and just guide them to intruder's actual position.
             if (m_guardPlanner.search == GuardSearchPlanner.Cheating)
             {
                 guard.SetGoal(m_Intruders[0].transform.position, true);
@@ -539,14 +541,19 @@ public class GuardsManager : Agent
             if (guard.IsIdle())
             {
                 // Search behavior based on the planner type 
-                if (m_guardPlanner.search == GuardSearchPlanner.RoadMapPropagation)
+                if (m_guardPlanner.search == GuardSearchPlanner.RmPropSimple ||
+                    m_guardPlanner.search == GuardSearchPlanner.RmPropOccupancyDiffusal)
                 {
                     // Get the search segment the guard should see
-                    guard.SetGoal(
-                        m_StealthArea.interceptor.GetSearchSegment(guard, m_Guards, m_Intruders[0],
-                            m_StealthArea.worldRep.GetNavMesh(),
-                            searchWeights),
-                        false);
+                    // guard.SetGoal(
+                    //     m_StealthArea.interceptor.GetSearchSegment(guard, m_Guards, m_Intruders[0],
+                    //         m_StealthArea.worldRep.GetNavMesh(),
+                    //         searchWeights),
+                    //     false);
+
+                    SwapGoal(guard, m_StealthArea.searcher.GetSearchSegment(guard, m_Guards, m_Intruders[0],
+                        m_StealthArea.worldRep.GetNavMesh(),
+                        searchWeights));
                 }
                 else if (m_guardPlanner.search == GuardSearchPlanner.Random)
                 {
@@ -557,13 +564,50 @@ public class GuardsManager : Agent
         }
     }
 
-
     public void EndSearch()
     {
         m_StealthArea.interceptor.Clear();
     }
 
     #endregion
+
+
+    // Assign goal to closest guard and swap goals.
+    public void SwapGoal(Guard assignedGuard, Vector2 newGoal)
+    {
+        float minDistance = Vector2.Distance(assignedGuard.transform.position, newGoal);
+        Guard closestGuard = null;
+        for (int i = 0; i < m_Guards.Count; i++)
+        {
+            Guard curGuard = m_Guards[i];
+            if (curGuard != assignedGuard)
+            {
+                float dstToOldGuard = Vector2.Distance(curGuard.transform.position, newGoal);
+
+                // Check if the other guard is closer
+                if (minDistance > dstToOldGuard)
+                {
+                    minDistance = dstToOldGuard;
+                    closestGuard = curGuard;
+                }
+            }
+        }
+
+        if (closestGuard != null)
+        {
+            if (closestGuard.GetGoal() != null)
+            {
+                Vector2 tempGoal = closestGuard.GetGoal().Value;
+                assignedGuard.SetGoal(tempGoal, true);
+            }
+
+            closestGuard.SetGoal(newGoal, true);
+        }
+        else
+        {
+            assignedGuard.SetGoal(newGoal, false);
+        }
+    }
 
 
     // Let NPCs cast their vision
@@ -580,7 +624,7 @@ public class GuardsManager : Agent
     public void MakeDecision()
     {
         // Update the state of the guards manager
-        m_state.Update();
+        m_state.UpdateState();
 
         foreach (var intruder in m_Intruders)
             intruder.ExecuteState();

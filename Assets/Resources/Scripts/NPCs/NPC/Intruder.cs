@@ -64,7 +64,7 @@ public class Intruder : NPC
             MoveByInput();
         else
         {
-            m_state.Update();
+            m_state.UpdateState();
         }
     }
 

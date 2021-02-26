@@ -32,18 +32,21 @@ public class MapDrawer : MonoBehaviour
 
     public Button SaveBtn;
 
+    // Location of the data for the game
+    public static string DataPath;
+    public static string MapsDataPath = "MapsData/";
+    public static string MapsPath = "Maps/";
+
     void Start()
     {
+        m_walls = new List<List<Vector2>>();
+        m_WallsGameObjects = new List<GameObject>();
+        m_Lines = new List<LineRenderer>();
+
         m_wallPrefab = (GameObject) Resources.Load("Prefabs/Line");
 
         // Check if there is the drawing grid attached, if so link it and reset the grid.
         TryGetComponent(out m_grid);
-
-        m_walls = new List<List<Vector2>>();
-
-        m_WallsGameObjects = new List<GameObject>();
-
-        m_Lines = new List<LineRenderer>();
 
         StartNewWall();
 
@@ -54,12 +57,19 @@ public class MapDrawer : MonoBehaviour
         RemoveLastWallBtn.onClick.AddListener(RemoveLastWall);
 
         SaveBtn.onClick.AddListener(SaveMap);
+
+        // Define the paths for the game
+        // Main path
+        DataPath = Application.dataPath + "/Data/";
+        // Map related data paths
+        MapsDataPath = DataPath + MapsDataPath;
+        MapsPath = MapsDataPath + MapsPath;
     }
 
     string GetPath(string mapName)
     {
         // Gets the path to the "Assets" folder 
-        return Application.dataPath + "/MapData/" + mapName + ".csv";
+        return MapsPath + mapName + ".csv";
     }
 
     void StartNewWall()

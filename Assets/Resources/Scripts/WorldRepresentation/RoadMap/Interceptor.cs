@@ -8,6 +8,8 @@ using Random = UnityEngine.Random;
 
 public class Interceptor : MonoBehaviour
 {
+    private StealthArea m_StealthArea;
+
     // The distance the interception points are placed on
     private float m_futureDistance = 8f;
 
@@ -22,12 +24,12 @@ public class Interceptor : MonoBehaviour
     public bool RenderRoadMap;
 
     // Start is called before the first frame update
-    public void Initiate(SAT sat, MapRenderer mapRenderer)
+    public void Initiate(StealthArea stealthArea)
     {
         m_interceptionPoints = new List<InterceptionPoint>();
-        m_roadMap = new RoadMap(sat, mapRenderer);
+        m_StealthArea = stealthArea;
+        m_roadMap = m_StealthArea.roadMap;
     }
-
 
     // Anticipate future positions based on the distance measure from the current position for the pursuit phase
     public void CreatePossiblePositions(Vector2 position, Vector2 dir)
@@ -35,51 +37,14 @@ public class Interceptor : MonoBehaviour
         Clear();
 
         // Get the projection point 
-        InterceptionPoint phNode = m_roadMap.GetInterceptionPointOnRoadMap(position, dir);
+        // InterceptionPoint phNode = m_roadMap.GetInterceptionPointOnRoadMap(position, dir);
 
-        PlacePossiblePositions(phNode, 0, m_futureDistance);
-    }
-
-
-    // Move the interception point for the search phase
-    public void PlaceInterceptionForSearch(Vector2 position, Vector2 dir)
-    {
-        Clear();
-
-        // Insert the search segment 
-        //m_roadMap.InsertSearchLineSegment(position, dir);
-        m_roadMap.CreateArbitrarySearchSegment(position, dir);
-    }
-
-
-    // Start moving the phantoms across the road map and trim them if seen by guards
-    public void ExpandSearch(float speed, List<Guard> guards, float timeDelta)
-    {
-        m_roadMap.ExpandSearchSegments(speed, timeDelta);
-        m_roadMap.SeeSearchSegments(guards);
-    }
-
-    public int GetSearchSegmentCount()
-    {
-        int count = 0;
-        foreach (var roadMapLine in m_roadMap.GetLines())
-        foreach (var ss in roadMapLine.GetSearchSegments())
-        {
-            count++;
-        }
-
-        return count;
+        // PlacePossiblePositions(phNode, 0, m_futureDistance);
     }
 
     public Vector2 GetRandomRoadMapNode()
     {
         return m_roadMap.GetRandomRoadMapNode();
-    }
-
-    public Vector2 GetSearchSegment(Guard requestingGuard, List<Guard> guards, Intruder intruder,
-        List<MeshPolygon> navMesh, SearchWeights searchWeights)
-    {
-        return m_roadMap.GetBestSearchSegment(requestingGuard, guards, intruder, navMesh, searchWeights);
     }
 
     // Return interception points and if all are visited propagate them and return the new interceptions points
@@ -88,18 +53,10 @@ public class Interceptor : MonoBehaviour
         return m_interceptionPoints;
     }
 
-    // If the search is active; meaning that there are phantoms propagating on the road map
-    public bool IsSearchActive()
-    {
-        return m_interceptionPoints.Count > 0;
-    }
-
     // The search is over so clear the variables
     public void Clear()
     {
         m_interceptionPoints.Clear();
-        m_roadMap.ClearProbabilities();
-        m_roadMap.ClearSearchSegments();
     }
 
 
@@ -205,12 +162,6 @@ public class Interceptor : MonoBehaviour
     {
         if (IsRenderInterceptionPoints)
         {
-            if (m_roadMap != null)
-            {
-                m_roadMap.DrawSearchSegments();
-                // m_roadMap.DrawWayPoints();
-            }
-
             if (m_interceptionPoints != null)
                 foreach (var iP in m_interceptionPoints)
                 {

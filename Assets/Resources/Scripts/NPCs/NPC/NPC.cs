@@ -14,6 +14,8 @@ public abstract class NPC : MonoBehaviour
     // NPC Rigid body for physics
     private Rigidbody2D m_NpcRb;
 
+    private Transform m_transform;
+
     // The world representation
     protected WorldRep World;
 
@@ -52,8 +54,9 @@ public abstract class NPC : MonoBehaviour
     // Called when the agent is first created
     public virtual void Initiate()
     {
+        m_transform = transform;
         PathToTake = new List<Vector2>();
-        World = transform.parent.parent.Find("Map").GetComponent<WorldRep>();
+        World = GetTransform().parent.parent.Find("Map").GetComponent<WorldRep>();
     }
 
     // The set up of the start of the episode
@@ -78,14 +81,19 @@ public abstract class NPC : MonoBehaviour
     // Update the agent's last position
     public void SetPosition()
     {
-        m_LastPosition = transform.position;
+        m_LastPosition = GetTransform().position;
+    }
+
+    public Transform GetTransform()
+    {
+        return m_transform;
     }
 
     // Get a vector that represents the agents orientation around the z-axis
     public Vector2 GetDirection()
     {
         Vector2 dir = -Vector2.right;
-        float rad = transform.eulerAngles.z * Mathf.Deg2Rad;
+        float rad = GetTransform().eulerAngles.z * Mathf.Deg2Rad;
         float s = Mathf.Sin(rad);
         float c = Mathf.Cos(rad);
         return new Vector2(
@@ -112,7 +120,7 @@ public abstract class NPC : MonoBehaviour
             {
                 // Randomly place the NPC on the map
                 int polygonIndex = Random.Range(0, navMesh.Count);
-                transform.position = navMesh[polygonIndex].GetCentroidPosition();
+                GetTransform().position = navMesh[polygonIndex].GetCentroidPosition();
             }
             // if the npc is an intruder then place in front of one of the guards
             else if (Data.npcType == NpcType.Intruder)
@@ -122,22 +130,22 @@ public abstract class NPC : MonoBehaviour
                 {
                     int guardIndex = Random.Range(0, guards.Count);
                     Guard guard = guards[guardIndex];
-                    transform.position = GetPositionNearNpc(guard.transform, mapWalls);
+                    GetTransform().position = GetPositionNearNpc(guard.GetTransform(), mapWalls);
 
                     // Find the angle needed to rotate to face the desired direction
-                    Vector2 rotateDir = (transform.position - guard.transform.position).normalized;
+                    Vector2 rotateDir = (GetTransform().position - guard.GetTransform().position).normalized;
                     float m_goalAngle = Vector2.SignedAngle(Vector2.up, rotateDir);
 
                     Quaternion toRotation = Quaternion.AngleAxis(m_goalAngle, Vector3.forward);
-                    guard.transform.rotation = toRotation;
+                    guard.GetTransform().rotation = toRotation;
                 }
             }
         }
         else
         {
             // Set the agent to the specified location
-            transform.position = (Vector2) Data.location.Value.position;
-            transform.rotation = Quaternion.AngleAxis(Data.location.Value.rotation, Vector3.forward);
+            GetTransform().position = (Vector2) Data.location.Value.position;
+            GetTransform().rotation = Quaternion.AngleAxis(Data.location.Value.rotation, Vector3.forward);
         }
     }
 
@@ -149,7 +157,7 @@ public abstract class NPC : MonoBehaviour
         Vector2 place = transform.position + transform.up * distanceMultiplier;
         if (PolygonHelper.IsPointInPolygons(mapWalls, place))
             return place;
-        
+
         place = transform.position - transform.up * distanceMultiplier;
         if (PolygonHelper.IsPointInPolygons(mapWalls, place))
             return place;
@@ -165,7 +173,7 @@ public abstract class NPC : MonoBehaviour
         return transform.position;
     }
 
-    
+
     // Define a goal for the agent and set the path to navigate to it,
     public void SetGoal(Vector2 _goal, bool isForced)
     {
@@ -179,8 +187,8 @@ public abstract class NPC : MonoBehaviour
     public void SetPathToGoal()
     {
         if (Goal != null)
-            PathToTake = PathFinding.GetShortestPath(World.GetNavMesh(),
-                transform.position, Goal.Value);
+            PathFinding.GetShortestPath(World.GetNavMesh(),
+                GetTransform().position, Goal.Value, PathToTake);
     }
 
     // Get the agents goal
@@ -213,24 +221,27 @@ public abstract class NPC : MonoBehaviour
     // Rotate to a specific target and then move towards it; return a boolean if the point is reached or not
     protected bool GoStraightTo(Vector3 target, IState state, GuardRole? guardRole, float deltaTime)
     {
+        Vector3 currentPosition = GetTransform().position;
+        Quaternion currentRotation = GetTransform().rotation;
+
         // Find the angle needed to rotate to face the desired direction
-        Vector2 rotateDir = (target - transform.position).normalized;
+        Vector2 rotateDir = (target - currentPosition).normalized;
         float m_goalAngle = Vector2.SignedAngle(Vector2.up, rotateDir);
 
         Quaternion toRotation = Quaternion.AngleAxis(m_goalAngle, Vector3.forward);
-        float angleLeft = Mathf.Round(toRotation.eulerAngles.z - transform.rotation.eulerAngles.z);
+        float angleLeft = Mathf.Round(toRotation.eulerAngles.z - currentRotation.eulerAngles.z);
 
         // Make sure no rotation is due before moving
         if (Mathf.Abs(angleLeft) > 0f)
         {
             float rotationStep = Mathf.Min(Mathf.Abs(angleLeft), NpcRotationSpeed * deltaTime);
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, toRotation,
+            GetTransform().rotation = Quaternion.RotateTowards(currentRotation, toRotation,
                 rotationStep);
             return false;
         }
 
         // Handle movement
-        float distanceLeft = Vector2.Distance(transform.position, target);
+        float distanceLeft = Vector2.Distance(currentPosition, target);
 
         // How to behavior when heading for the last way point (goal)
         if (PathToTake[PathToTake.Count - 1] == (Vector2) target)
@@ -243,8 +254,8 @@ public abstract class NPC : MonoBehaviour
         if (distanceLeft > 0.1f)
         {
             float distanceToMove = Mathf.Min(NpcSpeed * deltaTime, distanceLeft);
-            m_NpcRb.MovePosition(m_NpcRb.position +
-                                 ((Vector2) transform.up * distanceToMove));
+            m_NpcRb.MovePosition((Vector2) currentPosition +
+                                 ((Vector2) GetTransform().up * distanceToMove));
 
             // Update the total distance traveled
             if (m_LastPosition != null)
@@ -275,11 +286,11 @@ public abstract class NPC : MonoBehaviour
         {
             float m_goalAngle = Vector2.SignedAngle(Vector2.up, dir);
             Quaternion toRotation = Quaternion.AngleAxis(m_goalAngle, Vector3.forward);
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, toRotation,
+            GetTransform().rotation = Quaternion.RotateTowards(GetTransform().rotation, toRotation,
                 NpcRotationSpeed * Time.fixedDeltaTime * 10f);
         }
 
-        m_NpcRb.MovePosition(m_NpcRb.position + dir.normalized * (NpcSpeed * Time.fixedDeltaTime));
+        m_NpcRb.MovePosition((Vector2) GetTransform().position + dir.normalized * (NpcSpeed * Time.fixedDeltaTime));
     }
 
     // Clear the designated goal and path to take
@@ -306,7 +317,7 @@ public abstract class NPC : MonoBehaviour
     // Update the total distance travelled by the NPC for logging purposes
     private void UpdateDistance()
     {
-        var position = transform.position;
+        var position = GetTransform().position;
         var distanceTravelled = Vector2.Distance(position, m_LastPosition.Value);
         m_TotalDistanceTravelled += distanceTravelled;
         m_LastPosition = position;

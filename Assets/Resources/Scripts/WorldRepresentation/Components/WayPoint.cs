@@ -15,13 +15,10 @@ public class WayPoint
 
     // Distance to incoming possible intruder position
     private float m_Distance;
-
-    // Probability of finding the intruder in this region
-    private float m_Probability;
-
+    
     // The ID of the way point
     public readonly int Id;
-    
+
     // the ID of the wall this way point belong to. This is for the visibility graph
     public int WallId;
 
@@ -38,7 +35,6 @@ public class WayPoint
         m_Position = _position;
         m_Connections = new List<WayPoint>();
         m_MapLines = new List<RoadMapLine>();
-        m_Probability = 0f;
         Id = _id;
     }
 
@@ -61,19 +57,24 @@ public class WayPoint
     {
         m_Distance = (distance);
     }
-
-    public void SetProbability(float probability)
-    {
-        m_Probability = probability;
-    }
-
+    
     public void AddLines(List<RoadMapLine> lines)
     {
         foreach (var line in lines)
         {
             if (line.IsPointPartOfLine(this))
-                m_MapLines.Add(line);
+                AddLine(line);
         }
+    }
+
+    public void AddLine(RoadMapLine line)
+    {
+        m_MapLines.Add(line);
+    }
+
+    public void RemoveLine(RoadMapLine line)
+    {
+        m_MapLines.Remove(line);
     }
 
     public List<RoadMapLine> GetLines()
@@ -81,9 +82,9 @@ public class WayPoint
         return m_MapLines;
     }
 
-    public float GetProbability()
+    public float GetFvalue()
     {
-        return m_Probability;
+        return hDistance + gDistance;
     }
 
 
@@ -91,17 +92,7 @@ public class WayPoint
     {
         return m_Connections;
     }
-
-    // Process if the roadmap has been seen by a guard
-    public void Seen(List<Guard> guards)
-    {
-        foreach (var guard in guards)
-        {
-            if (guard.GetFoV().IsCircleInPolygon(m_Position, 0.05f))
-                SetProbability(0f);
-        }
-    }
-
+    
     // Insert the distance to the neighboring way points except the source
     public void InsertDistancesToNeighbors(WayPoint source, float totalDistance)
     {
