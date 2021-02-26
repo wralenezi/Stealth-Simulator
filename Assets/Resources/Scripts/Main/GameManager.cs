@@ -59,6 +59,9 @@ public class GameManager : MonoBehaviour
         // Set the simulation speed
         Time.timeScale = SimulationSpeed;
 
+        // Initiate the containers for path finding.
+        PathFinding.Initiate();
+
         // Load the next session
         LoadNextScenario();
     }
@@ -178,7 +181,7 @@ public enum Logging
 // World Representation Type 
 public enum WorldRepType
 {
-    VisMesh,
+    Continuous,
     Grid
 }
 
@@ -204,7 +207,11 @@ public enum GuardSearchPlanner
     Random,
 
     // The guards search the road map while propagating the probability of the intruder's presence.
-    RoadMapPropagation,
+    // The probability is diffused similarly to Damian Isla's implementation
+    RmPropOccupancyDiffusal,
+    
+    // The probability is simply propagated through the road map.
+    RmPropSimple,
 
     // The guards know the intruder's position at all times.
     Cheating
@@ -360,7 +367,7 @@ public struct Session
     public int coveredRegionResetThreshold;
 
     // Number of guards
-    public int guardsCount;
+    public float guardsCount;
 
     // Number of Intruders
     public int intruderCount;
