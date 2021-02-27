@@ -45,7 +45,7 @@ public class Intruder : NPC
 
         // Multiply the intruder's speed
         NpcSpeed *= 1.5f;
-        NpcRotationSpeed *= 2f;
+        NpcRotationSpeed *= 1f;
     }
     
     public override void ResetNpc()
