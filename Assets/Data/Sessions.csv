@@ -1,8 +1,8 @@
 GameCode,Scenario,CoverageResetThreshold,WorldRep,Map,MapScale,GuardPatrolPlanner,GuardChasePlanner,GuardSearchPlanner,GuardsCount,PathFindingHeursitic,PathFollowing,IntudersCount,IntruderPlanner,PathFindingHeursitic,PathFollowing
-SimpleRandom,Chase,100,Continuous,CoD_relative,0.1,Stalest,Simple,RmPropSimple,2,EuclideanDst,SimpleFunnel,1,Heuristic,EuclideanDst,SimpleFunnel
+SimpleRandom,Chase,100,Continuous,valorant_ascent,2,Stalest,Simple,RmPropOccupancyDiffusal,2,EuclideanDst,SimpleFunnel,1,Heuristic,EuclideanDst,SimpleFunnel
 SimpleRandom,Chase,100,Continuous,valorant_ascent,2,Stalest,Simple,RmPropSimple,2,EuclideanDst,SimpleFunnel,1,Heuristic,EuclideanDst,SimpleFunnel
 SimpleRandom,Chase,100,Continuous,CoD_relative,0.1,Stalest,Simple,RmPropOccupancyDiffusal,2,EuclideanDst,SimpleFunnel,1,Heuristic,EuclideanDst,SimpleFunnel
-SimpleRandom,Chase,100,Continuous,valorant_ascent,2,Stalest,Simple,RmPropOccupancyDiffusal,2,EuclideanDst,SimpleFunnel,1,Heuristic,EuclideanDst,SimpleFunnel
+SimpleRandom,Chase,100,Continuous,CoD_relative,0.1,Stalest,Simple,RmPropSimple,2,EuclideanDst,SimpleFunnel,1,Heuristic,EuclideanDst,SimpleFunnel
 SimpleRandom,Chase,100,Continuous,valorant_ascent,2,Stalest,Simple,Random,2,EuclideanDst,SimpleFunnel,1,Heuristic,EuclideanDst,SimpleFunnel
 SimpleRandom,Chase,100,Continuous,valorant_ascent,2,Stalest,Simple,Cheating,2,EuclideanDst,SimpleFunnel,1,Heuristic,EuclideanDst,SimpleFunnel
 SimpleRandom,Chase,100,Continuous,CoD_relative,0.1,Stalest,Simple,Random,2,EuclideanDst,SimpleFunnel,1,Heuristic,EuclideanDst,SimpleFunnel
