@@ -287,10 +287,10 @@ public abstract class NPC : MonoBehaviour
             float m_goalAngle = Vector2.SignedAngle(Vector2.up, dir);
             Quaternion toRotation = Quaternion.AngleAxis(m_goalAngle, Vector3.forward);
             GetTransform().rotation = Quaternion.RotateTowards(GetTransform().rotation, toRotation,
-                NpcRotationSpeed * Time.fixedDeltaTime * 10f);
+                NpcRotationSpeed * Time.deltaTime * 10f);
         }
 
-        m_NpcRb.MovePosition((Vector2) GetTransform().position + dir.normalized * (NpcSpeed * Time.fixedDeltaTime));
+        m_NpcRb.MovePosition((Vector2) GetTransform().position + dir.normalized * (NpcSpeed * Time.deltaTime));
     }
 
     // Clear the designated goal and path to take
