@@ -56,10 +56,10 @@ public static class Properties
     // NPC Properties
     public const float SpeedMultiplyer = 1f;
     public const float NpcSpeed = 4f * SpeedMultiplyer;
-    public const float NpcRotationSpeed = 200f * SpeedMultiplyer;
+    public const float NpcRotationSpeed = 400f * SpeedMultiplyer;
 
     // Field of View Properties
-    private const float viewRadiusFractionOfMap = 0.1f;
+    private const float viewRadiusFractionOfMap = 0.2f;
 
     // Set the default value for view radius for the Npcs
     public static void SetViewRadius(float maxWidth)
@@ -74,13 +74,13 @@ public static class Properties
     //-----------------------------------------------------------------------------
     // Search Parameters
     // Rate of increase of the probability value of search segment
-    public static readonly float ProbabilityIncreaseRate = 0.002f * NpcSpeed;
-    public static readonly float DiscountFactor = 0.9f;
-    public static readonly float PropagationMultiplier = 4f;
+    public static readonly float ProbabilityIncreaseRate = 0.001f * NpcSpeed;
+    public static readonly float DiscountFactor = 0.97f;
+    public static readonly float PropagationMultiplier = 0.5f * NpcSpeed;
 
     // Parameters of Damian Isla implementation
     // Probability Diffuse factor; it tunes how fast the probability is propagated.
-    public static readonly float ProbDiffFac = 0.05f * NpcSpeed;
+    public static readonly float ProbDiffFac = 0.1f;// * NpcSpeed;
 
     // Max length a search segment can have
     public static readonly float MaxEdgeLength = 2f;
