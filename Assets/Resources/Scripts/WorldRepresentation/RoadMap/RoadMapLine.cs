@@ -39,12 +39,16 @@ public class RoadMapLine
 
     // Add a possible line where the intruder might be in
     public void SetSearchSegment(Vector2 startingPos1, Vector2 startingPos2, float prob,
-        float timestamp = 0f)
+        float timestamp)
     {
         m_SearchSegment.SetSsData(startingPos1, startingPos2, prob);
+        m_SearchSegment.SetTimestamp(timestamp);
+    }
 
-        if (timestamp != 0f)
-            m_SearchSegment.SetTimestamp(timestamp);
+    public void ProbabgateToSegment(Vector2 startPostion, float prob, float timeStamp)
+    {
+        GetSearchSegment().isPropagated = true;
+        SetSearchSegment(startPostion, startPostion, prob, timeStamp);
     }
 
     // Expand the search segments
@@ -92,13 +96,12 @@ public class RoadMapLine
     {
         SearchSegment sS = GetSearchSegment();
 
-        if (sS.reached1)
+        if (GetSearchSegment().IsActive() && GetSearchSegment().GetAge() > 0.1f)
+        {
             sS.PropagateDestination(1);
-
-        if (sS.reached2)
             sS.PropagateDestination(2);
+        }
     }
-
 
     // Get search segments
     public SearchSegment GetSearchSegment()
@@ -108,17 +111,25 @@ public class RoadMapLine
 
     // Remove part of the old search segment to add a new one
     // Returns true if it is seen
-    public bool CheckSeenSegment(Polygon foV)
+    public void CheckSeenSegment(Polygon foV, Vector2 position)
     {
+        if (GetSearchSegment().GetAge() < 0.05f)
+            return;
+
         List<Vector2> intersections = foV.GetIntersectionWithLine(GetSearchSegment().position1,
             GetSearchSegment().position2,
             out var isIp1In, out var isIp2In);
 
+        bool isMidPointInFov = foV.IsPointInPolygon(GetSearchSegment().GetMidPoint(), false);
+
+        float distanceFromGuard = Vector2.Distance(GetSearchSegment().GetMidPoint(), position);
+
+
         // Check if the segment is completely is in the field of vision
-        if (isIp1In && isIp2In && foV.IsPointInPolygon(GetSearchSegment().GetMidPoint(), false))
+        if ((isIp1In && isIp2In && isMidPointInFov) || distanceFromGuard <= 2f)
         {
             GetSearchSegment().Seen();
-            return true;
+            return;
         }
 
         // if there is an intersection
@@ -135,8 +146,6 @@ public class RoadMapLine
                 GetSearchSegment().position2 = intersections[0];
             }
         }
-
-        return false;
     }
 
     // Search segment is no longer need, so it is reset.
