@@ -500,6 +500,9 @@ public class GuardsManager : Agent
             foreach (var intruders in m_Intruders)
                 intruders.StartHiding();
 
+            // Clear the search road map
+            // m_StealthArea.searcher.Clear();
+
             // Flow the probability 
             m_StealthArea.searcher.PlaceSsForSearch(m_Intruders[0].GetLastKnownLocation(),
                 m_Intruders[0].GetDirection());
@@ -566,7 +569,7 @@ public class GuardsManager : Agent
 
     public void EndSearch()
     {
-        m_StealthArea.interceptor.Clear();
+        m_StealthArea.searcher.Clear();
     }
 
     #endregion
