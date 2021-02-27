@@ -253,12 +253,19 @@ public class RoadMap
             }
         }
 
-        // Add a new line to the road map.
-        AddRoadLineMap(position, m_WayPoints[closestWpIndex]);
+        // // Add a new line to the road map.
+        // AddRoadLineMap(position, m_WayPoints[closestWpIndex]);
+        //
+        // m_AdHocRmLine.SetSearchSegment(position,
+        //     m_WayPoints[closestWpIndex].GetPosition(),
+        //     1f);
 
-        m_AdHocRmLine.SetSearchSegment(position,
-            m_WayPoints[closestWpIndex].GetPosition(),
-            1f);
+
+        WayPoint wp1 = m_WayPoints[closestWpIndex];
+        foreach (var line in wp1.GetLines())
+        {
+            line.SetSearchSegment(wp1.GetPosition(), wp1.GetPosition(), 1f, StealthArea.episodeTime);
+        }
     }
 
     // Add the adhoc roadMap line to the road map, and connect it to an existing way point.
@@ -298,7 +305,7 @@ public class RoadMap
         m_AdHocWp = null;
     }
 
-    
+
     public void ClearSearchSegments()
     {
         foreach (var line in m_Lines)
