@@ -26,15 +26,11 @@ public class Searcher : MonoBehaviour
                 break;
             }
         }
-
-        RenderSearchSegments = true;
     }
 
     // Move the interception point for the search phase
     public void PlaceSsForSearch(Vector2 position, Vector2 dir)
     {
-        Clear();
-
         // Insert the search segment 
         m_roadMap.CreateArbitraryRoadMapLine(position, dir);
     }
@@ -57,8 +53,12 @@ public class Searcher : MonoBehaviour
         foreach (var line in m_roadMap.GetLines())
         {
             SimplePropagation(timeDelta, line);
-            CheckSeenSs(guards, line);
             line.ExpandSs(speed, timeDelta);
+        }
+
+        foreach (var line in m_roadMap.GetLines())
+        {
+            CheckSeenSs(guards, line);
         }
     }
 
@@ -68,8 +68,12 @@ public class Searcher : MonoBehaviour
         foreach (var line in m_roadMap.GetLines())
         {
             DiffuseProb(line);
-            CheckSeenSs(guards, line);
             line.ExpandSs(speed, timeDelta);
+        }
+
+        foreach (var line in m_roadMap.GetLines())
+        {
+            CheckSeenSs(guards, line);
         }
 
         NormalizeProbs();
@@ -106,10 +110,12 @@ public class Searcher : MonoBehaviour
                 neighborsCount++;
             }
 
+        // float
 
         float newProbability = (1f - Properties.ProbDiffFac) * sS.GetProbability() +
                                (Properties.ProbDiffFac / neighborsCount) * probabilitySum;
 
+        // if (newProbability > sS.GetProbability())
         sS.SetProb(newProbability);
     }
 
@@ -121,7 +127,7 @@ public class Searcher : MonoBehaviour
             Polygon foV = guard.GetFoV();
 
             // Trim the parts seen by the guards and reset the section if it is all seen 
-            line.CheckSeenSegment(foV);
+            line.CheckSeenSegment(foV, guard.GetTransform().position);
         }
     }
 
@@ -159,8 +165,8 @@ public class Searcher : MonoBehaviour
             SearchSegment sS = line.GetSearchSegment();
 
             // Skip the segment if it has a probability of zero or less
-            if (sS.GetProbability() <= 0.2f)
-                continue;
+            // if (sS.GetProbability() <= 0.2f)
+            //     continue;
 
             // Get the distance of the closest goal other guards are coming to visit
             float minGoalDistance = Mathf.Infinity;
