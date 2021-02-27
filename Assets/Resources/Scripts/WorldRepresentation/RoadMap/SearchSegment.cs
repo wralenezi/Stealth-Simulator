@@ -5,8 +5,8 @@ using UnityEngine;
 // A line segment that represents a possible area to search in for an intruder
 public class SearchSegment
 {
-    // Check if the segment is seen at least once by a guard
-    private bool isSeen;
+    // Check if the segment si propagated to once already.
+    public bool isPropagated;
 
     // Probability of the intruder is in this segment
     private float m_Probability;
@@ -16,7 +16,7 @@ public class SearchSegment
     private Vector2 m_segmentMidPoint;
 
     // The timestamp the segment was created on
-    public int timestamp;
+    public float timestamp;
 
     // The first destination of the line segment 
     private WayPoint m_destination1;
@@ -56,8 +56,8 @@ public class SearchSegment
     public void Reset()
     {
         SetDefaultProb();
-        SetTimestamp(StealthArea.episodeTime);
-        isSeen = false;
+        SetTimestamp(0f);
+        isPropagated = false;
     }
 
     // Set the search segment with new values
@@ -73,7 +73,7 @@ public class SearchSegment
     // Set the timestamp the search segment was create on
     public void SetTimestamp(float tstamp)
     {
-        timestamp = Mathf.RoundToInt(tstamp);
+        timestamp = tstamp;
     }
 
     public Vector2 GetMidPoint()
@@ -84,9 +84,14 @@ public class SearchSegment
     // Get the age of the search segment
     public float GetAge()
     {
-        int age = (Mathf.RoundToInt(StealthArea.episodeTime) - timestamp);
+        float age = StealthArea.episodeTime - timestamp;
 
-        return Mathf.Min(age, Properties.MaxAge);
+        return age;
+    }
+
+    public bool IsActive()
+    {
+        return timestamp != 0f;
     }
 
     // Get the fitness value of the search segment
@@ -100,7 +105,6 @@ public class SearchSegment
     {
         SetTimestamp(StealthArea.episodeTime);
         SetProb(MinProbability);
-        isSeen = true;
         reached1 = false;
         reached2 = false;
     }
@@ -124,7 +128,7 @@ public class SearchSegment
 
     public void Expand(float speed, float timeDelta)
     {
-        float slowSpeed = 0.2f;
+        float slowSpeed = 0.1f / Mathf.Pow(10, Time.timeScale);
 
         // Expand from one side
         float distance1 = Vector2.Distance(m_destination1.GetPosition(), position1);
@@ -134,15 +138,17 @@ public class SearchSegment
         float expansionSpeed1 = reached1 ? slowSpeed : speed;
 
         // Expand the search segment to the right.
-        float expansionStep1 = Mathf.Min(distance1, expansionSpeed1 * timeDelta * Properties.PropagationMultiplier);
+        float expansionStep1 = Mathf.Min(distance1,
+            expansionSpeed1 * timeDelta * Properties.PropagationMultiplier);
 
-        position1 += positionDir1 * (expansionStep1);
-
-        if (distance1 < 0.1f)
+        if (distance1 <= expansionStep1)
         {
             reached1 = true;
             position1 = m_destination1.GetPosition();
         }
+        else
+            position1 += positionDir1 * (expansionStep1);
+
 
         // Expand to the other
         float distance2 = Vector2.Distance(m_destination2.GetPosition(), position2);
@@ -152,15 +158,16 @@ public class SearchSegment
         float expansionSpeed2 = reached2 ? slowSpeed : speed;
 
         // Expand the search segment to the left.
-        float expansionStep2 = Mathf.Min(distance2, expansionSpeed2 * timeDelta * Properties.PropagationMultiplier);
+        float expansionStep2 = Mathf.Min(distance2,
+            expansionSpeed2 * timeDelta * Properties.PropagationMultiplier);
 
-        position2 += positionDir2 * (expansionStep2);
-
-        if (distance2 < 0.1f)
+        if (distance2 <= expansionStep2)
         {
             reached2 = true;
             position2 = m_destination2.GetPosition();
         }
+        else
+            position2 += positionDir2 * (expansionStep2);
     }
 
 
@@ -175,21 +182,20 @@ public class SearchSegment
             return;
 
         // Give a portion of the probability
-        float newProb = GetProbability() * Properties.DiscountFactor;
+        float newProb = GetProbability() * Properties.DiscountFactor; // * timeDelta;
 
         // Create search segments in the other points connected to this destination
         foreach (var line in wayPoint.GetLines())
         {
-            // Make sure the new point is not visited
-            if (line.IsPointPartOfLine(m_destination1) && line.IsPointPartOfLine(m_destination2))
+            // Make sure the new point is not propagated befpre
+            if (line.GetSearchSegment() == this || GetProbability() < 0.2f || line.GetSearchSegment().isPropagated)
                 continue;
 
-            // Skip if the search segment is set
-            if (line.GetSearchSegment().isSeen || line.GetSearchSegment().GetProbability() > newProb * 0.5f)
-                continue;
+            if (line.GetSearchSegment().GetProbability() > GetProbability())
+                break;
 
             // Create the new search segment 
-            line.SetSearchSegment(wayPoint.GetPosition(), wayPoint.GetPosition(), newProb);
+            line.ProbabgateToSegment(wayPoint.GetPosition(), newProb, StealthArea.episodeTime);
         }
     }
 
@@ -202,7 +208,7 @@ public class SearchSegment
 
 
         // Handles.Label(position1, Vector2.Distance(position1,m_segmentMidPoint).ToString());
-        // if (GetProbability() > 0f)
-        // Handles.Label(m_segmentMidPoint, (Mathf.Round(GetProbability() * 100f) / 100f).ToString());
+        if (GetProbability() > 0f)
+            Handles.Label(m_segmentMidPoint, (Mathf.Round(GetProbability() * 100f) / 100f).ToString());
     }
 }
