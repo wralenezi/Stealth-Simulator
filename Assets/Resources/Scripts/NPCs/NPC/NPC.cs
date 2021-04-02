@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices.WindowsRuntime;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -23,8 +24,8 @@ public abstract class NPC : MonoBehaviour
     protected StealthArea Area;
 
     // The path the agent is meant to follow
-    protected List<Vector2> PathToTake;
-    protected Vector2? Goal;
+    private List<Vector2> PathToTake;
+    private Vector2? Goal;
 
     // NPC movement variables
     protected float NpcSpeed = Properties.NpcSpeed;
@@ -39,6 +40,9 @@ public abstract class NPC : MonoBehaviour
 
     // Field of View object
     protected FieldOfView Fov;
+    private float m_FovRadius;
+    // The Current FoV
+    private List<Polygon> m_FovPolygon;
 
     //************** Logging data ***************//
     // Variables for the distance travelled by a character
@@ -52,30 +56,38 @@ public abstract class NPC : MonoBehaviour
     public bool ShowPath;
 
     // Called when the agent is first created
-    public virtual void Initiate()
+    public virtual void Initiate(StealthArea area, NpcData data)
     {
-        m_transform = transform;
         PathToTake = new List<Vector2>();
+        Area = area;
+        m_transform = transform;
         World = GetTransform().parent.parent.Find("Map").GetComponent<WorldRep>();
+        Data = data;
+        m_NpcRb = GetComponent<Rigidbody2D>();
+        m_FovPolygon = new List<Polygon>() {new Polygon()};
+
+        AddFoV();
     }
 
     // The set up of the start of the episode
     public virtual void ResetNpc()
     {
-        PathToTake.Clear();
-        Goal = null;
+        ClearGoal();
         m_TotalDistanceTravelled = 0f;
 
         SetPosition();
+        m_FovPolygon[0].Clear();
+
 
         Renderer = GetComponent<Renderer>();
         FovRenderer = Fov.GetComponent<Renderer>();
     }
 
-    // Set the area the agent will be using
-    public void SetArea(StealthArea area)
+    // Clear the designated goal and path to take
+    public void ClearGoal()
     {
-        Area = area;
+        Goal = null;
+        PathToTake.Clear();
     }
 
     // Update the agent's last position
@@ -84,12 +96,59 @@ public abstract class NPC : MonoBehaviour
         m_LastPosition = GetTransform().position;
     }
 
+    public void AddFoV()
+    {
+        // The game object that contains the field of view
+        GameObject fovGameObject = new GameObject("FoV");
+
+        // Assign it as a child to the guard
+        var transform1 = transform;
+        fovGameObject.transform.parent = transform1;
+        fovGameObject.transform.position = transform1.position;
+
+        m_FovRadius = Properties.GetFovRadius(Data.npcType);
+
+        Fov = fovGameObject.AddComponent<FieldOfView>();
+        Fov.Initiate(Properties.GetFovAngle(Data.npcType), m_FovRadius, Properties.GetFovColor(Data.npcType));
+    }
+
+    private void LoadFovPolygon()
+    {
+        GetFovPolygon().Clear();
+        foreach (var vertex in Fov.GetFovVertices())
+            GetFovPolygon().AddPoint(vertex);
+    }
+
+    public float GetFovRadius()
+    {
+        return m_FovRadius;
+    }
+
+
+    // Cast the guard field of view
+    public void CastVision()
+    {
+        Fov.CastFieldOfView();
+        LoadFovPolygon();
+    }
+
     public Transform GetTransform()
     {
         return m_transform;
     }
 
-    // Get a vector that represents the agents orientation around the z-axis
+    // Get field of vision
+    public Polygon GetFovPolygon()
+    {
+        return GetFov()[0];
+    }
+
+    public List<Polygon> GetFov()
+    {
+        return m_FovPolygon;
+    }
+
+    // Get a vector that represents the agents facing direction around the z-axis
     public Vector2 GetDirection()
     {
         Vector2 dir = -Vector2.right;
@@ -100,14 +159,7 @@ public abstract class NPC : MonoBehaviour
             dir.y * c + dir.x * s, dir.y * s - dir.x * c
         );
     }
-
-    // Set the NPC data
-    public void SetNpcData(NpcData data)
-    {
-        Data = data;
-        m_NpcRb = GetComponent<Rigidbody2D>();
-    }
-
+    
     // Place the NPC's start position
     public void ResetLocation(List<MeshPolygon> navMesh, List<Guard> guards, List<Polygon> mapWalls,
         Session sessionInfo)
@@ -175,20 +227,23 @@ public abstract class NPC : MonoBehaviour
 
 
     // Define a goal for the agent and set the path to navigate to it,
+    // param@isForce forces the guard to forget its current path and make a new one.
     public void SetGoal(Vector2 _goal, bool isForced)
     {
-        if (Goal == null || isForced)
+        if (!IsBusy() || isForced)
+        {
             Goal = _goal;
 
-        SetPathToGoal();
-    }
-
-    // Set the path to the goal using the NavMesh
-    public void SetPathToGoal()
-    {
-        if (Goal != null)
+            // Get the shortest path to the goal
             PathFinding.GetShortestPath(World.GetNavMesh(),
                 GetTransform().position, Goal.Value, PathToTake);
+        }
+    }
+
+    // If the NPC has a path to take then they are busy.
+    public bool IsBusy()
+    {
+        return PathToTake.Count > 0;
     }
 
     // Get the agents goal
@@ -213,13 +268,14 @@ public abstract class NPC : MonoBehaviour
             {
                 PathToTake.RemoveAt(0);
 
+                // When the path is over clear the goal.
                 if (PathToTake.Count == 0)
                     Goal = null;
             }
     }
 
     // Rotate to a specific target and then move towards it; return a boolean if the point is reached or not
-    protected bool GoStraightTo(Vector3 target, IState state, GuardRole? guardRole, float deltaTime)
+    private bool GoStraightTo(Vector3 target, IState state, GuardRole? guardRole, float deltaTime)
     {
         Vector3 currentPosition = GetTransform().position;
         Quaternion currentRotation = GetTransform().rotation;
@@ -248,7 +304,7 @@ public abstract class NPC : MonoBehaviour
         {
             // If the guard is in patrol, it doesn't need to visit the goal on the path. Just see it
             if (state is Patrol || state is Search)
-                distanceLeft -= Properties.ViewRadius - 1f;
+                distanceLeft -= m_FovRadius - 1f;
         }
 
         if (distanceLeft > 0.1f)
@@ -293,14 +349,6 @@ public abstract class NPC : MonoBehaviour
         m_NpcRb.MovePosition((Vector2) GetTransform().position + dir.normalized * (NpcSpeed * Time.deltaTime));
     }
 
-    // Clear the designated goal and path to take
-    public void ClearGoal()
-    {
-        Goal = null;
-        PathToTake.Clear();
-    }
-
-
     // Get the remaining distance to goal
     public float GetRemainingDistanceToGoal()
     {
@@ -313,7 +361,6 @@ public abstract class NPC : MonoBehaviour
         return totalDistance;
     }
 
-
     // Update the total distance travelled by the NPC for logging purposes
     private void UpdateDistance()
     {
@@ -321,11 +368,6 @@ public abstract class NPC : MonoBehaviour
         var distanceTravelled = Vector2.Distance(position, m_LastPosition.Value);
         m_TotalDistanceTravelled += distanceTravelled;
         m_LastPosition = position;
-    }
-
-    public bool IsIdle()
-    {
-        return Goal == null;
     }
 
     public float GetTravelledDistance()

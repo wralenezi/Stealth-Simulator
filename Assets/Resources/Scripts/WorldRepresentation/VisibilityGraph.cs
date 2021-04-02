@@ -25,7 +25,7 @@ public class VisibilityGraph : MonoBehaviour
         m_mapRenderer = mapRenderer;
         m_graphNodes = new List<WayPoint>();
 
-        IsRenderVisibilityGraph = true;
+        // IsRenderVisibilityGraph = true;
 
         // Create the nodes on the interior of the map for each point in the map.
         CreateNodes();
@@ -33,6 +33,8 @@ public class VisibilityGraph : MonoBehaviour
         //SimplifyNodes();
 
         ConnectNodes();
+
+        RemoveReplicateEdges();
     }
 
     // Distribute the nodes on the angles of the graph
@@ -96,56 +98,46 @@ public class VisibilityGraph : MonoBehaviour
         for (int i = 0; i < m_graphNodes.Count; i++)
         for (int j = i + 1; j < m_graphNodes.Count; j++)
         {
-            // Check if the are mutually visible
-
-            // Get the direction
-            Vector2 direction = (m_graphNodes[j].GetPosition() - m_graphNodes[i].GetPosition()).normalized;
-
-
             float extension = 1f;
 
             // Extend the length of the line check by both sides
-            Vector2 firstPoint = m_graphNodes[i].GetPosition();
-            Vector2 secPoint = m_graphNodes[j].GetPosition();
+            WayPoint firstWp = m_graphNodes[i];
+            WayPoint secWp = m_graphNodes[j];
 
-            float distance = Vector2.Distance(firstPoint, secPoint);
+            // Get the direction
+            Vector2 direction = (firstWp.GetPosition() - secWp.GetPosition()).normalized;
 
             int firstPtWallId = -1;
             int secPtWallId = -1;
 
-            // Check if the 
-            RaycastHit2D hit = Physics2D.Linecast(firstPoint, secPoint);
+            // Check if the are mutually visible 
+            RaycastHit2D hit = Physics2D.Linecast(firstWp.GetPosition(), secWp.GetPosition());
 
             // Draw a line from the first point to the other extended.
-            RaycastHit2D hit1to2 = Physics2D.Linecast(firstPoint, secPoint + direction * extension);
-
+            RaycastHit2D hit1to2 =
+                Physics2D.Linecast(firstWp.GetPosition(), secWp.GetPosition() + direction * extension);
 
             if (hit1to2)
-            {
                 firstPtWallId = hit1to2.transform.gameObject.GetComponent<Wall>().WallId;
-            }
+
 
             // Draw a line from the opposite direction
-            RaycastHit2D hit2to1 = Physics2D.Linecast(secPoint, firstPoint - direction * extension);
+            RaycastHit2D hit2to1 =
+                Physics2D.Linecast(secWp.GetPosition(), firstWp.GetPosition() - direction * extension);
 
             if (hit2to1)
-            {
                 secPtWallId = hit2to1.transform.gameObject.GetComponent<Wall>().WallId;
-            }
 
-
-            bool isClose = Vector2.Distance(m_graphNodes[i].GetPosition(), m_graphNodes[j].GetPosition()) <
-                           m_NeighborhoodRadius;
 
             bool isVisible = false;
 
-            if (firstPtWallId == secPtWallId && (firstPtWallId == -1 || m_graphNodes[i].WallId == 0)
+
+            if (firstPtWallId == secPtWallId && (firstPtWallId == -1 || firstWp.WallId == 0)
             ) // If there are no intersections at all.
                 isVisible = true;
             else if (firstPtWallId != secPtWallId)
             {
-                if ((firstPtWallId == -1 || secPtWallId == -1) &&
-                    m_graphNodes[i].WallId == m_graphNodes[j].WallId)
+                if ((firstPtWallId == -1 || secPtWallId == -1) && firstWp.WallId == secWp.WallId)
                     isVisible = true;
             }
 
@@ -157,8 +149,7 @@ public class VisibilityGraph : MonoBehaviour
 
             if (isVisible)
             {
-                m_graphNodes[i].AddEdge(m_graphNodes[j]);
-                m_graphNodes[j].AddEdge(m_graphNodes[i]);
+                firstWp.Connect(secWp);
             }
         }
     }
@@ -170,15 +161,65 @@ public class VisibilityGraph : MonoBehaviour
         for (int i = 0; i < m_graphNodes.Count; i++)
         for (int j = i + 1; j < m_graphNodes.Count; j++)
         {
-
             for (int k = 0; k < m_graphNodes[i].GetConnections().Count; k++)
             {
                 WayPoint conn = m_graphNodes[i].GetConnections()[k];
-                
+
                 // Search in the other direct connections if there is a connection that leads to it; a -> c, a -> b find if there is b -> c if so remove a -> c. 
             }
-            
-            
+        }
+    }
+    
+    private void RemoveReplicateEdges()
+    {
+        for (int i = 0; i < m_graphNodes.Count; i++)
+        {
+            WayPoint curWp = m_graphNodes[i];
+
+            List<WayPoint> conns = curWp.GetConnections();
+
+            for (int j = 0; j < conns.Count; j++)
+            {
+                WayPoint firstCon = conns[j];
+
+                for (int k = j + 1; k < conns.Count; k++)
+                {
+                    WayPoint secCon = conns[k];
+
+                    if (!firstCon.IsConnected(secCon))
+                        continue;
+
+                    float firstToSecDistance = Vector2.Distance(firstCon.GetPosition(), secCon.GetPosition());
+                    float firstToCurDistance = Vector2.Distance(firstCon.GetPosition(), curWp.GetPosition());
+                    float curToSecDistance = Vector2.Distance(curWp.GetPosition(), secCon.GetPosition());
+
+                    WayPoint firstWp = null;
+                    WayPoint secWp = null;
+
+                    if (firstToSecDistance > firstToCurDistance)
+                    {
+                        if (firstToSecDistance > curToSecDistance)
+                            firstWp = firstCon;
+                        else
+                            firstWp = curWp;
+
+                        secWp = secCon;
+                    }
+                    else
+                    {
+                        if (firstToCurDistance > curToSecDistance)
+                            firstWp = firstCon;
+                        else
+                            firstWp = secCon;
+
+                        secWp = curWp;
+                    }
+
+                    firstWp.RemoveConnection(secWp);
+                    j = 0;
+                    break;
+                }
+            }
         }
     }
 
@@ -192,6 +233,9 @@ public class VisibilityGraph : MonoBehaviour
     public void OnDrawGizmos()
     {
         if (IsRenderVisibilityGraph)
+        {
+            Gizmos.color = Color.black;
+
             foreach (var spot in m_graphNodes)
             {
                 Gizmos.DrawSphere(spot.GetPosition(), 0.1f);
@@ -201,5 +245,6 @@ public class VisibilityGraph : MonoBehaviour
                     Gizmos.DrawLine(spot.GetPosition(), node1.GetPosition());
                 }
             }
+        }
     }
 }

@@ -11,7 +11,7 @@ public class Wall : MonoBehaviour
     MeshFilter m_viewMeshFilter;
     Mesh m_viewMesh;
 
-    private float m_ColliderRadius = 0.08f; 
+    private float m_ColliderRadius = 0.07f; 
 
     EdgeCollider2D m_edgeCollider2D;
     

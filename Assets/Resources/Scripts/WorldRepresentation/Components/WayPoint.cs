@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 using UnityEditor;
 using UnityEngine;
@@ -15,15 +16,24 @@ public class WayPoint
 
     // Distance to incoming possible intruder position
     private float m_Distance;
-    
+
     // The ID of the way point
-    public readonly int Id;
+    public int Id;
+
+    // The ID of the max block; used for the Skeletal axis transform algorithm.
+    public int BlockId;
 
     // the ID of the wall this way point belong to. This is for the visibility graph
     public int WallId;
 
     // Which guard targeted this way point to intercept in. If it is null then there is no incoming guard
     public Guard InterceptingGuard;
+
+    // The node original location on the grid. Used in the grid simplification to a graph.
+    public int row;
+    public int col;
+    public char code;
+
 
     // the variables for A*
     public float hDistance;
@@ -37,6 +47,58 @@ public class WayPoint
         m_MapLines = new List<RoadMapLine>();
         Id = _id;
     }
+
+    public WayPoint(Vector2 _position, int _row, int _col, char _code)
+    {
+        m_Position = _position;
+        row = _row;
+        col = _col;
+        code = _code;
+        m_Connections = new List<WayPoint>();
+        m_MapLines = new List<RoadMapLine>();
+        Id = 0;
+    }
+
+    // Add the way points to each others list of connects.
+    public void Connect(WayPoint wp)
+    {
+        bool sameNode = wp.GetPosition() == GetPosition();
+
+        if (wp != null && !(IsConnected(wp) || sameNode)) //if (!alreadyExists && !sameNode)
+        {
+            AddEdge(wp);
+            wp.AddEdge(this);
+        }
+    }
+
+    public bool IsConnected(WayPoint wp)
+    {
+        bool alreadyExists = GetConnections().Any(x => x.GetPosition() == wp.GetPosition());
+
+        return alreadyExists;
+    }
+
+
+    // Check if the node is connected to more than one local maximum node.
+    public bool EdgeOfLocalMaximum()
+    {
+        int count = 0;
+
+        foreach (var con in GetConnections())
+        {
+            count += con.code == '*' && con.BlockId == BlockId ? 1 : 0;
+        }
+
+        return count <= 1 && code == '*';
+    }
+
+
+    public void RemoveConnection(WayPoint wp)
+    {
+        RemoveEdge(wp);
+        wp.RemoveEdge(this);
+    }
+
 
     public void AddEdge(WayPoint wp)
     {
@@ -57,7 +119,7 @@ public class WayPoint
     {
         m_Distance = (distance);
     }
-    
+
     public void AddLines(List<RoadMapLine> lines)
     {
         foreach (var line in lines)
@@ -92,7 +154,7 @@ public class WayPoint
     {
         return m_Connections;
     }
-    
+
     // Insert the distance to the neighboring way points except the source
     public void InsertDistancesToNeighbors(WayPoint source, float totalDistance)
     {

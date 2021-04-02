@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class Intruder : NPC
 {
@@ -14,11 +15,9 @@ public class Intruder : NPC
     // The place the intruder was last seen in 
     private Vector2? m_lastKnownLocation;
 
-    // The Current FoV
-    private List<Polygon> m_FovPolygon;
-
+    // Count of how many time this intruder has been spotted by guards
     private int m_NoTimesSpotted;
-    
+
     // Total time being chased and visible
     private float m_AlertTime;
 
@@ -27,27 +26,23 @@ public class Intruder : NPC
 
     // List of guards; to assess the fitness of the hiding spots
     private List<Guard> m_guards;
-    
-    public override void Initiate()
+
+    public override void Initiate(StealthArea area, NpcData data)
     {
-        base.Initiate();
+        base.Initiate(area, data);
 
         m_HidingSpots = transform.parent.parent.Find("Map").GetComponent<HidingSpots>();
         m_guards = transform.parent.parent.Find("NpcManager").GetComponent<GuardsManager>().GetGuards();
-        AddFoV();
-
-        // The intruder's field of view to detect guards
-        m_FovPolygon = new List<Polygon>() {new Polygon()};
 
         // Start the state as incognito
         m_state = new StateMachine();
         m_state.ChangeState(new Incognito(this));
 
         // Multiply the intruder's speed
-        NpcSpeed *= 1.5f;
-        NpcRotationSpeed *= 1f;
+        NpcSpeed *= Properties.IntruderSpeedPercentage / 100f;
+        NpcRotationSpeed *= Properties.IntruderRotationSpeedMulti;
     }
-    
+
     public override void ResetNpc()
     {
         base.ResetNpc();
@@ -56,7 +51,7 @@ public class Intruder : NPC
         m_AlertTime = 0f;
         m_SearchedTime = 0f;
     }
-    
+
     // Run the state the intruder is in
     public void ExecuteState()
     {
@@ -81,49 +76,19 @@ public class Intruder : NPC
         }
     }
 
-    private void LateUpdate()
-    {
-        CastVision();
-    }
-
-    // Cast the guard field of view
-    public void CastVision()
-    {
-        Fov.CastFieldOfView();
-        LoadFovPolygon();
-    }
-
-    private void LoadFovPolygon()
-    {
-        m_FovPolygon[0].Clear();
-        foreach (var vertex in Fov.GetFovVertices())
-            m_FovPolygon[0].AddPoint(vertex);
-    }
-
     public Vector2 GetLastKnownLocation()
     {
         return m_lastKnownLocation.Value;
-    }
-
-    // Create and add the Field of View
-    public void AddFoV()
-    {
-        // The game object that contains the field of view
-        GameObject fovGameObject = new GameObject("FoV");
-
-        // Assign it as a child to the guard
-        var transform1 = transform;
-        fovGameObject.transform.parent = transform1;
-        fovGameObject.transform.position = transform1.position;
-
-        Fov = fovGameObject.AddComponent<FieldOfView>();
-        Fov.Initiate(361f, 50f, new Color32(200, 200, 200, 150));
     }
 
     // Render the guard and the FoV if seen by the intruder
     public void RenderIntruder(bool isSeen)
     {
         Renderer.enabled = isSeen;
+    }
+
+    public void RenderIntruderFov(bool isSeen)
+    {
         FovRenderer.enabled = isSeen;
     }
 
@@ -132,7 +97,7 @@ public class Intruder : NPC
     {
         m_lastKnownLocation = transform.position;
     }
-    
+
     // Rendering 
     public void SpotGuards(List<Guard> guards)
     {
@@ -147,20 +112,20 @@ public class Intruder : NPC
             {
                 RenderIntruder(true);
 
-                if (m_FovPolygon[0].IsCircleInPolygon(guard.transform.position, 0.5f))
+                if (GetFovPolygon().IsCircleInPolygon(guard.transform.position, 0.5f))
                     guard.RenderGuard(true);
                 else
                     guard.RenderGuard(false);
             }
         }
     }
-    
+
     // Incognito behavior
     public void Incognito()
     {
         if (GetNpcData().intruderPlanner == IntruderPlanner.Random)
             SetGoal(m_HidingSpots.GetRandomHidingSpot(), false);
-        else if (GetNpcData().intruderPlanner == IntruderPlanner.Heuristic)
+        else
         {
             m_HidingSpots.AssignHidingSpotsFitness(m_guards, World.GetNavMesh());
             SetGoal(m_HidingSpots.GetBestHidingSpot().Value, false);
@@ -179,12 +144,12 @@ public class Intruder : NPC
     {
         if (GetNpcData().intruderPlanner == IntruderPlanner.Random)
             SetGoal(m_HidingSpots.GetRandomHidingSpot(), false);
-        else if (GetNpcData().intruderPlanner == IntruderPlanner.Heuristic)
-            if (IsIdle())
-            {
-                m_HidingSpots.AssignHidingSpotsFitness(m_guards, World.GetNavMesh());
-                SetGoal(m_HidingSpots.GetBestHidingSpot().Value, false);
-            }
+        else //if (GetNpcData().intruderPlanner == IntruderPlanner.Heuristic)
+        if (!IsBusy())
+        {
+            m_HidingSpots.AssignHidingSpotsFitness(m_guards, World.GetNavMesh());
+            SetGoal(m_HidingSpots.GetBestHidingSpot().Value, false);
+        }
     }
 
     // To start hiding from guards searching for the intruder
@@ -193,14 +158,62 @@ public class Intruder : NPC
         m_state.ChangeState(new Hide(this));
 
         // Find a place to hide
-        if (GetNpcData().intruderPlanner == IntruderPlanner.Random)
+        if (GetNpcData().intruderPlanner == IntruderPlanner.Random ||
+            GetNpcData().intruderPlanner == IntruderPlanner.RandomMoving)
             SetGoal(m_HidingSpots.GetRandomHidingSpot(), false);
-        else if (GetNpcData().intruderPlanner == IntruderPlanner.Heuristic)
-            if (IsIdle())
+        else if (GetNpcData().intruderPlanner == IntruderPlanner.Heuristic ||
+                 GetNpcData().intruderPlanner == IntruderPlanner.HeuristicMoving)
+            if (!IsBusy())
             {
                 m_HidingSpots.AssignHidingSpotsFitness(m_guards, World.GetNavMesh());
                 SetGoal(m_HidingSpots.GetBestHidingSpot().Value, false);
             }
+    }
+
+    private bool isWaiting = false;
+
+    // Intruder behavior after escaping guards
+    public void Hide()
+    {
+        if (!IsBusy() && !isWaiting)
+        {
+            if (GetNpcData().intruderPlanner == IntruderPlanner.HeuristicMoving)
+                StartCoroutine(waitThenHeuristicMove());
+            else if (GetNpcData().intruderPlanner == IntruderPlanner.RandomMoving)
+                StartCoroutine(waitThenRandomMove());
+        }
+    }
+
+    private IEnumerator waitThenHeuristicMove()
+    {
+        isWaiting = true;
+        float waitTime = Random.Range(5f, 20f);
+
+        yield return new WaitForSeconds(waitTime);
+
+        if (!IsBusy())
+        {
+            m_HidingSpots.AssignHidingSpotsFitness(m_guards, World.GetNavMesh());
+            SetGoal(m_HidingSpots.GetBestHidingSpot().Value, false);
+        }
+
+        isWaiting = false;
+    }
+
+
+    private IEnumerator waitThenRandomMove()
+    {
+        isWaiting = true;
+
+        float waitTime = Random.Range(5f, 20f);
+        yield return new WaitForSeconds(waitTime);
+
+        if (!IsBusy())
+        {
+            SetGoal(m_HidingSpots.GetRandomHidingSpot(), false);
+        }
+
+        isWaiting = false;
     }
 
     public float GetPercentAlertTime()
@@ -213,21 +226,16 @@ public class Intruder : NPC
         return m_NoTimesSpotted;
     }
 
-
     public IState GetState()
     {
         return m_state.GetState();
     }
 
 
-    // Intruder behavior after escaping guards
-    public void Hide()
-    {
-    }
-
     public override LogSnapshot LogNpcProgress()
     {
-        return new LogSnapshot(GetTravelledDistance(), StealthArea.episodeTime, Data, m_state.GetState().ToString(),m_NoTimesSpotted,
+        return new LogSnapshot(GetTravelledDistance(), StealthArea.episodeTime, Data, m_state.GetState().ToString(),
+            m_NoTimesSpotted, GuardsManager.GuardsOverlapTime,
             m_AlertTime, m_SearchedTime, 0, 0f);
     }
 }

@@ -234,7 +234,7 @@ MonoBehaviour:
   isovists: {fileID: 0}
   sat: {fileID: 0}
   visibilityGraph: {fileID: 0}
-  interceptor: {fileID: 0}
+  meshManager: {fileID: 0}
   performanceMonitor: {fileID: 0}
   gameView: 0
 --- !u!1 &3724154381063140157
@@ -282,7 +282,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 1
+    VectorObservationSize: 2
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 4
@@ -291,9 +291,9 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 1
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 5022602860645237092, guid: e96cd89b168523948822d1059ca33bea, type: 3}
+  m_Model: {fileID: 0}
   m_InferenceDevice: 2
-  m_BehaviorType: 1
+  m_BehaviorType: 0
   m_BehaviorName: GuardsManagerBehavior
   TeamId: 0
   m_UseChildSensors: 0
@@ -315,6 +315,8 @@ MonoBehaviour:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
   MaxStep: 0
+  interceptor: {fileID: 0}
+  searcher: {fileID: 0}
   StateName: 
   searchWeights:
     probWeight: 0
@@ -514,4 +516,5 @@ MonoBehaviour:
     intruderCount: 0
     map: 
     mapScale: 0
-    npcsList: []
+    guardsList: []
+    intrudersList: []

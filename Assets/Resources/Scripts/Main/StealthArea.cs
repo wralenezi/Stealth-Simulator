@@ -33,24 +33,22 @@ public class StealthArea : MonoBehaviour
     // Isovist map
     public Isovists isovists;
 
-    // Scale Area transform ( to get the skeletal graph of the map)
+    // Scale Area transform ( to get the skeletal graph of the map) and load it into the road map.
     public SAT sat;
 
+    // Create the Visibility graph and load into the road map.
     public VisibilityGraph visibilityGraph;
 
-    // Roadmap of the level
+    // Road map of the level.
     public RoadMap roadMap;
 
-    // Interceptor controller
-    public Interceptor interceptor;
-
-    // Search representation controller
-    public Searcher searcher;
+    // Mesh Manager
+    public MeshManager meshManager;
 
     // Logging manager
     public PerformanceMonitor performanceMonitor;
 
-    // Coroutine for updating world
+    // Coroutine for updating the world
     private IEnumerator worldCoroutine;
 
     // To determine which perspective the game is viewed from
@@ -81,8 +79,7 @@ public class StealthArea : MonoBehaviour
         mapRenderer = map.GetComponent<MapRenderer>();
         mapRenderer.Initiate();
         mapRenderer.LoadMap(m_SessionInfo.map, m_SessionInfo.GetMapScale());
-        mapRenderer.SetNpcDefaultRadius();
-
+        
         // Create the NavMesh
         mapDecomposer = map.GetComponent<MapDecomposer>();
         mapDecomposer.Initiate(this);
@@ -108,31 +105,28 @@ public class StealthArea : MonoBehaviour
         hidingSpots.Initiate(this);
 
         // Isovists map
-        isovists = map.GetComponent<Isovists>();
-        // m_Isovists.Initiate(m_MapDecomposer.GetNavMesh());
+        // isovists = map.GetComponent<Isovists>();
+        // isovists.Initiate(mapDecomposer.GetNavMesh());
 
         // Scale Area Transform
         sat = map.GetComponent<SAT>();
-        sat.Initiate(m_SessionInfo.GetMapScale(), m_SessionInfo.map);
+        sat.Initiate(m_SessionInfo);
 
-        // Visibility graph
-        // m_VisibilityGraph = map.GetComponent<VisibilityGraph>();
-        // m_VisibilityGraph.Initiate(m_MapRenderer);
+        // // Visibility graph
+        visibilityGraph = map.GetComponent<VisibilityGraph>();
+        // visibilityGraph.Initiate(mapRenderer);
 
         // Build the road map based on the Scale Area Transform
         roadMap = new RoadMap(sat, mapRenderer);
 
-        // Interception controller
-        interceptor = map.GetComponent<Interceptor>();
-        interceptor.Initiate(this);
+        // Mesh manager
+        meshManager = transform.Find("MeshManager").GetComponent<MeshManager>();
+        meshManager.Initiate(this);
 
-        // Search Controller
-        searcher = map.gameObject.AddComponent<Searcher>();
-        searcher.Initiate(this);
 
         // Assign NPC Manager
         guardsManager = transform.Find("NpcManager").GetComponent<GuardsManager>();
-        guardsManager.Initiate(this,
+        guardsManager.Initiate(this, map,
             transform.Find("Canvas").Find("Guard state label").GetComponent<Text>());
 
         // Create the NPCs
@@ -143,30 +137,21 @@ public class StealthArea : MonoBehaviour
         performanceMonitor.ResetResults();
 
         // The coroutine for updating the world representation
-        worldCoroutine = UpdateWorld(2f);
+        // worldCoroutine = UpdateWorld(2f);
 
         // Reset World Representation and NPCs
         ResetArea();
-
-        // Skip logged the session if already logged.
-        StartCoroutine(CheckIfLogged());
     }
 
-    // Check if the scenario of the this session is already logged
-    private IEnumerator CheckIfLogged()
-    {
-        yield return new WaitForSeconds(0.01f);
-        EndArea();
-    }
 
     private void ResetArea()
     {
-        StopCoroutine(worldCoroutine);
+        // StopCoroutine(worldCoroutine);
         episodeTime = 0f;
         lastLoggedTime = 0f;
         guardsManager.ResetNpcs(mapDecomposer.GetNavMesh(), this);
         worldRep.ResetWorld();
-        StartCoroutine(worldCoroutine);
+        // StartCoroutine(worldCoroutine);
     }
 
     private void EndEpisode()
@@ -225,7 +210,6 @@ public class StealthArea : MonoBehaviour
         worldRep.ReplenishHidingSpots();
     }
 
-
     private void FixedUpdate()
     {
         float deltaTime = Time.deltaTime;
@@ -237,8 +221,7 @@ public class StealthArea : MonoBehaviour
     // private void LateUpdate()
     // {
     // }
-
-
+    
     public Session GetSessionInfo()
     {
         return m_SessionInfo;
@@ -277,7 +260,7 @@ public class StealthArea : MonoBehaviour
             switch (gameManager.loggingMethod)
             {
                 // Log the overall performance in case of local logging.
-                case Logging.Locally:
+                case Logging.Local:
                     endArea = FinalizeLogging(false);
                     break;
 
@@ -333,7 +316,7 @@ public class StealthArea : MonoBehaviour
     // Destroy the area
     public void EndArea()
     {
-        StopCoroutine(worldCoroutine);
+        // StopCoroutine(worldCoroutine);
 
         if (performanceMonitor.IsDone())
             gameManager.RemoveArea(gameObject);

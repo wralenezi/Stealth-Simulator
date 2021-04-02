@@ -206,8 +206,6 @@ public static class PolygonHelper
             }
 
             return mergedPolygon;
-
-   
         }
 
         // Smooth a list of polygons

@@ -18,13 +18,10 @@ public class Searcher : MonoBehaviour
         m_StealthArea = stealthArea;
         m_roadMap = stealthArea.roadMap;
 
-        foreach (var npcData in m_StealthArea.GetSessionInfo().GetNpcsData())
+        foreach (var npcData in m_StealthArea.GetSessionInfo().GetGuardsData())
         {
-            if (npcData.npcType == NpcType.Guard)
-            {
-                m_searchType = npcData.guardPlanner.Value.search;
-                break;
-            }
+            m_searchType = npcData.guardPlanner.Value.search;
+            break;
         }
     }
 
@@ -52,7 +49,7 @@ public class Searcher : MonoBehaviour
         // Spread the probability similarly to Third eye crime
         foreach (var line in m_roadMap.GetLines())
         {
-            SimplePropagation(timeDelta, line);
+            SimplePropagation(speed, timeDelta, line);
             line.ExpandSs(speed, timeDelta);
         }
 
@@ -81,9 +78,9 @@ public class Searcher : MonoBehaviour
 
 
     // Expand the search segments
-    public void SimplePropagation(float timeDelta, RoadMapLine line)
+    public void SimplePropagation(float speed, float timeDelta, RoadMapLine line)
     {
-        line.PropagateProb();
+        line.PropagateProb(speed, timeDelta);
         line.IncreaseProbability(timeDelta);
     }
 
@@ -99,23 +96,33 @@ public class Searcher : MonoBehaviour
         foreach (var con in line.GetWp1Connections())
             if (line != con)
             {
-                probabilitySum += con.GetSearchSegment().GetProbability();
+                float normalizedAge = con.GetSearchSegment().GetAge() / 10f;
+                normalizedAge = normalizedAge > 1f ? 1f : normalizedAge;
+                float diffuseFactor = Mathf.Lerp(0f, Properties.ProbDiffFac, normalizedAge);
+                // probabilitySum += con.GetSearchSegment().GetProbability() * diffuseFactor;
+                probabilitySum += con.GetSearchSegment().GetProbability() * Properties.ProbDiffFac;
                 neighborsCount++;
             }
 
         foreach (var con in line.GetWp2Connections())
             if (line != con)
             {
-                probabilitySum += con.GetSearchSegment().GetProbability();
+                float normalizedAge = con.GetSearchSegment().GetAge() / 10f;
+                normalizedAge = normalizedAge > 1f ? 1f : normalizedAge;
+                float diffuseFactor = Mathf.Lerp(0f, Properties.ProbDiffFac, normalizedAge);
+                // probabilitySum += con.GetSearchSegment().GetProbability() * diffuseFactor;
+                probabilitySum += con.GetSearchSegment().GetProbability() * Properties.ProbDiffFac;
                 neighborsCount++;
             }
 
-        // float
+
+        // float newProbability = (1f - Properties.ProbDiffFac) * sS.GetProbability() +
+        //                        (Properties.ProbDiffFac / neighborsCount) * probabilitySum;
 
         float newProbability = (1f - Properties.ProbDiffFac) * sS.GetProbability() +
-                               (Properties.ProbDiffFac / neighborsCount) * probabilitySum;
+                               probabilitySum / neighborsCount;
 
-        // if (newProbability > sS.GetProbability())
+
         sS.SetProb(newProbability);
     }
 
@@ -124,10 +131,8 @@ public class Searcher : MonoBehaviour
     {
         foreach (var guard in guards)
         {
-            Polygon foV = guard.GetFoV();
-
             // Trim the parts seen by the guards and reset the section if it is all seen 
-            line.CheckSeenSegment(foV, guard.GetTransform().position);
+            line.CheckSeenSegment(guard, guard.GetTransform().position);
         }
     }
 
@@ -147,7 +152,10 @@ public class Searcher : MonoBehaviour
         foreach (var line in m_roadMap.GetLines())
         {
             SearchSegment sS = line.GetSearchSegment();
-            sS.SetProb(sS.GetProbability() / maxProbability);
+            if (maxProbability != 0f)
+                sS.SetProb(sS.GetProbability() / maxProbability);
+            else
+                sS.SetProb(1f);
         }
     }
 
@@ -159,22 +167,30 @@ public class Searcher : MonoBehaviour
         SearchSegment bestSs = null;
         float maxFitnessValue = Mathf.NegativeInfinity;
 
+        float maxProbability = Mathf.NegativeInfinity;
+
         // Loop through the search segments in the lines
         foreach (var line in m_roadMap.GetLines())
         {
             SearchSegment sS = line.GetSearchSegment();
 
+            if (maxProbability < sS.GetProbability())
+            {
+                maxProbability = sS.GetProbability();
+            }
+
             // Skip the segment if it has a probability of zero or less
-            // if (sS.GetProbability() <= 0.2f)
-            //     continue;
+            if (sS.GetProbability() <= 0.1f)
+                continue;
+
 
             // Get the distance of the closest goal other guards are coming to visit
             float minGoalDistance = Mathf.Infinity;
 
             foreach (var guard in guards)
             {
-                // Skip the guard without a goal
-                if (guard.GetGoal() == null)
+                // Skip the busy guards
+                if (!guard.IsBusy())
                     continue;
 
                 float distanceToGuardGoal =
@@ -209,6 +225,9 @@ public class Searcher : MonoBehaviour
                 bestSs = sS;
             }
         }
+
+        if (maxProbability < 0.2f)
+            NormalizeProbs();
 
 
         if (bestSs == null)

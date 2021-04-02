@@ -133,7 +133,7 @@ public class VisMesh : WorldRep
         CalculateAreas();
 
         // Render the visibility mesh
-        m_meshManager.RenderVisibilityMesh(GetVisMesh());
+        // m_meshManager.RenderVisibilityMesh(GetVisMesh());
     }
 
 

@@ -33,11 +33,14 @@ public class CyclicalList<T> : List<T>
             base[index] = value;
         }
     }
-    
+
     public CyclicalList(IEnumerable<T> collection)
         : base(collection)
     {
     }
+    
+    
+    
 
     // Remove the element 
     public new void RemoveAt(int index)

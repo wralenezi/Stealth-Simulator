@@ -78,7 +78,8 @@ public class SearchSegment
 
     public Vector2 GetMidPoint()
     {
-        return m_segmentMidPoint;
+        // return m_segmentMidPoint;
+        return (position1 + position2) / 2f;
     }
 
     // Get the age of the search segment
@@ -128,7 +129,7 @@ public class SearchSegment
 
     public void Expand(float speed, float timeDelta)
     {
-        float slowSpeed = 0.1f / Mathf.Pow(10, Time.timeScale);
+        float slowSpeed = 10f / Mathf.Pow(10, Time.timeScale);
 
         // Expand from one side
         float distance1 = Vector2.Distance(m_destination1.GetPosition(), position1);
@@ -182,13 +183,14 @@ public class SearchSegment
             return;
 
         // Give a portion of the probability
-        float newProb = GetProbability() * Properties.DiscountFactor; // * timeDelta;
+        float newProb = GetProbability() * (Properties.MaxPathDistance - Properties.GetMaxEdgeLength() * 1.5f) /
+                        Properties.MaxPathDistance;
 
         // Create search segments in the other points connected to this destination
         foreach (var line in wayPoint.GetLines())
         {
-            // Make sure the new point is not propagated befpre
-            if (line.GetSearchSegment() == this || GetProbability() < 0.2f || line.GetSearchSegment().isPropagated)
+            // Make sure the new point is not propagated before
+            if (line.GetSearchSegment() == this || GetProbability() < 0.1f || line.GetSearchSegment().isPropagated)
                 continue;
 
             if (line.GetSearchSegment().GetProbability() > GetProbability())
@@ -206,9 +208,9 @@ public class SearchSegment
         Gizmos.color = Properties.GetSegmentColor(GetProbability());
         Gizmos.DrawLine(position1, position2);
 
-
+        //
         // Handles.Label(position1, Vector2.Distance(position1,m_segmentMidPoint).ToString());
-        if (GetProbability() > 0f)
-            Handles.Label(m_segmentMidPoint, (Mathf.Round(GetProbability() * 100f) / 100f).ToString());
+        // if (GetProbability() > 0f)
+        // Handles.Label(m_segmentMidPoint, (Mathf.Round(GetProbability() * 100f) / 100f).ToString());
     }
 }

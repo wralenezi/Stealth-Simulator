@@ -8,9 +8,6 @@ public abstract class WorldRep : MonoBehaviour
     [Header("Debug")] [Tooltip("Hiding Spots")]
     public bool showHidingSpots;
     
-    // Mesh Manager
-    protected MeshManager m_meshManager;
-    
     // static hiding points
     private List<Vector2> m_hidingSpots;
 
@@ -28,10 +25,8 @@ public abstract class WorldRep : MonoBehaviour
     
     public virtual void InitiateWorld(float mapScale)
     {
-        m_meshManager = transform.parent.Find("MeshManager").GetComponent<MeshManager>();
         m_mapDecomposer = GetComponent<MapDecomposer>();
         m_hidingSpots = new List<Vector2>();
-        m_meshManager.Initiate();
     }
 
     public virtual void ResetWorld()

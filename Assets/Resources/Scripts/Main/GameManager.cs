@@ -21,13 +21,13 @@ public class GameManager : MonoBehaviour
     private GameObject m_activeArea;
 
     // The Scenarios to be executed
-    private List<Session> m_scenarios;
+    private List<Session> m_Sessions;
 
     [Tooltip("Rendering")] public bool Render;
 
     // Location of the data for the game
     public static string DataPath;
-    public static string LogsPath = "Logs/";
+    public static string LogsPath = "../../../Logs/";
     public static string MapsDataPath = "MapsData/";
     public static string MapsPath = "Maps/";
     public static string RoadMapsPath = "RoadMaps/";
@@ -38,7 +38,7 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         m_activeArea = null;
-        m_scenarios = new List<Session>();
+        m_Sessions = new List<Session>();
 
         // Define the paths for the game
         // Main path
@@ -68,11 +68,13 @@ public class GameManager : MonoBehaviour
 
     private void LoadSavedSessions()
     {
-        // Get the path to the sessions records
-        string path = DataPath + "/Sessions.csv";
+        // // Get the path to the sessions records
+        // string path = DataPath + "/Sessions.csv";
+        //
+        // // Load the sessions file
+        // var sessionsString = CsvController.ReadString(path);
 
-        // Load the sessions file
-        var sessionsString = CsvController.ReadString(path);
+        var sessionsString = EnumerateSessionData();
 
         // Split data by lines
         var lines = sessionsString.Split('\n');
@@ -98,22 +100,67 @@ public class GameManager : MonoBehaviour
 
                 // Add the guards
                 for (int i = 0; i < int.Parse(data[9]); i++)
-                    sc.AddNpc(NpcType.Guard, guardBehavior, null,
+                    sc.AddGuard(i + 1, NpcType.Guard, guardBehavior, null,
                         (PathFindingHeursitic) Enum.Parse(typeof(PathFindingHeursitic), data[10], true),
                         (PathFollowing) Enum.Parse(typeof(PathFollowing), data[11], true),
                         null);
 
                 // Add the intruders
                 for (int i = 0; i < int.Parse(data[12]); i++)
-                    sc.AddNpc(NpcType.Intruder, null,
+                    sc.AddIntruder(i + 1, NpcType.Intruder, null,
                         (IntruderPlanner) Enum.Parse(typeof(IntruderPlanner), data[13], true),
                         (PathFindingHeursitic) Enum.Parse(typeof(PathFindingHeursitic), data[14], true),
                         (PathFollowing) Enum.Parse(typeof(PathFollowing), data[15], true),
                         null);
 
-                m_scenarios.Add(sc);
+                // Check if the required number of Episodes is logged already or skip if logging is not required.
+                if (!PerformanceMonitor.IsLogged(sc) || loggingMethod == Logging.None)
+                    m_Sessions.Add(sc);
             }
     }
+
+
+    private string EnumerateSessionData()
+    {
+        Dictionary<string, string> maps = new Dictionary<string, string>();
+        // Add maps
+        // maps.Add("MgsDock", "2");
+        // maps.Add("dragon_age_brc202d", "1");
+        // maps.Add("dragon_age2", "1");
+        // maps.Add("valorant_ascent", "2");
+        maps.Add("Boxes", "1");
+        maps.Add("AlienIsolation", "4");
+        maps.Add("CoD_relative", "0.1");
+
+        List<string> guardsCount = new List<string>() {"2"};
+
+        List<string> intruderPlanners = new List<string>() {"RandomMoving", "Heuristic", "HeuristicMoving"};
+
+        List<string> methods = new List<string>() {"RmPropSimple", "Cheating", "RmPropOccupancyDiffusal"};
+
+        // List<string> methods = new List<string>() {"RmPropOccupancyDiffusal"};
+
+        string sessions =
+            "GameCode,Scenario,CoverageResetThreshold,WorldRep,Map,MapScale,GuardPatrolPlanner,GuardChasePlanner,GuardSearchPlanner,GuardsCount,PathFindingHeursitic,PathFollowing,IntudersCount,IntruderPlanner,PathFindingHeursitic,PathFollowing\n";
+
+        foreach (var map in maps)
+        foreach (var guardCount in guardsCount)
+        foreach (var intruderPlanner in intruderPlanners)
+        foreach (var method in methods)
+        {
+            sessions += ",Chase,100,Continuous,";
+            sessions += map.Key + "," + map.Value;
+            sessions += ",Stalest,Simple,";
+            sessions += method + ",";
+            sessions += guardCount;
+            sessions += ",EuclideanDst,SimpleFunnel,1,";
+            sessions += intruderPlanner;
+            sessions += ",EuclideanDst,SimpleFunnel\n";
+        }
+
+        return sessions;
+    }
+
 
     // Create the area and load it with the scenario
     private GameObject CreateArea(Session scenario)
@@ -136,12 +183,12 @@ public class GameManager : MonoBehaviour
     {
         if (m_activeArea == null)
         {
-            if (m_scenarios.Count > 0)
+            if (m_Sessions.Count > 0)
             {
-                m_activeArea = CreateArea(m_scenarios[0]);
+                m_activeArea = CreateArea(m_Sessions[0]);
                 Camera.main.orthographicSize = 10;
 
-                m_scenarios.RemoveAt(0);
+                m_Sessions.RemoveAt(0);
             }
             else
             {
@@ -169,7 +216,7 @@ public class GameManager : MonoBehaviour
 public enum Logging
 {
     // Save log files locally.
-    Locally,
+    Local,
 
     // Upload log files to a server.
     Cloud,
@@ -209,7 +256,7 @@ public enum GuardSearchPlanner
     // The guards search the road map while propagating the probability of the intruder's presence.
     // The probability is diffused similarly to Damian Isla's implementation
     RmPropOccupancyDiffusal,
-    
+
     // The probability is simply propagated through the road map.
     RmPropSimple,
 
@@ -221,8 +268,10 @@ public enum GuardSearchPlanner
 public enum IntruderPlanner
 {
     Random,
+    RandomMoving,
     UserInput,
-    Heuristic
+    Heuristic,
+    HeuristicMoving
 }
 
 // Heuristic for path finding 
@@ -313,10 +362,10 @@ public struct NpcData
     // Initial position for the NPC
     public NpcLocation? location;
 
-    public NpcData(NpcType pNpcType, GuardBehavior? _guardPlanner, IntruderPlanner? _intruderPlanner,
+    public NpcData(int _id, NpcType pNpcType, GuardBehavior? _guardPlanner, IntruderPlanner? _intruderPlanner,
         PathFindingHeursitic pPathFindingHeuristic, PathFollowing pNpcPathFollowing, NpcLocation? _location)
     {
-        id = NpcsCount++;
+        id = _id;
         npcType = pNpcType;
         guardPlanner = _guardPlanner;
         intruderPlanner = _intruderPlanner;
@@ -378,9 +427,11 @@ public struct Session
     // The map Scale
     public float mapScale;
 
-    // NPCs Data
-    public List<NpcData> npcsList;
+    // Guards Data
+    public List<NpcData> guardsList;
 
+    // Intruders Data
+    public List<NpcData> intrudersList;
 
     public Session(string pGameCode, Scenario pScenario, int pGuardsCount, int pIntruderCount,
         int pCoveredRegionResetThreshold,
@@ -395,7 +446,8 @@ public struct Session
         coveredRegionResetThreshold = pCoveredRegionResetThreshold;
         worldRepType = pWorldRepType;
         map = pMap;
-        npcsList = new List<NpcData>();
+        guardsList = new List<NpcData>();
+        intrudersList = new List<NpcData>();
         mapScale = pMapScale;
     }
 
@@ -406,18 +458,30 @@ public struct Session
     }
 
     // Add a NPC to the list
-    public void AddNpc(NpcType npcType, GuardBehavior? guardPlanner, IntruderPlanner? intruderPlanner,
+    public void AddGuard(int id, NpcType npcType, GuardBehavior? guardPlanner, IntruderPlanner? intruderPlanner,
         PathFindingHeursitic pathFindingHeuristic, PathFollowing pathFollowing, NpcLocation? npcLocation)
     {
-        npcsList.Add(new NpcData(npcType, guardPlanner, intruderPlanner, pathFindingHeuristic, pathFollowing,
+        guardsList.Add(new NpcData(id, npcType, guardPlanner, intruderPlanner, pathFindingHeuristic, pathFollowing,
+            npcLocation));
+    }
+
+    public void AddIntruder(int id, NpcType npcType, GuardBehavior? guardPlanner, IntruderPlanner? intruderPlanner,
+        PathFindingHeursitic pathFindingHeuristic, PathFollowing pathFollowing, NpcLocation? npcLocation)
+    {
+        intrudersList.Add(new NpcData(id, npcType, guardPlanner, intruderPlanner, pathFindingHeuristic, pathFollowing,
             npcLocation));
     }
 
 
     // Add the NPC data
-    public List<NpcData> GetNpcsData()
+    public List<NpcData> GetGuardsData()
     {
-        return npcsList;
+        return guardsList;
+    }
+
+    public List<NpcData> GetIntrudersData()
+    {
+        return intrudersList;
     }
 
     public override string ToString()
@@ -425,8 +489,36 @@ public struct Session
         // Separator
         string sep = " ";
 
-        return gameCode + sep + GetMapScale() + sep + GetNpcsData()[0].guardPlanner.Value.search + sep + guardsCount +
-               sep + map +
-               sep + Properties.EpisodeLength;
+        string sessionInfo = "";
+
+        // Game code
+        sessionInfo += gameCode + sep;
+
+        // Man name
+        sessionInfo += map + sep;
+
+        // Map scale
+        sessionInfo += GetMapScale() + sep;
+
+        // Guard planner 
+        sessionInfo += (GetGuardsData().Count > 0 ? GetGuardsData()[0].guardPlanner.Value.search.ToString() : "") + sep;
+
+        // Guard FoV percentage of the longest path in the map
+        sessionInfo += Properties.GuardsFovRadiusPercentage + sep;
+
+        // Number of guards
+        sessionInfo += guardsCount + sep;
+
+        // Intruder planner 
+        sessionInfo += (GetIntrudersData().Count > 0 ? GetIntrudersData()[0].intruderPlanner.Value.ToString() : "") +
+                       sep;
+
+        // Intruder's speed percentage to guards
+        sessionInfo += Properties.IntruderSpeedPercentage + sep;
+
+        // Length of the episode
+        sessionInfo += Properties.EpisodeLength;
+
+        return sessionInfo;
     }
 }

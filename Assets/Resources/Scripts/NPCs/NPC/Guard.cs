@@ -16,8 +16,6 @@ public abstract class Guard : NPC
     // The seen area of the guard
     protected List<Polygon> SeenArea;
 
-    // The Current FoV
-    private List<Polygon> m_FovPolygon;
 
     // the percentage of the seen area by this guard
     protected int m_GuardSeenAreaPercentage;
@@ -26,12 +24,9 @@ public abstract class Guard : NPC
     protected int m_FoundHidingSpots;
 
     // Initialize the guard
-    public override void Initiate()
+    public override void Initiate(StealthArea area, NpcData data)
     {
-        base.Initiate();
-        AddFoV();
-
-        m_FovPolygon = new List<Polygon>() {new Polygon()};
+        base.Initiate(area, data);
         SeenArea = new List<Polygon>();
     }
 
@@ -39,7 +34,6 @@ public abstract class Guard : NPC
     {
         base.ResetNpc();
         ClearGoal();
-        m_FovPolygon[0].Clear();
         SeenArea.Clear();
     }
 
@@ -49,33 +43,25 @@ public abstract class Guard : NPC
         if (m_GuardSeenAreaPercentage > resetThreshold)
             ClearSeenArea();
     }
-    
-    public void RestrictSearchArea()
-    {
-        // m_SpaceFiller.RemoveFromCircle(m_FovPolygon);
-        // m_SpaceFiller.RemoveSpottedInterceptionPoints(m_FovPolygon);
-    }
-    
+
     public void ClearSeenArea()
     {
         SeenArea.Clear();
     }
-    
+
     // Get the guard to patrol 
     public void Patrol()
     {
-        if (Goal == null)
-            Goal = GetPatrolGoal();
-
-        SetPathToGoal();
+        if (!IsBusy())
+            SetGoal(GetPatrolGoal().Value, false);
     }
-    
+
     // Check if any intruder is spotted, return true if at least one is spotted
     public bool SpotIntruders(List<Intruder> intruders)
     {
         foreach (var intruder in intruders)
         {
-            if (m_FovPolygon[0].IsCircleInPolygon(intruder.transform.position, 0.03f))
+            if (GetFovPolygon().IsCircleInPolygon(intruder.transform.position, 0.03f))
             {
                 intruder.Seen();
                 RenderIntruder(intruder, true);
@@ -87,12 +73,7 @@ public abstract class Guard : NPC
 
         return false;
     }
-    
-    // Get field of vision
-    public Polygon GetFoV()
-    {
-        return m_FovPolygon[0];
-    }
+
 
     // Rendering the intruder
     public void RenderIntruder(Intruder intruder, bool seen)
@@ -100,6 +81,7 @@ public abstract class Guard : NPC
         if (Area.gameView == GameView.Spectator)
         {
             intruder.RenderIntruder(true);
+            intruder.RenderIntruderFov(true);
             RenderGuard(true);
         }
         else if (Area.gameView == GameView.Guard)
@@ -109,6 +91,8 @@ public abstract class Guard : NPC
                 intruder.RenderIntruder(true);
             else
                 intruder.RenderIntruder(false);
+
+            intruder.RenderIntruderFov(false);
         }
     }
 
@@ -119,38 +103,16 @@ public abstract class Guard : NPC
         FovRenderer.enabled = isSeen;
     }
 
-
     public abstract Vector2? GetPatrolGoal();
 
+    // private void LoadFovPolygon()
+    // {
+    //     GetFovPolygon().Clear();
+    //     foreach (var vertex in Fov.GetFovVertices())
+    //         GetFovPolygon().AddPoint(vertex);
+    // }
 
-    // Create and add the Field of View
-    public void AddFoV()
-    {
-        // The game object that contains the field of view
-        GameObject fovGameObject = new GameObject("FoV");
 
-        // Assign it as a child to the guard
-        var transform1 = transform;
-        fovGameObject.transform.parent = transform1;
-        fovGameObject.transform.position = transform1.position;
-
-        Fov = fovGameObject.AddComponent<FieldOfView>();
-        Fov.Initiate(Properties.ViewAngle, Properties.ViewRadius, new Color32(0, 100, 100, 100));
-    }
-
-    private void LoadFovPolygon()
-    {
-        m_FovPolygon[0].Clear();
-        foreach (var vertex in Fov.GetFovVertices())
-            m_FovPolygon[0].AddPoint(vertex);
-    }
-
-    // Cast the guard field of view
-    public void CastVision()
-    {
-        Fov.CastFieldOfView();
-        LoadFovPolygon();
-    }
 
     // Add the FoV to the Overall Seen Area
     public void AccumulateSeenArea()
@@ -158,17 +120,17 @@ public abstract class Guard : NPC
         // If there is no area seen start with the guards current vision
         if (SeenArea.Count == 0)
         {
-            SeenArea.Add(m_FovPolygon[0]);
+            SeenArea.Add(GetFovPolygon());
         }
         else
         {
             // Merge with the total seen area by this guard
-            SeenArea = PolygonHelper.MergePolygons(m_FovPolygon, SeenArea, ClipType.ctUnion);
+            SeenArea = PolygonHelper.MergePolygons(GetFov(), SeenArea, ClipType.ctUnion);
         }
 
         CheckForFoundHidingSpots();
     }
-    
+
     // 
     public List<Polygon> CopySeenArea()
     {
@@ -182,7 +144,7 @@ public abstract class Guard : NPC
 
         return seenArea;
     }
-    
+
     // Check if a spot is seen
     void CheckForFoundHidingSpots()
     {
@@ -206,16 +168,7 @@ public abstract class Guard : NPC
     // Check if a point is in the FoV
     public bool IsPointInFoV(Vector2 point)
     {
-        bool isIn = false;
-
-        if (m_FovPolygon.Count > 0)
-            for (int i = 0; i < m_FovPolygon.Count; i++)
-                if (m_FovPolygon[i].IsPointInPolygon(point, true))
-                {
-                    isIn = true;
-                }
-
-
+        bool isIn = GetFovPolygon().IsPointInPolygon(point, true);
         return isIn;
     }
 
@@ -232,7 +185,7 @@ public abstract class Guard : NPC
     private void OnDrawGizmos()
     {
         base.OnDrawGizmos();
-        
+
         if (drawSeenArea)
         {
             foreach (var p in SeenArea)

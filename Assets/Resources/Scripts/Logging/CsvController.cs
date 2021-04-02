@@ -22,7 +22,7 @@ public static class CsvController
 
         foreach (var file in allFiles)
         {
-            if (file.StartsWith(fileName))
+            if (file.StartsWith(fileName) && !file.EndsWith(".meta"))
                 episodesCount++;
         }
 

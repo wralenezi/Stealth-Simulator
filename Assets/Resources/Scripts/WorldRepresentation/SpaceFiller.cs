@@ -174,10 +174,10 @@ public class SpaceFiller : MonoBehaviour
 
     public void Restrict(List<Guard> guards)
     {
-        foreach (var guard in guards)
-        {
-            guard.RestrictSearchArea();
-        }
+        // foreach (var guard in guards)
+        // {
+        //     guard.RestrictSearchArea();
+        // }
 
         m_SearchRegions =
             PolygonHelper.MergePolygons(m_SearchRegions, m_MapRenderer.GetInteriorWalls(),

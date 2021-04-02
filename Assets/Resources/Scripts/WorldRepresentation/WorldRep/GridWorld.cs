@@ -76,7 +76,7 @@ public class GridWorld : WorldRep
         }
 
         // Render the grid
-        m_meshManager.InitializeGrid(NodeList);
+        // m_meshManager.InitializeGrid(NodeList);
     }
 
     private bool IsNodeInMap(Vector2 node)
@@ -113,7 +113,7 @@ public class GridWorld : WorldRep
         UpdateGrid(gridGuards);
 
         base.UpdateWorld(guardsManager);
-        m_meshManager.RenderGrid(NodeList);
+        // m_meshManager.RenderGrid(NodeList);
     }
 
 

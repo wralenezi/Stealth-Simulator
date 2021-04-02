@@ -28,6 +28,13 @@ public class PerformanceMonitor : MonoBehaviour
         m_episodeCount = CsvController.ReadFileStartWith(Sa);
     }
 
+    public static bool IsLogged(Session sa)
+    {
+        int episodeCount = CsvController.ReadFileStartWith(sa);
+
+        return episodeCount >= Properties.EpisodesCount;
+    }
+
     // Did the scenario recorded the required number of episodes
     public bool IsDone()
     {
@@ -78,7 +85,7 @@ public class PerformanceMonitor : MonoBehaviour
             string data = "";
 
             data +=
-                "gameCode,guardType,guardId,guardPlanner,guardHeuristic,guardPathFollowing,elapsedTime,distanceTravelled,state,NoTimesSpotted,alertTime,searchedTime,foundHidingSpots,stalenessAverages\n";
+                "gameCode,guardType,guardId,guardPlanner,guardHeuristic,guardPathFollowing,elapsedTime,distanceTravelled,state,NoTimesSpotted,alertTime,searchedTime,GuardsOverlapTime,foundHidingSpots,stalenessAverages\n";
 
             for (int i = 0; i < snapshots.Count; i++)
             {
@@ -110,6 +117,9 @@ public struct LogSnapshot
     // Number of times and intruder is spotted
     public int NoTimesSpotted;
 
+    // Guards overlap time
+    public float GuardsOverlapTime;
+
     // Total time under alert
     public float AlertTime;
 
@@ -124,6 +134,7 @@ public struct LogSnapshot
 
 
     public LogSnapshot(float travelledDistance, float elapsedTime, NpcData npcData, string npcState, int noTimesSpotted,
+        float guardOverlapTime,
         float alertTime,
         float searchTime, int foundHidingSpots,
         float stalenessAverage)
@@ -134,6 +145,7 @@ public struct LogSnapshot
         State = npcState;
         AlertTime = alertTime;
         SearchTime = searchTime;
+        GuardsOverlapTime = guardOverlapTime;
         FoundHidingSpots = foundHidingSpots;
         StalenessAverage = stalenessAverage;
         NoTimesSpotted = noTimesSpotted;
@@ -141,8 +153,14 @@ public struct LogSnapshot
 
     public override string ToString()
     {
-        string output = NpcDetail + "," + ElapsedTime + "," +
-                        TravelledDistance + "," + State + "," + NoTimesSpotted + "," + AlertTime + "," + SearchTime +
+        string output = NpcDetail +
+                        "," + ElapsedTime +
+                        "," + TravelledDistance +
+                        "," + State +
+                        "," + NoTimesSpotted +
+                        "," + AlertTime +
+                        "," + SearchTime +
+                        "," + GuardsOverlapTime +
                         "," + FoundHidingSpots +
                         "," + StalenessAverage;
 

@@ -3,10 +3,6 @@ using UnityEngine;
 
 public static class Properties
 {
-    //-------------------------------------------------
-    // File Directories
-
-
     //-------------------------------------------------------------------------//
     // Geometry Parameters
     // Winding order for outer polygons; inner polygon is opposite.
@@ -25,7 +21,7 @@ public static class Properties
     static readonly int GridMultiplier = 1;
     public static readonly int GridDefaultSizeX = 16 * GridMultiplier;
     public static readonly int GridDefaultSizeY = 10 * GridMultiplier;
-    public static readonly float NodeRadius = 0.1f;
+    public static readonly float NodeRadius = 0.15f;
 
 
     //---------------------------------------------------//
@@ -56,34 +52,105 @@ public static class Properties
     // NPC Properties
     public const float SpeedMultiplyer = 1f;
     public const float NpcSpeed = 4f * SpeedMultiplyer;
-    public const float NpcRotationSpeed = 400f * SpeedMultiplyer;
+    public const float NpcRotationSpeed = 200f * SpeedMultiplyer;
 
-    // Field of View Properties
-    private const float viewRadiusFractionOfMap = 0.2f;
+    // The multiplier of the intruder's speed
+    public const float IntruderSpeedPercentage = 150f;
+    public const float IntruderRotationSpeedMulti = 2f;
 
-    // Set the default value for view radius for the Npcs
-    public static void SetViewRadius(float maxWidth)
+    public static Color32 GetFovColor(NpcType npcType)
     {
-        ViewRadius = maxWidth * viewRadiusFractionOfMap;
+        switch (npcType)
+        {
+            case NpcType.Guard:
+                return new Color32(0, 100, 100, 100);
+
+            case NpcType.Intruder:
+                return new Color32(100, 100, 100, 100);
+
+            default:
+                return new Color32(100, 100, 100, 100);
+        }
     }
 
-    public static float ViewRadius = 15f;
-    public const float ViewAngle = 90f;
+    private static float maxWidth; 
+    public static void SetMapMaxWidth(float _maxWidth)
+    {
+        maxWidth = _maxWidth;
+    }
+
+
+
+    public static float GuardsFovRadiusPercentage = 50f;
+
+    // Get the default value for view radius for the Npcs as a portion of a value
+    public static float GetFovRadius(NpcType npcType)
+    {
+        // Field of View Properties
+        float viewRadiusFractionOfMap;
+
+        switch (npcType)
+        {
+            case NpcType.Guard:
+                viewRadiusFractionOfMap = GuardsFovRadiusPercentage / 100f;
+                break;
+
+            case NpcType.Intruder:
+                viewRadiusFractionOfMap = 1f;
+                break;
+
+            default:
+                viewRadiusFractionOfMap = 0.1f;
+                break;
+        }
+
+        return maxWidth * viewRadiusFractionOfMap;
+    }
+
+    // Get the FoV angle based on the type of the npc.
+    public static float GetFovAngle(NpcType npcType)
+    {
+        // Field of View Properties
+        float fovAngle;
+
+        switch (npcType)
+        {
+            case NpcType.Guard:
+                fovAngle = 90f;
+                break;
+
+            case NpcType.Intruder:
+                fovAngle = 361f;
+                break;
+
+            default:
+                fovAngle = 90f;
+                break;
+        }
+
+        return fovAngle;
+    }
 
 
     //-----------------------------------------------------------------------------
     // Search Parameters
     // Rate of increase of the probability value of search segment
     public static readonly float ProbabilityIncreaseRate = 0.001f * NpcSpeed;
-    public static readonly float DiscountFactor = 0.97f;
     public static readonly float PropagationMultiplier = 0.5f * NpcSpeed;
 
     // Parameters of Damian Isla implementation
     // Probability Diffuse factor; it tunes how fast the probability is propagated.
-    public static readonly float ProbDiffFac = 0.1f;// * NpcSpeed;
+    public static readonly float ProbDiffFac = 0.1f;
 
-    // Max length a search segment can have
-    public static readonly float MaxEdgeLength = 2f;
+    // Ratio of max length of a segment to map width. 
+    private static readonly float maxEdgeRatio = 0.2f;
+
+    public static float GetMaxEdgeLength()
+    {
+        // return maxWidth * maxEdgeRatio;
+        return 2f;
+    }
+
 
     // Max age a search segment can have
     public static float MaxAge = 255f;
@@ -96,24 +163,24 @@ public static class Properties
 
     // The Max path distance of the map, for normalization purposes. 
     public static float MaxPathDistance;
-
+    public static float PathDenom = 150f;
+    
+    
+    // Get a color opacity based a on a value from 0 to 1
     public static Color32 GetSegmentColor(float feature)
     {
         if (feature < 0f) feature = 0f;
-
-        // In case of using the age feature
-        // byte colorLevel = (byte) Math.Round((age/MaxAge) * 255);
-
+        
         // In case of using the likelihood feature
-        byte colorLevel = (byte) Mathf.Round(feature * 255);
+        byte opacity = (byte) Mathf.Round(feature * 255);
 
-        return new Color32(255, 0, 0, colorLevel);
+        return new Color32(255, 0, 0, opacity);
     }
 
     //----------------------------------------------------------
     // The number of episodes to record
-    public static int EpisodesCount = 50;
+    public static int EpisodesCount = 40;
 
     // The duration of an episode.
-    public static float EpisodeLength = 400f;
+    public static float EpisodeLength = 250f;
 }

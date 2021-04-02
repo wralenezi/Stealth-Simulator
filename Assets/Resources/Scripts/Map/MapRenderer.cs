@@ -16,6 +16,8 @@ public class MapRenderer : MonoBehaviour
     // inner walls 
     private List<Polygon> m_interiorWalls;
 
+    private float m_MapBoundingBoxMaxWith; 
+
 
     // Initiate the map renderer
     public void Initiate()
@@ -215,10 +217,13 @@ public class MapRenderer : MonoBehaviour
 
         // Draw the lines to render the map
         RenderLines();
+
+        SetMapMaxWidth();
     }
 
 
-    public void SetNpcDefaultRadius()
+    // Set the maximum with of the bounding box of the map
+    public void SetMapMaxWidth()
     {
         m_walls[0].BoundingBox(out float minX, out float maxX, out float minY, out float maxY);
 
@@ -226,8 +231,22 @@ public class MapRenderer : MonoBehaviour
             ? Mathf.Abs(maxX - minX)
             : Mathf.Abs(maxY - minY);
 
-        Properties.SetViewRadius(maxWidth);
+        m_MapBoundingBoxMaxWith = maxWidth;
+        
+        Properties.SetMapMaxWidth(maxWidth);
+
     }
+
+    public void GetMapBoundingBox(out float minX, out float maxX, out float minY, out float maxY)
+    {
+        m_walls[0].BoundingBox(out  minX, out  maxX, out  minY, out  maxY);
+    }
+
+    public float GetMaxWidth()
+    {
+        return m_MapBoundingBoxMaxWith;
+    }
+
 
     // Modify the walls size, the holes to be larger and the outer wall to be smaller. This is hack to prevent triangulation from crashing when there are touching polygons
     public void CreateIntWalls()

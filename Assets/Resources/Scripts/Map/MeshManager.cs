@@ -6,8 +6,13 @@ public class MeshManager : MonoBehaviour
 {
     private GameManager m_gameManager;
 
+    private StealthArea m_StealthArea;
+
     // List of the materials of the nodes in the grid
     private List<Material> m_materials;
+
+    // Gameobject for the walkable area mesh
+    private List<GameObject> m_walkableAreaMeshes;
 
     // Area Mesh GameObject (for rendering)
     GameObject m_AreaMeshPrefab;
@@ -16,11 +21,35 @@ public class MeshManager : MonoBehaviour
     string PixelPath = "Sprites/white_pixel";
 
     // Start is called before the first frame update
-    public void Initiate()
+    public void Initiate(StealthArea stealthArea)
     {
         m_AreaMeshPrefab = (GameObject) Resources.Load(MeshPrefabAddress);
         m_gameManager = transform.parent.parent.GetComponent<GameManager>();
+        m_StealthArea = stealthArea;
+        TileFloor(m_StealthArea.mapRenderer.GetWalls());
     }
+
+
+    // Tile the walkable area with meshes
+    public void TileFloor(List<Polygon> walls)
+    {
+        m_walkableAreaMeshes = new List<GameObject>();
+        
+        // Cut the holes in the map
+        Polygon simplePolygon = PolygonHelper.CutHoles(walls);
+
+        // Decompose Space
+        List<MeshPolygon> convexPolys = HertelMelDecomp.ConvexPartition(simplePolygon);
+        
+        foreach (var p in convexPolys)
+        {
+            GameObject areaMesh = Instantiate(m_AreaMeshPrefab, transform, true);
+            areaMesh.GetComponent<AreaMesh>().Draw(GetVertices(p));
+            areaMesh.GetComponent<Renderer>().sortingOrder = -2;
+            m_walkableAreaMeshes.Add(areaMesh);
+        }
+    }
+
 
     public void ClearMeshes()
     {
@@ -84,7 +113,7 @@ public class MeshManager : MonoBehaviour
         for (int x = 0; x < nodes.GetLength(0); x++)
         for (int y = 0; y < nodes.GetLength(1); y++)
         {
-            if (nodes[x, y].walkable)
+            if (nodes[x, y].code != '0')
                 InitiateNode(nodes[x, y].worldPosition, nodes[x, y].distanceTransform);
         }
     }

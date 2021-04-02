@@ -6,13 +6,15 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using Vector3 = UnityEngine.Vector3;
 
+
+// Inspired by: https://github.com/SebLague/Field-of-View
 public class FieldOfView : MonoBehaviour
 {
     // 
     private int edgeResolveIterations = 1;
     private float edgeDstThreshold = 100f;
 
-    private int meshResolution = 1;
+    private float meshResolution = 2f;
 
     private float m_ViewAngle;
     private float m_ViewRadius;
@@ -41,6 +43,9 @@ public class FieldOfView : MonoBehaviour
         var material = new Material(Shader.Find("Sprites/Default")) {color = viewConeColor};
         material.renderQueue = RenderQueue.Geometry.GetHashCode();
         meshRenderer.material = material;
+        material.renderQueue = 3000;
+        GetComponent<Renderer>().sortingOrder = 0;
+
 
         m_ViewMeshFilter.mesh = m_ViewMesh;
 
@@ -66,11 +71,13 @@ public class FieldOfView : MonoBehaviour
 
         m_ViewPoints.Add(source);
 
+        int numberOfRays = Mathf.RoundToInt(m_ViewAngle * meshResolution);
+
         // Calculate field of view
-        for (int i = 0; i <= Mathf.RoundToInt(m_ViewAngle * meshResolution); i++)
+        for (int i = 0; i <= numberOfRays; i++)
         {
-            float angle = yRotation - m_ViewAngle / 2 +
-                          (m_ViewAngle / Mathf.RoundToInt(m_ViewAngle * meshResolution)) * i;
+            // Calculate the angle of this step
+            float angle = yRotation - m_ViewAngle / 2 + (m_ViewAngle / numberOfRays) * i;
 
             ViewCastInfo newViewCast = ViewCast(source, angle, m_ViewRadius);
 
@@ -81,6 +88,7 @@ public class FieldOfView : MonoBehaviour
                      Mathf.Abs(oldViewCast.distance - newViewCast.distance) > edgeDstThreshold))
                 {
                     EdgeInfo edge = FindEdge(source, oldViewCast, newViewCast, m_ViewRadius);
+                    
                     if (edge.PointA != Vector3.zero)
                     {
                         m_ViewPoints.Add(edge.PointA);
@@ -97,12 +105,12 @@ public class FieldOfView : MonoBehaviour
             m_ViewPoints.Add(newViewCast.point);
             oldViewCast = newViewCast;
         }
-
+        
         // Draw mesh
         int vertexCount = m_ViewPoints.Count;
         m_Vertices.Clear();
         m_Triangles.Clear();
-        
+
         m_Vertices.Add(Vector3.zero);
         for (int i = 0; i < vertexCount - 1; i++)
         {

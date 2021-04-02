@@ -1,5 +1,7 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 public class AreaMesh : MonoBehaviour
@@ -42,16 +44,41 @@ public class AreaMesh : MonoBehaviour
 
         for (int i = 0; i < vertices.Length; i++)
             nodes.AddPoint(vertices[i]);
-        
+
         var triangles = EarClipDecomp.TriangulateIndex(nodes).ToArray();
-        
+
         // Assign the mesh values
         m_viewMesh.Clear();
         m_viewMesh.vertices = vertices;
         m_viewMesh.triangles = triangles;
         m_viewMesh.RecalculateNormals();
-        
+
         Color color = Properties.GetStalenessColor(m_staleness);
-        m_meshRenderer.material.color =  color;
+        m_meshRenderer.material.color = color;
     }
+
+    public void Draw(Vector2[] meshVertices)
+    {
+        // Prepare the variables to load the number of vertices and triangles that will make the visibility polygon
+        Vector3[] vertices = ToVector3Array(meshVertices);
+        int[] triangles;
+
+        Polygon poly = new Polygon();
+
+        for (int i = 0; i < vertices.Length; i++)
+            poly.AddPoint(vertices[i]);
+
+        poly.EnsureWindingOrder(Properties.outerPolygonWinding);
+
+        triangles = EarClipDecomp.TriangulateIndex(poly).ToArray();
+
+        // Assign the mesh values
+        m_viewMesh.Clear();
+        m_viewMesh.vertices = vertices;
+        m_viewMesh.triangles = triangles;
+
+
+        m_viewMesh.RecalculateNormals();
+    }
+    
 }
