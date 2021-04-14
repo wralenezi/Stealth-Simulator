@@ -41,7 +41,7 @@ public class GuardsManager : Agent
 
     // The number of updates done for the possible interception points
     private int m_UpdateCount = 0;
-    
+
     // Total time of guards overlapping each other
     public static float GuardsOverlapTime;
 
@@ -50,6 +50,9 @@ public class GuardsManager : Agent
 
     // The weights for deciding the heuristic
     public SearchWeights searchWeights;
+
+    public float Decision;
+    public float Updated;
 
     // Start the NPC manager
     public void Initiate(StealthArea _stealthArea, Transform map, Text text)
@@ -103,10 +106,10 @@ public class GuardsManager : Agent
         sensor.AddObservation(guardsPresence);
 
         // The normalized area of the map
-        float mapsRelativeArea = m_StealthArea.mapDecomposer.GetNavMeshArea() / Properties.MaxWalkableArea; 
+        float mapsRelativeArea = m_StealthArea.mapDecomposer.GetNavMeshArea() / Properties.MaxWalkableArea;
         sensor.AddObservation(mapsRelativeArea);
-        
-        // Debug.Log("Guards Presence: " + guardsPresence + "  Map Area: " + mapsRelativeArea);
+
+        // Debug.Log("  Map Area: " + m_StealthArea.mapDecomposer.GetNavMeshArea());
     }
 
     // Called when the action is received.
@@ -141,7 +144,7 @@ public class GuardsManager : Agent
         // Default weight for the distance to other guards' closest goal of the segment
         continuousActionsOut[2] = 1f;
         // Default weight for the distance of the segment
-        continuousActionsOut[3] = -0.8f;
+        continuousActionsOut[3] = -1f;
     }
 
     // End the episode.
@@ -245,7 +248,7 @@ public class GuardsManager : Agent
     public void ResetNpcs(List<MeshPolygon> navMesh, StealthArea area)
     {
         GuardsOverlapTime = 0f;
-        
+
         // Reset guards
         foreach (var guard in m_Guards)
         {
@@ -317,7 +320,9 @@ public class GuardsManager : Agent
         // Move and propagate the possible intruder position (phantoms)
         if (GetState() is Search)
         {
+            float timeBefore = Time.realtimeSinceStartup;
             searcher.UpdateSearcher(m_Intruders[0].GetNpcSpeed(), m_Guards, timeDelta);
+            Updated = (Time.realtimeSinceStartup - timeBefore);
         }
     }
 
@@ -433,6 +438,8 @@ public class GuardsManager : Agent
     // Keep searching for the intruder
     public void Search()
     {
+        float timeBefore = Time.realtimeSinceStartup;
+
         foreach (var guard in m_Guards)
         {
             // Don't wait till the guard is free and just guide them to intruder's actual position.
@@ -462,6 +469,9 @@ public class GuardsManager : Agent
                 }
             }
         }
+
+        if (Time.realtimeSinceStartup - timeBefore > Decision)
+            Decision = (Time.realtimeSinceStartup - timeBefore);
     }
 
     public void EndSearch()
@@ -637,7 +647,7 @@ public class GuardsManager : Agent
     {
         if (IsGuardsOverlapping())
             GuardsOverlapTime += deltaTime;
-        
+
         foreach (var intruder in m_Intruders)
             intruder.UpdateMetrics(deltaTime);
     }
@@ -646,7 +656,7 @@ public class GuardsManager : Agent
     public bool IsGuardsOverlapping()
     {
         for (int i = 0; i < m_Guards.Count; i++)
-        for (int j = i+1; j < m_Guards.Count; j++)
+        for (int j = i + 1; j < m_Guards.Count; j++)
         {
             if (Vector2.Distance(m_Guards[i].GetTransform().position, m_Guards[j].GetTransform().position) < 0.4f)
                 return true;

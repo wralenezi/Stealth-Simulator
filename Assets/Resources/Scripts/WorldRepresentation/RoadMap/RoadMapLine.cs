@@ -64,11 +64,14 @@ public class RoadMapLine
 
         bool isValidToIncrement = false;
 
+        if (GetSearchSegment().IsObserved)
+            return;
+
         foreach (var wp1Line in GetWp1Connections())
         {
             SearchSegment wp1Ss = wp1Line.GetSearchSegment();
 
-            if (wp1Ss.GetProbability() > SearchSegment.MinProbability)
+            if (wp1Ss.GetProbability() > SearchSegment.MinProbability && !GetSearchSegment().IsObserved)
             {
                 isValidToIncrement = true;
                 break;
@@ -80,7 +83,7 @@ public class RoadMapLine
             {
                 SearchSegment wp1Ss = wp2Line.GetSearchSegment();
 
-                if (wp1Ss.GetProbability() > SearchSegment.MinProbability)
+                if (wp1Ss.GetProbability() > SearchSegment.MinProbability && !GetSearchSegment().IsObserved)
                 {
                     isValidToIncrement = true;
                     break;
@@ -100,8 +103,8 @@ public class RoadMapLine
         // The age threshold of the search segment to propagate to other search segments
         // float ageThreshold = (speed * timeDelta) / (lineLength * Time.timeScale);// * Properties.GetMaxEdgeLength()) ;
 
-        float ageThreshold = 0.1f * speed * Properties.MaxPathDistance / Properties.PathDenom;
-        
+        float ageThreshold = 0.025f * lineLength * speed; // * Properties.MaxPathDistance / Properties.PathDenom;
+
         if (GetSearchSegment().IsActive() && GetSearchSegment().GetAge() > ageThreshold)
         {
             sS.PropagateDestination(1);
@@ -117,12 +120,12 @@ public class RoadMapLine
 
     // Remove part of the old search segment to add a new one
     // Returns true if it is seen
-    public void CheckSeenSegment(Guard guard, Vector2 position)
+    public void CheckSeenSegment(Guard guard)
     {
         Polygon foV = guard.GetFovPolygon();
 
         // Get the distance over the segment from the guard
-        float distanceFromGuard = Vector2.Distance(GetSearchSegment().GetMidPoint(), position);
+        float distanceFromGuard = Vector2.Distance(GetSearchSegment().GetMidPoint(), guard.GetTransform().position);
 
         // Ignore segments that are too far away
         if (distanceFromGuard > guard.GetFovRadius() * 1.5f)
@@ -148,12 +151,24 @@ public class RoadMapLine
             }
         }
 
+        // Check if the segment is completely is in the field of vision
+        if (IsSegmentSeen(guard)) //isIp1In && isIp2In &&
+            GetSearchSegment().Seen();
+        else
+            GetSearchSegment().notSeen();
+    }
+
+    bool IsSegmentSeen(Guard guard)
+    {
+        Polygon foV = guard.GetFovPolygon();
+
         // Check if the mid point is in the field of view
         bool isMidPointInFov = foV.IsPointInPolygon(GetSearchSegment().GetMidPoint(), false);
 
-        // Check if the segment is completely is in the field of vision
-        if ((isMidPointInFov) || distanceFromGuard <= 0.3f) //isIp1In && isIp2In &&
-            GetSearchSegment().Seen();
+        // Get the distance over the segment from the guard
+        float distanceFromGuard = Vector2.Distance(GetSearchSegment().GetMidPoint(), guard.GetTransform().position);
+
+        return (isMidPointInFov) || distanceFromGuard <= 0.3f;
     }
 
     // Search segment is no longer need, so it is reset.
@@ -171,12 +186,11 @@ public class RoadMapLine
 
     public void DrawLine()
     {
-        
         var p1 = wp1.GetPosition();
         var p2 = wp2.GetPosition();
         var dir = (p1 - p2).normalized * 0.5f;
         var thickness = 3;
-        Handles.DrawBezier(p1 - dir,p2 + dir,p1 + dir,p2 - dir, Color.red,null,thickness);
+        Handles.DrawBezier(p1 - dir, p2 + dir, p1 + dir, p2 - dir, Color.red, null, thickness);
 
         // Gizmos.DrawLine(wp1.GetPosition(), wp2.GetPosition());
         // Handles.Label(wp1.GetPosition(), wp1.Id.ToString());

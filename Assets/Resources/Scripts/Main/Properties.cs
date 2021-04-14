@@ -81,7 +81,7 @@ public static class Properties
 
 
 
-    public static float GuardsFovRadiusPercentage = 50f;
+    public static float GuardsFovRadiusPercentage = 10f;
 
     // Get the default value for view radius for the Npcs as a portion of a value
     public static float GetFovRadius(NpcType npcType)
@@ -120,7 +120,7 @@ public static class Properties
                 break;
 
             case NpcType.Intruder:
-                fovAngle = 361f;
+                fovAngle = 360f;
                 break;
 
             default:

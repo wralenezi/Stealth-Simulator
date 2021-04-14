@@ -40,7 +40,9 @@ public abstract class NPC : MonoBehaviour
 
     // Field of View object
     protected FieldOfView Fov;
+
     private float m_FovRadius;
+
     // The Current FoV
     private List<Polygon> m_FovPolygon;
 
@@ -159,7 +161,7 @@ public abstract class NPC : MonoBehaviour
             dir.y * c + dir.x * s, dir.y * s - dir.x * c
         );
     }
-    
+
     // Place the NPC's start position
     public void ResetLocation(List<MeshPolygon> navMesh, List<Guard> guards, List<Polygon> mapWalls,
         Session sessionInfo)
@@ -263,7 +265,9 @@ public abstract class NPC : MonoBehaviour
     // Move the NPC through it's path
     public void ExecutePlan(IState state, GuardRole? guardRole, float deltaTime)
     {
-        if (PathToTake.Count > 0)
+        if (GetNpcData().intruderPlanner == IntruderPlanner.UserInput)
+            MoveByInput(deltaTime);
+        else if (PathToTake.Count > 0)
             if (GoStraightTo(PathToTake[0], state, guardRole, deltaTime))
             {
                 PathToTake.RemoveAt(0);
@@ -325,7 +329,7 @@ public abstract class NPC : MonoBehaviour
     }
 
     // Move the NPC by user input.
-    public void MoveByInput()
+    public void MoveByInput(float deltaTime)
     {
         Vector2 dir = new Vector2(0f, 0f);
 
@@ -343,10 +347,10 @@ public abstract class NPC : MonoBehaviour
             float m_goalAngle = Vector2.SignedAngle(Vector2.up, dir);
             Quaternion toRotation = Quaternion.AngleAxis(m_goalAngle, Vector3.forward);
             GetTransform().rotation = Quaternion.RotateTowards(GetTransform().rotation, toRotation,
-                NpcRotationSpeed * Time.deltaTime * 10f);
+                NpcRotationSpeed * deltaTime * 10f);
         }
 
-        m_NpcRb.MovePosition((Vector2) GetTransform().position + dir.normalized * (NpcSpeed * Time.deltaTime));
+        m_NpcRb.MovePosition((Vector2) GetTransform().position + dir.normalized * (NpcSpeed * deltaTime));
     }
 
     // Get the remaining distance to goal

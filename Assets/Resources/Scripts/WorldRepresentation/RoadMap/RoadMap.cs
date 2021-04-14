@@ -73,6 +73,8 @@ public class RoadMap
         // Add the line connected to the way point
         foreach (var wp in m_WayPoints)
             wp.AddLines(m_Lines);
+        
+        // Debug.Log("Segments Count: "+m_Lines.Count);
     }
 
 

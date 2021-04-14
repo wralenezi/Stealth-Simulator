@@ -14,7 +14,7 @@ public class FieldOfView : MonoBehaviour
     private int edgeResolveIterations = 1;
     private float edgeDstThreshold = 100f;
 
-    private float meshResolution = 2f;
+    private float meshResolution = 1f;
 
     private float m_ViewAngle;
     private float m_ViewRadius;
@@ -105,6 +105,10 @@ public class FieldOfView : MonoBehaviour
             m_ViewPoints.Add(newViewCast.point);
             oldViewCast = newViewCast;
         }
+
+        if (m_ViewAngle == 360f)
+            m_ViewPoints.Add(m_ViewPoints[0]);
+        
         
         // Draw mesh
         int vertexCount = m_ViewPoints.Count;

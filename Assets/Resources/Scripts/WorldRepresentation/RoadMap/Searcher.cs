@@ -132,7 +132,7 @@ public class Searcher : MonoBehaviour
         foreach (var guard in guards)
         {
             // Trim the parts seen by the guards and reset the section if it is all seen 
-            line.CheckSeenSegment(guard, guard.GetTransform().position);
+            line.CheckSeenSegment(guard);
         }
     }
 

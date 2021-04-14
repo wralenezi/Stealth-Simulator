@@ -55,9 +55,7 @@ public class Intruder : NPC
     // Run the state the intruder is in
     public void ExecuteState()
     {
-        if (GetNpcData().intruderPlanner == IntruderPlanner.UserInput)
-            MoveByInput();
-        else
+        if (GetNpcData().intruderPlanner != IntruderPlanner.UserInput)
         {
             m_state.UpdateState();
         }

@@ -182,8 +182,8 @@ public class StealthArea : MonoBehaviour
         // Update the episode time
         UpdateTime(deltaTime);
 
-        // Let the agents cast their visions
-        guardsManager.CastVision();
+        // // Let the agents cast their visions
+        // guardsManager.CastVision();
 
         // Update the guards vision and apply the vision affects (seeing intruders,etc) 
         guardsManager.UpdateGuardVision();
@@ -198,7 +198,7 @@ public class StealthArea : MonoBehaviour
         // guardsManager.MoveNpcs(deltaTime);
 
         // Move the camera with the intruder.
-        guardsManager.FollowIntruder();
+        // guardsManager.FollowIntruder();
 
         // Update metrics for logging
         guardsManager.UpdateMetrics(deltaTime);
@@ -218,9 +218,11 @@ public class StealthArea : MonoBehaviour
         guardsManager.MoveNpcs(deltaTime);
     }
 
-    // private void LateUpdate()
-    // {
-    // }
+    private void LateUpdate()
+    {
+        // Let the agents cast their visions
+        guardsManager.CastVision();
+    }
     
     public Session GetSessionInfo()
     {

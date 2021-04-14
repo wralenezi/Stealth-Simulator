@@ -128,17 +128,21 @@ public class GameManager : MonoBehaviour
         // maps.Add("dragon_age_brc202d", "1");
         // maps.Add("dragon_age2", "1");
         // maps.Add("valorant_ascent", "2");
-        maps.Add("Boxes", "1");
-        maps.Add("AlienIsolation", "4");
-        maps.Add("CoD_relative", "0.1");
+        // maps.Add("Boxes", "1");
+        // maps.Add("AlienIsolation", "4");
+        // maps.Add("CoD_relative", "0.1");
+        maps.Add("t_map", "1");
 
-        List<string> guardsCount = new List<string>() {"2"};
+        List<string> guardsCount = new List<string>() {"1"};
 
-        List<string> intruderPlanners = new List<string>() {"RandomMoving", "Heuristic", "HeuristicMoving"};
+        // List<string> intruderPlanners = new List<string>() {"RandomMoving", "Heuristic", "HeuristicMoving"};
 
-        List<string> methods = new List<string>() {"RmPropSimple", "Cheating", "RmPropOccupancyDiffusal"};
+        // List<string> methods = new List<string>() {"RmPropSimple", "Cheating", "RmPropOccupancyDiffusal"};
 
-        // List<string> methods = new List<string>() {"RmPropOccupancyDiffusal"};
+        List<string> methods = new List<string>() {"RmPropSimple"};
+        
+        List<string> intruderPlanners = new List<string>() {"Heuristic"};
+
 
         string sessions =
             "GameCode,Scenario,CoverageResetThreshold,WorldRep,Map,MapScale,GuardPatrolPlanner,GuardChasePlanner,GuardSearchPlanner,GuardsCount,PathFindingHeursitic,PathFollowing,IntudersCount,IntruderPlanner,PathFindingHeursitic,PathFollowing\n";

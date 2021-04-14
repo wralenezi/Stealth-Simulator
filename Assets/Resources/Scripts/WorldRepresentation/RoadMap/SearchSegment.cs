@@ -12,9 +12,6 @@ public class SearchSegment
     private float m_Probability;
     public const float MinProbability = 0f;
 
-    // The midpoint of the segment when its length is maxed.
-    private Vector2 m_segmentMidPoint;
-
     // The timestamp the segment was created on
     public float timestamp;
 
@@ -34,6 +31,8 @@ public class SearchSegment
     // If the segment reached it's second destination
     public bool reached2;
 
+    public bool IsObserved;
+
     public SearchSegment(WayPoint dst1, Vector2 startingPos1, WayPoint dst2, Vector2 startingPos2)
     {
         m_destination1 = dst1;
@@ -41,9 +40,7 @@ public class SearchSegment
 
         m_destination2 = dst2;
         position2 = startingPos2;
-
-        m_segmentMidPoint = (m_destination1.GetPosition() + m_destination2.GetPosition()) / 2f;
-
+        
         Reset();
     }
 
@@ -78,7 +75,6 @@ public class SearchSegment
 
     public Vector2 GetMidPoint()
     {
-        // return m_segmentMidPoint;
         return (position1 + position2) / 2f;
     }
 
@@ -104,10 +100,16 @@ public class SearchSegment
     // Reset the segment after it has been seen
     public void Seen()
     {
+        IsObserved = true;
         SetTimestamp(StealthArea.episodeTime);
         SetProb(MinProbability);
         reached1 = false;
         reached2 = false;
+    }
+
+    public void notSeen()
+    {
+        IsObserved = false;
     }
 
     // Set the probability of the search 
@@ -129,7 +131,7 @@ public class SearchSegment
 
     public void Expand(float speed, float timeDelta)
     {
-        float slowSpeed = 10f / Mathf.Pow(10, Time.timeScale);
+        float slowSpeed = 1f / Mathf.Pow(10, Time.timeScale);
 
         // Expand from one side
         float distance1 = Vector2.Distance(m_destination1.GetPosition(), position1);
@@ -210,7 +212,7 @@ public class SearchSegment
 
         //
         // Handles.Label(position1, Vector2.Distance(position1,m_segmentMidPoint).ToString());
-        // if (GetProbability() > 0f)
-        // Handles.Label(m_segmentMidPoint, (Mathf.Round(GetProbability() * 100f) / 100f).ToString());
+        if (GetProbability() > 0f)
+        Handles.Label(GetMidPoint(), (Mathf.Round(GetProbability() * 100f) / 100f).ToString());
     }
 }
