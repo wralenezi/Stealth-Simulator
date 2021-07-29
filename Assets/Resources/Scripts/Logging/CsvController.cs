@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Data;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
@@ -28,6 +29,33 @@ public static class CsvController
 
         return episodesCount;
     }
+    
+    public static DataTable ConvertCSVtoDataTable(string strFilePath)
+    {
+        DataTable dt = new DataTable();
+        using (StreamReader sr = new StreamReader(strFilePath))
+        {
+            string[] headers = sr.ReadLine().Split(',');
+            foreach (string header in headers)
+            {
+                dt.Columns.Add(header);
+            }
+            while (!sr.EndOfStream)
+            {
+                string[] rows = sr.ReadLine().Split(',');
+                DataRow dr = dt.NewRow();
+                for (int i = 0; i < headers.Length; i++)
+                {
+                    dr[i] = rows[i];
+                }
+                dt.Rows.Add(dr);
+            }
+
+        }
+
+
+        return dt;
+    }
 
 
     private static string GetFileName(Session sa)
@@ -51,7 +79,6 @@ public static class CsvController
     {
         //Read the text from directly from the test.txt file
         StreamReader reader = new StreamReader(path);
-
         string data = reader.ReadToEnd();
         reader.Close();
 

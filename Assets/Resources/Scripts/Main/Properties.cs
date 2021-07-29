@@ -52,7 +52,7 @@ public static class Properties
     // NPC Properties
     public const float SpeedMultiplyer = 1f;
     public const float NpcSpeed = 4f * SpeedMultiplyer;
-    public const float NpcRotationSpeed = 200f * SpeedMultiplyer;
+    public const float NpcRotationSpeed = 300f * SpeedMultiplyer;
 
     // The multiplier of the intruder's speed
     public const float IntruderSpeedPercentage = 150f;
@@ -66,7 +66,7 @@ public static class Properties
                 return new Color32(0, 100, 100, 100);
 
             case NpcType.Intruder:
-                return new Color32(100, 100, 100, 100);
+                return new Color32(255, 255, 255, 150);
 
             default:
                 return new Color32(100, 100, 100, 100);
@@ -81,7 +81,7 @@ public static class Properties
 
 
 
-    public static float GuardsFovRadiusPercentage = 10f;
+    public static float GuardsFovRadiusPercentage = 20f;
 
     // Get the default value for view radius for the Npcs as a portion of a value
     public static float GetFovRadius(NpcType npcType)
@@ -179,8 +179,8 @@ public static class Properties
 
     //----------------------------------------------------------
     // The number of episodes to record
-    public static int EpisodesCount = 40;
+    public static int EpisodesCount = 20;
 
     // The duration of an episode.
-    public static float EpisodeLength = 250f;
+    public static float EpisodeLength = 60f;
 }

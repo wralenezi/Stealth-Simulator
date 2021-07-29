@@ -15,7 +15,7 @@ public class GridGuard : Guard
         base.Initiate(area, data);
         m_grid = transform.parent.parent.Find("Map").GetComponent<GridWorld>();
     }
-    
+
     public override Vector2? GetPatrolGoal()
     {
         Vector2? goal = null;
@@ -34,7 +34,15 @@ public class GridGuard : Guard
         return goal;
     }
 
+    // In the case of grid guard nothing to be done in this function yet
+    public override void ClearLines()
+    {
+    }
 
+    public override float GetPassingsAverage()
+    {
+        return 0f;
+    }
 
     Vector2? GetStalestNodePosition()
     {
@@ -66,7 +74,8 @@ public class GridGuard : Guard
 
     public override LogSnapshot LogNpcProgress()
     {
-        return new LogSnapshot(GetTravelledDistance(), StealthArea.episodeTime, Data,"",0,0f,0f,0f, m_FoundHidingSpots, m_grid.GetAverageStaleness());
+        return new LogSnapshot(GetTravelledDistance(), StealthArea.GetElapsedTime(), Data, "", 0, 0f, 0f, 0f,
+            m_FoundHidingSpots, m_grid.GetAverageStaleness());
     }
 
     public void IncrementSeenNodes()

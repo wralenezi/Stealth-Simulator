@@ -10,21 +10,24 @@ public class MapRenderer : MonoBehaviour
     // Reference to the wall prefab (for the map collider)
     private GameObject m_wallPrefab;
 
-    // the first polygon is the outer wall and the rest are the obstacles
+    // List of the walls in the map
+    // the first polygon is the outer wall and the rest are the obstacles.
     private List<Polygon> m_walls;
 
-    // inner walls 
+    // inner walls which are on an offset from the actual wall.
     private List<Polygon> m_interiorWalls;
 
-    private float m_MapBoundingBoxMaxWith; 
+    private float m_MapBoundingBoxMaxWith;
 
 
     // Initiate the map renderer
     public void Initiate()
     {
+        // Load the prefabs
         m_wallPrefab = (GameObject) Resources.Load("Prefabs/Wall");
         m_linePrefab = (GameObject) Resources.Load("Prefabs/Line");
 
+        // Initiate the variables
         m_walls = new List<Polygon>();
         m_interiorWalls = new List<Polygon>();
     }
@@ -197,8 +200,13 @@ public class MapRenderer : MonoBehaviour
     // Load the map
     public void LoadMap(string mapName, float mapScale)
     {
-        // Get the map data
-        var mapData = CsvController.ReadString(GetPath(mapName));
+        string mapData;
+
+        if (GameManager.instance.loggingMethod == Logging.Cloud)
+            mapData = GameManager.instance.currentMapData;
+        else
+            // Get the map data
+            mapData = CsvController.ReadString(GetPath(mapName));
 
         // Parse the map data
         // if the file name has the world "_relative" then it is an SVG inspired coordinate system
@@ -232,14 +240,13 @@ public class MapRenderer : MonoBehaviour
             : Mathf.Abs(maxY - minY);
 
         m_MapBoundingBoxMaxWith = maxWidth;
-        
-        Properties.SetMapMaxWidth(maxWidth);
 
+        Properties.SetMapMaxWidth(maxWidth);
     }
 
     public void GetMapBoundingBox(out float minX, out float maxX, out float minY, out float maxY)
     {
-        m_walls[0].BoundingBox(out  minX, out  maxX, out  minY, out  maxY);
+        m_walls[0].BoundingBox(out minX, out maxX, out minY, out maxY);
     }
 
     public float GetMaxWidth()

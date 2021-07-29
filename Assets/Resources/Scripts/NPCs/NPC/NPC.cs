@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices.WindowsRuntime;
+using TMPro;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -27,6 +29,9 @@ public abstract class NPC : MonoBehaviour
     private List<Vector2> PathToTake;
     private Vector2? Goal;
 
+    // The sequence of Roadmap lines an NPC marked on their way;
+    protected List<RoadMapLine> LinesToPassThrough;
+
     // NPC movement variables
     protected float NpcSpeed = Properties.NpcSpeed;
     protected float NpcRotationSpeed = Properties.NpcRotationSpeed;
@@ -46,6 +51,7 @@ public abstract class NPC : MonoBehaviour
     // The Current FoV
     private List<Polygon> m_FovPolygon;
 
+
     //************** Logging data ***************//
     // Variables for the distance travelled by a character
     // The last position the NPC was logged until
@@ -61,6 +67,8 @@ public abstract class NPC : MonoBehaviour
     public virtual void Initiate(StealthArea area, NpcData data)
     {
         PathToTake = new List<Vector2>();
+        LinesToPassThrough = new List<RoadMapLine>();
+
         Area = area;
         m_transform = transform;
         World = GetTransform().parent.parent.Find("Map").GetComponent<WorldRep>();
@@ -68,8 +76,13 @@ public abstract class NPC : MonoBehaviour
         m_NpcRb = GetComponent<Rigidbody2D>();
         m_FovPolygon = new List<Polygon>() {new Polygon()};
 
+        GameObject labelOg = new GameObject();
+        labelOg.transform.parent = transform;
+
+
         AddFoV();
     }
+
 
     // The set up of the start of the episode
     public virtual void ResetNpc()
@@ -90,7 +103,12 @@ public abstract class NPC : MonoBehaviour
     {
         Goal = null;
         PathToTake.Clear();
+        ClearLines();
     }
+
+    // Remove the counter the NPC left on the road map and clear them from the list.
+    public abstract void ClearLines();
+
 
     // Update the agent's last position
     public void SetPosition()
@@ -98,6 +116,7 @@ public abstract class NPC : MonoBehaviour
         m_LastPosition = GetTransform().position;
     }
 
+    // Add a field of view component to the NPC
     public void AddFoV()
     {
         // The game object that contains the field of view
@@ -143,6 +162,16 @@ public abstract class NPC : MonoBehaviour
     public Polygon GetFovPolygon()
     {
         return GetFov()[0];
+    }
+
+    public List<RoadMapLine> GetLinesToPass()
+    {
+        return LinesToPassThrough;
+    }
+
+    public List<Vector2> GetPath()
+    {
+        return PathToTake;
     }
 
     public List<Polygon> GetFov()
@@ -229,7 +258,7 @@ public abstract class NPC : MonoBehaviour
 
 
     // Define a goal for the agent and set the path to navigate to it,
-    // param@isForce forces the guard to forget its current path and make a new one.
+    // param@isForced forces the guard to forget its current path and make a new one.
     public void SetGoal(Vector2 _goal, bool isForced)
     {
         if (!IsBusy() || isForced)
@@ -240,6 +269,20 @@ public abstract class NPC : MonoBehaviour
             PathFinding.GetShortestPath(World.GetNavMesh(),
                 GetTransform().position, Goal.Value, PathToTake);
         }
+    }
+
+    // Update the word state variables
+    public virtual void UpdateWldStatV()
+    {
+        // The orientation of the NPC's goal
+        if (GetGoal() != null)
+            WorldState.Set(name + "_goal", WorldState.GetHeading(GetTransform().position, GetGoal().Value));
+        else
+            WorldState.Set(name + "_goal", "NA");
+
+        // NpcSpeed
+
+        // Debug.Log(GetRemainingDistanceToGoal() / NpcSpeed);
     }
 
     // If the NPC has a path to take then they are busy.
@@ -274,7 +317,7 @@ public abstract class NPC : MonoBehaviour
 
                 // When the path is over clear the goal.
                 if (PathToTake.Count == 0)
-                    Goal = null;
+                    ClearGoal();
             }
     }
 
@@ -291,14 +334,17 @@ public abstract class NPC : MonoBehaviour
         Quaternion toRotation = Quaternion.AngleAxis(m_goalAngle, Vector3.forward);
         float angleLeft = Mathf.Round(toRotation.eulerAngles.z - currentRotation.eulerAngles.z);
 
+
+        angleLeft *= angleLeft > 180 ? -1 : 1;
+        float rotationStep = Mathf.Min(Mathf.Abs(angleLeft), NpcRotationSpeed * deltaTime);
+        GetTransform().rotation = Quaternion.RotateTowards(currentRotation, toRotation,
+            rotationStep);
+
         // Make sure no rotation is due before moving
-        if (Mathf.Abs(angleLeft) > 0f)
-        {
-            float rotationStep = Mathf.Min(Mathf.Abs(angleLeft), NpcRotationSpeed * deltaTime);
-            GetTransform().rotation = Quaternion.RotateTowards(currentRotation, toRotation,
-                rotationStep);
+        float angleDiffThreshold = state is Chase ? 180f : 0f;
+        if (Mathf.Abs(angleLeft) > angleDiffThreshold)
             return false;
-        }
+
 
         // Handle movement
         float distanceLeft = Vector2.Distance(currentPosition, target);
@@ -333,13 +379,13 @@ public abstract class NPC : MonoBehaviour
     {
         Vector2 dir = new Vector2(0f, 0f);
 
-        if (Input.GetKey(KeyCode.W))
+        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
             dir += Vector2.up;
-        if (Input.GetKey(KeyCode.D))
+        if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
             dir += Vector2.right;
-        if (Input.GetKey(KeyCode.A))
+        if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
             dir += Vector2.left;
-        if (Input.GetKey(KeyCode.S))
+        if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))
             dir += Vector2.down;
 
         if (dir != Vector2.zero)

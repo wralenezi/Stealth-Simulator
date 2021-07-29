@@ -11,14 +11,27 @@ using UnityEngine.UI;
 
 public class GuardsManager : Agent
 {
+    private StealthArea m_StealthArea;
+
     // Guards behavior managers
+    // public Patroler patroler;
+    // Time of the last timestamp a patrol state initiated 
+    private float m_lstPatrolTime;
+
+
     // Interceptor controller for controlling how guards act when chasing an intruder in sight.
     public Interceptor interceptor;
+
+    // Time of the last timestamp a chase state initiated 
+    private float m_lstChaseTime;
 
     // Search controller for controlling how guards searched for an intruder.
     public Searcher searcher;
 
-    private StealthArea m_StealthArea;
+    // Time of the last timestamp a search state initiated 
+    private float m_lstSearchTime;
+
+    public GuardDecisionStyle decisionStyle;
 
     // List of Guards
     private List<Guard> m_Guards;
@@ -26,9 +39,22 @@ public class GuardsManager : Agent
     // List of Intruders
     private List<Intruder> m_Intruders;
 
+    // Score 
+    private float m_score;
+
     // Guards state
     private StateMachine m_state;
     public string StateName;
+
+    private float m_lastAlertTime;
+    private readonly float AlarmCooldown = 2f;
+    private AudioSource m_alarmAudio;
+
+    // Script and dialog manager
+    private Scriptor m_Scriptor;
+
+    // timestamp since the search started
+    private float m_searchStamp;
 
     // Guards planner
     private GuardBehavior m_guardPlanner;
@@ -45,17 +71,15 @@ public class GuardsManager : Agent
     // Total time of guards overlapping each other
     public static float GuardsOverlapTime;
 
-    // Text label to display important messages to human players
-    private Text m_Text;
-
     // The weights for deciding the heuristic
     public SearchWeights searchWeights;
 
+    // Time it takes to make a decision for all guards
     public float Decision;
     public float Updated;
 
     // Start the NPC manager
-    public void Initiate(StealthArea _stealthArea, Transform map, Text text)
+    public void Initiate(StealthArea _stealthArea, Transform map)
     {
         m_StealthArea = _stealthArea;
 
@@ -70,15 +94,26 @@ public class GuardsManager : Agent
         searcher = map.gameObject.AddComponent<Searcher>();
         searcher.Initiate(m_StealthArea);
 
-        m_Text = text;
-
         // Initiate the FSM to patrol for the guards
         m_state = new StateMachine();
-        m_state.ChangeState(new Patrol(this));
+        ChangeState(new Patrol(this));
+        m_lstPatrolTime = Time.time;
+        WorldState.Set("lastPatrolTime", m_lstPatrolTime.ToString());
+
+        // m_StealthArea.AreaUiManager.UpdateGuardLabel(GetState());
 
         // Ignore collision between NPCs
         m_npcLayer = LayerMask.NameToLayer("NPC");
         Physics2D.IgnoreLayerCollision(m_npcLayer, m_npcLayer);
+
+        // Initiate scriptor
+        m_Scriptor = gameObject.AddComponent<Scriptor>();
+        m_Scriptor.Initialize();
+    }
+
+    public void Reset()
+    {
+        SetScore(0);
     }
 
     private void Update()
@@ -159,7 +194,6 @@ public class GuardsManager : Agent
 
     #endregion
 
-
     #region NPC creation
 
     // Create an NPC
@@ -195,20 +229,45 @@ public class GuardsManager : Agent
         switch (npcData.npcType)
         {
             case NpcType.Intruder:
-                npcGameObject.name = "Intruder " + npcData.id;
+                npcGameObject.name = "Intruder" + npcData.id.ToString().PadLeft(2, '0');
                 npc = npcGameObject.AddComponent<Intruder>();
                 spriteRenderer.color = Color.blue;
                 m_Intruders.Add((Intruder) npc);
                 break;
 
             case NpcType.Guard:
-                npcGameObject.name = "Guard " + npcData.id;
+                npcGameObject.name = "Guard" + npcData.id.ToString().PadLeft(2, '0');
                 if (world != WorldRepType.Grid)
                     npc = npcGameObject.AddComponent<VisMeshGuard>();
                 else
                     npc = npcGameObject.AddComponent<GridGuard>();
 
-                spriteRenderer.color = Color.red;
+                string colorName = "";
+                switch (npcData.guardPlanner.Value.search)
+                {
+                    case GuardSearchPlanner.Cheating:
+                        spriteRenderer.color = Color.red;
+                        colorName = "Red";
+                        break;
+
+                    case GuardSearchPlanner.RmPropSimple:
+                        spriteRenderer.color = Color.green;
+                        colorName = "Green";
+                        break;
+
+                    case GuardSearchPlanner.RmPropOccupancyDiffusal:
+                        spriteRenderer.color = Color.yellow;
+                        colorName = "Yellow";
+                        break;
+
+                    case GuardSearchPlanner.Random:
+                        spriteRenderer.color = Color.black;
+                        colorName = "Tutorial";
+                        break;
+                }
+
+                m_StealthArea.AreaUiManager.UpdateGuardLabel(colorName, spriteRenderer.color);
+
                 m_Guards.Add((Guard) npc);
                 break;
 
@@ -243,7 +302,6 @@ public class GuardsManager : Agent
             m_guardPlanner = m_Guards[0].GetNpcData().guardPlanner.Value;
     }
 
-
     // Reset NPCs at the end of the round
     public void ResetNpcs(List<MeshPolygon> navMesh, StealthArea area)
     {
@@ -265,37 +323,47 @@ public class GuardsManager : Agent
 
 
         // Set the guards to the default mode (patrol)
-        m_state.ChangeState(new Patrol(this));
+        ChangeState(new Patrol(this));
+        m_lstPatrolTime = Time.time;
+        WorldState.Set("lastPatrolTime", m_lstPatrolTime.ToString());
     }
 
     #endregion
-
 
     // Update the guards FoV
     public void UpdateGuardVision()
     {
         bool intruderSpotted = false;
+        string spotterName = "";
         foreach (var guard in m_Guards)
         {
             // Accumulate the Seen Area of the guard
             // guard.AccumulateSeenArea(); // Disabled since it is not needed
 
             // Check if any intruders are spotted
+            bool seen = guard.SpotIntruders(m_Intruders);
+
             if (!intruderSpotted)
-                intruderSpotted = guard.SpotIntruders(m_Intruders);
+            {
+                intruderSpotted = seen;
+                spotterName = guard.name;
+            }
         }
 
         // Render guards if the intruder can see them
         foreach (var intruder in m_Intruders)
         {
             intruder.SpotGuards(m_Guards);
+
+            if (GameManager.instance.gameType == GameType.CoinCollection)
+                intruder.SpotCoins(m_StealthArea.coinSpawner.GetCoins());
         }
 
         // Switch the state of the guards 
         if (intruderSpotted)
         {
             // Guards knows the intruders location
-            StartChase();
+            StartChase(spotterName);
         }
         else if (m_state.GetState() is Chase)
         {
@@ -326,34 +394,49 @@ public class GuardsManager : Agent
         }
     }
 
+    // Update the variables for the guards
+    public void UpdateWldStNpcs()
+    {
+        // WorldState.Set("guard_state", GetState().ToString());
+
+        foreach (var guard in m_Guards)
+            guard.UpdateWldStatV();
+    }
+
+    public void CoinPicked()
+    {
+        if (GetState() is Search)
+        {
+            IncrementScore(100);
+        }
+    }
+
+    public void HideLabels()
+    {
+        foreach (var intruder in m_Intruders)
+        {
+            intruder.HideLabel();
+        }
+    }
+
+    public void IncrementScore(float score)
+    {
+        m_score += score;
+        m_score = Mathf.Max(0, m_score);
+        SetScore(m_score);
+        m_StealthArea.AreaUiManager.ShakeScore(score);
+    }
+
+
+    public void SetScore(float score)
+    {
+        m_score = score;
+        m_StealthArea.AreaUiManager.UpdateScore(Mathf.Round(m_score * 10f) / 10f);
+    }
+
 
     #region FSM functions
 
-    // Get current state
-    public IState GetState()
-    {
-        return m_state.GetState();
-    }
-
-    // Update the label of the status of the game.
-    public void UpdateGuiLabel()
-    {
-        if (GetState() is Chase)
-        {
-            m_Text.text = "Alert";
-            m_Text.color = Color.red;
-        }
-        else if (GetState() is Search)
-        {
-            m_Text.text = "Searching";
-            m_Text.color = Color.yellow;
-        }
-        else if (GetState() is Patrol)
-        {
-            m_Text.text = "Normal";
-            m_Text.color = Color.green;
-        }
-    }
 
     // Order Guards to patrol
     public void Patrol()
@@ -362,25 +445,63 @@ public class GuardsManager : Agent
             guard.Patrol();
     }
 
+    // Get current state
+    public IState GetState()
+    {
+        return m_state.GetState();
+    }
+    
+    private void ChangeState(IState state)
+    {
+        m_state.ChangeState(state);
+        WorldState.Set("guard_state", GetState().ToString());
+    }
+
     // In case of intruder is seen
-    public void StartChase()
+    public void StartChase(string spotter)
     {
         // Switch to chase state
-        if (!(m_state.GetState() is Chase))
-        {
-            m_state.ChangeState(new Chase(this));
-            interceptor.Clear();
+        if (m_state.GetState() is Chase) return;
 
-            foreach (var intruder in m_Intruders)
-            {
-                intruder.StartRunningAway();
-            }
+        if (m_state.GetState() is Search)
+            WorldState.Set("lastSearchTimeEnd", Time.time.ToString());
+        else if (m_state.GetState() is Patrol)
+            WorldState.Set("lastPatrolTimeEnd", Time.time.ToString());
+
+        ChangeState(new Chase(this));
+
+        AddDialogLine(spotter, "st_spotted");
+        
+        m_lstChaseTime = Time.time;
+        WorldState.Set("lastChaseTimeStart", m_lstChaseTime.ToString());
+        WorldState.Set("lastChaseTimeEnd", "");
+
+        interceptor.Clear();
+
+        if (GameManager.instance.gameType == GameType.CoinCollection)
+            m_StealthArea.coinSpawner.DisableCoins();
+
+        // m_StealthArea.AreaUiManager.UpdateGuardLabel(GetState());
+
+        foreach (var intruder in m_Intruders)
+        {
+            intruder.StartRunningAway();
         }
     }
+
+    public void AddDialogLine(string speaker, string dialogId)
+    {
+        if (m_Scriptor.RulesPass(speaker, dialogId))
+            m_Scriptor.AppendDialogLine(speaker, dialogId);
+    }
+
 
     // Order guards to chase
     public void Chase()
     {
+        m_lastAlertTime = StealthArea.GetElapsedTime();
+
+        // Loop through the guards to order them
         foreach (var guard in m_Guards)
         {
             // Decide the guard behavior in chasing based on its parameter
@@ -391,14 +512,30 @@ public class GuardsManager : Agent
             }
             else if (m_guardPlanner.chase == GuardChasePlanner.Simple)
                 guard.SetGoal(m_Intruders[0].GetLastKnownLocation(), true);
+
+
+            // Update the score based on the game type if the intruder is seen
+            if (m_Intruders.Count > 0)
+            {
+                if (GameManager.instance.gameType == GameType.Stealth)
+                {
+                    float percentage = Properties.EpisodeLength - m_Intruders[0].GetAlertTime();
+                    percentage = Mathf.Round((percentage * 1000f) / Properties.EpisodeLength) / 10f;
+                    GameManager.instance.GetActiveArea().AreaUiManager.UpdateScore(percentage);
+                }
+                else if (GameManager.instance.gameType == GameType.CoinCollection)
+                {
+                    float decreaseRate = 20f;
+                    IncrementScore(-decreaseRate * Time.deltaTime);
+                }
+            }
         }
     }
 
     // Check if the intercepting guard can switch to chasing; this is not done every frame since it requires path finding and is expensive. 
     public void StopChase()
     {
-        if (!(m_state.GetState() is Chase))
-            return;
+        if (!(m_state.GetState() is Chase)) return;
 
         // When the interceptor is closer to its target the the tolerance distance it can go straight for the intruder as long as the intruder is being chased
         float toleranceDistance = 1f;
@@ -413,65 +550,115 @@ public class GuardsManager : Agent
             }
     }
 
-
     // In case the intruder is not seen and the guards were on alert, start the search or keep doing it.
     public void StartSearch()
     {
         // if we were chasing then switch to search
-        if (m_state.GetState() is Chase)
-        {
-            m_state.ChangeState(new Search(this));
+        if (!(m_state.GetState() is Chase)) return;
 
-            // Intruders will start their hiding behavior.
-            foreach (var intruders in m_Intruders)
-                intruders.StartHiding();
+        // Change the guard state
+        ChangeState(new Search(this));
 
+        WorldState.Set("lastChaseTimeEnd", m_lstSearchTime.ToString());
 
-            // Flow the probability for intruder positions
-            searcher.PlaceSsForSearch(m_Intruders[0].GetLastKnownLocation(),
-                m_Intruders[0].GetDirection());
+        m_lstSearchTime = Time.time;
+        WorldState.Set("lastSearchTimeStart", m_lstSearchTime.ToString());
+        WorldState.Set("lastSearchTimeEnd", "");
+        m_searchStamp = StealthArea.GetElapsedTime();
 
-            AssignGuardRoles();
-        }
+        // m_StealthArea.AreaUiManager.UpdateGuardLabel(GetState());
+
+        // Spawn the coins
+        if (GameManager.instance.gameType == GameType.CoinCollection)
+            m_StealthArea.coinSpawner.SpawnCoins();
+
+        // Intruders will start their hiding behavior.
+        foreach (var intruders in m_Intruders)
+            intruders.StartHiding();
+
+        // Flow the probability for intruder positions
+        searcher.PlaceSsForSearch(m_Intruders[0].GetLastKnownLocation(),
+            m_Intruders[0].GetDirection());
+
+        // Assign the guard roles
+        // AssignGuardRoles();
+
+        // Order the guards to go the intruder's last known position
+        foreach (var guard in m_Guards)
+            guard.SetGoal(m_Intruders[0].GetLastKnownLocation(), true);
     }
 
     // Keep searching for the intruder
     public void Search()
     {
+        // Benchmark purposes 
         float timeBefore = Time.realtimeSinceStartup;
 
         foreach (var guard in m_Guards)
         {
-            // Don't wait till the guard is free and just guide them to intruder's actual position.
+            // In case of cheating behavior, Don't wait till the guard is free and just guide them to intruder's actual position.
             if (m_guardPlanner.search == GuardSearchPlanner.Cheating)
             {
                 guard.SetGoal(m_Intruders[0].GetTransform().position, true);
                 continue;
             }
 
-            // Once the chaser is idle that means that the intruder is still not seen
-            // Now Guards should start visiting the nodes with distance more than zero
-            if (!guard.IsBusy())
-            {
-                // Search behavior based on the planner type 
-                if (m_guardPlanner.search == GuardSearchPlanner.RmPropSimple ||
-                    m_guardPlanner.search == GuardSearchPlanner.RmPropOccupancyDiffusal)
-                {
-                    // Get a new goal and swap it with the closest guard to that goal and take their goals instead.
-                    SwapGoal(guard, searcher.GetSearchSegment(guard, m_Guards, m_Intruders[0],
-                        m_StealthArea.worldRep.GetNavMesh(),
-                        searchWeights));
-                }
-                else if (m_guardPlanner.search == GuardSearchPlanner.Random)
-                {
-                    Vector2 randomRoadmap = interceptor.GetRandomRoadMapNode();
-                    guard.SetGoal(randomRoadmap, false);
-                }
-            }
+            // Two method for choosing the guard plans
+
+            // Choose the segment
+            // SearchIndividualSegments(guard);
+
+            // Define a path the guard should follow
+            SearchPath(guard);
         }
 
+        // Logging purposes
         if (Time.realtimeSinceStartup - timeBefore > Decision)
             Decision = (Time.realtimeSinceStartup - timeBefore);
+    }
+
+    // Individual segment search
+    public void SearchIndividualSegments(Guard guard)
+    {
+        // Once the chaser is idle that means that the intruder is still not seen
+        // Now Guards should start visiting the nodes with distance more than zero
+        if (!guard.IsBusy())
+        {
+            // Search behavior based on the planner type 
+            if (m_guardPlanner.search == GuardSearchPlanner.RmPropSimple ||
+                m_guardPlanner.search == GuardSearchPlanner.RmPropOccupancyDiffusal)
+            {
+                // Get a new goal and swap it with the closest guard to that goal and take their goals instead.
+                SwapGoal(guard, searcher.GetSearchSegment(guard, m_Guards, m_Intruders[0],
+                    m_StealthArea.worldRep.GetNavMesh(),
+                    searchWeights));
+            }
+            else if (m_guardPlanner.search == GuardSearchPlanner.Random)
+            {
+                Vector2 randomRoadmap = m_StealthArea.roadMap.GetRandomRoadMapNode();
+                guard.SetGoal(randomRoadmap, true);
+            }
+        }
+    }
+
+    public void SearchPath(Guard guard)
+    {
+        if (!guard.IsBusy())
+        {
+            if (m_guardPlanner.search == GuardSearchPlanner.RmPropSimple ||
+                m_guardPlanner.search == GuardSearchPlanner.RmPropOccupancyDiffusal)
+            {
+                float timeDiff = StealthArea.GetElapsedTime() - m_searchStamp;
+                float distancePortion = timeDiff / 15f;
+
+                float length = Properties.MaxPathDistance * distancePortion;
+
+
+                searcher.GetPath(guard, length);
+
+                // searcher.FindLineAndPath(guard);
+            }
+        }
     }
 
     public void EndSearch()

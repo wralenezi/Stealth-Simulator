@@ -5,6 +5,9 @@ using UnityEngine;
 
 public abstract class Guard : NPC
 {
+    private GameObject m_excMarkPrefab;
+    private GameObject m_excMarkGo;
+
     [Header("Debug")] [Tooltip("Seen Area")]
     public bool drawSeenArea;
 
@@ -15,7 +18,6 @@ public abstract class Guard : NPC
 
     // The seen area of the guard
     protected List<Polygon> SeenArea;
-
 
     // the percentage of the seen area by this guard
     protected int m_GuardSeenAreaPercentage;
@@ -28,6 +30,9 @@ public abstract class Guard : NPC
     {
         base.Initiate(area, data);
         SeenArea = new List<Polygon>();
+        m_excMarkPrefab = (GameObject) Resources.Load("Prefabs/exclamation_mark");
+        m_excMarkGo = Instantiate(m_excMarkPrefab, GameManager.instance.GetActiveArea().transform);
+        m_excMarkGo.SetActive(false);
     }
 
     public override void ResetNpc()
@@ -36,6 +41,8 @@ public abstract class Guard : NPC
         ClearGoal();
         SeenArea.Clear();
     }
+
+    public abstract float GetPassingsAverage();
 
     // resets the guards covered area
     public void RestrictSeenArea(float resetThreshold)
@@ -61,17 +68,30 @@ public abstract class Guard : NPC
     {
         foreach (var intruder in intruders)
         {
+            // Check if the intruder is seen
             if (GetFovPolygon().IsCircleInPolygon(intruder.transform.position, 0.03f))
             {
                 intruder.Seen();
+                WorldState.Set(name + "_see_" + intruder.name, true.ToString());
                 RenderIntruder(intruder, true);
+                ShowExclamation();
                 return true;
             }
 
+            WorldState.Set(name + "_see_" + intruder.name, false.ToString());
             RenderIntruder(intruder, false);
         }
 
+
+        m_excMarkGo.SetActive(false);
         return false;
+    }
+
+
+    private void ShowExclamation()
+    {
+        m_excMarkGo.SetActive(true);
+        m_excMarkGo.transform.position = (Vector2) GetTransform().position + Vector2.up * 0.7f;
     }
 
 
@@ -104,15 +124,6 @@ public abstract class Guard : NPC
     }
 
     public abstract Vector2? GetPatrolGoal();
-
-    // private void LoadFovPolygon()
-    // {
-    //     GetFovPolygon().Clear();
-    //     foreach (var vertex in Fov.GetFovVertices())
-    //         GetFovPolygon().AddPoint(vertex);
-    // }
-
-
 
     // Add the FoV to the Overall Seen Area
     public void AccumulateSeenArea()

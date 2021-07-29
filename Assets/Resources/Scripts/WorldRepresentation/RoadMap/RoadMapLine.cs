@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -13,10 +14,26 @@ public class RoadMapLine
     // The segment that lies in this line
     private SearchSegment m_SearchSegment;
 
+    private readonly float m_length;
+
+
+    // Variables for pathfinding using RoadMap in search
+    // The guards planning to pass through this roadmap line.
+    private List<Guard> m_passingGuardS;
+
+    public float pathUtility;
+    public float distance;
+    public RoadMapLine pathParent;
+
+
     public RoadMapLine(WayPoint _wp1, WayPoint _wp2)
     {
         wp1 = _wp1;
         wp2 = _wp2;
+
+        m_length = Vector2.Distance(wp1.GetPosition(), wp2.GetPosition());
+
+        m_passingGuardS = new List<Guard>();
 
         m_SearchSegment = new SearchSegment(wp1, wp1.GetPosition(), wp2, wp2.GetPosition());
     }
@@ -35,6 +52,38 @@ public class RoadMapLine
     public List<RoadMapLine> GetWp2Connections()
     {
         return wp2.GetLines();
+    }
+
+    public float GetLength()
+    {
+        return m_length;
+    }
+
+    public void AddPassingGuard(Guard guard)
+    {
+        if (!m_passingGuardS.Contains(guard))
+            m_passingGuardS.Add(guard);
+    }
+
+    public void RemovePassingGuard(Guard guard)
+    {
+        if (m_passingGuardS.Contains(guard))
+            m_passingGuardS.Remove(guard);
+    }
+
+    public int GetPassingGuardsCount()
+    {
+        return m_passingGuardS.Count;
+    }
+
+    // Get the utility value of a guard passing through this line
+    public float GetUtility()
+    {
+        float prob = GetSearchSegment().GetProbability();
+
+        float guardsPassingUtility = GetPassingGuardsCount() / (StealthArea.sessionInfo.guardsCount);
+
+        return prob - guardsPassingUtility;
     }
 
     // Add a possible line where the intruder might be in
@@ -58,24 +107,32 @@ public class RoadMapLine
     }
 
     // Increment the probability of a search segment if neighbors has non-zero probability. 
-    public void IncreaseProbability(float deltaTime)
+    public void IncreaseProbability(float speed, float deltaTime)
     {
         SearchSegment sS = GetSearchSegment();
 
+        float ageThreshold = 0.1f * GetLength() * speed;
+
+        // If the segment is just seen wait before incrementing its probability
+        if (sS.GetAge() < ageThreshold || GetSearchSegment().IsObserved)
+            return;
+
         bool isValidToIncrement = false;
 
-        if (GetSearchSegment().IsObserved)
-            return;
+        float maxProb = Mathf.NegativeInfinity;
 
         foreach (var wp1Line in GetWp1Connections())
         {
             SearchSegment wp1Ss = wp1Line.GetSearchSegment();
 
-            if (wp1Ss.GetProbability() > SearchSegment.MinProbability && !GetSearchSegment().IsObserved)
+            if (wp1Ss.GetProbability() > SearchSegment.MinProbability) // && !wp1Ss.IsObserved && wp1Ss.IsReached())
             {
                 isValidToIncrement = true;
                 break;
             }
+
+            if (maxProb < wp1Ss.GetProbability())
+                maxProb = wp1Ss.GetProbability();
         }
 
         if (!isValidToIncrement)
@@ -83,15 +140,19 @@ public class RoadMapLine
             {
                 SearchSegment wp1Ss = wp2Line.GetSearchSegment();
 
-                if (wp1Ss.GetProbability() > SearchSegment.MinProbability && !GetSearchSegment().IsObserved)
+                if (wp1Ss.GetProbability() > SearchSegment.MinProbability) // && !wp1Ss.IsObserved && wp1Ss.IsReached())
                 {
                     isValidToIncrement = true;
                     break;
                 }
+
+                if (maxProb < wp1Ss.GetProbability())
+                    maxProb = wp1Ss.GetProbability();
             }
 
+
         if (isValidToIncrement)
-            sS.AddProbability(Properties.ProbabilityIncreaseRate * deltaTime);
+            sS.AddProbability(Properties.ProbabilityIncreaseRate * deltaTime); // * maxProb);
     }
 
     // Propagate the search segment probability if needed.
@@ -99,13 +160,12 @@ public class RoadMapLine
     {
         SearchSegment sS = GetSearchSegment();
 
-        float lineLength = Vector2.Distance(wp1.GetPosition(), wp2.GetPosition());
         // The age threshold of the search segment to propagate to other search segments
         // float ageThreshold = (speed * timeDelta) / (lineLength * Time.timeScale);// * Properties.GetMaxEdgeLength()) ;
 
-        float ageThreshold = 0.025f * lineLength * speed; // * Properties.MaxPathDistance / Properties.PathDenom;
+        float ageThreshold = 0.005f * GetLength() * speed; // * Properties.MaxPathDistance / Properties.PathDenom;
 
-        if (GetSearchSegment().IsActive() && GetSearchSegment().GetAge() > ageThreshold)
+        if (GetSearchSegment().IsActive() && GetSearchSegment().GetAge() > ageThreshold && sS.IsReached())
         {
             sS.PropagateDestination(1);
             sS.PropagateDestination(2);
@@ -190,11 +250,14 @@ public class RoadMapLine
         var p2 = wp2.GetPosition();
         var dir = (p1 - p2).normalized * 0.5f;
         var thickness = 3;
-        Handles.DrawBezier(p1 - dir, p2 + dir, p1 + dir, p2 - dir, Color.red, null, thickness);
+        // Handles.DrawBezier(p1 - dir, p2 + dir, p1 + dir, p2 - dir, Color.red, null, thickness);
 
-        // Gizmos.DrawLine(wp1.GetPosition(), wp2.GetPosition());
+        Gizmos.DrawLine(wp1.GetPosition(), wp2.GetPosition());
         // Handles.Label(wp1.GetPosition(), wp1.Id.ToString());
+        // Handles.Label(wp2.GetPosition(), wp2.Id.ToString());
+        // Handles.Label(wp2.GetPosition(), wp2.Id.ToString());
+
         // Handles.Label((wp1.GetPosition() + wp2.GetPosition()) / 2f,
-        //     Vector2.Distance(wp1.GetPosition(), wp2.GetPosition()).ToString());
+        //     pathUtility.ToString());
     }
 }

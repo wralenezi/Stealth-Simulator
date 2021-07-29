@@ -19,7 +19,15 @@ public class PerformanceMonitor : MonoBehaviour
     public void SetArea(Session sa)
     {
         Sa = sa;
-        GetEpisodesCountInLogs();
+
+        if (GameManager.instance.loggingMethod == Logging.Local)
+            GetEpisodesCountInLogs();
+    }
+
+
+    public int GetEpisodeNo()
+    {
+        return m_episodeCount;
     }
 
     // Update the Episode count if there are any before
@@ -55,8 +63,6 @@ public class PerformanceMonitor : MonoBehaviour
     // Append the Episode performance to the log
     public void LogEpisodeFinish()
     {
-        IncrementEpisode();
-
         // make sure the data list is non empty
         if (snapshots.Count > 0)
         {
@@ -70,9 +76,9 @@ public class PerformanceMonitor : MonoBehaviour
     }
 
     // Upload the results to the server
-    public void UploadEpisodeData()
+    public void UploadEpisodeData(int timeStamp)
     {
-        StartCoroutine(FileUploader.UploadLevel(Sa, GetEpisodeResults()));
+        StartCoroutine(FileUploader.UploadData(Sa, timeStamp, "gameData", "text/csv", GetEpisodeResults()));
     }
 
 

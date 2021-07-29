@@ -46,8 +46,8 @@ public class SAT : MonoBehaviour
 
         // Import the hand drawn road map
         ImportRoadMap();
-        
-        
+
+
         // Divide long edges to smaller edges
         DivideRoadMap();
     }
@@ -86,7 +86,11 @@ public class SAT : MonoBehaviour
 
         try
         {
-            mapData = CsvController.ReadString(GetPath(m_Session.map, m_Session.GetMapScale()));
+            if (GameManager.instance.loggingMethod == Logging.Cloud)
+                mapData = GameManager.instance.currentRoadMapData;
+            else
+                mapData = CsvController.ReadString(GetPath(m_Session.map, m_Session.GetMapScale()));
+
             ParseMapString(mapData);
         }
         catch (Exception e)
@@ -1351,7 +1355,7 @@ public class SAT : MonoBehaviour
 
             RaycastHit2D hit = Physics2D.Linecast(pro, position);
 
-            if (distance < minDistance &&  hit.collider == null )//m_mapRenderer.VisibilityCheck(pro, position))
+            if (distance < minDistance && hit.collider == null) //m_mapRenderer.VisibilityCheck(pro, position))
             {
                 // Debug.Log(pro);
                 minDistance = distance;

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -11,6 +12,10 @@ public class RoadMap
 
     // Way points that are dead ends
     private List<WayPoint> m_endPoints;
+
+    // Actual nodes in the roadmap (since m_Waypoints contain all waypoints of the divided segments)
+    private List<WayPoint> m_WpsActual;
+
 
     private SAT m_Sat;
 
@@ -34,6 +39,7 @@ public class RoadMap
 
         PopulateEndNodes();
         PopulateLines();
+        PopulateWayPoints();
     }
 
 
@@ -73,8 +79,17 @@ public class RoadMap
         // Add the line connected to the way point
         foreach (var wp in m_WayPoints)
             wp.AddLines(m_Lines);
-        
-        // Debug.Log("Segments Count: "+m_Lines.Count);
+    }
+
+
+    // Get the reference of actual waypoints
+    private void PopulateWayPoints()
+    {
+        m_WpsActual = new List<WayPoint>();
+
+        foreach (var wp in m_WayPoints)
+            if (wp.Id != 0)
+                m_WpsActual.Add(wp);
     }
 
 
@@ -84,131 +99,91 @@ public class RoadMap
     }
 
 
-    // // Find the projection point on the road map
-    // // Find the closest projection point 
-    // public InterceptionPoint GetInterceptionPointOnRoadMap(Vector2 position, Vector2 dir)
-    // {
-    //     float minDistance = Mathf.Infinity;
-    //     // Position
-    //     Vector2? projectionOnRoadMap = null;
-    //     // Direction of the phantom node movement
-    //     //Vector2? direction = null;
-    //     // Destination of the phantom node
-    //     WayPoint destination = null;
-    //     // Source of the phantom
-    //     WayPoint source = null;
-    //
-    //
-    //     foreach (var line in m_Lines)
-    //     {
-    //         // Get the point projection on the line
-    //         Vector2 pro = GeometryHelper.ClosestProjectionOnSegment(line.wp1.GetPosition(), line.wp2.GetPosition(),
-    //             position);
-    //
-    //         // The distance from the projection point to the intruder position
-    //         float distance = Vector2.Distance(position, pro);
-    //
-    //         if (distance < minDistance)
-    //         {
-    //             minDistance = distance;
-    //             projectionOnRoadMap = pro;
-    //
-    //             // Get the normalized direction of the road map edge
-    //             Vector2 edgeDir = line.wp1.GetPosition() - line.wp2.GetPosition();
-    //             edgeDir = edgeDir.normalized;
-    //
-    //             // Get the normalized Velocity of the intruder
-    //             Vector2 velocityNorm = dir.normalized;
-    //
-    //             // Get the cosine of the smalled angel between the road map edge and velocity; to measure the alignment between the vectors
-    //             // The closer to one the more aligned 
-    //             float cosineAngle = Vector2.Dot(edgeDir, velocityNorm);
-    //
-    //             destination = (cosineAngle > 0) ? line.wp2 : line.wp1;
-    //             source = (cosineAngle > 0) ? line.wp1 : line.wp2;
-    //         }
-    //     }
-    //
-    //     return new InterceptionPoint(projectionOnRoadMap.Value,
-    //         source, destination, 0);
-    // }
-
-
     // Get the closest projection point to a position@param on the road map.
     // The closest two points will be considered, and the tie breaker will be the how the road map line is aligned with dir@param 
-    public Vector2 GetClosestProjectionOnRoadMap(Vector2 position, Vector2 dir)
+    public WayPoint GetClosestWp(Vector2 position, Vector2 dir)
     {
-        // Projection Positions
-        List<Vector2> projections = new List<Vector2>();
-
-        RoadMapLine closestRoadMapLine = null;
-
-        // List of distance and direction difference of the lines and agent
+        // List of distances and direction differences of the parameters.
         List<float> distances = new List<float>();
         List<float> angleDiffs = new List<float>();
 
-        int closestLineIndex = 0;
-        int secondClosestLineIndex = 0;
-
-        foreach (var line in m_Lines)
+        // Loop through the way points
+        foreach (var wp in m_WayPoints)
         {
-            // Get the point projection on the line
-            Vector2 pro = GeometryHelper.ClosestProjectionOnSegment(line.wp1.GetPosition(), line.wp2.GetPosition(),
-                position);
-            projections.Add(pro);
-
-            // The distance from the projection point to the intruder position
-            float distance = Vector2.Distance(position, pro);
+            // The distance from the way point to the intruder position
+            float distance = Vector2.Distance(position, wp.GetPosition());
             distances.Add(distance);
 
-            // Get the normalized direction of the road map edge
-            Vector2 edgeDir = line.wp1.GetPosition() - line.wp2.GetPosition();
-            edgeDir = edgeDir.normalized;
+            // Get the normalized direction of intruder's position to the way point.
+            Vector2 toWayPointDir = wp.GetPosition() - position;
+            toWayPointDir = toWayPointDir.normalized;
 
             // Get the normalized Velocity of the intruder
             Vector2 velocityNorm = dir.normalized;
 
             // Get the cosine of the smalled angel between the road map edge and velocity; to measure the alignment between the vectors
             // The closer to one the more aligned 
-            float cosineAngle = Vector2.Dot(edgeDir, velocityNorm);
-            angleDiffs.Add(Mathf.Abs(cosineAngle));
+            float cosineAngle = Vector2.Dot(toWayPointDir, velocityNorm);
+            angleDiffs.Add(cosineAngle);
         }
 
-        // Get the index of the closest line
+        // Get the index of the closest way point that is in front of intruder
+        int closestFrontalWpIndex = -1;
+        float minFrontalDistance = Mathf.Infinity;
+
+        // The closest point regardless of direction
+        int closestWpIndex = -1;
         float minDistance = Mathf.Infinity;
-        for (int i = 0; i < distances.Count; i++)
-        {
-            if (minDistance > distances[i])
-            {
-                closestLineIndex = i;
-                minDistance = distances[i];
-            }
-        }
 
-        // Get the index of second closest line 
-        minDistance = Mathf.Infinity;
         for (int i = 0; i < distances.Count; i++)
         {
-            if (i == closestLineIndex)
+            // if not visible then skip
+            if (!m_mapRenderer.VisibilityCheck(position, m_WayPoints[i].GetPosition()))
                 continue;
 
             if (minDistance > distances[i])
             {
-                secondClosestLineIndex = i;
+                closestWpIndex = i;
                 minDistance = distances[i];
+            }
+
+
+            // If not in front skip
+            if (angleDiffs[i] < 0.6f)
+                continue;
+
+            if (minFrontalDistance > distances[i])
+            {
+                closestFrontalWpIndex = i;
+                minFrontalDistance = distances[i];
             }
         }
 
-        int bestFit;
-        // decide the best fit line between the first and sec based on the highest cosine.
-        if (angleDiffs[closestLineIndex] >= angleDiffs[secondClosestLineIndex])
-            bestFit = closestLineIndex;
-        else
-            bestFit = secondClosestLineIndex;
+        // If nothing is in the front then just get a visible closest node
+        if (closestFrontalWpIndex == -1)
+            return m_WayPoints[closestWpIndex];
 
-        closestRoadMapLine = m_Lines[bestFit];
+        try
+        {
+            return m_WayPoints[closestFrontalWpIndex];
+        }
+        catch (Exception e)
+        {
+            Debug.Log(closestFrontalWpIndex);
+            return null;
+        }
+    }
 
-        return projections[bestFit];
+
+    // Start the flow of probability from the closest way point aligned with the direction. 
+    public void CommenceProbabilityFlow(Vector2 position, Vector2 dir)
+    {
+        WayPoint closestWp = GetClosestWp(position, dir);
+
+        foreach (var line in closestWp.GetLines())
+        {
+            line.SetSearchSegment(closestWp.GetPosition(), closestWp.GetPosition(), 1f, StealthArea.GetElapsedTime());
+        }
     }
 
     // Create a search segment that doesn't belong to the road map. The line starts from position@param and connects to the closest roadMap node
@@ -284,9 +259,38 @@ public class RoadMap
         WayPoint wp1 = m_WayPoints[closestWpIndex];
         foreach (var line in wp1.GetLines())
         {
-            line.SetSearchSegment(wp1.GetPosition(), wp1.GetPosition(), 1f, StealthArea.episodeTime);
+            line.SetSearchSegment(wp1.GetPosition(), wp1.GetPosition(), 1f, StealthArea.GetElapsedTime());
         }
     }
+
+
+    public RoadMapLine GetClosestLine(Vector2 position)
+    {
+        RoadMapLine closetLine = null;
+        float closetDistance = Mathf.Infinity;
+
+        foreach (var line in m_Lines)
+        {
+            float distance = Vector2.Distance(position, line.wp1.GetPosition());
+
+            if (distance < closetDistance && m_mapRenderer.VisibilityCheck(position, line.wp1.GetPosition()))
+            {
+                closetDistance = distance;
+                closetLine = line;
+            }
+
+            distance = Vector2.Distance(position, line.wp2.GetPosition());
+
+            if (distance < closetDistance && m_mapRenderer.VisibilityCheck(position, line.wp2.GetPosition()))
+            {
+                closetDistance = distance;
+                closetLine = line;
+            }
+        }
+
+        return closetLine;
+    }
+
 
     private Vector2? GetClosestIntersectionWithRoadmap(Vector2 start, Vector2 end)
     {
@@ -321,7 +325,6 @@ public class RoadMap
 
         return closestIntersection;
     }
-    
 
 
     // Add the adhoc roadMap line to the road map, and connect it to an existing way point.
@@ -372,9 +375,13 @@ public class RoadMap
     // Get a random road map node
     public Vector2 GetRandomRoadMapNode()
     {
-        int randomIndex = Random.Range(0, m_WayPoints.Count);
-        return m_WayPoints[randomIndex].GetPosition();
+        int randomIndex = Random.Range(0, m_WpsActual.Count);
+        return m_WpsActual[randomIndex].GetPosition();
     }
+    
+    
+    
+    
 
     // Render the draw interception points & search segments 
     public void DrawSearchSegments()

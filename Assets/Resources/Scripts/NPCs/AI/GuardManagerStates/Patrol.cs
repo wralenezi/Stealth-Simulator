@@ -10,7 +10,6 @@ public class Patrol : IState
 
     public void Enter()
     {
-        m_GuardsManager.UpdateGuiLabel();
     }
 
     public void Execute()

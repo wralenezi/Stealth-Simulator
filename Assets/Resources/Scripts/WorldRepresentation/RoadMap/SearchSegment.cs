@@ -40,7 +40,7 @@ public class SearchSegment
 
         m_destination2 = dst2;
         position2 = startingPos2;
-        
+
         Reset();
     }
 
@@ -81,8 +81,7 @@ public class SearchSegment
     // Get the age of the search segment
     public float GetAge()
     {
-        float age = StealthArea.episodeTime - timestamp;
-
+        float age = StealthArea.GetElapsedTime() - timestamp;
         return age;
     }
 
@@ -101,7 +100,7 @@ public class SearchSegment
     public void Seen()
     {
         IsObserved = true;
-        SetTimestamp(StealthArea.episodeTime);
+        SetTimestamp(StealthArea.GetElapsedTime());
         SetProb(MinProbability);
         reached1 = false;
         reached2 = false;
@@ -118,6 +117,11 @@ public class SearchSegment
         m_Probability = prob;
     }
 
+    public bool IsReached()
+    {
+        return reached1 && reached2;
+    }
+
     public void AddProbability(float prob)
     {
         m_Probability += prob;
@@ -129,8 +133,10 @@ public class SearchSegment
         return m_Probability;
     }
 
+    // Expand the search segment
     public void Expand(float speed, float timeDelta)
     {
+        // The slowed expansion speed; to give a chance to slow down the expansion of seen segments.
         float slowSpeed = 1f / Mathf.Pow(10, Time.timeScale);
 
         // Expand from one side
@@ -150,7 +156,7 @@ public class SearchSegment
             position1 = m_destination1.GetPosition();
         }
         else
-            position1 += positionDir1 * (expansionStep1);
+            position1 += positionDir1 * expansionStep1;
 
 
         // Expand to the other
@@ -170,7 +176,7 @@ public class SearchSegment
             position2 = m_destination2.GetPosition();
         }
         else
-            position2 += positionDir2 * (expansionStep2);
+            position2 += positionDir2 * expansionStep2;
     }
 
 
@@ -192,14 +198,15 @@ public class SearchSegment
         foreach (var line in wayPoint.GetLines())
         {
             // Make sure the new point is not propagated before
-            if (line.GetSearchSegment() == this || GetProbability() < 0.1f || line.GetSearchSegment().isPropagated)
+            if (line.GetSearchSegment() == this || line.GetSearchSegment().isPropagated) // GetProbability() < 0.1f ||
                 continue;
 
+            // Don't propagate the probability if the destination has a higher value
             if (line.GetSearchSegment().GetProbability() > GetProbability())
                 break;
 
             // Create the new search segment 
-            line.ProbabgateToSegment(wayPoint.GetPosition(), newProb, StealthArea.episodeTime);
+            line.ProbabgateToSegment(wayPoint.GetPosition(), newProb, StealthArea.GetElapsedTime());
         }
     }
 
@@ -212,7 +219,7 @@ public class SearchSegment
 
         //
         // Handles.Label(position1, Vector2.Distance(position1,m_segmentMidPoint).ToString());
-        if (GetProbability() > 0f)
-        Handles.Label(GetMidPoint(), (Mathf.Round(GetProbability() * 100f) / 100f).ToString());
+        // if (GetProbability() > 0f)
+        //     Handles.Label(GetMidPoint(), (Mathf.Round(GetProbability() * 100f) / 100f).ToString());
     }
 }

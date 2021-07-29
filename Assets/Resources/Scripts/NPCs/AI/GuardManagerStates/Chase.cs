@@ -6,12 +6,10 @@ public class Chase : IState
     public Chase(GuardsManager _guardsManager)
     {
         m_GuardsManager = _guardsManager;
-        m_GuardsManager.UpdateGuiLabel();
     }
 
     public void Enter()
     {
-        m_GuardsManager.UpdateGuiLabel();
     }
 
     public void Execute()

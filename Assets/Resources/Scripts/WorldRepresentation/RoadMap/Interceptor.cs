@@ -42,11 +42,6 @@ public class Interceptor : MonoBehaviour
         // PlacePossiblePositions(phNode, 0, m_futureDistance);
     }
 
-    public Vector2 GetRandomRoadMapNode()
-    {
-        return m_roadMap.GetRandomRoadMapNode();
-    }
-
     // Return interception points and if all are visited propagate them and return the new interceptions points
     public List<InterceptionPoint> GetPossiblePositions()
     {
@@ -207,6 +202,56 @@ public class Interceptor : MonoBehaviour
     //     PlacePossiblePositions(iP, iP.generationIndex + 1, m_futureDistance);
     //     m_interceptionPoints.Remove(iP);
     // }
+    
+        // // Find the projection point on the road map
+    // // Find the closest projection point 
+    // public InterceptionPoint GetInterceptionPointOnRoadMap(Vector2 position, Vector2 dir)
+    // {
+    //     float minDistance = Mathf.Infinity;
+    //     // Position
+    //     Vector2? projectionOnRoadMap = null;
+    //     // Direction of the phantom node movement
+    //     //Vector2? direction = null;
+    //     // Destination of the phantom node
+    //     WayPoint destination = null;
+    //     // Source of the phantom
+    //     WayPoint source = null;
+    //
+    //
+    //     foreach (var line in m_Lines)
+    //     {
+    //         // Get the point projection on the line
+    //         Vector2 pro = GeometryHelper.ClosestProjectionOnSegment(line.wp1.GetPosition(), line.wp2.GetPosition(),
+    //             position);
+    //
+    //         // The distance from the projection point to the intruder position
+    //         float distance = Vector2.Distance(position, pro);
+    //
+    //         if (distance < minDistance)
+    //         {
+    //             minDistance = distance;
+    //             projectionOnRoadMap = pro;
+    //
+    //             // Get the normalized direction of the road map edge
+    //             Vector2 edgeDir = line.wp1.GetPosition() - line.wp2.GetPosition();
+    //             edgeDir = edgeDir.normalized;
+    //
+    //             // Get the normalized Velocity of the intruder
+    //             Vector2 velocityNorm = dir.normalized;
+    //
+    //             // Get the cosine of the smalled angel between the road map edge and velocity; to measure the alignment between the vectors
+    //             // The closer to one the more aligned 
+    //             float cosineAngle = Vector2.Dot(edgeDir, velocityNorm);
+    //
+    //             destination = (cosineAngle > 0) ? line.wp2 : line.wp1;
+    //             source = (cosineAngle > 0) ? line.wp1 : line.wp2;
+    //         }
+    //     }
+    //
+    //     return new InterceptionPoint(projectionOnRoadMap.Value,
+    //         source, destination, 0);
+    // }
+
 }
 
 // Interception point class

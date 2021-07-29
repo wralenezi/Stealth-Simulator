@@ -9,7 +9,7 @@ public static class PathFinding
     // Simple Funnel Offset
     static float offsetMultiplier = 0.25f;
 
-    // Containers for the pathfinding
+    // Containers for the path finding
     private static List<MeshPolygon> openListMesh;
     private static List<MeshPolygon> closedListMesh;
     private static List<MeshPolygon> pathMesh;
@@ -124,7 +124,7 @@ public static class PathFinding
                     }
 
                     openListMesh.InsertIntoSortedList(p,
-                        delegate(MeshPolygon x, MeshPolygon y) { return x.GetFvalue().CompareTo(y.GetFvalue()); });
+                        delegate(MeshPolygon x, MeshPolygon y) { return x.GetFvalue().CompareTo(y.GetFvalue()); }, Order.Asc);
                 }
             }
 
@@ -468,7 +468,7 @@ public static class PathFinding
         while (openListRoadMap.Count > 0)
         {
             WayPoint current = openListRoadMap[0];
-            openListMesh.RemoveAt(0);
+            openListRoadMap.RemoveAt(0);
 
             foreach (WayPoint p in current.GetConnections())
             {
@@ -487,7 +487,7 @@ public static class PathFinding
 
 
                     openListRoadMap.InsertIntoSortedList(p,
-                        delegate(WayPoint x, WayPoint y) { return x.GetFvalue().CompareTo(y.GetFvalue()); });
+                        delegate(WayPoint x, WayPoint y) { return x.GetFvalue().CompareTo(y.GetFvalue()); }, Order.Asc);
                 }
             }
 

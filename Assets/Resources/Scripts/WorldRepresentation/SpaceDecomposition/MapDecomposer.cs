@@ -72,7 +72,7 @@ public class MapDecomposer : MonoBehaviour
         // Modify the regions to facilitate triangulation
         PrepareRegions();
 
-        
+
         RegularizePolygons();
 
         // Decompose the unseen area
@@ -151,7 +151,8 @@ public class MapDecomposer : MonoBehaviour
             }
         }
     }
-
+    
+    // Get a random polygon from the NavMesh
     public Polygon GetRandomPolygon()
     {
         int randPoly = UnityEngine.Random.Range(0, GetNavMesh().Count);
@@ -266,17 +267,20 @@ public class MapDecomposer : MonoBehaviour
         m_SeenRegions = seenRegions;
     }
 
+
     private void RegularizePolygons()
     {
         for (int i = 0; i < m_UnseenRegions.Count; i++)
         {
+            // Remove the empty lists
             if (m_UnseenRegions[i].Count == 0)
             {
                 m_UnseenRegions.RemoveAt(i);
                 i = 0;
                 continue;
             }
-            
+
+            // Remove any non-polygon objects.
             for (int j = 0; j < m_UnseenRegions[i].Count; j++)
                 if (m_UnseenRegions[i][j].GetVerticesCount() < 3)
                 {
@@ -289,6 +293,7 @@ public class MapDecomposer : MonoBehaviour
 
         for (int i = 0; i < m_SeenRegions.Count; i++)
         {
+            // Remove the empty lists
             if (m_SeenRegions[i].Count == 0)
             {
                 m_SeenRegions.RemoveAt(i);
@@ -296,6 +301,7 @@ public class MapDecomposer : MonoBehaviour
                 continue;
             }
 
+            // Remove any non-polygon objects.
             for (int j = 0; j < m_SeenRegions[i].Count; j++)
                 if (m_SeenRegions[i][j].GetVerticesCount() < 3)
                 {
@@ -357,7 +363,7 @@ public class MapDecomposer : MonoBehaviour
     {
         return m_UnseenPolygons;
     }
-    
+
     private void OnDrawGizmos()
     {
         if (showNavMesh)

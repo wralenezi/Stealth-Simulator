@@ -153,7 +153,7 @@ public static class GeometryHelper
         float ab = Vector2.Distance(a, b);
 
         float ac = Vector2.Distance(a, c);
-        
+
         float bc = Vector2.Distance(b, c);
 
         return Math.Abs(ab - (ac + bc)) < 0.01f;
@@ -164,7 +164,7 @@ public static class GeometryHelper
     {
         Vector2 closestIntersection = points[0];
         float minDist = Mathf.Infinity;
-                        
+
         foreach (var inter in points)
         {
             float dist = Vector2.Distance(origin, inter);
@@ -174,7 +174,6 @@ public static class GeometryHelper
                 closestIntersection = inter;
                 minDist = dist;
             }
-
         }
 
         return closestIntersection;
@@ -196,4 +195,34 @@ public static class GeometryHelper
 
         return projection;
     }
+    
+    
+    public static void SimplifiyLine(List<Vector2> line, float epsilon)
+    {
+        float minAngle = 10f;
+        float maxAngle = 160f;
+        
+        for (int index = 1; index < line.Count - 1; index++)
+        {
+            // Remove the vertices if its angle is below the min threshold or more than the max threshold
+            if (GetAngle(line[index - 1], line[index], line[index + 1]) >= maxAngle)
+            {
+                line.RemoveAt(index);
+                index = 1;
+                continue;
+            }
+
+            if (GetAngle(line[index - 1], line[index], line[index + 1]) <= minAngle)
+            {
+                line.RemoveAt(index);
+                index = 1;
+            }
+            else if (Vector2.Distance(line[index - 1], line[index + 1]) <= epsilon)
+            {
+                line.RemoveAt(index);
+                index = 1;
+            }
+        }
+    }
+    
 }

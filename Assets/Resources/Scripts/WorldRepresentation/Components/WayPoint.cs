@@ -173,6 +173,6 @@ public class WayPoint
         //     distances += distance + "\n";
         // }
 
-        // Handles.Label(GetPosition(), m_Distance.ToString());
+        // Handles.Label(GetPosition(), Id.ToString());
     }
 }

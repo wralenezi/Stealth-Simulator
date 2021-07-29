@@ -13,6 +13,30 @@ public class VisMeshGuard : Guard
         base.Initiate(area, data);
         m_VisMesh = transform.parent.parent.Find("Map").GetComponent<VisMesh>();
     }
+    
+    // Clear the lines the guard planned to go through
+    public override void ClearLines()
+    {
+        while (LinesToPassThrough.Count > 0)
+        {
+            RoadMapLine current = LinesToPassThrough[0];
+            current.RemovePassingGuard(this);
+            LinesToPassThrough.RemoveAt(0);
+        }
+    }
+
+    public override float GetPassingsAverage()
+    {
+        float sum = 0f;
+
+        foreach (var line in LinesToPassThrough)
+        {
+            sum += line.GetPassingGuardsCount() - 1;
+            
+        }
+
+        return sum / LinesToPassThrough.Count;
+    }
 
     // Get the next target the guard should observe
     public override Vector2? GetPatrolGoal()
@@ -76,7 +100,7 @@ public class VisMeshGuard : Guard
 
     public override LogSnapshot LogNpcProgress()
     {
-        return new LogSnapshot(GetTravelledDistance(), StealthArea.episodeTime, Data,"",0,0f,0f,0f, m_FoundHidingSpots, m_VisMesh.GetAverageStaleness());
+        return new LogSnapshot(GetTravelledDistance(), StealthArea.GetElapsedTime(), Data,"",0,0f,0f,0f, m_FoundHidingSpots, m_VisMesh.GetAverageStaleness());
     }
 
     public override void SetSeenPortion()

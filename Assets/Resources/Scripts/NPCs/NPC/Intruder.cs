@@ -26,6 +26,9 @@ public class Intruder : NPC
 
     // List of guards; to assess the fitness of the hiding spots
     private List<Guard> m_guards;
+    
+    private PlayerLabelController m_PlayerLabel;
+
 
     public override void Initiate(StealthArea area, NpcData data)
     {
@@ -41,6 +44,13 @@ public class Intruder : NPC
         // Multiply the intruder's speed
         NpcSpeed *= Properties.IntruderSpeedPercentage / 100f;
         NpcRotationSpeed *= Properties.IntruderRotationSpeedMulti;
+        
+        GameObject gameLabel = Resources.Load<GameObject>("Prefabs/PlayerLabel");
+        GameObject gameLabelGo = Instantiate(gameLabel, transform);
+
+        m_PlayerLabel = gameLabelGo.GetComponent<PlayerLabelController>();
+        m_PlayerLabel.Initiate(GetTransform());
+
     }
 
     public override void ResetNpc()
@@ -50,6 +60,11 @@ public class Intruder : NPC
         m_NoTimesSpotted = 0;
         m_AlertTime = 0f;
         m_SearchedTime = 0f;
+    }
+    
+    public void HideLabel()
+    {
+        m_PlayerLabel.HideLabel();
     }
 
     // Run the state the intruder is in
@@ -73,6 +88,12 @@ public class Intruder : NPC
             m_SearchedTime += timeDelta;
         }
     }
+
+    // In the case of intruder nothing to be done in this function yet
+    public override void ClearLines()
+    {
+    }
+
 
     public Vector2 GetLastKnownLocation()
     {
@@ -115,6 +136,16 @@ public class Intruder : NPC
                 else
                     guard.RenderGuard(false);
             }
+        }
+    }
+
+
+    public void SpotCoins(List<Coin> coins)
+    {
+        foreach (var coin in coins)
+        {
+            if (GetFovPolygon().IsCircleInPolygon(coin.transform.position, 0.3f))
+                coin.Render();
         }
     }
 
@@ -219,6 +250,11 @@ public class Intruder : NPC
         return m_AlertTime / Properties.EpisodeLength;
     }
 
+    public float GetAlertTime()
+    {
+        return m_AlertTime;
+    }
+
     public int GetNumberOfTimesSpotted()
     {
         return m_NoTimesSpotted;
@@ -232,7 +268,7 @@ public class Intruder : NPC
 
     public override LogSnapshot LogNpcProgress()
     {
-        return new LogSnapshot(GetTravelledDistance(), StealthArea.episodeTime, Data, m_state.GetState().ToString(),
+        return new LogSnapshot(GetTravelledDistance(), StealthArea.GetElapsedTime(), Data, m_state.GetState().ToString(),
             m_NoTimesSpotted, GuardsManager.GuardsOverlapTime,
             m_AlertTime, m_SearchedTime, 0, 0f);
     }

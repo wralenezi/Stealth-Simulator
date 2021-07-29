@@ -1,29 +1,41 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
+using Unity.Barracuda;
 using Unity.MLAgents.Policies;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
+using Random = UnityEngine.Random;
 
 public class GameManager : MonoBehaviour
 {
+    // The path to the stealth area prefab
+    private readonly string m_StealthArea = "Prefabs/StealthArea";
+
+    // Active area
+    private StealthArea m_activeArea;
+
+    // List of scenarios to be executed
+    private List<Session> m_Sessions;
+
+    // display survey?
+    public bool ShowSurvey;
+
+    // Choose the type of game
+    public GameType gameType;
+
     // Logging Variables 
-    [Header("Logging")] [Tooltip("Log the performance")]
+    [Header("Logging")] [Tooltip("Specify the logging method")]
     public Logging loggingMethod;
 
     [Header("Time")] [Tooltip("Simulation speed")] [Range(1, 20)]
     public int SimulationSpeed;
 
-    // The path to the stealth area prefab
-    private readonly string m_StealthArea = "Prefabs/StealthArea";
-
-    // Active area
-    private GameObject m_activeArea;
-
-    // The Scenarios to be executed
-    private List<Session> m_Sessions;
-
-    [Tooltip("Rendering")] public bool Render;
+    // Rendering colors and certain meshes
+    [Tooltip("To render colors and meshes in the game.")]
+    public bool Render;
 
     // Location of the data for the game
     public static string DataPath;
@@ -32,17 +44,37 @@ public class GameManager : MonoBehaviour
     public static string MapsPath = "Maps/";
     public static string RoadMapsPath = "RoadMaps/";
 
+    // Available maps
+    private string[] m_maps = { "MgsDock" };//{"dragon_age2", "valorant_ascent", "Boxes"};
+    private int[] m_mapScales = { 2 };//{1, 2, 1};
+    private int[] m_guardCounts = { 2 };//{3, 4, 6};
+    private int chosenIndex;
+
     // The main camera
     public static Camera MainCamera;
 
+    public static SurveyManager SurveyManager;
+
+    // The time stamp the game started
+    public static int TimeStamp;
+
+    public string currentMapData { set; get; }
+    public string currentRoadMapData { set; get; }
+
+    // Game manager instance handler
+    public static GameManager instance;
+
+    // Beginning of the game manager.
     private void Start()
     {
+        // Initiate the references
         m_activeArea = null;
         m_Sessions = new List<Session>();
+        instance = this;
 
-        // Define the paths for the game
+        // Define the hierarchy of the paths for the game
         // Main path
-        DataPath = Application.dataPath + "/Data/";
+        DataPath = "Data/";
         // Logs path
         LogsPath = DataPath + LogsPath;
         // Map related data paths
@@ -50,10 +82,12 @@ public class GameManager : MonoBehaviour
         MapsPath = MapsDataPath + MapsPath;
         RoadMapsPath = MapsDataPath + RoadMapsPath;
 
-        // Camera
+        // Reference the main camera
         MainCamera = Camera.main;
 
-        // Load sessions
+        ChooseMap();
+
+        // Load the sessions to play
         LoadSavedSessions();
 
         // Set the simulation speed
@@ -61,156 +95,223 @@ public class GameManager : MonoBehaviour
 
         // Initiate the containers for path finding.
         PathFinding.Initiate();
+        
+        // World state storage
+        WorldState.Initialize();
+
+        SurveyManager = GameObject.Find("Canvas").transform.Find("Survey").GetComponent<SurveyManager>();
+        SurveyManager.Initiate();
+
+        TimeStamp = GetDateTime();
+    }
+
+
+    // This is to get a unique time stamp
+    public static int GetDateTime()
+    {
+        DateTime epochStart = new DateTime(2021, 5, 1, 0, 0, 0, DateTimeKind.Utc);
+        return (int) (DateTime.UtcNow - epochStart).TotalSeconds;
+    }
+
+    private void LoadSavedSessions()
+    {
+        var sessions = PrepareStudySessions();
+
+        // Each line represents a session
+        foreach (var session in sessions)
+        {
+            // Get the session info
+            var sc = new Session(session["GameCode"],
+                (Scenario) Enum.Parse(typeof(Scenario), session["Scenario"], true),
+                int.Parse(session["GuardsCount"]), int.Parse(session["IntudersCount"]),
+                int.Parse(session["CoverageResetThreshold"]),
+                (WorldRepType) Enum.Parse(typeof(WorldRepType), session["WorldRep"], true), session["Map"],
+                float.Parse(session["MapScale"]));
+
+            // Set the guard behavior
+            GuardBehavior guardBehavior = new GuardBehavior(
+                (GuardPatrolPlanner) Enum.Parse(typeof(GuardPatrolPlanner), session["GuardPatrolPlanner"], true),
+                (GuardChasePlanner) Enum.Parse(typeof(GuardChasePlanner), session["GuardChasePlanner"], true),
+                (GuardSearchPlanner) Enum.Parse(typeof(GuardSearchPlanner), session["GuardSearchPlanner"], true));
+
+            // Add the guards
+            for (int i = 0; i < int.Parse(session["GuardsCount"]); i++)
+                sc.AddGuard(i + 1, NpcType.Guard, guardBehavior, null,
+                    (PathFindingHeursitic) Enum.Parse(typeof(PathFindingHeursitic), session["PathFindingHeursitic"],
+                        true),
+                    (PathFollowing) Enum.Parse(typeof(PathFollowing), session["PathFollowing"], true),
+                    null);
+
+            // Add the intruders
+            for (int i = 0; i < int.Parse(session["IntudersCount"]); i++)
+                sc.AddIntruder(i + 1, NpcType.Intruder, null,
+                    (IntruderPlanner) Enum.Parse(typeof(IntruderPlanner), session["IntruderPlanner"], true),
+                    (PathFindingHeursitic) Enum.Parse(typeof(PathFindingHeursitic), session["PathFindingHeursitic"],
+                        true),
+                    (PathFollowing) Enum.Parse(typeof(PathFollowing), session["PathFollowing"], true),
+                    null);
+
+            // Check if the required number of Episodes is logged already or skip if logging is not required.
+            if (loggingMethod != Logging.Local || !PerformanceMonitor.IsLogged(sc))
+                m_Sessions.Add(sc);
+        }
+    }
+
+    private void ChooseMap()
+    {
+        chosenIndex = Random.Range(0, m_maps.Length);
+        string map = m_maps[chosenIndex];
+        int mapScale = m_mapScales[chosenIndex];
+
+        // Load the map data
+        StartCoroutine(FileUploader.GetFile(map, "map", 0f));
+        // Load the road map data
+        StartCoroutine(FileUploader.GetFile(map, "roadMap", mapScale));
+
+        StartCoroutine(LoadGamesWhenReady());
+    }
+
+    private IEnumerator LoadGamesWhenReady()
+    {
+        while (currentMapData == null || currentRoadMapData == null)
+        {
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        if (ShowSurvey)
+            SurveyManager.CreateNewUserSurvey(TimeStamp);
 
         // Load the next session
         LoadNextScenario();
     }
 
-    private void LoadSavedSessions()
+    private List<Dictionary<string, string>> PrepareStudySessions()
     {
-        // // Get the path to the sessions records
-        // string path = DataPath + "/Sessions.csv";
-        //
-        // // Load the sessions file
-        // var sessionsString = CsvController.ReadString(path);
+        string map = m_maps[chosenIndex];
+        int mapScale = m_mapScales[chosenIndex];
+        int guardCount = m_guardCounts[chosenIndex];
 
-        var sessionsString = EnumerateSessionData();
+        List<string> originalMethods = new List<string>() {"RmPropSimple"}; //, "Cheating", "RmPropOccupancyDiffusal"};
 
-        // Split data by lines
-        var lines = sessionsString.Split('\n');
+        List<string> methods = new List<string>();
 
-        // Each line represents a session
-        for (var lineIndex = 1; lineIndex < lines.Length; lineIndex++)
-            if (lines[lineIndex].Length > 0)
-            {
-                // Split the elements
-                var data = lines[lineIndex].Split(',');
-
-                // Get the session info
-                var sc = new Session(data[0], (Scenario) Enum.Parse(typeof(Scenario), data[1], true),
-                    int.Parse(data[9]), int.Parse(data[12]),
-                    int.Parse(data[2]), (WorldRepType) Enum.Parse(typeof(WorldRepType), data[3], true), data[4],
-                    float.Parse(data[5]));
-
-                // Set the guard behavior
-                GuardBehavior guardBehavior = new GuardBehavior(
-                    (GuardPatrolPlanner) Enum.Parse(typeof(GuardPatrolPlanner), data[6], true),
-                    (GuardChasePlanner) Enum.Parse(typeof(GuardChasePlanner), data[7], true),
-                    (GuardSearchPlanner) Enum.Parse(typeof(GuardSearchPlanner), data[8], true));
-
-                // Add the guards
-                for (int i = 0; i < int.Parse(data[9]); i++)
-                    sc.AddGuard(i + 1, NpcType.Guard, guardBehavior, null,
-                        (PathFindingHeursitic) Enum.Parse(typeof(PathFindingHeursitic), data[10], true),
-                        (PathFollowing) Enum.Parse(typeof(PathFollowing), data[11], true),
-                        null);
-
-                // Add the intruders
-                for (int i = 0; i < int.Parse(data[12]); i++)
-                    sc.AddIntruder(i + 1, NpcType.Intruder, null,
-                        (IntruderPlanner) Enum.Parse(typeof(IntruderPlanner), data[13], true),
-                        (PathFindingHeursitic) Enum.Parse(typeof(PathFindingHeursitic), data[14], true),
-                        (PathFollowing) Enum.Parse(typeof(PathFollowing), data[15], true),
-                        null);
-
-                // Check if the required number of Episodes is logged already or skip if logging is not required.
-                if (!PerformanceMonitor.IsLogged(sc) || loggingMethod == Logging.None)
-                    m_Sessions.Add(sc);
-            }
-    }
-
-
-    private string EnumerateSessionData()
-    {
-        Dictionary<string, string> maps = new Dictionary<string, string>();
-        // Add maps
-        // maps.Add("MgsDock", "2");
-        // maps.Add("dragon_age_brc202d", "1");
-        // maps.Add("dragon_age2", "1");
-        // maps.Add("valorant_ascent", "2");
-        // maps.Add("Boxes", "1");
-        // maps.Add("AlienIsolation", "4");
-        // maps.Add("CoD_relative", "0.1");
-        maps.Add("t_map", "1");
-
-        List<string> guardsCount = new List<string>() {"1"};
-
-        // List<string> intruderPlanners = new List<string>() {"RandomMoving", "Heuristic", "HeuristicMoving"};
-
-        // List<string> methods = new List<string>() {"RmPropSimple", "Cheating", "RmPropOccupancyDiffusal"};
-
-        List<string> methods = new List<string>() {"RmPropSimple"};
-        
-        List<string> intruderPlanners = new List<string>() {"Heuristic"};
-
-
-        string sessions =
-            "GameCode,Scenario,CoverageResetThreshold,WorldRep,Map,MapScale,GuardPatrolPlanner,GuardChasePlanner,GuardSearchPlanner,GuardsCount,PathFindingHeursitic,PathFollowing,IntudersCount,IntruderPlanner,PathFindingHeursitic,PathFollowing\n";
-
-        foreach (var map in maps)
-        foreach (var guardCount in guardsCount)
-        foreach (var intruderPlanner in intruderPlanners)
-        foreach (var method in methods)
+        while (originalMethods.Count > 0)
         {
-            sessions += ",Chase,100,Continuous,";
-            sessions += map.Key + "," + map.Value;
-            sessions += ",Stalest,Simple,";
-            sessions += method + ",";
-            sessions += guardCount;
-            sessions += ",EuclideanDst,SimpleFunnel,1,";
-            sessions += intruderPlanner;
-            sessions += ",EuclideanDst,SimpleFunnel\n";
+            int randomIndex = Random.Range(0, originalMethods.Count);
+            methods.Add(originalMethods[randomIndex]);
+            originalMethods.RemoveAt(randomIndex);
         }
+
+        List<Dictionary<string, string>> sessions = new List<Dictionary<string, string>>();
+
+        Dictionary<string, string> session = new Dictionary<string, string>();
+
+        // session.Add("GameCode", "");
+        // session.Add("Scenario", "Chase");
+        // session.Add("CoverageResetThreshold", "100");
+        // session.Add("WorldRep", "Continuous");
+        // session.Add("Map", map);
+        // session.Add("MapScale", mapScale.ToString());
+        // session.Add("GuardPatrolPlanner", "Stalest");
+        // session.Add("GuardChasePlanner", "Simple");
+        // session.Add("GuardSearchPlanner", "Random");
+        // session.Add("GuardsCount", "2");
+        // session.Add("PathFindingHeursitic", "EuclideanDst");
+        // session.Add("PathFollowing", "SimpleFunnel");
+        // session.Add("IntudersCount", "1");
+        // session.Add("IntruderPlanner", "UserInput");
+        //
+        // sessions.Add(session);
+
+
+        foreach (var guardMethod in methods)
+        {
+            // Dictionary for the session 
+            session = new Dictionary<string, string>
+            {
+                {"GameCode", ""},
+                {"Scenario", "Chase"},
+                {"CoverageResetThreshold", "100"},
+                {"WorldRep", "Continuous"},
+                {"Map", map},
+                {"MapScale", mapScale.ToString()},
+                {"GuardPatrolPlanner", "Stalest"},
+                {"GuardChasePlanner", "Simple"},
+                {"GuardSearchPlanner", guardMethod},
+                {"GuardsCount", guardCount.ToString()},
+                {"PathFindingHeursitic", "EuclideanDst"},
+                {"PathFollowing", "SimpleFunnel"},
+                {"IntudersCount", "1"},
+                {"IntruderPlanner", "UserInput"}
+            };
+
+
+
+            sessions.Add(session);
+        }
+
 
         return sessions;
     }
 
 
     // Create the area and load it with the scenario
-    private GameObject CreateArea(Session scenario)
+    private void CreateArea(Session scenario)
     {
         // Get the area prefab
         var areaPrefab = (GameObject) Resources.Load(m_StealthArea);
-        var areaGameObject = Instantiate(areaPrefab, transform, true);
+        GameObject activeArea = Instantiate(areaPrefab, transform, true);
 
         // Get the script
-        var area = areaGameObject.GetComponent<StealthArea>();
+        m_activeArea = activeArea.GetComponent<StealthArea>();
 
-        // Load the scenario
-        area.InitiateArea(scenario);
+        // Initiate the session
+        m_activeArea.InitiateArea(scenario);
 
-        return areaGameObject;
+        if (ShowSurvey)
+            m_activeArea.gameObject.SetActive(false);
     }
 
     // Replenish the scenarios
-    private void LoadNextScenario()
+    public void LoadNextScenario()
     {
         if (m_activeArea == null)
         {
             if (m_Sessions.Count > 0)
             {
-                m_activeArea = CreateArea(m_Sessions[0]);
-                Camera.main.orthographicSize = 10;
+                // Create the session
+                CreateArea(m_Sessions[0]);
 
+                // Remove the session from the list.
                 m_Sessions.RemoveAt(0);
             }
-            else
-            {
-#if UNITY_STANDALONE_WIN
-                Application.Quit();
-#endif
-
-#if UNITY_EDITOR
-                EditorApplication.isPlaying = false;
-#endif
-            }
         }
+    }
+
+
+    public void StartAreaAfterSurvey()
+    {
+        if (m_activeArea != null)
+        {
+            m_activeArea.GetComponent<StealthArea>().StartArea();
+            SurveyManager.SetSession(m_activeArea.GetComponent<StealthArea>().GetSessionInfo());
+        }
+        else
+            SurveyManager.CreateEndSurvey(TimeStamp);
+    }
+
+    public StealthArea GetActiveArea()
+    {
+        if (m_activeArea != null)
+            return m_activeArea;
+
+        return null;
     }
 
     // Remove the current area and load the next scenario
     public void RemoveArea(GameObject area)
     {
-        Destroy(area);
+        DestroyImmediate(area);
         m_activeArea = null;
         LoadNextScenario();
     }
@@ -268,6 +369,18 @@ public enum GuardSearchPlanner
     Cheating
 }
 
+
+// The style the guard makes a decision
+public enum GuardDecisionStyle
+{
+    // The guard chooses a point and navigate to it.
+    individual,
+
+    // The guard finds a path.
+    path
+}
+
+
 // Intruder behavior 
 public enum IntruderPlanner
 {
@@ -310,6 +423,14 @@ public enum Scenario
     Manual
 }
 
+// Game Type
+public enum GameType
+{
+    CoinCollection,
+
+    Stealth
+}
+
 
 // The view of the game based on the perspective
 public enum GameView
@@ -345,7 +466,6 @@ public struct GuardBehavior
 public struct NpcData
 {
     // A single source to set NPC IDs
-    public static int NpcsCount = 0;
     public int id;
 
     // The NPC type
@@ -436,6 +556,7 @@ public struct Session
 
     // Intruders Data
     public List<NpcData> intrudersList;
+
 
     public Session(string pGameCode, Scenario pScenario, int pGuardsCount, int pIntruderCount,
         int pCoveredRegionResetThreshold,
