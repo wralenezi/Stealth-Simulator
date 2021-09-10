@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Data;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class LineLookUp
 {
@@ -16,9 +18,12 @@ public class LineLookUp
     // the dialog priority
     private static Dictionary<string, int> _priorityLookUp;
 
+    // Dialog groups to choose among for playing lines
+    private static Dictionary<string, DialogGroup> _dialogs;
+
     public static void Initiate()
     {
-        string path = "../dialog_lines.csv";
+        string path = "dialog_lines.csv";
 
         DataTable data = CsvController.ConvertCSVtoDataTable(path);
 
@@ -27,6 +32,7 @@ public class LineLookUp
         _ruleLookUp = new Dictionary<string, Rules>();
         _rspnsLookUp = new Dictionary<string, Responses>();
         _priorityLookUp = new Dictionary<string, int>();
+        _dialogs = new Dictionary<string, DialogGroup>();
 
         for (int i = 0; i < data.Rows.Count; i++)
         {
@@ -34,10 +40,25 @@ public class LineLookUp
             AddLines(row["dialogId"].ToString(), row["lines"].ToString());
             AddRule(row["dialogId"].ToString(), row["rules"].ToString());
             AddResponses(row["dialogId"].ToString(), row["responses"].ToString());
+            AddDialogGroup(row["type"].ToString(), row["dialogId"].ToString());
             _priorityLookUp.Add(row["dialogId"].ToString(), int.Parse(row["priority"].ToString()));
         }
     }
 
+    private static void AddDialogGroup(string dialogType, string dialogId)
+    {
+        bool isGroupExist = _dialogs.TryGetValue(dialogType, out DialogGroup dialogGroup);
+
+        if (Equals(dialogType, "")) return;
+
+        if (!isGroupExist)
+        {
+            dialogGroup = new DialogGroup();
+            _dialogs.Add(dialogType, dialogGroup);
+        }
+
+        dialogGroup.AddLineId(dialogId);
+    }
 
     private static void AddLines(string dialogId, string linesData)
     {
@@ -59,7 +80,15 @@ public class LineLookUp
 
     public static string GetLineForDialog(string dialogId)
     {
-        return _lineLookUp[dialogId].GetLine();
+        try
+        {
+            return _lineLookUp[dialogId].GetLine();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(dialogId + " - Error");
+            throw;
+        }
     }
 
     public static string GetResponseForDialog(string dialogId)
@@ -81,6 +110,19 @@ public class LineLookUp
     public static Rules GetRuleSet(string dialogId)
     {
         return _ruleLookUp[dialogId];
+    }
+
+    public static DialogGroup GetDialogGroup(string dialogType)
+    {
+        try
+        {
+            return _dialogs[dialogType];
+        }
+        catch (Exception e)
+        {
+            Debug.Log("There are no dialogs of type: " + dialogType);
+            return null;
+        }
     }
 }
 
@@ -149,10 +191,10 @@ public class Lines
     {
         if (m_Lines.Count == 0)
             return "";
-        
+
         if (m_Lines.Count == 1)
             return m_Lines[0];
-        
+
         string line = "";
 
         if (index < m_Lines.Count)
@@ -163,7 +205,7 @@ public class Lines
 
         line = m_Lines[m_Lines.Count - 1];
         index = 0;
-        
+
         do
         {
             ShuffleLines();

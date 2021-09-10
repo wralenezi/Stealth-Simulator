@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using ClipperLib;
+using TMPro;
 using UnityEngine;
 
 
@@ -33,6 +34,20 @@ public abstract class Guard : NPC
         m_excMarkPrefab = (GameObject) Resources.Load("Prefabs/exclamation_mark");
         m_excMarkGo = Instantiate(m_excMarkPrefab, GameManager.instance.GetActiveArea().transform);
         m_excMarkGo.SetActive(false);
+
+        // Add guard label
+        GameObject labelOg = new GameObject();
+
+        labelOg.name = "Label";
+        labelOg.transform.parent = transform;
+        labelOg.AddComponent<SeparateRotator>();
+        TextMeshPro textMeshPro = labelOg.AddComponent<TextMeshPro>();
+        textMeshPro.text = gameObject.name.Replace("Guard0", "");
+        textMeshPro.alignment = TextAlignmentOptions.Center;
+        textMeshPro.fontSize = 4;
+        textMeshPro.sortingOrder = 5;
+        textMeshPro.color = Color.black;
+        
     }
 
     public override void ResetNpc()
@@ -73,6 +88,7 @@ public abstract class Guard : NPC
             {
                 intruder.Seen();
                 WorldState.Set(name + "_see_" + intruder.name, true.ToString());
+                WorldState.Set("last_time_"+name+"_saw_"+intruder.name, Time.time.ToString());
                 RenderIntruder(intruder, true);
                 ShowExclamation();
                 return true;

@@ -334,7 +334,7 @@ public class GuardsManager : Agent
     public void UpdateGuardVision()
     {
         bool intruderSpotted = false;
-        string spotterName = "";
+        NPC spotter = null;
         foreach (var guard in m_Guards)
         {
             // Accumulate the Seen Area of the guard
@@ -346,7 +346,7 @@ public class GuardsManager : Agent
             if (!intruderSpotted)
             {
                 intruderSpotted = seen;
-                spotterName = guard.name;
+                spotter = guard;
             }
         }
 
@@ -363,7 +363,7 @@ public class GuardsManager : Agent
         if (intruderSpotted)
         {
             // Guards knows the intruders location
-            StartChase(spotterName);
+            StartChase(spotter);
         }
         else if (m_state.GetState() is Chase)
         {
@@ -400,7 +400,7 @@ public class GuardsManager : Agent
         // WorldState.Set("guard_state", GetState().ToString());
 
         foreach (var guard in m_Guards)
-            guard.UpdateWldStatV();
+            guard.UpdateWldStatV(m_Guards);
     }
 
     public void CoinPicked()
@@ -437,7 +437,6 @@ public class GuardsManager : Agent
 
     #region FSM functions
 
-
     // Order Guards to patrol
     public void Patrol()
     {
@@ -450,7 +449,7 @@ public class GuardsManager : Agent
     {
         return m_state.GetState();
     }
-    
+
     private void ChangeState(IState state)
     {
         m_state.ChangeState(state);
@@ -458,7 +457,7 @@ public class GuardsManager : Agent
     }
 
     // In case of intruder is seen
-    public void StartChase(string spotter)
+    public void StartChase(NPC spotter)
     {
         // Switch to chase state
         if (m_state.GetState() is Chase) return;
@@ -470,11 +469,14 @@ public class GuardsManager : Agent
 
         ChangeState(new Chase(this));
 
-        AddDialogLine(spotter, "st_spotted");
-        
+        // AddDialogLine(spotter, "st_spotted");
+        //
+        m_Scriptor.ChooseDialog(spotter, "Spot");
+
+
         m_lstChaseTime = Time.time;
         WorldState.Set("lastChaseTimeStart", m_lstChaseTime.ToString());
-        WorldState.Set("lastChaseTimeEnd", "");
+        WorldState.Set("lastChaseTimeEnd", WorldState.EMPTY_VALUE);
 
         interceptor.Clear();
 
@@ -488,13 +490,13 @@ public class GuardsManager : Agent
             intruder.StartRunningAway();
         }
     }
-
-    public void AddDialogLine(string speaker, string dialogId)
-    {
-        if (m_Scriptor.RulesPass(speaker, dialogId))
-            m_Scriptor.AppendDialogLine(speaker, dialogId);
-    }
-
+    //
+    // public void AddDialogLine(NPC speaker, string dialogId, bool isVerbose)
+    // {
+    //     if (DialogGroup.RulesPass(speaker, dialogId,isVerbose))
+    //         m_Scriptor.AppendDialogLine(speaker, dialogId);
+    // }
+    //
 
     // Order guards to chase
     public void Chase()
@@ -563,7 +565,7 @@ public class GuardsManager : Agent
 
         m_lstSearchTime = Time.time;
         WorldState.Set("lastSearchTimeStart", m_lstSearchTime.ToString());
-        WorldState.Set("lastSearchTimeEnd", "");
+        WorldState.Set("lastSearchTimeEnd", WorldState.EMPTY_VALUE);
         m_searchStamp = StealthArea.GetElapsedTime();
 
         // m_StealthArea.AreaUiManager.UpdateGuardLabel(GetState());
@@ -588,6 +590,31 @@ public class GuardsManager : Agent
             guard.SetGoal(m_Intruders[0].GetLastKnownLocation(), true);
     }
 
+
+    private NPC GetLastGuard()
+    {
+        NPC intruder = m_Intruders[0];
+
+        // The last time an opponent was seen
+        float maxTime = Mathf.NegativeInfinity;
+        Guard lastGuard = null;
+
+        foreach (var guard in m_Guards)
+        {
+            string timeString = WorldState.Get("last_time_" + guard.name + "_saw_" + intruder.name);
+            timeString = Equals(timeString, WorldState.EMPTY_VALUE) ? "0" : timeString;
+            float lastTime = float.Parse(timeString);
+
+            if (lastTime > maxTime)
+            {
+                maxTime = lastTime;
+                lastGuard = guard;
+            }
+        }
+
+        return lastGuard;
+    }
+
     // Keep searching for the intruder
     public void Search()
     {
@@ -606,10 +633,10 @@ public class GuardsManager : Agent
             // Two method for choosing the guard plans
 
             // Choose the segment
-            // SearchIndividualSegments(guard);
+            SearchIndividualSegments(guard);
 
             // Define a path the guard should follow
-            SearchPath(guard);
+            // SearchPath(guard);
         }
 
         // Logging purposes
@@ -789,12 +816,21 @@ public class GuardsManager : Agent
             {
                 Vector2 tempGoal = closestGuard.GetGoal().Value;
                 assignedGuard.SetGoal(tempGoal, true);
+                
+                // guard announce to go instead 
+                m_Scriptor.ChooseDialog(assignedGuard,"Plan");
             }
 
+            // Assign the new goal to the guard
             closestGuard.SetGoal(newGoal, true);
+            
+            m_Scriptor.ChooseDialog(closestGuard,"Plan");
         }
         else
+        {
             assignedGuard.SetGoal(newGoal, false);
+            m_Scriptor.ChooseDialog(assignedGuard,"Plan");
+        }
     }
 
     // Let NPCs cast their vision

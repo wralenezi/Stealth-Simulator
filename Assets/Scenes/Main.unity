@@ -506,7 +506,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowSurvey: 0
-  gameType: 0
+  gameType: 1
+  m_IsOnlineBuild: 0
   loggingMethod: 2
   SimulationSpeed: 1
   Render: 0

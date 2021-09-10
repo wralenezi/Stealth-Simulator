@@ -8,13 +8,13 @@ public class DialogLine
     public string DialogId;
 
     // Speaker ID
-    public string SpeakerId;
+    public NPC speaker;
 
     // Status of the line
     public DialogStatus Status;
 
     // Listener ID; if -1 then its for a group
-    public string ListenerId;
+    public NPC listener;
 
     // how urgent is it
     public int Priority;
@@ -22,11 +22,11 @@ public class DialogLine
     // the spoken line
     public string Line;
 
-    public DialogLine(string _dialogId, string _speakerId, string _listenerId = "")
+    public DialogLine(string _dialogId, NPC _speaker, NPC _listener = null)
     {
         DialogId = _dialogId;
-        SpeakerId = _speakerId;
-        ListenerId = _listenerId;
+        speaker = _speaker;
+        listener = _listener;
         SetLine();
         SetPriority();
         Status = DialogStatus.Queued;
@@ -44,26 +44,14 @@ public class DialogLine
 
     public string GetAudioPath()
     {
-        string path = "Sounds/Voices/guard_1/"+Line.Replace(" ","_");
+        string path = "Sounds/Voices/guard_1/" + Line.Replace(" ", "_");
         return path;
     }
 
     public string GetFollowUpLines()
     {
-        return ""; 
+        return "";
     }
-}
-
-// Type of the dialog line
-public enum DialogType
-{
-    Question,
-
-    Command,
-
-    Response,
-
-    Statement
 }
 
 public enum DialogStatus

@@ -76,9 +76,6 @@ public abstract class NPC : MonoBehaviour
         m_NpcRb = GetComponent<Rigidbody2D>();
         m_FovPolygon = new List<Polygon>() {new Polygon()};
 
-        GameObject labelOg = new GameObject();
-        labelOg.transform.parent = transform;
-
 
         AddFoV();
     }
@@ -272,18 +269,80 @@ public abstract class NPC : MonoBehaviour
     }
 
     // Update the word state variables
-    public virtual void UpdateWldStatV()
+    public virtual void UpdateWldStatV(List<Guard> npcs)
     {
         // The orientation of the NPC's goal
+        string heading = "NA";
+
+
         if (GetGoal() != null)
-            WorldState.Set(name + "_goal", WorldState.GetHeading(GetTransform().position, GetGoal().Value));
-        else
-            WorldState.Set(name + "_goal", "NA");
+        {
+            heading = WorldState.GetHeading(GetTransform().position, GetGoal().Value);
+
+            foreach (var npc in npcs)
+            {
+                UpdtOtherGuardWrldStat(npc);
+            }
+        }
+
+
+        // Set the heading value
+        WorldState.Set(name + "_goal", heading);
 
         // NpcSpeed
 
         // Debug.Log(GetRemainingDistanceToGoal() / NpcSpeed);
     }
+
+
+    // 
+    private void UpdtOtherGuardWrldStat(NPC npc)
+    {
+        const int decimalSpots = 3;
+        float multiplier = Mathf.Pow(10f, decimalSpots);
+
+        // Update the path distance between these two NPCs
+        float distance = PathFinding.GetShortestPathDistance(World.GetNavMesh(), npc.GetTransform().position,
+            GetTransform().position);
+
+        // Normalize the distance
+        distance /= Properties.MaxPathDistance;
+        distance = Mathf.Round(distance * multiplier) / multiplier;
+
+        if (!Equals(this, npc))
+            WorldState.Set("dst_" + name + "_to_" + npc.name, distance.ToString());
+
+
+        // Set the distance from the other NPC to the goal of this
+        if (!Equals(GetGoal(), null))
+        {
+            distance = PathFinding.GetShortestPathDistance(World.GetNavMesh(), npc.GetTransform().position,
+                GetGoal().Value);
+
+            // Normalize the distance
+            distance /= Properties.MaxPathDistance;
+            distance = Mathf.Round(distance * multiplier) / multiplier;
+
+            WorldState.Set("dst_goal_" + name + "_to_" + npc.name, distance.ToString());
+        }
+        else
+            WorldState.Set("dst_goal_" + name + "_to_" + npc.name, "NA");
+
+
+        // Set the distance from the goal of the other NPC and the goal of this NPC
+        if (!Equals(this, npc) && !Equals(GetGoal(), null) && !Equals(npc.GetGoal(), null))
+        {
+            distance = PathFinding.GetShortestPathDistance(World.GetNavMesh(), npc.GetGoal().Value,
+                GetGoal().Value);
+            distance /= Properties.MaxPathDistance;
+            distance = Mathf.Round(distance * multiplier) / multiplier;
+
+            WorldState.Set("dst_goal_" + name + "_to_goal_" + npc.name, distance.ToString());
+        }
+        else
+            WorldState.Set("dst_goal_" + name + "_to_goal_" + npc.name, "NA");
+    }
+
 
     // If the NPC has a path to take then they are busy.
     public bool IsBusy()

@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class WorldState
 {
+    public const string EMPTY_VALUE = "NA"; 
+    
     private static Dictionary<string, string> _worldState;
 
     public static void Initialize()
@@ -24,9 +26,9 @@ public class WorldState
 
     public static string Get(string name)
     {
-        return _worldState.TryGetValue(name, out string value) ? value : "";
+        return _worldState.TryGetValue(name, out string value) ? value : EMPTY_VALUE;
     }
-    
+
 
     // Get the time spent since a timeStamp
     public static int GetTimeSince(string timeStamp)
@@ -47,21 +49,25 @@ public class WorldState
                 heading += "north";
             else if (dir.y < -0.5f)
                 heading += "south";
-            // Add a separator
-            heading += "-";
         }
 
-        if (dir.x > 0.5f)
-            heading += "east";
-        else if (dir.x < -0.5f)
-            heading += "west";
+        if (Mathf.Abs(dir.x) > 0.5f)
+        {
+            // Add a separator
+            heading += heading != "" ? "-" : "";
+
+            if (dir.x > 0.5f)
+                heading += "east";
+            else if (dir.x < -0.5f)
+                heading += "west";
+        }
 
         if (heading == "")
             heading = "around";
 
         return heading;
     }
-    
+
     // get the world state as a string
     public static string GetWorldState()
     {

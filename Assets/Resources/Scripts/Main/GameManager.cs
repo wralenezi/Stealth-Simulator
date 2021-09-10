@@ -26,6 +26,9 @@ public class GameManager : MonoBehaviour
     // Choose the type of game
     public GameType gameType;
 
+
+    [SerializeField] private bool m_IsOnlineBuild;
+
     // Logging Variables 
     [Header("Logging")] [Tooltip("Specify the logging method")]
     public Logging loggingMethod;
@@ -45,9 +48,9 @@ public class GameManager : MonoBehaviour
     public static string RoadMapsPath = "RoadMaps/";
 
     // Available maps
-    private string[] m_maps = { "MgsDock" };//{"dragon_age2", "valorant_ascent", "Boxes"};
-    private int[] m_mapScales = { 2 };//{1, 2, 1};
-    private int[] m_guardCounts = { 2 };//{3, 4, 6};
+    private readonly string[] m_Maps = {"Boxes"}; //{"dragon_age2", "valorant_ascent", "Boxes"};
+    private readonly int[] m_MapScales = {1}; //{1, 2, 1};
+    private readonly int[] m_GuardCounts = {3}; //{3, 4, 6};
     private int chosenIndex;
 
     // The main camera
@@ -85,19 +88,19 @@ public class GameManager : MonoBehaviour
         // Reference the main camera
         MainCamera = Camera.main;
 
-        ChooseMap();
+        // Initiate the containers for path finding.
+        PathFinding.Initiate();
 
+        // World state storage
+        WorldState.Initialize();
+        
         // Load the sessions to play
         LoadSavedSessions();
+        
+        ChooseMap();
 
         // Set the simulation speed
         Time.timeScale = SimulationSpeed;
-
-        // Initiate the containers for path finding.
-        PathFinding.Initiate();
-        
-        // World state storage
-        WorldState.Initialize();
 
         SurveyManager = GameObject.Find("Canvas").transform.Find("Survey").GetComponent<SurveyManager>();
         SurveyManager.Initiate();
@@ -155,20 +158,54 @@ public class GameManager : MonoBehaviour
             if (loggingMethod != Logging.Local || !PerformanceMonitor.IsLogged(sc))
                 m_Sessions.Add(sc);
         }
+        
+
     }
 
     private void ChooseMap()
     {
-        chosenIndex = Random.Range(0, m_maps.Length);
-        string map = m_maps[chosenIndex];
-        int mapScale = m_mapScales[chosenIndex];
+        // chosenIndex = Random.Range(0, m_Maps.Length);
+        // string map = m_Maps[chosenIndex];
+        // int mapScale = m_MapScales[chosenIndex];
 
-        // Load the map data
-        StartCoroutine(FileUploader.GetFile(map, "map", 0f));
-        // Load the road map data
-        StartCoroutine(FileUploader.GetFile(map, "roadMap", mapScale));
+        string map = m_Sessions[0].map;
+        float mapScale = m_Sessions[0].mapScale;
+        
+        LoadMapData(map, mapScale);
 
         StartCoroutine(LoadGamesWhenReady());
+    }
+
+    // Load the map data
+    private void LoadMapData(string map, float mapScale)
+    {
+        if (m_IsOnlineBuild)
+        {
+            // Load the map data
+            StartCoroutine(FileUploader.GetFile(map, "map", 0f));
+            // Load the road map data
+            StartCoroutine(FileUploader.GetFile(map, "roadMap", mapScale));
+        }
+        else
+        {
+            // Get the map data
+            currentMapData = CsvController.ReadString(GetMapPath(map));
+            currentRoadMapData = CsvController.ReadString(GetRoadMapPath(map, mapScale));
+        }
+    }
+
+    // Get the path to the map
+    private string GetMapPath(string mapName)
+    {
+        // Gets the path to the "Assets" folder 
+        return MapsPath + mapName + ".csv";
+    }
+
+    // Get the path to the map
+    private string GetRoadMapPath(string mapName, float mapScale)
+    {
+        // Gets the path to the "Assets" folder 
+        return RoadMapsPath + mapName + "_" + mapScale + ".csv";
     }
 
     private IEnumerator LoadGamesWhenReady()
@@ -187,9 +224,9 @@ public class GameManager : MonoBehaviour
 
     private List<Dictionary<string, string>> PrepareStudySessions()
     {
-        string map = m_maps[chosenIndex];
-        int mapScale = m_mapScales[chosenIndex];
-        int guardCount = m_guardCounts[chosenIndex];
+        string map = m_Maps[chosenIndex];
+        int mapScale = m_MapScales[chosenIndex];
+        int guardCount = m_GuardCounts[chosenIndex];
 
         List<string> originalMethods = new List<string>() {"RmPropSimple"}; //, "Cheating", "RmPropOccupancyDiffusal"};
 
@@ -204,7 +241,7 @@ public class GameManager : MonoBehaviour
 
         List<Dictionary<string, string>> sessions = new List<Dictionary<string, string>>();
 
-        Dictionary<string, string> session = new Dictionary<string, string>();
+        Dictionary<string, string> session; // = new Dictionary<string, string>();
 
         // session.Add("GameCode", "");
         // session.Add("Scenario", "Chase");
@@ -242,15 +279,13 @@ public class GameManager : MonoBehaviour
                 {"PathFindingHeursitic", "EuclideanDst"},
                 {"PathFollowing", "SimpleFunnel"},
                 {"IntudersCount", "1"},
-                {"IntruderPlanner", "UserInput"}
+                {"IntruderPlanner", "Heuristic"}
             };
-
 
 
             sessions.Add(session);
         }
-
-
+        
         return sessions;
     }
 
@@ -275,17 +310,13 @@ public class GameManager : MonoBehaviour
     // Replenish the scenarios
     public void LoadNextScenario()
     {
-        if (m_activeArea == null)
-        {
-            if (m_Sessions.Count > 0)
-            {
-                // Create the session
-                CreateArea(m_Sessions[0]);
+        if (m_activeArea != null || m_Sessions.Count <= 0) return;
 
-                // Remove the session from the list.
-                m_Sessions.RemoveAt(0);
-            }
-        }
+        // Create the session
+        CreateArea(m_Sessions[0]);
+
+        // Remove the session from the list.
+        m_Sessions.RemoveAt(0);
     }
 
 

@@ -3,17 +3,28 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
 public class Scriptor : MonoBehaviour
 {
-    // Verbose flag
-    [SerializeField] private bool IsVerbose;
+    // Display debug messages
+    [SerializeField] private bool isVerbose;
+
+    // Enable The Dialog system or not
+    public bool enabled = false;
 
     private string m_LastDialogLine;
     private float m_LastTimeDialogPlayed;
-    private float m_sameLineCooldown = 5f;
+    private const float SameLineCooldown = 5f;
+
+    /// Chat bubble
+    private const string ChatBubbleLoc = "Prefabs/ChatBubble";
+
+    // chat bubble Object
+    private ChatBubble m_ChtBble;
 
     // Dialog lines queue; the lines scheduled to be played
     private Queue<DialogLine> m_LinesToPlay;
@@ -30,32 +41,66 @@ public class Scriptor : MonoBehaviour
     // Coroutine regularly playing the dialog coroutine
     private IEnumerator regularShoutout;
 
-    // Filler lines to play when there is no special actions 
-    private int fillerIndex;
-    private CyclicalList<string> m_fillerLineIds;
+    // flag to show world state
+    public bool showWorldState;
+
+    // The UI text that shows the world state
+    private TextMeshProUGUI m_wrldStatLabel;
 
     // List of NPCs that can speak
     private List<Guard> m_Guards;
 
     public void Initialize()
     {
+        // Skip if this component is not enabled
+        if (!enabled) return;
+
         // Load the defined dialogs 
         LineLookUp.Initiate();
+
+        // Create the world state label
+        CreateWrldStateLabel();
 
         // Load variables
         m_LinesToPlay = new Queue<DialogLine>();
         m_As = GetComponent<AudioSource>();
+        m_As.volume = 0.1f;
 
-        // Set the lines
-        fillerIndex = 0;
-        m_fillerLineIds = new CyclicalList<string>() {"st_search-continue"};
-
+        // Reference the guards
         m_Guards = GetComponent<GuardsManager>().GetGuards();
 
+        // Initiate the chat bubble
+        GameObject chtBblePrefab = Resources.Load(ChatBubbleLoc) as GameObject;
+        GameObject chatBubbleObj = Instantiate(chtBblePrefab);
+        m_ChtBble = chatBubbleObj.GetComponent<ChatBubble>();
+
+        // 
         StartShoutout();
 
-        IsVerbose = true;
+        isVerbose = true;
     }
+
+    // Associate the dialogs into 
+    private void CreateWrldStateLabel()
+    {
+        GameObject canvas = GameObject.Find("Canvas");
+
+        GameObject label = new GameObject("World State Label");
+        label.transform.parent = canvas.transform;
+
+        m_wrldStatLabel = label.AddComponent<TextMeshProUGUI>();
+        Vector2 canvasPos = canvas.GetComponent<RectTransform>().position;
+
+        label.GetComponent<RectTransform>().position = new Vector2(-378f, 282f) + canvasPos;
+
+        m_wrldStatLabel.fontSize = 7f;
+    }
+
+    private void Update()
+    {
+        if (enabled) m_wrldStatLabel.gameObject.SetActive(showWorldState);
+    }
+
 
     // Start the routine to repeatedly play filler dialogs
     private void StartShoutout()
@@ -79,203 +124,34 @@ public class Scriptor : MonoBehaviour
     {
         while (true)
         {
-            int wait = Random.Range(5, 10);
+            // time to wait before playing next 
+            int wait = Random.Range(1, 3);
             yield return new WaitForSeconds(wait);
+
+            // Update the world state
             UpdateWldSt();
-            ChooseDialog();
+
+            // Chose the dialog to play
+            ChooseDialog(null, "Filler");
         }
     }
 
-    // Find an adequate filler dialog to add to be played
-    private void ChooseDialog()
+    // Find an adequate dialog to add to be played
+    public void ChooseDialog(NPC speaker, string dialogType)
     {
-        // we need to find the line and the speaker who will say it
-        string speaker = "";
-        string lineId = "";
+        if (!enabled) return;
 
-        // loop through the list of filler dialog and take the first the applies
-        bool foundLine = false;
-        for (int i = fillerIndex; i < m_fillerLineIds.Count; i++)
-        {
-            // loop through guards to check if they can speak a line
-            foreach (var guard in GameManager.instance.GetActiveArea().guardsManager.GetGuards())
-            {
-                // if a line has been found, then stop looping
-                if (foundLine)
-                    break;
+        DialogGroup dialogs = LineLookUp.GetDialogGroup(dialogType);
 
-                // Check if the preconditions of this line and speaker are valid
-                if (RulesPass(guard.name, m_fillerLineIds[fillerIndex]))
-                {
-                    speaker = guard.name;
-                    lineId = m_fillerLineIds[fillerIndex];
-                    foundLine = true;
-                    break;
-                }
-            }
-        }
+        // Update the world state label
+        m_wrldStatLabel.text = WorldState.GetWorldState();
 
-        // Restrict the index to be in range
-        fillerIndex %= m_fillerLineIds.Count;
+        string lineId = dialogs.ChooseDialog(ref speaker, isVerbose);
 
         // if a line is found append it 
-        if (speaker != "")
-        {
+        if (!Equals(speaker, null) && !Equals(lineId, ""))
             AppendDialogLine(speaker, lineId);
-        }
     }
-
-    // Check if the rules of a line are valid
-    public bool RulesPass(string speaker, string lineId)
-    {
-        // Get the rules of a specific line
-        Rules rules = LineLookUp.GetRuleSet(lineId);
-
-        if (IsVerbose) Debug.Log(WorldState.GetWorldState());
-
-        string conditions = "";
-
-        // Loop through the rules
-        foreach (var rule in rules.GetRules())
-        {
-            // If a rule is empty then it is valid
-            if (rule == "") continue;
-
-            if (!ValidateRule(speaker, rule))
-            {
-                if (IsVerbose) Debug.Log(lineId + " - " + rule + " - Failed");
-                return false;
-            }
-        }
-
-        // All rules are validated
-        return true;
-    }
-
-
-    // Check a single rule and validate it with the world state
-    private bool ValidateRule(string speaker, string rule)
-    {
-        // If the rule string starts with a dot, then it is a rule that needs calculation
-        return rule.Substring(0, 4) == "time" ? ValidateTimeRule(rule) : ValidatePlainRule(rule, speaker);
-    }
-
-    // Validate a rule by a simple check with the world state
-    private bool ValidatePlainRule(string rule, string speaker)
-    {
-        // Split the rule
-        char ruleSplitter = ' ';
-        string header = rule.Split(ruleSplitter)[0];
-        string op = rule.Split(ruleSplitter)[1];
-        string value = rule.Split(ruleSplitter)[2];
-
-        // if the rule header start with underscore then it is a variable 
-        if (header[0] == '_')
-        {
-            // Remove the variable identifier
-            header = header.Remove(0, 1);
-
-            // Assign the header actual value
-            switch (header)
-            {
-                case "speaker":
-                    header = speaker;
-                    break;
-            }
-        }
-
-        // Get the value from the world state
-        string wrldStValue = WorldState.Get(header);
-
-        // Based on the operator check
-        bool isSuccess = op switch
-        {
-            // Equality
-            "=" => value == wrldStValue,
-            ">=" => float.Parse(wrldStValue) >= float.Parse(value),
-            "<=" => float.Parse(wrldStValue) <= float.Parse(value),
-            _ => false
-        };
-
-        if (IsVerbose)
-        {
-            if (wrldStValue == "")
-                Debug.Log(header + " is not found.");
-            else
-                Debug.Log(rule + ": " + isSuccess);
-        }
-
-        return isSuccess;
-    }
-
-
-    // Validate time based rule 
-    private bool ValidateTimeRule(string rule)
-    {
-        char ruleSplitter = ' ';
-        string header = rule.Split(ruleSplitter)[0];
-        string op = rule.Split(ruleSplitter)[1];
-        string value = rule.Split(ruleSplitter)[2];
-
-        // Remove the variable identifier
-        // header = header.Remove(0, 1);
-
-        // Define the start and end labels or a phase
-        string wrldStatHeader = header;
-
-        switch (header)
-        {
-            // duration of the last patrol phase
-            case "time_last_patrol":
-                wrldStatHeader = "lastPatrolTime";
-                break;
-
-            // duration of the last chase phase
-            case "time_last_chase":
-                wrldStatHeader = "lastChaseTime";
-                break;
-
-            // duration of the last search phase
-            case "time_last_search":
-                wrldStatHeader = "lastSearchTime";
-                break;
-        }
-
-        // Get the value from the world state
-        if (WorldState.Get(wrldStatHeader + "Start") == "")
-        {
-            if (IsVerbose)
-                Debug.Log(wrldStatHeader + " : No start time");
-            return false;
-        }
-
-        string wrldStStartValue = WorldState.Get(wrldStatHeader + "Start");
-
-        float weldStEndValue = WorldState.Get(wrldStatHeader + "End") == ""
-            ? Time.time
-            : float.Parse(WorldState.Get(wrldStatHeader + "End"));
-
-        float timeInterval = weldStEndValue - float.Parse(wrldStStartValue);
-
-        // Based on the operator check
-        bool isSuccess = op switch
-        {
-            ">=" => timeInterval >= float.Parse(value),
-            "<=" => timeInterval <= float.Parse(value),
-            _ => false
-        };
-
-        if (IsVerbose)
-        {
-            if (value == "")
-                Debug.Log(header + " is not found.");
-            else
-                Debug.Log(rule + ": " + isSuccess);
-        }
-
-        return isSuccess;
-    }
-
 
     // Play the queue dialog lines
     private void PlayScript(bool isForced)
@@ -302,15 +178,15 @@ public class Scriptor : MonoBehaviour
         GameManager.instance.GetActiveArea().guardsManager.UpdateWldStNpcs();
     }
 
-    public void AppendDialogLine(string speakerId, string _name)
+    private void AppendDialogLine(NPC speaker, string _dialogId)
     {
-        if (Time.time - m_LastTimeDialogPlayed < m_sameLineCooldown && _name == m_LastDialogLine)
+        if (Time.time - m_LastTimeDialogPlayed < SameLineCooldown && _dialogId == m_LastDialogLine)
             return;
 
         UpdateWldSt();
 
         // Create the dialog line
-        DialogLine dialogLine = new DialogLine(_name, speakerId);
+        DialogLine dialogLine = new DialogLine(_dialogId, speaker);
 
         // Clear the Queue and stop less important dialogs
         if (IsHigherPriority(dialogLine))
@@ -335,14 +211,13 @@ public class Scriptor : MonoBehaviour
         {
             // If there are no possible response then end
             if (!LineLookUp.IsDlgHasRspns(dialog.DialogId))
-            {
                 return;
-            }
+
 
             // Check if this line is relevant
             bool isRspnsValid = false;
             string possibleRspnsId = "";
-            string responder = "";
+            NPC responder = null;
 
             int attempts = 6;
             while (!isRspnsValid && attempts-- > 0)
@@ -354,11 +229,11 @@ public class Scriptor : MonoBehaviour
                 possibleRspnsId = LineLookUp.GetResponseForDialog(dialog.DialogId);
 
                 // Check if the response is valid
-                isRspnsValid = RulesPass(responder, possibleRspnsId);
+                isRspnsValid = DialogGroup.RulesPass(responder, possibleRspnsId, isVerbose);
             }
 
             // If a response was found, add it and try to expand it 
-            if (possibleRspnsId != "")
+            if (isRspnsValid)
             {
                 DialogLine newDialog = new DialogLine(possibleRspnsId, responder);
                 m_LinesToPlay.Enqueue(newDialog);
@@ -370,20 +245,20 @@ public class Scriptor : MonoBehaviour
         }
     }
 
-    private string GetPossibleListener(DialogLine dialog)
+    private NPC GetPossibleListener(DialogLine dialog)
     {
-        string responder = "";
+        NPC responder = null;
         // Choose the next speaker if this dialog line is general
-        if (string.IsNullOrEmpty(dialog.ListenerId))
+        if (Equals(dialog.listener, null))
         {
-            foreach (var guard in m_Guards.Where(guard => guard.name != dialog.SpeakerId))
+            foreach (var guard in m_Guards.Where(guard => guard != dialog.speaker))
             {
-                responder = guard.name;
+                responder = guard;
                 break;
             }
         }
         else
-            responder = dialog.ListenerId;
+            responder = dialog.listener;
 
 
         return responder;
@@ -392,11 +267,15 @@ public class Scriptor : MonoBehaviour
     // Play a dialog line and return its length in seconds
     private float Play(DialogLine dialogLine)
     {
+        // Determine the length 
+        float secPerLetter = 0.3f;
         AudioClip audioClip = Resources.Load<AudioClip>(dialogLine.GetAudioPath());
         m_As.clip = audioClip;
+        m_ChtBble.SetText(dialogLine.speaker, dialogLine.Line);
         m_As.Play();
 
-        return audioClip.length;
+        // In case there is no file for that, just return the time based on the number of letters in the line.
+        return !Equals(audioClip, null) ? audioClip.length : secPerLetter * dialogLine.Line.Length;
     }
 
     private IEnumerator PlayDialogs()
@@ -410,17 +289,18 @@ public class Scriptor : MonoBehaviour
             {
                 float wait = Play(m_CrntDlgLn) + waitTime;
 
-                if (IsVerbose)
-                    Debug.Log(m_CrntDlgLn.SpeakerId + " : " + m_CrntDlgLn.Line);
+                if (isVerbose)
+                    Debug.Log(m_CrntDlgLn.speaker + " : " + m_CrntDlgLn.Line);
 
                 m_CrntDlgLn.Status = DialogStatus.Said;
                 m_LastDialogLine = m_CrntDlgLn.DialogId;
                 m_LastTimeDialogPlayed = Time.time;
 
                 yield return new WaitForSeconds(wait);
+                m_ChtBble.Disable();
             }
         }
-        
+
         m_CrntDlgLn = null;
         playingDialogs = null;
     }
@@ -434,6 +314,7 @@ public class Scriptor : MonoBehaviour
         {
             // m_As.Stop();
             m_LinesToPlay.Clear();
+            m_ChtBble.Disable();
             return true;
         }
 

@@ -76,7 +76,7 @@ public class AreaMesh : MonoBehaviour
         m_viewMesh.Clear();
         m_viewMesh.vertices = vertices;
         m_viewMesh.triangles = triangles;
-        m_meshRenderer.material.color = Color.gray;
+        m_meshRenderer.material.color = Color.white;
 
         m_viewMesh.RecalculateNormals();
     }

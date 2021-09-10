@@ -32,13 +32,6 @@ public class MapRenderer : MonoBehaviour
         m_interiorWalls = new List<Polygon>();
     }
 
-    // Get the path to the map
-    private string GetPath(string mapName)
-    {
-        // Gets the path to the "Assets" folder 
-        return GameManager.MapsPath + mapName + ".csv";
-    }
-
     // Parse the map data where the map is stored in absolute coordinates 
     private void ParseMapStringAbsolute(string mapData)
     {
@@ -200,14 +193,8 @@ public class MapRenderer : MonoBehaviour
     // Load the map
     public void LoadMap(string mapName, float mapScale)
     {
-        string mapData;
-
-        if (GameManager.instance.loggingMethod == Logging.Cloud)
-            mapData = GameManager.instance.currentMapData;
-        else
-            // Get the map data
-            mapData = CsvController.ReadString(GetPath(mapName));
-
+        string mapData = GameManager.instance.currentMapData;
+        
         // Parse the map data
         // if the file name has the world "_relative" then it is an SVG inspired coordinate system
         if (!mapName.Contains("_relative"))

@@ -47,7 +47,6 @@ public class SAT : MonoBehaviour
         // Import the hand drawn road map
         ImportRoadMap();
 
-
         // Divide long edges to smaller edges
         DivideRoadMap();
     }
@@ -86,12 +85,8 @@ public class SAT : MonoBehaviour
 
         try
         {
-            if (GameManager.instance.loggingMethod == Logging.Cloud)
                 mapData = GameManager.instance.currentRoadMapData;
-            else
-                mapData = CsvController.ReadString(GetPath(m_Session.map, m_Session.GetMapScale()));
-
-            ParseMapString(mapData);
+                ParseMapString(mapData);
         }
         catch (Exception e)
         {

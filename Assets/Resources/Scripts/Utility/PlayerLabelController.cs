@@ -27,7 +27,6 @@ public class PlayerLabelController : MonoBehaviour
         startC = 0f;
         endC = 1f;
         currentValue = 0f;
-        
     }
 
     private void Update()
