@@ -195,7 +195,7 @@ public class SearchSegment
                         Properties.MaxPathDistance;
 
         // Create search segments in the other points connected to this destination
-        foreach (var line in wayPoint.GetLines())
+        foreach (var line in wayPoint.GetLines(false))
         {
             // Make sure the new point is not propagated before
             if (line.GetSearchSegment() == this || line.GetSearchSegment().isPropagated) // GetProbability() < 0.1f ||
@@ -219,7 +219,7 @@ public class SearchSegment
 
         //
         // Handles.Label(position1, Vector2.Distance(position1,m_segmentMidPoint).ToString());
-        // if (GetProbability() > 0f)
-        //     Handles.Label(GetMidPoint(), (Mathf.Round(GetProbability() * 100f) / 100f).ToString());
+        if (GetProbability() > 0f)
+            Handles.Label(GetMidPoint(), (Mathf.Round(GetProbability() * 100f) / 100f).ToString());
     }
 }

@@ -55,7 +55,7 @@ public abstract class WorldRep : MonoBehaviour
 
     private void AddHidingSpot()
     {
-        Vector2 newHiding = m_mapDecomposer.GetRandomPolygon().GetRandomPosition();
+        Vector2 newHiding = m_mapDecomposer.GetRandomPolygonInNavMesh().GetRandomPosition();
             
         m_hidingSpots.Add(newHiding);        
     }

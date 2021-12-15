@@ -1,7 +1,9 @@
-﻿using System.Data;
+﻿using System;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Unity.Barracuda;
 using UnityEngine;
 
 // CSV Handler 
@@ -29,28 +31,69 @@ public static class CsvController
 
         return episodesCount;
     }
-    
+
     public static DataTable ConvertCSVtoDataTable(string strFilePath)
     {
+        if (GameManager.Instance.IsOnlineBuild)
+            return GetOnlineDialogs();
+
         DataTable dt = new DataTable();
-        using (StreamReader sr = new StreamReader(strFilePath))
+        using StreamReader sr = new StreamReader(strFilePath);
+
+        string[] headers = sr.ReadLine().Split(',');
+
+        foreach (string header in headers)
         {
-            string[] headers = sr.ReadLine().Split(',');
-            foreach (string header in headers)
+            dt.Columns.Add(header);
+        }
+
+        while (!sr.EndOfStream)
+        {
+            string[] rows = sr.ReadLine().Split(',');
+            DataRow dr = dt.NewRow();
+            for (int i = 0; i < headers.Length; i++)
             {
-                dt.Columns.Add(header);
-            }
-            while (!sr.EndOfStream)
-            {
-                string[] rows = sr.ReadLine().Split(',');
-                DataRow dr = dt.NewRow();
-                for (int i = 0; i < headers.Length; i++)
-                {
-                    dr[i] = rows[i];
-                }
-                dt.Rows.Add(dr);
+                dr[i] = rows[i];
             }
 
+            dt.Rows.Add(dr);
+        }
+
+
+        return dt;
+    }
+
+
+    public static DataTable GetOnlineDialogs()
+    {
+        // Split data by lines
+        string[] lines = GameManager.DialogLines.Split('\n');
+
+        DataTable dt = new DataTable();
+
+        for (var lineIndex = 0; lineIndex < lines.Length; lineIndex++)
+        {
+            string[] row = lines[lineIndex].Split(',');
+
+            if (row.Length == 0) continue;
+
+            if (lineIndex == 0)
+            {
+                foreach (var cell in row)
+                {
+                    dt.Columns.Add(cell);
+                }
+            }
+            else
+            {
+                DataRow dr = dt.NewRow();
+                for (int i = 0; i < dt.Columns.Count; i++)
+                {
+                    dr[i] = row[i];
+                }
+
+                dt.Rows.Add(dr);
+            }
         }
 
 
@@ -77,12 +120,20 @@ public static class CsvController
     // Return the content of a CSV
     public static string ReadString(string path)
     {
-        //Read the text from directly from the test.txt file
-        StreamReader reader = new StreamReader(path);
-        string data = reader.ReadToEnd();
-        reader.Close();
+        try
+        {
+            //Read the text from directly from the test.txt file
+            StreamReader reader = new StreamReader(path);
+            string data = reader.ReadToEnd();
+            reader.Close();
 
-        return data;
+            return data;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(path + " not found");
+            return "";
+        }
     }
 
 

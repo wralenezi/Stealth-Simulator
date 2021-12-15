@@ -32,7 +32,7 @@ public abstract class Guard : NPC
         base.Initiate(area, data);
         SeenArea = new List<Polygon>();
         m_excMarkPrefab = (GameObject) Resources.Load("Prefabs/exclamation_mark");
-        m_excMarkGo = Instantiate(m_excMarkPrefab, GameManager.instance.GetActiveArea().transform);
+        m_excMarkGo = Instantiate(m_excMarkPrefab, GameManager.Instance.GetActiveArea().transform);
         m_excMarkGo.SetActive(false);
 
         // Add guard label
@@ -94,6 +94,7 @@ public abstract class Guard : NPC
                 return true;
             }
 
+            // Intruder not seen
             WorldState.Set(name + "_see_" + intruder.name, false.ToString());
             RenderIntruder(intruder, false);
         }

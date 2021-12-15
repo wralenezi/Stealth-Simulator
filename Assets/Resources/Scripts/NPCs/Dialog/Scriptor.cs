@@ -14,7 +14,7 @@ public class Scriptor : MonoBehaviour
     [SerializeField] private bool isVerbose;
 
     // Enable The Dialog system or not
-    public bool enabled = false;
+    public bool enabled;
 
     private string m_LastDialogLine;
     private float m_LastTimeDialogPlayed;
@@ -50,8 +50,10 @@ public class Scriptor : MonoBehaviour
     // List of NPCs that can speak
     private List<Guard> m_Guards;
 
-    public void Initialize()
+    public void Initialize(bool isEnable)
     {
+        enabled = isEnable;
+
         // Skip if this component is not enabled
         if (!enabled) return;
 
@@ -73,11 +75,18 @@ public class Scriptor : MonoBehaviour
         GameObject chtBblePrefab = Resources.Load(ChatBubbleLoc) as GameObject;
         GameObject chatBubbleObj = Instantiate(chtBblePrefab);
         m_ChtBble = chatBubbleObj.GetComponent<ChatBubble>();
+        chatBubbleObj.transform.parent = transform;
 
         // 
         StartShoutout();
 
-        isVerbose = true;
+        isVerbose = false;
+    }
+
+
+    public void Disable()
+    {
+        if (m_ChtBble) m_ChtBble.Disable();
     }
 
     // Associate the dialogs into 
@@ -132,25 +141,36 @@ public class Scriptor : MonoBehaviour
             UpdateWldSt();
 
             // Chose the dialog to play
-            ChooseDialog(null, "Filler");
+
+            ChooseDialog(null, null, "Filler", 1f);
         }
     }
 
-    // Find an adequate dialog to add to be played
-    public void ChooseDialog(NPC speaker, string dialogType)
-    {
-        if (!enabled) return;
 
+    /// <summary>
+    ///Find an adequate dialog to add to be played 
+    /// </summary>
+    /// <param name="speaker"> The speaker of this line</param>
+    /// <param name="listener"> The listener of this line</param>
+    /// <param name="dialogType"> The type of the dialog group</param>
+    /// <param name="prob"> The probability this line will be played</param>
+    public void ChooseDialog(NPC speaker, NPC listener, string dialogType, float prob)
+    {
+        float sampleNumber = Random.Range(0f, 0.99f);
+
+        // Cancel if the scriptor is not enabled or the probability is lower than the sampled number
+        if (!enabled || prob < sampleNumber) return;
+
+        // Get the dialog group of the require type
         DialogGroup dialogs = LineLookUp.GetDialogGroup(dialogType);
 
         // Update the world state label
         m_wrldStatLabel.text = WorldState.GetWorldState();
 
-        string lineId = dialogs.ChooseDialog(ref speaker, isVerbose);
+        // find a dialog that can be played
+        DialogLine dialogLine = dialogs.ChooseDialog(ref speaker, ref listener, isVerbose);
 
-        // if a line is found append it 
-        if (!Equals(speaker, null) && !Equals(lineId, ""))
-            AppendDialogLine(speaker, lineId);
+        if (!Equals(dialogLine, null)) AppendDialogLine(dialogLine);
     }
 
     // Play the queue dialog lines
@@ -175,31 +195,28 @@ public class Scriptor : MonoBehaviour
     private void UpdateWldSt()
     {
         // Update the guards variables
-        GameManager.instance.GetActiveArea().guardsManager.UpdateWldStNpcs();
+        GameManager.Instance.GetActiveArea().guardsManager.UpdateWldStNpcs();
     }
 
-    private void AppendDialogLine(NPC speaker, string _dialogId)
+    private void AppendDialogLine(DialogLine dialogLine)
     {
-        if (Time.time - m_LastTimeDialogPlayed < SameLineCooldown && _dialogId == m_LastDialogLine)
+        // prevent dialogs from being played too soon
+        if (Time.time - m_LastTimeDialogPlayed < SameLineCooldown && dialogLine.DialogId == m_LastDialogLine)
             return;
 
         UpdateWldSt();
 
-        // Create the dialog line
-        DialogLine dialogLine = new DialogLine(_dialogId, speaker);
+        // if the priotriy is lower then drop it
+        if (!IsHigherPriority(dialogLine)) return;
 
-        // Clear the Queue and stop less important dialogs
-        if (IsHigherPriority(dialogLine))
-        {
-            // Insert new dialog
-            m_LinesToPlay.Enqueue(dialogLine);
+        // Insert new dialog
+        m_LinesToPlay.Enqueue(dialogLine);
 
-            // Check if there are follow up lines and add them
-            BranchDialog(dialogLine);
+        // Check if there are follow up lines and add them
+        BranchDialog(dialogLine);
 
-            // play the script 
-            PlayScript(true);
-        }
+        // play the script 
+        PlayScript(true);
     }
 
 
@@ -210,9 +227,7 @@ public class Scriptor : MonoBehaviour
         while (count-- > 0)
         {
             // If there are no possible response then end
-            if (!LineLookUp.IsDlgHasRspns(dialog.DialogId))
-                return;
-
+            if (!LineLookUp.IsDlgHasRspns(dialog.DialogId)) return;
 
             // Check if this line is relevant
             bool isRspnsValid = false;
@@ -222,14 +237,14 @@ public class Scriptor : MonoBehaviour
             int attempts = 6;
             while (!isRspnsValid && attempts-- > 0)
             {
-                // Get a possible speaker
-                responder = GetPossibleListener(dialog);
+                // if there was a listener to the previous line, it will be the next speaker else, get a possible speaker
+                responder = dialog.listener ? dialog.listener : GetPossibleListener(dialog);
 
                 // Get another possible response
                 possibleRspnsId = LineLookUp.GetResponseForDialog(dialog.DialogId);
 
-                // Check if the response is valid
-                isRspnsValid = DialogGroup.RulesPass(responder, possibleRspnsId, isVerbose);
+                // Check if the response is valid; the previous dialog speaker becomes the listener now
+                isRspnsValid = WorldState.RulesPass(responder, dialog.speaker, possibleRspnsId, isVerbose);
             }
 
             // If a response was found, add it and try to expand it 
@@ -268,7 +283,7 @@ public class Scriptor : MonoBehaviour
     private float Play(DialogLine dialogLine)
     {
         // Determine the length 
-        float secPerLetter = 0.3f;
+        float secPerLetter = 0.15f;
         AudioClip audioClip = Resources.Load<AudioClip>(dialogLine.GetAudioPath());
         m_As.clip = audioClip;
         m_ChtBble.SetText(dialogLine.speaker, dialogLine.Line);
@@ -312,7 +327,7 @@ public class Scriptor : MonoBehaviour
 
         if (m_CrntDlgLn != null && newLine.Priority > m_CrntDlgLn.Priority)
         {
-            // m_As.Stop();
+            m_As.Stop();
             m_LinesToPlay.Clear();
             m_ChtBble.Disable();
             return true;

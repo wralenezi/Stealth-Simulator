@@ -23,17 +23,16 @@ public class LineLookUp
 
     public static void Initiate()
     {
-        string path = "dialog_lines.csv";
+        string path = Application.dataPath + "/" + "dialog_lines.csv";
 
         DataTable data = CsvController.ConvertCSVtoDataTable(path);
-
 
         _lineLookUp = new Dictionary<string, Lines>();
         _ruleLookUp = new Dictionary<string, Rules>();
         _rspnsLookUp = new Dictionary<string, Responses>();
         _priorityLookUp = new Dictionary<string, int>();
         _dialogs = new Dictionary<string, DialogGroup>();
-
+        
         for (int i = 0; i < data.Rows.Count; i++)
         {
             DataRow row = data.Rows[i];
@@ -112,6 +111,11 @@ public class LineLookUp
         return _ruleLookUp[dialogId];
     }
 
+    public static int GetRuleCount(string dialogId)
+    {
+        return GetRuleSet(dialogId).GetRuleCount();
+    }
+
     public static DialogGroup GetDialogGroup(string dialogType)
     {
         try
@@ -147,6 +151,11 @@ public class Rules
     public List<string> GetRules()
     {
         return m_Rules;
+    }
+
+    public int GetRuleCount()
+    {
+        return m_Rules.Count;
     }
 }
 

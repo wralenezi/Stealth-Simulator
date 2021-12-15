@@ -77,6 +77,7 @@ public class HidingSpots : MonoBehaviour
                 }
 
                 Properties.MaxPathDistance = maxDistance;
+                Debug.Log("Hiding Spots: "+Properties.MaxPathDistance);
             }
         }
     }
@@ -128,14 +129,3 @@ public class HidingSpots : MonoBehaviour
     }
 }
 
-public class HidingSpot
-{
-    public Vector2 Position;
-    public float Fitness;
-
-    public HidingSpot(Vector2 _position)
-    {
-        Position = _position;
-        Fitness = 0f;
-    }
-}

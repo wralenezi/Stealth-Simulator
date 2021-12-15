@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.IO.Abstractions.TestingHelpers;
 using UnityEngine;
 
 public class DialogLine
@@ -35,6 +36,14 @@ public class DialogLine
     private void SetLine()
     {
         Line = LineLookUp.GetLineForDialog(DialogId);
+        EvaluateLine();
+    }
+
+    // Replace the variable name with the values in the line
+    private void EvaluateLine()
+    {
+        // `SPEAKER_HEADING is the heading of the speaker. Duh.
+        Line = Line.Replace("`SPEAKER_GOAL", WorldState.Get(speaker.name+"_goal"));
     }
 
     private void SetPriority()

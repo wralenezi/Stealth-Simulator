@@ -170,7 +170,7 @@ RectTransform:
   - {fileID: 1111296883841716603}
   - {fileID: 5594347601787698377}
   m_Father: {fileID: 5164549110359455139}
-  m_RootOrder: 3
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -281,6 +281,7 @@ Transform:
   - {fileID: 4660941221449017318}
   - {fileID: 6552958046423063881}
   - {fileID: 7191581722378327762}
+  - {fileID: 7774896597120358788}
   - {fileID: 5786007267164136572}
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -297,6 +298,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 963d96054f063b2459dcfa9de92b6d25, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  renderRoadMap: 0
+--- !u!1 &3202133405013084932
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7774896597120358788}
+  m_Layer: 0
+  m_Name: IntruderManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7774896597120358788
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3202133405013084932}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 242, y: 137, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 5164549110359455139}
+  m_RootOrder: 3
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3724154381063140157
 GameObject:
   m_ObjectHideFlags: 0
@@ -310,7 +342,7 @@ GameObject:
   - component: {fileID: 3680801786636235673}
   - component: {fileID: 3105860226900381305}
   m_Layer: 0
-  m_Name: NpcManager
+  m_Name: GuardManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -376,17 +408,11 @@ MonoBehaviour:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
   MaxStep: 0
-  interceptor: {fileID: 0}
-  searcher: {fileID: 0}
-  decisionStyle: 0
-  StateName: 
   searchWeights:
     probWeight: 0
     ageWeight: 0
     dstToGuardsWeight: 0
     dstFromOwnWeight: 0
-  Decision: 0
-  Updated: 0
 --- !u!82 &3105860226900381305
 AudioSource:
   m_ObjectHideFlags: 0
@@ -1153,7 +1179,6 @@ GameObject:
   - component: {fileID: 3327928151749949276}
   - component: {fileID: 7525880524977429124}
   - component: {fileID: 7427454865731679055}
-  - component: {fileID: 3435625574252659528}
   m_Layer: 0
   m_Name: Map
   m_TagString: Untagged
@@ -1211,6 +1236,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 29c65f9e7c0280a489a84015c2194b02, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  showInteriorWalls: 0
 --- !u!114 &8452091901216583498
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1225,15 +1251,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Sa:
     gameCode: 
+    gameType: 0
     scenario: 0
     worldRepType: 0
     coveredRegionResetThreshold: 0
+    guardColor: 
     guardsCount: 0
     intruderCount: 0
+    isDialogEnabled: 0
     map: 
     mapScale: 0
     guardsList: []
     intrudersList: []
+    surveyType: 0
 --- !u!114 &3327928151749949276
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1275,17 +1305,3 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   IsRenderVisibilityGraph: 0
---- !u!114 &3435625574252659528
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8978636981361410780}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ff68265a909eadf4388378e594f4dd53, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  IsRenderInterceptionPoints: 0
-  RenderRoadMap: 0

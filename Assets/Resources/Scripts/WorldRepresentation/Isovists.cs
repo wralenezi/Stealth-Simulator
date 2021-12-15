@@ -21,7 +21,7 @@ public class Isovists : MonoBehaviour
         CreateIsovists();
 
         //  Separate the isovists
-        // CalculateVisibility();
+        CalculateVisibility();
     }
 
     public void CreateIsovists()

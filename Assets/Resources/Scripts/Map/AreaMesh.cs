@@ -57,7 +57,7 @@ public class AreaMesh : MonoBehaviour
         m_meshRenderer.material.color = color;
     }
 
-    public void Draw(Vector2[] meshVertices)
+    public void Draw(Vector2[] meshVertices, Color meshColor)
     {
         // Prepare the variables to load the number of vertices and triangles that will make the visibility polygon
         Vector3[] vertices = ToVector3Array(meshVertices);
@@ -76,7 +76,7 @@ public class AreaMesh : MonoBehaviour
         m_viewMesh.Clear();
         m_viewMesh.vertices = vertices;
         m_viewMesh.triangles = triangles;
-        m_meshRenderer.material.color = Color.white;
+        m_meshRenderer.material.color = meshColor;
 
         m_viewMesh.RecalculateNormals();
     }

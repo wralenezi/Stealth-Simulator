@@ -20,11 +20,11 @@ public class Score : MonoBehaviour
         //
         // m_endAreaBtn.onClick.AddListener(EndArea);
     }
-    
-    // End the area
-    private void EndArea()
-    {
-        m_stealthArea.EndArea();
-    }
+    //
+    // // End the area
+    // private void EndArea()
+    // {
+    //     m_stealthArea.EndArea();
+    // }
 
 }

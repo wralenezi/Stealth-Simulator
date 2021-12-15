@@ -20,10 +20,9 @@ public class PerformanceMonitor : MonoBehaviour
     {
         Sa = sa;
 
-        if (GameManager.instance.loggingMethod == Logging.Local)
+        if (GameManager.Instance.loggingMethod == Logging.Local)
             GetEpisodesCountInLogs();
     }
-
 
     public int GetEpisodeNo()
     {
@@ -76,9 +75,9 @@ public class PerformanceMonitor : MonoBehaviour
     }
 
     // Upload the results to the server
-    public void UploadEpisodeData(int timeStamp)
+    public void UploadEpisodeData()
     {
-        StartCoroutine(FileUploader.UploadData(Sa, timeStamp, "gameData", "text/csv", GetEpisodeResults()));
+        StartCoroutine(FileUploader.UploadData(Sa, "gameData", "text/csv", GetEpisodeResults()));
     }
 
 
@@ -91,7 +90,7 @@ public class PerformanceMonitor : MonoBehaviour
             string data = "";
 
             data +=
-                "gameCode,guardType,guardId,guardPlanner,guardHeuristic,guardPathFollowing,elapsedTime,distanceTravelled,state,NoTimesSpotted,alertTime,searchedTime,GuardsOverlapTime,foundHidingSpots,stalenessAverages\n";
+                "GameCode," + LogSnapshot.Headers + "\n";  //"guardType,guardId,guardPlanner,guardHeuristic,guardPathFollowing,elapsedTime,distanceTravelled,state,NoTimesSpotted,alertTime,searchedTime,GuardsOverlapTime,foundHidingSpots,stalenessAverages\n";
 
             for (int i = 0; i < snapshots.Count; i++)
             {
@@ -138,12 +137,17 @@ public struct LogSnapshot
     // Average staleness of the map
     public float StalenessAverage;
 
+    // Number of coins collect
+    public int CollectedCoin;
+
+    public float Score;
+
 
     public LogSnapshot(float travelledDistance, float elapsedTime, NpcData npcData, string npcState, int noTimesSpotted,
         float guardOverlapTime,
         float alertTime,
         float searchTime, int foundHidingSpots,
-        float stalenessAverage)
+        float stalenessAverage, int collectedCoin)
     {
         TravelledDistance = travelledDistance;
         ElapsedTime = elapsedTime;
@@ -155,7 +159,13 @@ public struct LogSnapshot
         FoundHidingSpots = foundHidingSpots;
         StalenessAverage = stalenessAverage;
         NoTimesSpotted = noTimesSpotted;
+        CollectedCoin = collectedCoin;
+        Score = AreaUIManager.Score;
     }
+
+    // Headers
+    public static string Headers = NpcData.Headers +
+                                   ",ElapseTime,TravelledDistance,State,NoTimesSpotted,AlertTime,SearchTime,GuardsOverlapTime,FoundHidingSpots,StalenessAverage,CollectedCoin,Score";
 
     public override string ToString()
     {
@@ -168,7 +178,9 @@ public struct LogSnapshot
                         "," + SearchTime +
                         "," + GuardsOverlapTime +
                         "," + FoundHidingSpots +
-                        "," + StalenessAverage;
+                        "," + StalenessAverage +
+                        "," + CollectedCoin +
+                        "," + Score;
 
         return output;
     }

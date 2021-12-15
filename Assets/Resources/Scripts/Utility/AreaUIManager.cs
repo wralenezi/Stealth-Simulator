@@ -25,10 +25,11 @@ public class AreaUIManager : MonoBehaviour
     private IEnumerator blinking;
     private float blinkingSpeed = 0.5f;
 
-
     private IEnumerator scoreShaking;
 
     private Vector2 timeLabelPosition;
+
+    public static float Score;
 
     public void Initiate()
     {
@@ -44,7 +45,19 @@ public class AreaUIManager : MonoBehaviour
 
         announcementLabel = transform.Find("Announcement").GetComponent<TextMeshProUGUI>();
         announcementLabel.text = "";
+
+        Score = 0f;
     }
+
+
+    public void Reset()
+    {
+        scoreLabel.color = Color.white;
+        scoreShaking = null;
+
+        timeLabel.gameObject.SetActive(true);
+    }
+
 
     // Update the label of the status of the game.
     public void UpdateGuardLabel(IState state)
@@ -71,7 +84,6 @@ public class AreaUIManager : MonoBehaviour
         guardsLabel.color = color;
         guardsLabel.text = name + " Team";
     }
-
 
     public void DisplayLabel(string text)
     {
@@ -120,10 +132,12 @@ public class AreaUIManager : MonoBehaviour
 
     public void UpdateScore(float score)
     {
-        if (GameManager.instance.gameType == GameType.CoinCollection)
+        Score = score;
+
+        if (GameManager.Instance.GetActiveArea().GetSessionInfo().gameType == GameType.CoinCollection)
             scoreLabel.text = "Score: " + score;
         else
-            scoreLabel.text = score + " %";
+            scoreLabel.text = "Score: " + score + " %";
     }
 
 

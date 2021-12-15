@@ -16,7 +16,6 @@ public class RoadMapLine
 
     private readonly float m_length;
 
-
     // Variables for pathfinding using RoadMap in search
     // The guards planning to pass through this roadmap line.
     private List<Guard> m_passingGuardS;
@@ -24,7 +23,6 @@ public class RoadMapLine
     public float pathUtility;
     public float distance;
     public RoadMapLine pathParent;
-
 
     public RoadMapLine(WayPoint _wp1, WayPoint _wp2)
     {
@@ -37,7 +35,7 @@ public class RoadMapLine
 
         m_SearchSegment = new SearchSegment(wp1, wp1.GetPosition(), wp2, wp2.GetPosition());
     }
-
+    
     // Check if a way point is on this line
     public bool IsPointPartOfLine(WayPoint wp)
     {
@@ -46,12 +44,12 @@ public class RoadMapLine
 
     public List<RoadMapLine> GetWp1Connections()
     {
-        return wp1.GetLines();
+        return wp1.GetLines(false);
     }
 
     public List<RoadMapLine> GetWp2Connections()
     {
-        return wp2.GetLines();
+        return wp2.GetLines(false);
     }
 
     public float GetLength()
@@ -81,7 +79,7 @@ public class RoadMapLine
     {
         float prob = GetSearchSegment().GetProbability();
 
-        float guardsPassingUtility = GetPassingGuardsCount() / (StealthArea.sessionInfo.guardsCount);
+        float guardsPassingUtility = GetPassingGuardsCount() / (StealthArea.SessionInfo.guardsCount);
 
         return prob - guardsPassingUtility;
     }
@@ -238,6 +236,12 @@ public class RoadMapLine
     }
 
 
+    public Vector2 GetMid()
+    {
+        return (wp1.GetPosition() + wp2.GetPosition()) / 2f;
+    }
+
+
     public void DrawSearchSegments()
     {
         if (m_SearchSegment != null)
@@ -246,10 +250,10 @@ public class RoadMapLine
 
     public void DrawLine()
     {
-        var p1 = wp1.GetPosition();
-        var p2 = wp2.GetPosition();
-        var dir = (p1 - p2).normalized * 0.5f;
-        var thickness = 3;
+        // var p1 = wp1.GetPosition();
+        // var p2 = wp2.GetPosition();
+        // var dir = (p1 - p2).normalized * 0.5f;
+        // var thickness = 3;
         // Handles.DrawBezier(p1 - dir, p2 + dir, p1 + dir, p2 - dir, Color.red, null, thickness);
 
         Gizmos.DrawLine(wp1.GetPosition(), wp2.GetPosition());

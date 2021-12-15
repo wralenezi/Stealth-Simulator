@@ -10,9 +10,17 @@ public class WayPoint
     // Position
     private readonly Vector2 m_Position;
 
+    // Current connections to the way point (including the intermediate way points introduced by dividing the edges into segments.
     private readonly List<WayPoint> m_Connections;
 
+    // The divided line segments connected to this way point. 
     private readonly List<RoadMapLine> m_MapLines;
+
+    // Original connections of the way points before dividing the edges into segments. 
+    private readonly List<WayPoint> m_OriginalCons;
+
+    // The original lines connected to this way point
+    private readonly List<RoadMapLine> m_OriginalLines;
 
     // Distance to incoming possible intruder position
     private float m_Distance;
@@ -34,7 +42,6 @@ public class WayPoint
     public int col;
     public char code;
 
-
     // the variables for A*
     public float hDistance;
     public float gDistance;
@@ -43,8 +50,10 @@ public class WayPoint
     public WayPoint(Vector2 _position, int _id = 0)
     {
         m_Position = _position;
+        m_OriginalCons = new List<WayPoint>();
         m_Connections = new List<WayPoint>();
         m_MapLines = new List<RoadMapLine>();
+        m_OriginalLines = new List<RoadMapLine>();
         Id = _id;
     }
 
@@ -54,26 +63,52 @@ public class WayPoint
         row = _row;
         col = _col;
         code = _code;
+        m_OriginalCons = new List<WayPoint>();
         m_Connections = new List<WayPoint>();
         m_MapLines = new List<RoadMapLine>();
+        m_OriginalLines = new List<RoadMapLine>();
         Id = 0;
     }
 
-    // Add the way points to each others list of connects.
-    public void Connect(WayPoint wp)
-    {
-        bool sameNode = wp.GetPosition() == GetPosition();
 
-        if (wp != null && !(IsConnected(wp) || sameNode)) //if (!alreadyExists && !sameNode)
-        {
-            AddEdge(wp);
-            wp.AddEdge(this);
-        }
+    // Add the way points to each others list of connects.
+    public void Connect(WayPoint wp, bool isOriginal)
+    {
+        bool sameNode = Equals(wp.GetPosition(), GetPosition());
+
+        if (IsConnected(wp, isOriginal) || sameNode) return;
+
+        AddEdge(wp, isOriginal);
+        wp.AddEdge(this, isOriginal);
     }
 
-    public bool IsConnected(WayPoint wp)
+    public void RemoveConnection(WayPoint wp, bool isOriginal)
     {
-        bool alreadyExists = GetConnections().Any(x => x.GetPosition() == wp.GetPosition());
+        RemoveEdge(wp, isOriginal);
+        wp.RemoveEdge(this, isOriginal);
+    }
+
+
+    private void AddEdge(WayPoint wp, bool isOriginal)
+    {
+        if (isOriginal)
+            m_OriginalCons.Add(wp);
+        else
+            m_Connections.Add(wp);
+    }
+
+    public void RemoveEdge(WayPoint wp, bool isOriginal)
+    {
+        if (isOriginal)
+            m_OriginalCons.Remove(wp);
+        else
+            m_Connections.Remove(wp);
+
+    }
+
+    public bool IsConnected(WayPoint wp, bool isOriginal)
+    {
+        bool alreadyExists = GetConnections(isOriginal).Any(x => x.GetPosition() == wp.GetPosition());
 
         return alreadyExists;
     }
@@ -84,30 +119,12 @@ public class WayPoint
     {
         int count = 0;
 
-        foreach (var con in GetConnections())
+        foreach (var con in GetConnections(true))
         {
             count += con.code == '*' && con.BlockId == BlockId ? 1 : 0;
         }
 
         return count <= 1 && code == '*';
-    }
-
-
-    public void RemoveConnection(WayPoint wp)
-    {
-        RemoveEdge(wp);
-        wp.RemoveEdge(this);
-    }
-
-
-    public void AddEdge(WayPoint wp)
-    {
-        m_Connections.Add(wp);
-    }
-
-    public void RemoveEdge(WayPoint wp)
-    {
-        m_Connections.Remove(wp);
     }
 
     public Vector2 GetPosition()
@@ -120,18 +137,21 @@ public class WayPoint
         m_Distance = (distance);
     }
 
-    public void AddLines(List<RoadMapLine> lines)
+    public void AddLines(List<RoadMapLine> lines, bool isOriginal)
     {
         foreach (var line in lines)
         {
             if (line.IsPointPartOfLine(this))
-                AddLine(line);
+                AddLine(line, isOriginal);
         }
     }
 
-    public void AddLine(RoadMapLine line)
+    public void AddLine(RoadMapLine line, bool isOriginal)
     {
-        m_MapLines.Add(line);
+        if (isOriginal)
+            m_OriginalLines.Add(line);
+        else
+            m_MapLines.Add(line);
     }
 
     public void RemoveLine(RoadMapLine line)
@@ -139,8 +159,10 @@ public class WayPoint
         m_MapLines.Remove(line);
     }
 
-    public List<RoadMapLine> GetLines()
+    public List<RoadMapLine> GetLines(bool isOriginal)
     {
+        if (isOriginal) return m_OriginalLines;
+
         return m_MapLines;
     }
 
@@ -150,9 +172,9 @@ public class WayPoint
     }
 
 
-    public List<WayPoint> GetConnections()
+    public List<WayPoint> GetConnections(bool isOriginal)
     {
-        return m_Connections;
+        return isOriginal ? m_OriginalCons : m_Connections;
     }
 
     // Insert the distance to the neighboring way points except the source

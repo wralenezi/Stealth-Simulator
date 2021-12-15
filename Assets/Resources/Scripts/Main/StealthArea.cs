@@ -5,16 +5,20 @@ using UnityEngine;
 
 public class StealthArea : MonoBehaviour
 {
+    // The episode time 
+    // public float episodeTime;
+    private static float _episodeStartTime;
+
     // Session data
-    public static Session sessionInfo;
+    public static Session SessionInfo;
 
     public bool renderRoadMap;
 
-    // Game Manager
-    public GameManager gameManager { get; set; }
-
-    // NPC manager
+    // Guards manager
     public GuardsManager guardsManager { get; set; }
+
+    // Intruder Manager
+    public IntrudersManager intrdrManager { get; set; }
 
     // Map renderer
     public MapRenderer mapRenderer { get; set; }
@@ -24,9 +28,6 @@ public class StealthArea : MonoBehaviour
 
     // Game world representation
     public WorldRep worldRep { get; set; }
-
-    // The hiding spots controller
-    public HidingSpots hidingSpots { get; set; }
 
     // Isovist map
     public Isovists isovists { get; set; }
@@ -58,30 +59,26 @@ public class StealthArea : MonoBehaviour
     // Coroutine for updating the world
     private IEnumerator worldCoroutine;
 
-    // The episode time 
-    // public float episodeTime;
-    private static float episodeStartTime;
-
     // Last timestamp the game was logged.
     private float lastLoggedTime;
 
     // Initiate the area
     public void InitiateArea(Session scenario)
     {
-        // Set a reference to the game manager
-        gameManager = GameObject.Find("GameSetUp").GetComponent<GameManager>();
-        sessionInfo = scenario;
+        SessionInfo = scenario;
+        SessionInfo.id = GameManager.GetDateTimestamp().ToString();
 
         // Get the map object 
         Transform map = transform.Find("Map");
 
+        // Set up the UI manager
         AreaUiManager = transform.Find("Canvas").GetComponent<AreaUIManager>();
         AreaUiManager.Initiate();
 
         // Draw the map
         mapRenderer = map.GetComponent<MapRenderer>();
         mapRenderer.Initiate();
-        mapRenderer.LoadMap(sessionInfo.map, sessionInfo.GetMapScale());
+        mapRenderer.LoadMap(SessionInfo.map, SessionInfo.GetMapScale());
 
         // Create the NavMesh
         mapDecomposer = map.GetComponent<MapDecomposer>();
@@ -89,7 +86,7 @@ public class StealthArea : MonoBehaviour
         mapDecomposer.CreateNavMesh();
 
         // Assign the world representation
-        switch (sessionInfo.worldRepType)
+        switch (SessionInfo.worldRepType)
         {
             case WorldRepType.Continuous:
                 worldRep = mapRenderer.gameObject.AddComponent<VisMesh>();
@@ -101,19 +98,15 @@ public class StealthArea : MonoBehaviour
         }
 
         // Initiate the world representation
-        worldRep.InitiateWorld(sessionInfo.GetMapScale());
+        worldRep.InitiateWorld(SessionInfo.GetMapScale());
 
-        // The hiding spots manager
-        hidingSpots = map.GetComponent<HidingSpots>();
-        hidingSpots.Initiate(this);
-
-        // Isovists map
-        // isovists = map.GetComponent<Isovists>();
+        // Isovists map initiate
+        isovists = map.GetComponent<Isovists>();
         // isovists.Initiate(mapDecomposer.GetNavMesh());
 
         // Scale Area Transform
         sat = map.GetComponent<SAT>();
-        sat.Initiate(sessionInfo);
+        sat.Initiate(SessionInfo);
 
         // // Visibility graph
         visibilityGraph = map.GetComponent<VisibilityGraph>();
@@ -126,12 +119,22 @@ public class StealthArea : MonoBehaviour
         meshManager = transform.Find("MeshManager").GetComponent<MeshManager>();
         meshManager.Initiate(this);
 
-        // Assign NPC Manager
-        guardsManager = transform.Find("NpcManager").GetComponent<GuardsManager>();
+
+        // Add the Intruder manager
+        Transform IntruderManager = transform.Find("IntruderManager");
+        intrdrManager = IntruderManager.gameObject.AddComponent<IntrudersManager>();
+        intrdrManager.Initiate(this, map);
+
+        // Assign the Guard Manager
+        Transform GuardManager = transform.Find("GuardManager");
+        guardsManager = GuardManager.GetComponent<GuardsManager>();
         guardsManager.Initiate(this, map);
 
-        // Create the NPCs
-        guardsManager.CreateNpcs(sessionInfo, mapDecomposer.GetNavMesh(), this);
+        // Create the Guards
+        guardsManager.CreateGuards(SessionInfo, mapDecomposer.GetNavMesh(), this);
+
+        // Create the intruders
+        intrdrManager.CreateIntruders(SessionInfo, mapDecomposer.GetNavMesh(), this);
 
         // Reference for recording the performance
         performanceMonitor = map.GetComponent<PerformanceMonitor>();
@@ -147,25 +150,27 @@ public class StealthArea : MonoBehaviour
 
         // World state variables
         WorldState.Reset();
-        WorldState.Set("guardsCount", sessionInfo.guardsCount.ToString());
+        WorldState.Set("guardsCount", SessionInfo.guardsCount.ToString());
 
         // Reset World Representation and NPCs
         ResetArea();
     }
 
-    private void ResetArea()
+    public void ResetArea()
     {
         // StopCoroutine(worldCoroutine);
-        episodeStartTime = Time.time;
-        WorldState.Set("episodeTime", episodeStartTime.ToString());
-        // episodeTime = 0f;
-        lastLoggedTime = 0f;
-        guardsManager.Reset();
-        guardsManager.ResetNpcs(mapDecomposer.GetNavMesh(), this);
+        _episodeStartTime = Time.time;
+        WorldState.Set("episodeTime", _episodeStartTime.ToString());
 
-        if (GameManager.instance.gameType == GameType.CoinCollection)
+        lastLoggedTime = 0f;
+
+        guardsManager.Reset(mapDecomposer.GetNavMesh(), this);
+
+        intrdrManager.Reset(mapDecomposer.GetNavMesh());
+
+        if (GetSessionInfo().gameType == GameType.CoinCollection)
             coinSpawner.Reset();
-        else if (GameManager.instance.gameType == GameType.Stealth)
+        else if (GetSessionInfo().gameType == GameType.Stealth)
             coinSpawner.DisableCoins();
 
         worldRep.ResetWorld();
@@ -174,22 +179,21 @@ public class StealthArea : MonoBehaviour
         float camSize = mapRenderer.GetMaxWidth() / 2f;
         GameManager.MainCamera.orthographicSize = camSize;
 
-        if (GameManager.instance.ShowSurvey)
-            Time.timeScale = 0f;
+        AreaUiManager.Reset();
+
+        if (GameManager.Instance.showSurvey) Time.timeScale = 0f;
     }
 
     public static float GetElapsedTime()
     {
-        return Time.time - episodeStartTime;
+        return Time.time - _episodeStartTime;
     }
 
     public void StartArea()
     {
         ResetArea();
         gameObject.SetActive(true);
-
-        if (GameManager.instance.ShowSurvey)
-            StartCoroutine(Countdown());
+        if (GameManager.Instance.showSurvey) StartCoroutine(Countdown());
     }
 
     // Show countdown to start the episode
@@ -206,7 +210,7 @@ public class StealthArea : MonoBehaviour
         AreaUiManager.DisplayLabel("");
         Time.timeScale = 1f;
         yield return new WaitForSecondsRealtime(6f);
-        guardsManager.HideLabels();
+        intrdrManager.HideLabels();
     }
 
     private void EndEpisode()
@@ -225,7 +229,7 @@ public class StealthArea : MonoBehaviour
             worldRep.UpdateWorld(guardsManager);
 
             // Update 
-            guardsManager.UpdateGuardManager(sessionInfo);
+            guardsManager.UpdateGuardManager(SessionInfo);
         }
     }
 
@@ -243,16 +247,10 @@ public class StealthArea : MonoBehaviour
         guardsManager.UpdateGuardVision();
 
         // In the case of searching for an intruder
-        guardsManager.UpdateSearcher(deltaTime);
+        // guardsManager.UpdateSearcher(deltaTime);
 
         // Idle NPCs make decisions
         guardsManager.MakeDecision();
-
-        // Execute existing plans for NPCs
-        // guardsManager.MoveNpcs(deltaTime);
-
-        // Move the camera with the intruder.
-        // guardsManager.FollowIntruder();
 
         // Update metrics for logging
         guardsManager.UpdateMetrics(deltaTime);
@@ -269,18 +267,20 @@ public class StealthArea : MonoBehaviour
         float deltaTime = Time.deltaTime;
 
         // Execute existing plans for NPCs
-        guardsManager.MoveNpcs(deltaTime);
+        guardsManager.Move(deltaTime);
+        intrdrManager.Move(deltaTime);
     }
 
     private void LateUpdate()
     {
         // Let the agents cast their visions
         guardsManager.CastVision();
+        intrdrManager.CastVision();
     }
 
     public Session GetSessionInfo()
     {
-        return sessionInfo;
+        return SessionInfo;
     }
 
     public MapRenderer GetMap()
@@ -294,40 +294,35 @@ public class StealthArea : MonoBehaviour
             GetElapsedTime() >= Properties.EpisodeLength;
 
         // Log Guards progress
-        if ((gameManager.loggingMethod != Logging.None) && IsTimeToLog())
+        if ((GameManager.Instance.loggingMethod != Logging.None) && IsTimeToLog())
             LogPerformance();
 
-        // Check if there are no more nodes to see and end the episodes
-        if (finished)
+        if (!finished) return;
+
+        // End the episode
+        switch (GameManager.Instance.loggingMethod)
         {
-            switch (gameManager.loggingMethod)
-            {
-                // Log the overall performance in case of local logging.
-                case Logging.Local:
-                    FinalizeLogging(false, GameManager.TimeStamp);
-                    break;
+            // Log the overall performance in case of local logging.
+            case Logging.Local:
+                FinalizeLogging(false);
+                break;
 
-                // Log the performance of this episode and upload it to the server.
-                case Logging.Cloud:
-                    FinalizeLogging(true, GameManager.TimeStamp);
-                    break;
+            // Log the performance of this episode and upload it to the server.
+            case Logging.Cloud:
+                FinalizeLogging(true);
+                break;
 
-                default:
-                    break;
-            }
-
-            FinishArea();
-
-            if (GameManager.instance.ShowSurvey)
-                DisplayEndAreaSurvey(GameManager.TimeStamp);
+            case Logging.None:
+                break;
         }
-    }
 
+        if (GameManager.Instance.showSurvey)
+        {
+            GameManager.SurveyManager.CreateSurvey(GameManager.GetRunId(), GetSessionInfo().surveyType);
+            GameManager.SurveyManager.ShowSurvey();
+        }
 
-    public void DisplayEndAreaSurvey(int timeStamp)
-    {
-        gameObject.SetActive(false);
-        GameManager.SurveyManager.CreateEndAreaSurvey(timeStamp);
+        FinishArea();
     }
 
 
@@ -340,6 +335,10 @@ public class StealthArea : MonoBehaviour
 
         ResetArea();
 
+        // Prevent the current area to be removed if it is a tutorial session
+        if (Equals(SessionInfo.gameCode, "tutorial"))
+            return;
+
         EndArea();
     }
 
@@ -349,29 +348,30 @@ public class StealthArea : MonoBehaviour
         if (guardsManager.GetGuards() != null)
             foreach (var guard in guardsManager.GetGuards())
                 performanceMonitor.UpdateProgress(guard.LogNpcProgress());
-        if (guardsManager.GetIntruders() != null)
-            foreach (var intruder in guardsManager.GetIntruders())
+        if (intrdrManager.GetIntruders() != null)
+            foreach (var intruder in intrdrManager.GetIntruders())
                 performanceMonitor.UpdateProgress(intruder.LogNpcProgress());
     }
 
     // Log the episode's performance and check if required number of episodes is recorded
     // Upload 
-    public void FinalizeLogging(bool isUpload, int timeStamp)
+    public void FinalizeLogging(bool isUpload)
     {
         LogPerformance();
 
         if (!isUpload)
             performanceMonitor.LogEpisodeFinish();
         else
-            performanceMonitor.UploadEpisodeData(timeStamp);
+            performanceMonitor.UploadEpisodeData();
     }
 
     // Destroy the area
     public void EndArea()
     {
         // StopCoroutine(worldCoroutine);
-        if (performanceMonitor.IsDone())
-            gameManager.RemoveArea(gameObject);
+
+        if (!GameManager.Instance.showSurvey && performanceMonitor.IsDone())
+            GameManager.Instance.RemoveArea(gameObject);
     }
 
     void UpdateTime(float timeDelta)
@@ -388,7 +388,7 @@ public class StealthArea : MonoBehaviour
 
     public bool IsTimeToLog()
     {
-        if (GetElapsedTime() - lastLoggedTime >= 5f)
+        if (GetElapsedTime() - lastLoggedTime >= 0.5f)
         {
             lastLoggedTime = GetElapsedTime();
             return true;
@@ -402,7 +402,7 @@ public class StealthArea : MonoBehaviour
         if (renderRoadMap)
         {
             Gizmos.color = Color.black;
-            roadMap.DrawRoadMap();
+            roadMap.DrawDividedRoadMap();
         }
     }
 }

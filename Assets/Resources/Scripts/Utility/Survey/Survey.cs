@@ -7,12 +7,15 @@ using Newtonsoft.Json;
 [JsonObject(MemberSerialization.OptIn)]
 public class Survey : MonoBehaviour
 {
+    private SurveyManager m_SurveyManager;
     private SurveyType m_type;
 
     private int currentSurveyIndex;
 
     private Session currentSession;
 
+    // A container for the selected button in this survey
+    private string previousButtonName;
 
     [JsonProperty("timeStamp")] private int currentSurveyTimeStamp;
 
@@ -21,20 +24,29 @@ public class Survey : MonoBehaviour
     private string surveyItemPath = "Prefabs/UIs/SurveyItem";
     private GameObject surveyItemPrefab;
 
-    public void Initiate()
+    public void Initiate(SurveyManager _surveyManager)
     {
         surveyItemPrefab = (GameObject) Resources.Load(surveyItemPath);
         items = new List<SurveyItem>();
-        gameObject.SetActive(false);
+        // gameObject.SetActive(false);
         currentSurveyIndex = 0;
+        m_SurveyManager = _surveyManager;
     }
 
 
+    /// <summary>
+    /// Reset the survey properties and questions
+    /// </summary>
+    /// <param name="type">The type of the new survey</param>
+    /// <param name="timeStamp">Timestamp of the session, this is to line the survey to the session</param>
     public void ResetSurvey(SurveyType type, int timeStamp)
     {
+        previousButtonName = "";
+
         m_type = type;
         currentSurveyTimeStamp = timeStamp;
 
+        // clear the survey items
         while (items.Count > 0)
         {
             DestroyImmediate(items[0].gameObject);
@@ -45,35 +57,104 @@ public class Survey : MonoBehaviour
     }
 
 
-    public void AddSurveyMultiple(string name, string question, List<Choice> choices)
+    /// <summary>
+    /// Add a multiple choice item to the survey
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="code"></param>
+    /// <param name="question"></param>
+    /// <param name="choices"></param>
+    public void AddItemMultiple(string id, string code, string question, List<Choice> choices)
     {
+        // Create the item object and hide it
         GameObject surveyItemGo = Instantiate(surveyItemPrefab, transform);
         surveyItemGo.SetActive(false);
 
         SurveyMultiple surveyMultiple = surveyItemGo.AddComponent<SurveyMultiple>();
-        surveyMultiple.Initiate(name, this);
+        surveyMultiple.Initiate(id, this, code);
 
         // Add the question
         surveyMultiple.SetQuestion(question);
 
         // Add the options
         foreach (var choice in choices)
-            surveyMultiple.AddOption(choice.name,choice.type);
-        
+            surveyMultiple.AddChoice(choice);
+
         items.Add(surveyMultiple);
     }
+
+
+    public void AddTutorialRepeat()
+    {
+        // Create the item object and hide it
+        GameObject surveyItemGo = Instantiate(surveyItemPrefab, transform);
+        surveyItemGo.SetActive(false);
+
+        RepeatTutorial repeatTutorial = surveyItemGo.AddComponent<RepeatTutorial>();
+        string name = "repeatTutorial";
+        string question = "Would you like to repeat the tutorial level?";
+        repeatTutorial.Initiate(name,this,"");
+        
+        // Add the question
+        repeatTutorial.SetQuestion(question);
+        
+        List<Choice> choices = new List<Choice>();
+        choices.Add(new Choice("Yes", "Yes", ButtonType.Survey));
+        choices.Add(new Choice("No", "No", ButtonType.Survey));
+
+        // Add the options
+        foreach (var choice in choices)
+            repeatTutorial.AddChoice(choice);
+        
+        items.Add(repeatTutorial);
+    }
+
+    public SurveyManager GetManager()
+    {
+        return m_SurveyManager;
+    }
+
+
+
+
+
 
     public void SetSession(Session session)
     {
         currentSession = session;
     }
 
+    public string GetGuardColor()
+    {
+        return currentSession.guardColor;
+    }
+
     public void StartSurvey()
     {
-        gameObject.SetActive(true);
-
         if (items.Count > 0)
             items[0].gameObject.SetActive(true);
+    }
+
+    public void ShowLoading()
+    {
+    }
+
+    public void UpdateName(string itemName, string answer)
+    {
+        if (itemName.Contains("q1"))
+        {
+            previousButtonName = answer;
+        }
+    }
+
+    private void ActiveItem()
+    {
+        items[currentSurveyIndex].gameObject.SetActive(true);
+
+        if (items[currentSurveyIndex].name.Contains("q2"))
+        {
+            items[currentSurveyIndex].DeactivateInput(previousButtonName);
+        }
     }
 
     public void NextItem()
@@ -81,7 +162,7 @@ public class Survey : MonoBehaviour
         currentSurveyIndex++;
 
         if (currentSurveyIndex < items.Count)
-            items[currentSurveyIndex].gameObject.SetActive(true);
+            ActiveItem();
         else
             EndSurvey();
     }
@@ -89,27 +170,40 @@ public class Survey : MonoBehaviour
     public void EndSurvey()
     {
         string surveyJson = JsonConvert.SerializeObject(this);
-        
+
         switch (m_type)
         {
             case SurveyType.NewUser:
                 StartCoroutine(FileUploader.UploadData(null,
-                    currentSurveyTimeStamp, "userSurvey", "application/json", surveyJson));
-                GameManager.instance.StartAreaAfterSurvey();
+                    "userSurvey", "application/json", surveyJson));
                 break;
 
-            case SurveyType.EndSession:
+            case SurveyType.EndTutorial:
+                // StartCoroutine(FileUploader.UploadData(null,
+                //     currentSurveyTimeStamp, "userSurvey", "application/json", surveyJson));
+                break;
+
+            case SurveyType.BehaviorEval:
                 StartCoroutine(FileUploader.UploadData(currentSession,
-                    currentSurveyTimeStamp, "sessionSurvey", "application/json", surveyJson));
-                GameManager.instance.StartAreaAfterSurvey();
-
+                    "sessionSurvey", "application/json", surveyJson));
                 break;
 
-            case SurveyType.EndSurvey:
-                StartCoroutine(FileUploader.UploadData(null,
-                    currentSurveyTimeStamp, "endSurvey", "application/json", surveyJson));
-                GameManager.SurveyManager.EndSurvey(currentSurveyTimeStamp);
+            case SurveyType.EndEpisode:
+                StartCoroutine(FileUploader.UploadData(currentSession,
+                    "sessionSurvey", "application/json", surveyJson));
+                break;
+
+            case SurveyType.SpeechEval:
+                StartCoroutine(FileUploader.UploadData(currentSession,
+                    "sessionSurvey", "application/json", surveyJson));
+                break;
+
+            case SurveyType.End:
+                Application.Quit();
                 break;
         }
+
+        m_SurveyManager.ClearImage();
+        GameManager.Instance.StartAreaAfterSurvey();
     }
 }

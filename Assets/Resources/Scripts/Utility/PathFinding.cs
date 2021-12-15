@@ -74,8 +74,11 @@ public static class PathFinding
         MeshPolygon startPolygon = GetCorrespondingPolygon(navMesh, start);
         MeshPolygon destinationPolygon = GetCorrespondingPolygon(navMesh, destination);
 
-        if (startPolygon == null)
+        if (Equals(startPolygon, null) || Equals(destinationPolygon, null))
+        {
+            Debug.LogError("Cannot Find the corresponding polygon.");
             return;
+        }
 
         openListMesh.Clear();
         closedListMesh.Clear();
@@ -124,7 +127,8 @@ public static class PathFinding
                     }
 
                     openListMesh.InsertIntoSortedList(p,
-                        delegate(MeshPolygon x, MeshPolygon y) { return x.GetFvalue().CompareTo(y.GetFvalue()); }, Order.Asc);
+                        delegate(MeshPolygon x, MeshPolygon y) { return x.GetFvalue().CompareTo(y.GetFvalue()); },
+                        Order.Asc);
                 }
             }
 
@@ -470,7 +474,7 @@ public static class PathFinding
             WayPoint current = openListRoadMap[0];
             openListRoadMap.RemoveAt(0);
 
-            foreach (WayPoint p in current.GetConnections())
+            foreach (WayPoint p in current.GetConnections(true))
             {
                 if (!closedListRoadMap.Contains(p))
                 {

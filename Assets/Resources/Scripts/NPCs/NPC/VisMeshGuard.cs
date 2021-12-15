@@ -32,7 +32,6 @@ public class VisMeshGuard : Guard
         foreach (var line in LinesToPassThrough)
         {
             sum += line.GetPassingGuardsCount() - 1;
-            
         }
 
         return sum / LinesToPassThrough.Count;
@@ -100,7 +99,7 @@ public class VisMeshGuard : Guard
 
     public override LogSnapshot LogNpcProgress()
     {
-        return new LogSnapshot(GetTravelledDistance(), StealthArea.GetElapsedTime(), Data,"",0,0f,0f,0f, m_FoundHidingSpots, m_VisMesh.GetAverageStaleness());
+        return new LogSnapshot(GetTravelledDistance(), StealthArea.GetElapsedTime(), Data,"",0,0f,0f,0f, m_FoundHidingSpots, m_VisMesh.GetAverageStaleness(),0);
     }
 
     public override void SetSeenPortion()

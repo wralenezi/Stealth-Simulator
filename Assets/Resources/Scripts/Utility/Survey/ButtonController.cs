@@ -17,21 +17,6 @@ public class ButtonController : MonoBehaviour
     public void OnClick()
     {
         m_surveyItem.Answer(transform.Find("Text").GetComponent<TextMeshProUGUI>().text);
-        SetGameType();
-    }
-
-    private void SetGameType()
-    {
-        switch (m_Type)
-        {
-            case ButtonType.GameStealth:
-                GameManager.instance.gameType = GameType.Stealth;
-                break;
-
-            case ButtonType.GameCoin:
-                GameManager.instance.gameType = GameType.Stealth;
-                break;
-        }
     }
 }
 

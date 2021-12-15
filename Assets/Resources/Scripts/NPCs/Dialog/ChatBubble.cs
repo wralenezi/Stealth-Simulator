@@ -31,8 +31,8 @@ public class ChatBubble : MonoBehaviour
 
     public void Disable()
     {
-        speaker = null;
         gameObject.SetActive(false);
+        speaker = null;
     }
 
     public void SetText(NPC _speaker, string msg)
@@ -45,17 +45,16 @@ public class ChatBubble : MonoBehaviour
         m_SprtRndrr.size = textSize + padding;
     }
 
-    // Follow the speaker; if there is one.
-    private void FollowSpeaker()
-    {
-        if (Equals(speaker, null) || Equals(speaker.GetTransform(),null))
-            return;
-
-        transform.position = (Vector2) speaker.GetTransform().position + m_SprtRndrr.size / 2f;
-    }
-
     private void Update()
     {
         FollowSpeaker();
+    }
+
+    // Follow the speaker; if there is one.
+    private void FollowSpeaker()
+    {
+        if (Equals(speaker, null) || Equals(speaker.GetTransform(), null)) return;
+
+        transform.position = (Vector2) speaker.GetTransform().position + m_SprtRndrr.size / 2f;
     }
 }

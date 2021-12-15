@@ -149,7 +149,7 @@ public class VisibilityGraph : MonoBehaviour
 
             if (isVisible)
             {
-                firstWp.Connect(secWp);
+                firstWp.Connect(secWp,true);
             }
         }
     }
@@ -158,69 +158,69 @@ public class VisibilityGraph : MonoBehaviour
     // Remove the direct edges of nodes that can be visited by another path
     private void RemoveRepetitiveEdges()
     {
-        for (int i = 0; i < m_graphNodes.Count; i++)
-        for (int j = i + 1; j < m_graphNodes.Count; j++)
-        {
-            for (int k = 0; k < m_graphNodes[i].GetConnections().Count; k++)
-            {
-                WayPoint conn = m_graphNodes[i].GetConnections()[k];
-
-                // Search in the other direct connections if there is a connection that leads to it; a -> c, a -> b find if there is b -> c if so remove a -> c. 
-            }
-        }
+        // for (int i = 0; i < m_graphNodes.Count; i++)
+        // for (int j = i + 1; j < m_graphNodes.Count; j++)
+        // {
+        //     for (int k = 0; k < m_graphNodes[i].GetConnections().Count; k++)
+        //     {
+        //         WayPoint conn = m_graphNodes[i].GetConnections()[k];
+        //
+        //         // Search in the other direct connections if there is a connection that leads to it; a -> c, a -> b find if there is b -> c if so remove a -> c. 
+        //     }
+        // }
     }
     
     private void RemoveReplicateEdges()
     {
-        for (int i = 0; i < m_graphNodes.Count; i++)
-        {
-            WayPoint curWp = m_graphNodes[i];
-
-            List<WayPoint> conns = curWp.GetConnections();
-
-            for (int j = 0; j < conns.Count; j++)
-            {
-                WayPoint firstCon = conns[j];
-
-                for (int k = j + 1; k < conns.Count; k++)
-                {
-                    WayPoint secCon = conns[k];
-
-                    if (!firstCon.IsConnected(secCon))
-                        continue;
-
-                    float firstToSecDistance = Vector2.Distance(firstCon.GetPosition(), secCon.GetPosition());
-                    float firstToCurDistance = Vector2.Distance(firstCon.GetPosition(), curWp.GetPosition());
-                    float curToSecDistance = Vector2.Distance(curWp.GetPosition(), secCon.GetPosition());
-
-                    WayPoint firstWp = null;
-                    WayPoint secWp = null;
-
-                    if (firstToSecDistance > firstToCurDistance)
-                    {
-                        if (firstToSecDistance > curToSecDistance)
-                            firstWp = firstCon;
-                        else
-                            firstWp = curWp;
-
-                        secWp = secCon;
-                    }
-                    else
-                    {
-                        if (firstToCurDistance > curToSecDistance)
-                            firstWp = firstCon;
-                        else
-                            firstWp = secCon;
-
-                        secWp = curWp;
-                    }
-
-                    firstWp.RemoveConnection(secWp);
-                    j = 0;
-                    break;
-                }
-            }
-        }
+        // for (int i = 0; i < m_graphNodes.Count; i++)
+        // {
+        //     WayPoint curWp = m_graphNodes[i];
+        //
+        //     List<WayPoint> conns = curWp.GetConnections(true);
+        //
+        //     for (int j = 0; j < conns.Count; j++)
+        //     {
+        //         WayPoint firstCon = conns[j];
+        //
+        //         for (int k = j + 1; k < conns.Count; k++)
+        //         {
+        //             WayPoint secCon = conns[k];
+        //
+        //             if (!firstCon.IsConnected(secCon))
+        //                 continue;
+        //
+        //             float firstToSecDistance = Vector2.Distance(firstCon.GetPosition(), secCon.GetPosition());
+        //             float firstToCurDistance = Vector2.Distance(firstCon.GetPosition(), curWp.GetPosition());
+        //             float curToSecDistance = Vector2.Distance(curWp.GetPosition(), secCon.GetPosition());
+        //
+        //             WayPoint firstWp = null;
+        //             WayPoint secWp = null;
+        //
+        //             if (firstToSecDistance > firstToCurDistance)
+        //             {
+        //                 if (firstToSecDistance > curToSecDistance)
+        //                     firstWp = firstCon;
+        //                 else
+        //                     firstWp = curWp;
+        //
+        //                 secWp = secCon;
+        //             }
+        //             else
+        //             {
+        //                 if (firstToCurDistance > curToSecDistance)
+        //                     firstWp = firstCon;
+        //                 else
+        //                     firstWp = secCon;
+        //
+        //                 secWp = curWp;
+        //             }
+        //
+        //             firstWp.RemoveConnection(secWp);
+        //             j = 0;
+        //             break;
+        //         }
+        //     }
+        // }
     }
 
 
@@ -240,7 +240,7 @@ public class VisibilityGraph : MonoBehaviour
             {
                 Gizmos.DrawSphere(spot.GetPosition(), 0.1f);
 
-                foreach (var node1 in spot.GetConnections())
+                foreach (var node1 in spot.GetConnections(true))
                 {
                     Gizmos.DrawLine(spot.GetPosition(), node1.GetPosition());
                 }

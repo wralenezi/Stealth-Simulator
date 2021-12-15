@@ -16,9 +16,10 @@ public class Coin : MonoBehaviour
 
     public void Initiate(List<Intruder> npcs)
     {
-        m_StealthArea = GameManager.instance.GetActiveArea();
+        m_StealthArea = GameManager.Instance.GetActiveArea();
         renderer = GetComponent<Renderer>();
         audioSource = GetComponent<AudioSource>();
+        audioSource.volume = 0.4f;
         m_intruders = npcs;
     }
 
@@ -75,6 +76,7 @@ public class Coin : MonoBehaviour
             audioSource.Play();
             ModifyScore();
             Spawn();
+            other.gameObject.GetComponent<Intruder>().AddCoin();
         }
     }
 }

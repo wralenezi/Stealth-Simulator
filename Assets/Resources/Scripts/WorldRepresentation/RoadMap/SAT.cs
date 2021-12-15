@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
@@ -34,6 +35,9 @@ public class SAT : MonoBehaviour
     // RoadMap of the World
     private List<WayPoint> m_roadMap;
 
+    // Road map after dividing the edges
+    private List<WayPoint> m_roadMapDivided;
+
     // the road map created from the map skeleton.
     private List<WayPoint> m_SatRoadMap;
 
@@ -46,7 +50,7 @@ public class SAT : MonoBehaviour
 
         // Import the hand drawn road map
         ImportRoadMap();
-
+        
         // Divide long edges to smaller edges
         DivideRoadMap();
     }
@@ -60,19 +64,19 @@ public class SAT : MonoBehaviour
 
         // Calculate the distance transform
         CalculateDistanceTransform();
-
+        
         // Create local maximals
         SetLocalMaximals();
-
+        
         SteepestHillClimb();
-
+        
         // Create saddle points
         Set1by1SaddlePoints();
-
+        
         Set2by2Saddles();
-
+        
         HumpUpHillClimb();
-
+        
         SimplifiedGraph();
     }
 
@@ -80,13 +84,18 @@ public class SAT : MonoBehaviour
     private void ImportRoadMap()
     {
         m_roadMap = new List<WayPoint>();
+        m_roadMapDivided = new List<WayPoint>();
 
         string mapData;
 
         try
         {
-                mapData = GameManager.instance.currentRoadMapData;
-                ParseMapString(mapData);
+            mapData = GameManager.Instance.currentRoadMapData;
+
+            if (mapData == "")
+                throw new Exception("Road map file is empty.");
+            
+            ParseMapString(mapData);
         }
         catch (Exception e)
         {
@@ -94,16 +103,16 @@ public class SAT : MonoBehaviour
 
             // Implement SAT to get the road map
             CreateSkeletal();
-
+            
             // Save the map data for future use.
             SaveMap();
-
+            
             m_roadMap = m_SatRoadMap;
         }
     }
 
 
-    // Save the map as a csv file 
+    // Save the road map as a csv file 
     private void SaveMap()
     {
         string data = "";
@@ -121,7 +130,7 @@ public class SAT : MonoBehaviour
 
         foreach (var wp in m_SatRoadMap)
         {
-            foreach (var con in wp.GetConnections())
+            foreach (var con in wp.GetConnections(true))
             {
                 if (wp.Id < con.Id)
                     data += wp.Id + "," + con.Id + "\n";
@@ -171,7 +180,9 @@ public class SAT : MonoBehaviour
                     var position = new Vector2(float.Parse(data[0]), float.Parse(data[1]));
                     position = transform.TransformPoint(position);
 
-                    m_roadMap.Add(new WayPoint(position, lineIndex));
+                    WayPoint newPoint = new WayPoint(position, lineIndex);
+                    m_roadMap.Add(newPoint);
+                    m_roadMapDivided.Add(newPoint);
                 }
                 else
                 {
@@ -179,7 +190,8 @@ public class SAT : MonoBehaviour
                     int secondIndex = int.Parse(data[1]) - 1;
 
                     // Add two way edge
-                    m_roadMap[firstIndex].Connect(m_roadMap[secondIndex]);
+                    m_roadMap[firstIndex].Connect(m_roadMap[secondIndex], true);
+                    m_roadMapDivided[firstIndex].Connect(m_roadMap[secondIndex], false);
                 }
             }
     }
@@ -190,14 +202,13 @@ public class SAT : MonoBehaviour
     {
         List<WayPoint> newWayPoints = new List<WayPoint>();
 
-        for (int w = 0; w < m_roadMap.Count; w++)
+        for (int w = 0; w < m_roadMapDivided.Count; w++)
         {
-            WayPoint wp = m_roadMap[w];
+            WayPoint wp = m_roadMapDivided[w];
 
-            for (int i = 0; i < wp.GetConnections().Count; i++)
+            for (int i = 0; i < wp.GetConnections(false).Count; i++)
             {
-                WayPoint connection = wp.GetConnections()[i];
-
+                WayPoint connection = wp.GetConnections(false)[i];
 
                 // Divide the edge if it is longer than the max length
                 float totalDistance = Vector2.Distance(wp.GetPosition(), connection.GetPosition());
@@ -207,8 +218,9 @@ public class SAT : MonoBehaviour
                     WayPoint prevWayPoint = null;
 
                     // Remove the two way connection
-                    wp.RemoveEdge(connection);
-                    connection.RemoveEdge(wp);
+                    // wp.RemoveEdge(connection);
+                    // connection.RemoveEdge(wp);
+                    wp.RemoveConnection(connection, false);
 
                     // Define the direction of placing the intermediate way points
                     Vector2 dir = (connection.GetPosition() - wp.GetPosition()).normalized;
@@ -228,13 +240,11 @@ public class SAT : MonoBehaviour
                         // Connect the first way point to the source way point and the rest with the previous
                         if (j == 1)
                         {
-                            wayPoint.AddEdge(wp);
-                            wp.AddEdge(wayPoint);
+                            wp.Connect(wayPoint, false);
                         }
                         else
                         {
-                            wayPoint.AddEdge(prevWayPoint);
-                            prevWayPoint.AddEdge(wayPoint);
+                            prevWayPoint.Connect(wayPoint, false);
                         }
 
                         prevWayPoint = wayPoint;
@@ -243,8 +253,7 @@ public class SAT : MonoBehaviour
                     }
 
                     // Make the final connection
-                    prevWayPoint.AddEdge(connection);
-                    connection.AddEdge(prevWayPoint);
+                    connection.Connect(prevWayPoint, false);
 
                     // Reset the counter since the connections were changed.
                     w = 0;
@@ -253,7 +262,7 @@ public class SAT : MonoBehaviour
             }
         }
 
-        m_roadMap.AddRange(newWayPoints);
+        m_roadMapDivided.AddRange(newWayPoints);
     }
 
 
@@ -772,25 +781,25 @@ public class SAT : MonoBehaviour
         CreateGridGraph();
 
         CreateConnections();
-
+        
         SlimMaximumBlocks();
-
+        
         LabelBlocks();
-
+        
         MergeConnections(1);
-
+        
         RemoveReplicateEdges();
-
+        
         RemoveExtraNodes();
-
+        
         ConnectLocalMaxIslands();
-
+        
         RemoveExtraNodes();
-
+        
         MergeConnections(3);
-
+        
         RemoveReplicateEdges();
-
+        
         ConnectCorners();
     }
 
@@ -851,7 +860,7 @@ public class SAT : MonoBehaviour
                 if (neighborNode.code == '0' || neighborNode.code == '-')
                     continue;
 
-                n.wp.Connect(neighborNode.wp);
+                n.wp.Connect(neighborNode.wp, true);
             }
         }
     }
@@ -953,18 +962,18 @@ public class SAT : MonoBehaviour
             {code = first.code, row = 0, col = 0};
 
         // Take the reconnect the connections from the old way point to the new one
-        while (firstWp.GetConnections().Count > 0)
+        while (firstWp.GetConnections(true).Count > 0)
         {
-            WayPoint con = firstWp.GetConnections()[0];
-            newWp.Connect(con);
-            firstWp.RemoveConnection(con);
+            WayPoint con = firstWp.GetConnections(true)[0];
+            newWp.Connect(con, true);
+            firstWp.RemoveConnection(con, true);
         }
 
-        while (secWp.GetConnections().Count > 0)
+        while (secWp.GetConnections(true).Count > 0)
         {
-            WayPoint con = secWp.GetConnections()[0];
-            newWp.Connect(con);
-            secWp.RemoveConnection(con);
+            WayPoint con = secWp.GetConnections(true)[0];
+            newWp.Connect(con, true);
+            secWp.RemoveConnection(con, true);
         }
 
         m_SatRoadMap.Remove(firstWp);
@@ -999,7 +1008,7 @@ public class SAT : MonoBehaviour
         {
             WayPoint curWp = open.Dequeue();
 
-            foreach (var con in curWp.GetConnections())
+            foreach (var con in curWp.GetConnections(true))
             {
                 if (con.BlockId != blockId && con.code == '*')
                 {
@@ -1016,7 +1025,7 @@ public class SAT : MonoBehaviour
         {
             WayPoint curWp = m_SatRoadMap[i];
 
-            List<WayPoint> conns = curWp.GetConnections();
+            List<WayPoint> conns = curWp.GetConnections(true);
 
             if (conns.Count == 0)
             {
@@ -1059,10 +1068,10 @@ public class SAT : MonoBehaviour
                     {
                         m_SatRoadMap.Remove(curWp);
 
-                        curWp.RemoveConnection(firstCon);
-                        curWp.RemoveConnection(secCon);
+                        curWp.RemoveConnection(firstCon, true);
+                        curWp.RemoveConnection(secCon,true);
 
-                        firstCon.Connect(secCon);
+                        firstCon.Connect(secCon, true);
                         i--;
                         isRemoved = true;
                         break;
@@ -1079,14 +1088,11 @@ public class SAT : MonoBehaviour
         {
             WayPoint curWp = m_SatRoadMap[i];
 
-            List<WayPoint> conns = curWp.GetConnections();
+            List<WayPoint> conns = curWp.GetConnections(true);
 
             bool isMerged = false;
             for (int j = 0; j < conns.Count; j++)
             {
-                // if (conns[j].code != '*')
-                //     continue;
-
                 if (isMerged)
                     break;
 
@@ -1105,7 +1111,7 @@ public class SAT : MonoBehaviour
 
                     bool merge = firstCon.BlockId == secCon.BlockId &&
                                  distance < mergeDistance &&
-                                 firstCon.IsConnected(secCon);
+                                 firstCon.IsConnected(secCon, true);
 
                     if (merge)
                     {
@@ -1124,8 +1130,8 @@ public class SAT : MonoBehaviour
                             break;
 
                         // Remove the connection to the two neighbors to be merged.
-                        curWp.RemoveConnection(firstCon);
-                        curWp.RemoveConnection(secCon);
+                        curWp.RemoveConnection(firstCon, true);
+                        curWp.RemoveConnection(secCon, true);
 
                         WayPoint newWp = new WayPoint(newPosition, 0, 0, firstCon.code)
                         {
@@ -1133,31 +1139,31 @@ public class SAT : MonoBehaviour
                         };
 
                         // Move the connections to the new way point
-                        while (firstCon.GetConnections().Count > 0)
+                        while (firstCon.GetConnections(true).Count > 0)
                         {
-                            WayPoint fCon = firstCon.GetConnections()[0];
+                            WayPoint fCon = firstCon.GetConnections(true)[0];
 
                             // Don't add the connection to the other neighbor.
                             if (fCon != secCon)
                             {
-                                newWp.Connect(fCon);
+                                newWp.Connect(fCon, true);
                             }
 
-                            firstCon.RemoveConnection(fCon);
+                            firstCon.RemoveConnection(fCon, true);
                         }
 
-                        while (secCon.GetConnections().Count > 0)
+                        while (secCon.GetConnections(true).Count > 0)
                         {
-                            WayPoint seCon = secCon.GetConnections()[0];
+                            WayPoint seCon = secCon.GetConnections(true)[0];
                             if (seCon != firstCon)
                             {
-                                newWp.Connect(seCon);
+                                newWp.Connect(seCon, true);
                             }
 
-                            secCon.RemoveConnection(seCon);
+                            secCon.RemoveConnection(seCon, true);
                         }
 
-                        curWp.Connect(newWp);
+                        curWp.Connect(newWp, true);
 
                         m_SatRoadMap.Remove(firstCon);
                         m_SatRoadMap.Remove(secCon);
@@ -1178,7 +1184,7 @@ public class SAT : MonoBehaviour
         {
             WayPoint curWp = m_SatRoadMap[i];
 
-            List<WayPoint> conns = curWp.GetConnections();
+            List<WayPoint> conns = curWp.GetConnections(true);
 
             for (int j = 0; j < conns.Count; j++)
             {
@@ -1188,7 +1194,7 @@ public class SAT : MonoBehaviour
                 {
                     WayPoint secCon = conns[k];
 
-                    if (!firstCon.IsConnected(secCon))
+                    if (!firstCon.IsConnected(secCon, true))
                         continue;
 
                     float firstToSecDistance = Vector2.Distance(firstCon.GetPosition(), secCon.GetPosition());
@@ -1217,7 +1223,7 @@ public class SAT : MonoBehaviour
                         secWp = curWp;
                     }
 
-                    firstWp.RemoveConnection(secWp);
+                    firstWp.RemoveConnection(secWp, true);
                     j = 0;
                     break;
                 }
@@ -1247,7 +1253,7 @@ public class SAT : MonoBehaviour
             close.Clear();
 
             // Load the starting connections.
-            foreach (var con in point.GetConnections())
+            foreach (var con in point.GetConnections(true))
             {
                 if (con.code != '*')
                     open.Enqueue(con);
@@ -1259,7 +1265,7 @@ public class SAT : MonoBehaviour
             {
                 WayPoint curWp = open.Dequeue();
 
-                foreach (var con in curWp.GetConnections())
+                foreach (var con in curWp.GetConnections(true))
                 {
                     if (close.Contains(con) || goals.Contains(con) || point == con)
                         continue;
@@ -1279,7 +1285,7 @@ public class SAT : MonoBehaviour
             foreach (var goal in goals)
             {
                 if (m_mapRenderer.VisibilityCheck(point.GetPosition(), goal.GetPosition()))
-                    point.Connect(goal);
+                    point.Connect(goal, true);
             }
 
             foreach (var r in close)
@@ -1293,8 +1299,8 @@ public class SAT : MonoBehaviour
         {
             m_SatRoadMap.Remove(nodesToRemove[0]);
 
-            while (nodesToRemove[0].GetConnections().Count > 0)
-                nodesToRemove[0].RemoveConnection(nodesToRemove[0].GetConnections()[0]);
+            while (nodesToRemove[0].GetConnections(true).Count > 0)
+                nodesToRemove[0].RemoveConnection(nodesToRemove[0].GetConnections(true)[0], true);
 
             nodesToRemove.Remove(nodesToRemove[0]);
         }
@@ -1319,7 +1325,7 @@ public class SAT : MonoBehaviour
 
                     WayPoint projectionWp = GetInterceptionPointOnRoadMap(wp.GetPosition());
 
-                    wp.Connect(projectionWp);
+                    wp.Connect(projectionWp, true);
 
                     m_SatRoadMap.Add(wp);
                 }
@@ -1340,7 +1346,7 @@ public class SAT : MonoBehaviour
         WayPoint secWp = null;
 
         foreach (var wp in m_SatRoadMap)
-        foreach (var con in wp.GetConnections())
+        foreach (var con in wp.GetConnections(true))
         {
             // Get the point projection on the line
             Vector2 pro = GeometryHelper.ClosestProjectionOnSegment(wp.GetPosition(), con.GetPosition(), position);
@@ -1370,24 +1376,29 @@ public class SAT : MonoBehaviour
 
         if (projectionWp != null)
             return projectionWp;
-        else
-        {
-            WayPoint newWp = new WayPoint(projectionOnRoadMap.Value);
-            firstWp.RemoveConnection(secWp);
 
-            firstWp.Connect(newWp);
-            secWp.Connect(newWp);
 
-            m_SatRoadMap.Add(newWp);
+        WayPoint newWp = new WayPoint(projectionOnRoadMap.Value);
+        firstWp.RemoveConnection(secWp, false);
 
-            return newWp;
-        }
+        firstWp.Connect(newWp, false);
+        secWp.Connect(newWp, false);
+
+        m_SatRoadMap.Add(newWp);
+
+        return newWp;
     }
 
-    public List<WayPoint> GetRoadMap()
+    public List<WayPoint> GetOriginalRoadMap()
     {
         return m_roadMap;
     }
+
+    public List<WayPoint> GetDividedRoadMap()
+    {
+        return m_roadMapDivided;
+    }
+
 
     // private int set = 0;
     //
@@ -1430,7 +1441,7 @@ public class SAT : MonoBehaviour
             //     if (n.code != '0' && n.code != '-')
             //         Gizmos.DrawCube(n.worldPosition, Vector3.one * nodeDiameter);
             // }
-            //
+            
             // for (int x = 0; x < gridSizeRow; x++)
             // for (int y = 0; y < gridSizeCol; y++)
             // {
@@ -1468,15 +1479,15 @@ public class SAT : MonoBehaviour
             //     // Handles.Label(wp.GetPosition(), wp.code.ToString());
             //     // Handles.Label(wp.GetPosition(), (wp.row + " " + wp.col));
             //
-            //     foreach (var con in wp.GetConnections())
+            //     foreach (var con in wp.GetConnections(true))
             //     {
-            //         // Gizmos.DrawLine(wp.GetPosition(), con.GetPosition());
+            //         Gizmos.DrawLine(wp.GetPosition(), con.GetPosition());
             //         
-            //         var p1 = wp.GetPosition();
-            //         var p2 = con.GetPosition();
-            //         var thickness = 3;
-            //         Handles.DrawBezier(p1,p2,p1,p2, Color.red,null,thickness);
-            //         
+            //         // var p1 = wp.GetPosition();
+            //         // var p2 = con.GetPosition();
+            //         // var thickness = 3;
+            //         // Handles.DrawBezier(p1,p2,p1,p2, Color.red,null,thickness);
+            //         //
             //
             //         if (con.code == '*')
             //             Gizmos.color = new Color32(255, 0, 0, (byte) (alpha - 20));

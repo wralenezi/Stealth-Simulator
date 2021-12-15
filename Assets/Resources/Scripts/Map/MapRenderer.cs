@@ -19,6 +19,8 @@ public class MapRenderer : MonoBehaviour
 
     private float m_MapBoundingBoxMaxWith;
 
+    public bool showInteriorWalls;
+
 
     // Initiate the map renderer
     public void Initiate()
@@ -193,7 +195,8 @@ public class MapRenderer : MonoBehaviour
     // Load the map
     public void LoadMap(string mapName, float mapScale)
     {
-        string mapData = GameManager.instance.currentMapData;
+        
+        string mapData = GameManager.Instance.currentMapData;
         
         // Parse the map data
         // if the file name has the world "_relative" then it is an SVG inspired coordinate system
@@ -264,6 +267,15 @@ public class MapRenderer : MonoBehaviour
             }
 
         return true;
+    }
+
+    public void OnDrawGizmos()
+    {
+        if (showInteriorWalls)
+        {
+            foreach (var poly in GetInteriorWalls())
+                poly.Draw("");
+        }
     }
 
 

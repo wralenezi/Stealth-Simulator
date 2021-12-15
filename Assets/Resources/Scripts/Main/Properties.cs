@@ -3,6 +3,15 @@ using UnityEngine;
 
 public static class Properties
 {
+    // General game set up
+    //----------------------------------------------------------
+    // The number of episodes to record
+    public const int EpisodesCount = 1;
+
+    // The duration of an episode.
+    public const float EpisodeLength = 60f;
+     
+    
     //-------------------------------------------------------------------------//
     // Geometry Parameters
     // Winding order for outer polygons; inner polygon is opposite.
@@ -55,7 +64,7 @@ public static class Properties
     public const float NpcRotationSpeed = 300f * SpeedMultiplyer;
 
     // The multiplier of the intruder's speed
-    public const float IntruderSpeedPercentage = 150f;
+    public const float IntruderSpeedMulti = 1.2f;
     public const float IntruderRotationSpeedMulti = 2f;
 
     public static Color32 GetFovColor(NpcType npcType)
@@ -81,7 +90,7 @@ public static class Properties
 
 
 
-    public static float GuardsFovRadiusPercentage = 20f;
+    public static float GuardsFovRadiusPercentage = 0.15f;
 
     // Get the default value for view radius for the Npcs as a portion of a value
     public static float GetFovRadius(NpcType npcType)
@@ -92,11 +101,11 @@ public static class Properties
         switch (npcType)
         {
             case NpcType.Guard:
-                viewRadiusFractionOfMap = GuardsFovRadiusPercentage / 100f;
+                viewRadiusFractionOfMap = GuardsFovRadiusPercentage;
                 break;
 
             case NpcType.Intruder:
-                viewRadiusFractionOfMap = 1f;
+                viewRadiusFractionOfMap = 0.4f;
                 break;
 
             default:
@@ -176,11 +185,5 @@ public static class Properties
 
         return new Color32(255, 0, 0, opacity);
     }
-
-    //----------------------------------------------------------
-    // The number of episodes to record
-    public static int EpisodesCount = 20;
-
-    // The duration of an episode.
-    public static float EpisodeLength = 60f;
+    
 }

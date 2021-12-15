@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class MeshManager : MonoBehaviour
 {
+    private Color32 m_MeshColor; 
     private GameManager m_gameManager;
 
     private StealthArea m_StealthArea;
@@ -26,6 +27,9 @@ public class MeshManager : MonoBehaviour
         m_AreaMeshPrefab = (GameObject) Resources.Load(MeshPrefabAddress);
         m_gameManager = transform.parent.parent.GetComponent<GameManager>();
         m_StealthArea = stealthArea;
+        
+        m_MeshColor = new Color32(180,180,180,255);
+        
         TileFloor(m_StealthArea.mapRenderer.GetWalls());
     }
 
@@ -44,7 +48,7 @@ public class MeshManager : MonoBehaviour
         foreach (var p in convexPolys)
         {
             GameObject areaMesh = Instantiate(m_AreaMeshPrefab, transform, true);
-            areaMesh.GetComponent<AreaMesh>().Draw(GetVertices(p));
+            areaMesh.GetComponent<AreaMesh>().Draw(GetVertices(p), m_MeshColor);
             areaMesh.GetComponent<Renderer>().sortingOrder = -2;
             m_walkableAreaMeshes.Add(areaMesh);
         }

@@ -76,6 +76,7 @@ public abstract class NPC : MonoBehaviour
         m_NpcRb = GetComponent<Rigidbody2D>();
         m_FovPolygon = new List<Polygon>() {new Polygon()};
 
+        ShowPath = true;
 
         AddFoV();
     }
@@ -277,7 +278,7 @@ public abstract class NPC : MonoBehaviour
 
         if (GetGoal() != null)
         {
-            heading = WorldState.GetHeading(GetTransform().position, GetGoal().Value);
+            heading = WorldState.GetDirectionName(GetTransform().position, GetGoal().Value);
 
             foreach (var npc in npcs)
             {
@@ -345,7 +346,7 @@ public abstract class NPC : MonoBehaviour
 
 
     // If the NPC has a path to take then they are busy.
-    public bool IsBusy()
+    public virtual bool IsBusy()
     {
         return PathToTake.Count > 0;
     }
@@ -378,6 +379,10 @@ public abstract class NPC : MonoBehaviour
                 if (PathToTake.Count == 0)
                     ClearGoal();
             }
+
+        // Update the total distance traveled
+        if (m_LastPosition != null)
+            UpdateDistance();
     }
 
     // Rotate to a specific target and then move towards it; return a boolean if the point is reached or not
@@ -421,10 +426,6 @@ public abstract class NPC : MonoBehaviour
             float distanceToMove = Mathf.Min(NpcSpeed * deltaTime, distanceLeft);
             m_NpcRb.MovePosition((Vector2) currentPosition +
                                  ((Vector2) GetTransform().up * distanceToMove));
-
-            // Update the total distance traveled
-            if (m_LastPosition != null)
-                UpdateDistance();
 
             return false;
         }

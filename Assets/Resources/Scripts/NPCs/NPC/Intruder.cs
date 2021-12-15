@@ -1,17 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
 public class Intruder : NPC
 {
-    // Hiding spots the intruder can go to
-    private HidingSpots m_HidingSpots;
-
-    // Intruder state 
-    private StateMachine m_state;
-
     // The place the intruder was last seen in 
     private Vector2? m_lastKnownLocation;
 
@@ -24,9 +19,9 @@ public class Intruder : NPC
     // Total time being chased and invisible 
     private float m_SearchedTime;
 
-    // List of guards; to assess the fitness of the hiding spots
-    private List<Guard> m_guards;
-    
+    // Number of collected coins
+    private int m_CollectCoins;
+
     private PlayerLabelController m_PlayerLabel;
 
 
@@ -34,23 +29,15 @@ public class Intruder : NPC
     {
         base.Initiate(area, data);
 
-        m_HidingSpots = transform.parent.parent.Find("Map").GetComponent<HidingSpots>();
-        m_guards = transform.parent.parent.Find("NpcManager").GetComponent<GuardsManager>().GetGuards();
-
-        // Start the state as incognito
-        m_state = new StateMachine();
-        m_state.ChangeState(new Incognito(this));
-
         // Multiply the intruder's speed
-        NpcSpeed *= Properties.IntruderSpeedPercentage / 100f;
+        NpcSpeed *= Properties.IntruderSpeedMulti;
         NpcRotationSpeed *= Properties.IntruderRotationSpeedMulti;
-        
+
         GameObject gameLabel = Resources.Load<GameObject>("Prefabs/PlayerLabel");
         GameObject gameLabelGo = Instantiate(gameLabel, transform);
 
         m_PlayerLabel = gameLabelGo.GetComponent<PlayerLabelController>();
         m_PlayerLabel.Initiate(GetTransform());
-
     }
 
     public override void ResetNpc()
@@ -60,8 +47,9 @@ public class Intruder : NPC
         m_NoTimesSpotted = 0;
         m_AlertTime = 0f;
         m_SearchedTime = 0f;
+        m_CollectCoins = 0;
     }
-    
+
     public void HideLabel()
     {
         m_PlayerLabel.HideLabel();
@@ -70,20 +58,23 @@ public class Intruder : NPC
     // Run the state the intruder is in
     public void ExecuteState()
     {
-        if (GetNpcData().intruderPlanner != IntruderPlanner.UserInput)
-        {
-            m_state.UpdateState();
-        }
+        // if (GetNpcData().intruderPlanner != IntruderPlanner.UserInput)
+        // {
+        //     m_state.UpdateState();
+        // }
     }
 
-    public override void UpdateMetrics(float timeDelta)
+    public void UpdateMetrics(IState state, float timeDelta)
     {
         base.UpdateMetrics(timeDelta);
-        if (m_state.GetState() is Chased)
+
+        // If the guards are alert for the presence of an intruder
+        if (state is Chase)
         {
             m_AlertTime += timeDelta;
         }
-        else if (m_state.GetState() is Hide)
+        // If the guards are searching for an intruder 
+        else if (state is Search)
         {
             m_SearchedTime += timeDelta;
         }
@@ -92,6 +83,11 @@ public class Intruder : NPC
     // In the case of intruder nothing to be done in this function yet
     public override void ClearLines()
     {
+    }
+
+    public override bool IsBusy()
+    {
+        return base.IsBusy() || isWaiting;
     }
 
 
@@ -142,78 +138,21 @@ public class Intruder : NPC
 
     public void SpotCoins(List<Coin> coins)
     {
-        foreach (var coin in coins)
+        foreach (var coin in coins.Where(coin => GetFovPolygon().IsCircleInPolygon(coin.transform.position, 0.3f)))
         {
-            if (GetFovPolygon().IsCircleInPolygon(coin.transform.position, 0.3f))
-                coin.Render();
+            coin.Render();
         }
     }
 
-    // Incognito behavior
-    public void Incognito()
+    public void AddCoin()
     {
-        if (GetNpcData().intruderPlanner == IntruderPlanner.Random)
-            SetGoal(m_HidingSpots.GetRandomHidingSpot(), false);
-        else
-        {
-            m_HidingSpots.AssignHidingSpotsFitness(m_guards, World.GetNavMesh());
-            SetGoal(m_HidingSpots.GetBestHidingSpot().Value, false);
-        }
+        m_CollectCoins++;
     }
 
-    // Called when the intruder is spotted
-    public void StartRunningAway()
-    {
-        m_state.ChangeState(new Chased(this));
-        m_NoTimesSpotted++;
-    }
-
-    // Intruder behavior when being chased
-    public void RunAway()
-    {
-        if (GetNpcData().intruderPlanner == IntruderPlanner.Random)
-            SetGoal(m_HidingSpots.GetRandomHidingSpot(), false);
-        else //if (GetNpcData().intruderPlanner == IntruderPlanner.Heuristic)
-        if (!IsBusy())
-        {
-            m_HidingSpots.AssignHidingSpotsFitness(m_guards, World.GetNavMesh());
-            SetGoal(m_HidingSpots.GetBestHidingSpot().Value, false);
-        }
-    }
-
-    // To start hiding from guards searching for the intruder
-    public void StartHiding()
-    {
-        m_state.ChangeState(new Hide(this));
-
-        // Find a place to hide
-        if (GetNpcData().intruderPlanner == IntruderPlanner.Random ||
-            GetNpcData().intruderPlanner == IntruderPlanner.RandomMoving)
-            SetGoal(m_HidingSpots.GetRandomHidingSpot(), false);
-        else if (GetNpcData().intruderPlanner == IntruderPlanner.Heuristic ||
-                 GetNpcData().intruderPlanner == IntruderPlanner.HeuristicMoving)
-            if (!IsBusy())
-            {
-                m_HidingSpots.AssignHidingSpotsFitness(m_guards, World.GetNavMesh());
-                SetGoal(m_HidingSpots.GetBestHidingSpot().Value, false);
-            }
-    }
 
     private bool isWaiting = false;
 
-    // Intruder behavior after escaping guards
-    public void Hide()
-    {
-        if (!IsBusy() && !isWaiting)
-        {
-            if (GetNpcData().intruderPlanner == IntruderPlanner.HeuristicMoving)
-                StartCoroutine(waitThenHeuristicMove());
-            else if (GetNpcData().intruderPlanner == IntruderPlanner.RandomMoving)
-                StartCoroutine(waitThenRandomMove());
-        }
-    }
-
-    private IEnumerator waitThenHeuristicMove()
+    public IEnumerator waitThenMove(Vector2 goal)
     {
         isWaiting = true;
         float waitTime = Random.Range(5f, 20f);
@@ -221,29 +160,11 @@ public class Intruder : NPC
         yield return new WaitForSeconds(waitTime);
 
         if (!IsBusy())
-        {
-            m_HidingSpots.AssignHidingSpotsFitness(m_guards, World.GetNavMesh());
-            SetGoal(m_HidingSpots.GetBestHidingSpot().Value, false);
-        }
+            SetGoal(goal, false);
 
         isWaiting = false;
     }
 
-
-    private IEnumerator waitThenRandomMove()
-    {
-        isWaiting = true;
-
-        float waitTime = Random.Range(5f, 20f);
-        yield return new WaitForSeconds(waitTime);
-
-        if (!IsBusy())
-        {
-            SetGoal(m_HidingSpots.GetRandomHidingSpot(), false);
-        }
-
-        isWaiting = false;
-    }
 
     public float GetPercentAlertTime()
     {
@@ -260,16 +181,11 @@ public class Intruder : NPC
         return m_NoTimesSpotted;
     }
 
-    public IState GetState()
-    {
-        return m_state.GetState();
-    }
-
 
     public override LogSnapshot LogNpcProgress()
     {
-        return new LogSnapshot(GetTravelledDistance(), StealthArea.GetElapsedTime(), Data, m_state.GetState().ToString(),
+        return new LogSnapshot(GetTravelledDistance(), StealthArea.GetElapsedTime(), Data, "Chased",
             m_NoTimesSpotted, GuardsManager.GuardsOverlapTime,
-            m_AlertTime, m_SearchedTime, 0, 0f);
+            m_AlertTime, m_SearchedTime, 0, 0f, m_CollectCoins);
     }
 }

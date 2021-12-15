@@ -130,7 +130,7 @@ public static class GeometryHelper
         float tmp = (B2.x - B1.x) * (A2.y - A1.y) - (B2.y - B1.y) * (A2.x - A1.x);
 
         // Check if they are parallel
-        if (tmp == 0)
+        if (Math.Abs(tmp) < 0.0001f)
         {
             // No solution!
             found = false;
@@ -184,12 +184,12 @@ public static class GeometryHelper
     {
         float length2 = Mathf.Pow(Vector2.Distance(q, r), 2);
 
-        if (length2 == 0f) return q;
+        if (Math.Abs(length2) < 0.00001f) return q;
 
         // Consider the line extending the segment, parameterized as r + t (q - r).
         // We find projection of point p onto the line. 
-        // It falls where t = [(p-r) . (q-r)] / |w-v|^2
-        // We clamp t from [0,1] to handle points outside the segment vw.
+        // It falls where t = [(p-r) . (q-r)] / |q-r|^2
+        // We clamp t from [0,1] to handle points outside the segment qr.
         float t = Mathf.Max(0, Mathf.Min(1, Vector2.Dot(p - r, q - r) / length2));
         Vector2 projection = r + t * (q - r); // Projection falls on the segment
 
