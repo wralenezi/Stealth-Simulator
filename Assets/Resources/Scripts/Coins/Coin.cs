@@ -7,9 +7,12 @@ using Random = UnityEngine.Random;
 
 public class Coin : MonoBehaviour
 {
-    private bool m_isFree;
     private StealthArea m_StealthArea;
     private Renderer renderer;
+    
+    // Hide coins when spawned
+    private bool m_isHideCoinWhenSpawned;
+
     private AudioSource audioSource;
 
     private List<Intruder> m_intruders;
@@ -25,18 +28,31 @@ public class Coin : MonoBehaviour
 
     public void Spawn()
     {
-        List<MeshPolygon> navMesh = m_StealthArea.mapDecomposer.GetNavMesh();
+        List<MeshPolygon> navMesh = MapManager.Instance.GetNavMesh();
 
-        Vector2? pos = null;
-        while (pos == null || IsCoinSeen(pos.Value))
+        Vector2 currentPos = m_intruders[0].GetTransform().position;
+
+        bool positionFound = false;
+        Vector2? chosenPos = null;
+        int numberRemainingAttempts = 100;
+        while (numberRemainingAttempts > 0 && !positionFound)
         {
             int random = Random.Range(0, navMesh.Count);
-            pos = navMesh[random].GetRandomPosition();
+            Vector2 pos = navMesh[random].GetRandomPosition();
+            
+            float distance = PathFinding.GetShortestPathDistance(currentPos, pos);
+
+            if (distance > Properties.MaxPathDistance * 0.4f)
+            {
+                positionFound = true;
+                chosenPos = pos;
+            }
+
+            numberRemainingAttempts--;
         }
 
-        transform.position = pos.Value;
-        m_isFree = false;
-        renderer.enabled = false;
+        transform.position = Equals(chosenPos, null) ? transform.position : (Vector3) chosenPos.Value;
+        renderer.enabled = !m_isHideCoinWhenSpawned;
         gameObject.SetActive(true);
     }
 
@@ -53,11 +69,6 @@ public class Coin : MonoBehaviour
         return false;
     }
 
-    public bool IsFree()
-    {
-        return m_isFree;
-    }
-
     public void Render()
     {
         renderer.enabled = true;
@@ -65,7 +76,7 @@ public class Coin : MonoBehaviour
 
     public void ModifyScore()
     {
-        m_StealthArea.guardsManager.CoinPicked();
+        // m_StealthArea.guardsManager.CoinPicked();
     }
 
 

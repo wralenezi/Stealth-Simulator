@@ -14,40 +14,20 @@ public static class FileUploader
 
 
     // Generate the file name
-    private static string GetFileName(Session sessionInfo, string fileType)
+    private static string GetFileName(Session? sessionInfo, FileType fileType)
     {
         string sep = "_";
 
-        string fileName= "";//GetLocalIPv4();//SystemInfo.deviceUniqueIdentifier;
-        // fileName += sep;
+        string fileName = "";
         fileName += GameManager.GetRunId();
         fileName += sep;
         fileName += fileType;
-        fileName += sep;
-        fileName += sessionInfo.map;
-        fileName += sep;
-        fileName += sessionInfo.GetGuardsData()[0].guardPlanner.Value.search;
-        fileName += sep;
-        fileName += sessionInfo.isDialogEnabled?"dialogEnabled":"dialogDisabled";
-        fileName += sep;
-        fileName += sessionInfo.gameCode;
-        fileName += sep;
-        fileName += sessionInfo.id;
 
-
-
-        return fileName;
-    }
-
-    private static string GetFileName(string fileType)
-    {
-        string sep = "_";
-
-        string fileName = "";//GetLocalIPv4();//SystemInfo.deviceUniqueIdentifier;
-        // fileName += sep;
-        fileName += GameManager.GetRunId();
-        fileName += sep;
-        fileName += fileType;
+        if (!Equals(sessionInfo, null))
+        {
+            fileName += sep;
+            fileName += sessionInfo;
+        }
 
         return fileName;
     }
@@ -72,7 +52,7 @@ public static class FileUploader
     }
 
     // Upload game data
-    public static IEnumerator UploadData(Session? sessionInfo, string dataType, string fileType,
+    public static IEnumerator UploadData(Session? sessionInfo, FileType file, string fileType,
         string gameData)
     {
         // Converting the xml to bytes to be ready for upload
@@ -80,9 +60,7 @@ public static class FileUploader
 
         // first the device identifier.
         // Determine if the file is a survey file or game data logs
-        string fileName = sessionInfo == null
-            ? GetFileName(dataType)
-            : GetFileName(sessionInfo.Value, dataType);
+        string fileName = GetFileName(sessionInfo, file);
 
         // Get the WWW form
         WWWForm form = GetForm(content, fileName, fileType);
@@ -112,16 +90,17 @@ public static class FileUploader
         if (www.result != UnityWebRequest.Result.Success || www.responseCode != 200)
         {
             string error = ResponseCodeLookUp.GetMeaning(www.responseCode);
-            Debug.LogError(www.responseCode + " - Map:" + fileName + " - MapScale:" + scale + " - " + error);
+            Debug.LogError("Error with requesting " + type + " - " + www.responseCode + " - Map:" + fileName +
+                           " - MapScale:" + scale + " - " + error);
         }
         else
         {
             // Or retrieve results as binary data
             if (type == "map")
                 GameManager.Instance.currentMapData = www.downloadHandler.text;
-            else if(type == "roadMap")
+            else if (type == "roadMap")
                 GameManager.Instance.currentRoadMapData = www.downloadHandler.text;
-            else if(type == "dialogs")
+            else if (type == "dialogs")
                 GameManager.DialogLines = www.downloadHandler.text;
         }
     }

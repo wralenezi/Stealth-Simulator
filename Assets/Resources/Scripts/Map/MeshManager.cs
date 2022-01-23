@@ -1,13 +1,15 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MeshManager : MonoBehaviour
+public class FloorTileManager : MonoBehaviour
 {
-    private Color32 m_MeshColor; 
-    private GameManager m_gameManager;
+    [SerializeField] 
+    private bool isRender;
 
-    private StealthArea m_StealthArea;
+    // The color of the floor
+    private Color32 m_MeshColor;
 
     // List of the materials of the nodes in the grid
     private List<Material> m_materials;
@@ -22,35 +24,83 @@ public class MeshManager : MonoBehaviour
     string PixelPath = "Sprites/white_pixel";
 
     // Start is called before the first frame update
-    public void Initiate(StealthArea stealthArea)
+    public void Initiate(List<MeshPolygon> navMesh)
     {
         m_AreaMeshPrefab = (GameObject) Resources.Load(MeshPrefabAddress);
-        m_gameManager = transform.parent.parent.GetComponent<GameManager>();
-        m_StealthArea = stealthArea;
-        
-        m_MeshColor = new Color32(180,180,180,255);
-        
-        TileFloor(m_StealthArea.mapRenderer.GetWalls());
+    
+        m_MeshColor = new Color32(180, 180, 180, 255);
+
+        TileFloor(navMesh);
+        // TileColoredFloor(navMesh);
     }
 
 
     // Tile the walkable area with meshes
-    public void TileFloor(List<Polygon> walls)
+    public void TileFloor(List<MeshPolygon> navMesh)
     {
         m_walkableAreaMeshes = new List<GameObject>();
         
-        // Cut the holes in the map
-        Polygon simplePolygon = PolygonHelper.CutHoles(walls);
-
-        // Decompose Space
-        List<MeshPolygon> convexPolys = HertelMelDecomp.ConvexPartition(simplePolygon);
-        
-        foreach (var p in convexPolys)
+        foreach (var p in navMesh)
         {
             GameObject areaMesh = Instantiate(m_AreaMeshPrefab, transform, true);
             areaMesh.GetComponent<AreaMesh>().Draw(GetVertices(p), m_MeshColor);
             areaMesh.GetComponent<Renderer>().sortingOrder = -2;
             m_walkableAreaMeshes.Add(areaMesh);
+        }
+    }
+
+    // Tile the floor with each region of a different color
+    private void TileColoredFloor(List<MeshPolygon> navMesh)
+    {
+        m_walkableAreaMeshes = new List<GameObject>();
+
+        // The index of the current color to paint the floor with.
+        int indexCurrentColor = 0;
+
+        // The list of colors that mark the different region.
+        List<Color32> regionColors = new List<Color32>();
+        regionColors.Add(new Color32(255,180,180,255));
+        regionColors.Add(new Color32(255,255,180,255));
+        regionColors.Add(new Color32(255,180,255,255));
+        regionColors.Add(new Color32(180,255,255,255));
+        
+        
+        // Allocated area for the each color
+        float colorArea = 0f;
+        foreach (var p in navMesh) colorArea += p.GetArea();
+        
+        Queue<MeshPolygon> polygonsToColor = new Queue<MeshPolygon>();
+
+        float totalColorArea = 0f;
+        polygonsToColor.Enqueue(navMesh[0]);
+
+        while (polygonsToColor.Count > 0)
+        {
+            MeshPolygon currentPoly = polygonsToColor.Dequeue();
+
+            if (currentPoly.regionID != -1) continue;
+
+            foreach (var neighbor in currentPoly.GetAdjcentPolygons())
+            {
+                if (neighbor.Value.regionID != -1) continue;
+
+                polygonsToColor.Enqueue(neighbor.Value);
+            }
+
+            GameObject areaMesh = Instantiate(m_AreaMeshPrefab, transform, true);
+            currentPoly.regionID = indexCurrentColor;
+            areaMesh.GetComponent<AreaMesh>().Draw(GetVertices(currentPoly), regionColors[indexCurrentColor]);
+            areaMesh.GetComponent<Renderer>().sortingOrder = -2;
+            m_walkableAreaMeshes.Add(areaMesh);
+
+
+            totalColorArea += currentPoly.GetArea();
+            
+            if (totalColorArea >= colorArea && indexCurrentColor < regionColors.Count - 1)
+            {
+                indexCurrentColor++;
+                totalColorArea = 0f;
+            }
         }
     }
 
@@ -79,11 +129,10 @@ public class MeshManager : MonoBehaviour
 
         return result;
     }
-
-
+    
     public void RenderVisibilityMesh(List<VisibilityPolygon> visibilityMesh)
     {
-        if (m_gameManager.Render)
+        if (isRender)
         {
             ClearMeshes();
             foreach (var polygon in visibilityMesh)
@@ -97,7 +146,7 @@ public class MeshManager : MonoBehaviour
     // Draw the grid
     public void InitializeGrid(List<Node> nodes)
     {
-        if (m_gameManager.Render)
+        if (isRender)
         {
             DrawGrid(nodes);
         }
@@ -149,7 +198,7 @@ public class MeshManager : MonoBehaviour
 
     public void RenderGrid(List<Node> nodes)
     {
-        if (m_gameManager.Render)
+        if (isRender)
         {
             for (int i = 0; i < nodes.Count; i++)
             {

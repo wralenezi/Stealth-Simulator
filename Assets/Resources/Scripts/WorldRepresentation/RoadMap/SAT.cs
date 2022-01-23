@@ -12,10 +12,6 @@ using Random = UnityEngine.Random;
 // Create the Scale axis transform of the map
 public class SAT : MonoBehaviour
 {
-    // The grid of map
-    // Map Renderer
-    MapRenderer m_mapRenderer;
-
     // 2D List of the grid way points
     private DtNode[,] m_grid;
 
@@ -30,8 +26,6 @@ public class SAT : MonoBehaviour
     CyclicalList<int> nR = new CyclicalList<int> {-1, -1, -1, 0, 1, 1, 1, 0};
     CyclicalList<int> nC = new CyclicalList<int> {-1, 0, 1, 1, 1, 0, -1, -1};
 
-    private Session m_Session;
-
     // RoadMap of the World
     private List<WayPoint> m_roadMap;
 
@@ -42,78 +36,74 @@ public class SAT : MonoBehaviour
     private List<WayPoint> m_SatRoadMap;
 
     // Establish the road map
-    public void Initiate(Session session)
+    public void Initiate(MapRenderer mapRenderer, MapData mapData)
     {
-        m_mapRenderer = GetComponent<MapRenderer>();
-
-        m_Session = session;
-
         // Import the hand drawn road map
-        ImportRoadMap();
-        
+        ImportRoadMap(mapRenderer, mapData);
+
         // Divide long edges to smaller edges
         DivideRoadMap();
     }
 
     // This is to create the skeleton of the map using this reference
     // https://www.sciencedirect.com/science/article/abs/pii/104996529290026T
-    private void CreateSkeletal()
+    private void CreateSkeletal(MapRenderer mapRenderer)
     {
         // Create the grid
-        CreateGrid();
+        CreateGrid(mapRenderer);
 
         // Calculate the distance transform
         CalculateDistanceTransform();
-        
+
         // Create local maximals
         SetLocalMaximals();
-        
+
         SteepestHillClimb();
-        
+
         // Create saddle points
         Set1by1SaddlePoints();
-        
+
         Set2by2Saddles();
-        
+
         HumpUpHillClimb();
-        
-        SimplifiedGraph();
+
+        SimplifiedGraph(mapRenderer);
     }
 
 
-    private void ImportRoadMap()
+    private void ImportRoadMap(MapRenderer mapRenderer, MapData mapData)
     {
         m_roadMap = new List<WayPoint>();
         m_roadMapDivided = new List<WayPoint>();
 
-        string mapData;
+        string mapString;
 
         try
         {
-            mapData = GameManager.Instance.currentRoadMapData;
+            mapString = GameManager.Instance.currentRoadMapData;
 
-            if (mapData == "")
+            if (mapString == "")
                 throw new Exception("Road map file is empty.");
-            
-            ParseMapString(mapData);
+
+            ParseMapString(mapString);
         }
         catch (Exception e)
         {
-            Debug.Log("Missing Road Map file for: " + m_Session.map + " " + m_Session.GetMapScale());
+            Debug.Log("Missing Road Map file for: " + mapData.name + " " + mapData.size);
 
             // Implement SAT to get the road map
-            CreateSkeletal();
-            
+            CreateSkeletal(mapRenderer);
+
             // Save the map data for future use.
-            SaveMap();
-            
+            SaveMap(mapData);
+
             m_roadMap = m_SatRoadMap;
         }
     }
 
 
     // Save the road map as a csv file 
-    private void SaveMap()
+    private void SaveMap(MapData mapData)
     {
         string data = "";
 
@@ -137,16 +127,16 @@ public class SAT : MonoBehaviour
             }
         }
 
-        CsvController.WriteString(GetPath(m_Session.map, m_Session.GetMapScale()), data, false);
+        CsvController.WriteString(GetPath(mapData), data, false);
 
-        Debug.Log("Map: " + m_Session.map + " " + m_Session.GetMapScale() + " Saved.");
+        Debug.Log("Map: " + mapData.name + " " + mapData.size + " Saved.");
     }
 
     // Get the path to the map
-    private string GetPath(string mapName, float mapScale)
+    private string GetPath(MapData map)
     {
         // Gets the path to the "Assets" folder 
-        return GameManager.RoadMapsPath + mapName + "_" + mapScale + ".csv";
+        return GameManager.RoadMapsPath + map.name + "_" + map.size + ".csv";
     }
 
     // Parse the map data
@@ -267,21 +257,21 @@ public class SAT : MonoBehaviour
 
 
 // Create the grid
-    public void CreateGrid()
+    public void CreateGrid(MapRenderer mapRenderer)
     {
         // Set the diameter of a node
         nodeDiameter = Properties.NodeRadius * 2f;
 
-        m_mapRenderer.GetMapBoundingBox(out float minX, out float maxX, out float minY, out float maxY);
+        Bounds bounds = mapRenderer.GetMapBoundingBox();
 
         // Determine the resolution of the grid
-        gridSizeRow = Mathf.RoundToInt(Mathf.Abs(maxY - minY) * 1.1f / nodeDiameter);
-        gridSizeCol = Mathf.RoundToInt(Mathf.Abs(maxX - minX) * 1.1f / nodeDiameter);
+        gridSizeRow = Mathf.RoundToInt(Mathf.Abs(bounds.max.y - bounds.min.y) * 1.1f / nodeDiameter);
+        gridSizeCol = Mathf.RoundToInt(Mathf.Abs(bounds.max.x - bounds.min.x) * 1.1f / nodeDiameter);
 
         // Set the grid size
         m_grid = new DtNode[gridSizeRow, gridSizeCol];
 
-        worldBottomLeft = new Vector2(minX, minY) - Vector2.one;
+        worldBottomLeft = new Vector2(bounds.min.x, bounds.min.y) - Vector2.one;
 
         // Establish the walkable areas in the grid
         for (int x = 0; x < gridSizeRow; x++)
@@ -294,7 +284,8 @@ public class SAT : MonoBehaviour
             bool walkable = false;
             float distance = -1f;
 
-            if (IsNodeInMap(worldPoint))
+            bool isWalkable = PolygonHelper.IsPointInPolygons(mapRenderer.GetInteriorWalls(), worldPoint);
+            if (isWalkable)
             {
                 walkable = true;
                 distance = Properties.StalenessLow;
@@ -358,11 +349,6 @@ public class SAT : MonoBehaviour
 
             m_grid[xi, yi].distanceTransform = normalized;
         }
-    }
-
-    private bool IsNodeInMap(Vector2 node)
-    {
-        return PolygonHelper.IsPointInPolygons(m_mapRenderer.GetInteriorWalls(), node);
     }
 
     // Set the local maximals
@@ -776,31 +762,31 @@ public class SAT : MonoBehaviour
     }
 
 
-    public void SimplifiedGraph()
+    public void SimplifiedGraph(MapRenderer mapRenderer)
     {
         CreateGridGraph();
 
         CreateConnections();
-        
+
         SlimMaximumBlocks();
-        
+
         LabelBlocks();
-        
-        MergeConnections(1);
-        
+
+        MergeConnections(mapRenderer, 1);
+
         RemoveReplicateEdges();
-        
+
         RemoveExtraNodes();
-        
-        ConnectLocalMaxIslands();
-        
+
+        ConnectLocalMaxIslands(mapRenderer);
+
         RemoveExtraNodes();
-        
-        MergeConnections(3);
-        
+
+        MergeConnections(mapRenderer, 3);
+
         RemoveReplicateEdges();
-        
-        ConnectCorners();
+
+        ConnectCorners(mapRenderer);
     }
 
 
@@ -1069,7 +1055,7 @@ public class SAT : MonoBehaviour
                         m_SatRoadMap.Remove(curWp);
 
                         curWp.RemoveConnection(firstCon, true);
-                        curWp.RemoveConnection(secCon,true);
+                        curWp.RemoveConnection(secCon, true);
 
                         firstCon.Connect(secCon, true);
                         i--;
@@ -1082,7 +1068,7 @@ public class SAT : MonoBehaviour
     }
 
 
-    private void MergeConnections(float mergeDistance)
+    private void MergeConnections(MapRenderer mapRenderer, float mergeDistance)
     {
         for (int i = 0; i < m_SatRoadMap.Count; i++)
         {
@@ -1126,7 +1112,7 @@ public class SAT : MonoBehaviour
                         else
                             newPosition = (firstCon.GetPosition() + secCon.GetPosition()) / 2f;
 
-                        if (!m_mapRenderer.VisibilityCheck(curWp.GetPosition(), newPosition))
+                        if (!mapRenderer.VisibilityCheck(curWp.GetPosition(), newPosition))
                             break;
 
                         // Remove the connection to the two neighbors to be merged.
@@ -1233,7 +1219,7 @@ public class SAT : MonoBehaviour
 
 
     // Connect the Islands of the local maximums
-    public void ConnectLocalMaxIslands()
+    public void ConnectLocalMaxIslands(MapRenderer mapRenderer)
     {
         List<WayPoint> nodesToRemove = new List<WayPoint>();
 
@@ -1284,7 +1270,7 @@ public class SAT : MonoBehaviour
             // Connect to the goal
             foreach (var goal in goals)
             {
-                if (m_mapRenderer.VisibilityCheck(point.GetPosition(), goal.GetPosition()))
+                if (mapRenderer.VisibilityCheck(point.GetPosition(), goal.GetPosition()))
                     point.Connect(goal, true);
             }
 
@@ -1307,9 +1293,10 @@ public class SAT : MonoBehaviour
     }
 
 
-    public void ConnectCorners()
+    public void ConnectCorners(MapRenderer mapRenderer)
     {
-        List<Polygon> walls = m_mapRenderer.GetWalls();
+        List<Polygon> walls = mapRenderer.GetInteriorWalls();
+
         for (int i = 0; i < walls.Count; i++)
         {
             for (int j = 0; j < walls[i].GetVerticesCount(); j++)
@@ -1356,9 +1343,8 @@ public class SAT : MonoBehaviour
 
             RaycastHit2D hit = Physics2D.Linecast(pro, position);
 
-            if (distance < minDistance && hit.collider == null) //m_mapRenderer.VisibilityCheck(pro, position))
+            if (distance < minDistance && Equals(hit.collider, null)) //m_mapRenderer.VisibilityCheck(pro, position))
             {
-                // Debug.Log(pro);
                 minDistance = distance;
                 projectionOnRoadMap = pro;
 
@@ -1374,15 +1360,15 @@ public class SAT : MonoBehaviour
             }
         }
 
-        if (projectionWp != null)
-            return projectionWp;
+        if (projectionWp != null) return projectionWp;
 
+        if (Equals(projectionOnRoadMap, null)) Debug.Log("There is no way point on the road map " + position);
 
         WayPoint newWp = new WayPoint(projectionOnRoadMap.Value);
-        firstWp.RemoveConnection(secWp, false);
+        firstWp.RemoveConnection(secWp, true);
 
-        firstWp.Connect(newWp, false);
-        secWp.Connect(newWp, false);
+        firstWp.Connect(newWp, true);
+        secWp.Connect(newWp, true);
 
         m_SatRoadMap.Add(newWp);
 
@@ -1398,24 +1384,6 @@ public class SAT : MonoBehaviour
     {
         return m_roadMapDivided;
     }
-
-
-    // private int set = 0;
-    //
-    // public void Update()
-    // {
-    //     if (Input.GetKeyDown(KeyCode.UpArrow))
-    //     {
-    //         set += 1;
-    //         // Debug.Log(m_SatRoadMap[set].GetConnections().Count);
-    //     }
-    //     else if (Input.GetKeyDown(KeyCode.DownArrow))
-    //     {
-    //         set -= 1;
-    //         // Debug.Log(m_SatRoadMap[set].GetConnections().Count);
-    //     }
-    // }
-
 
     private void OnDrawGizmos()
     {
@@ -1441,7 +1409,7 @@ public class SAT : MonoBehaviour
             //     if (n.code != '0' && n.code != '-')
             //         Gizmos.DrawCube(n.worldPosition, Vector3.one * nodeDiameter);
             // }
-            
+
             // for (int x = 0; x < gridSizeRow; x++)
             // for (int y = 0; y < gridSizeCol; y++)
             // {

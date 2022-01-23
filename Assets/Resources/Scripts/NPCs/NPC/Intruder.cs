@@ -7,6 +7,9 @@ using Random = UnityEngine.Random;
 
 public class Intruder : NPC
 {
+    // For debugging purposes
+    public bool isGhost;
+
     // The place the intruder was last seen in 
     private Vector2? m_lastKnownLocation;
 
@@ -23,11 +26,15 @@ public class Intruder : NPC
     private int m_CollectCoins;
 
     private PlayerLabelController m_PlayerLabel;
+    
+    private bool isWaiting = false;
 
 
-    public override void Initiate(StealthArea area, NpcData data)
+    public override void Initiate(NpcData data, VoiceParams _voice)
     {
-        base.Initiate(area, data);
+        // isGhost = true;
+
+        base.Initiate(data, _voice);
 
         // Multiply the intruder's speed
         NpcSpeed *= Properties.IntruderSpeedMulti;
@@ -90,6 +97,12 @@ public class Intruder : NPC
         return base.IsBusy() || isWaiting;
     }
 
+    public void ClearIntruderGoal()
+    {
+        // base.ClearGoal();
+        isWaiting = false;
+    }
+
 
     public Vector2 GetLastKnownLocation()
     {
@@ -118,12 +131,12 @@ public class Intruder : NPC
     {
         foreach (var guard in guards)
         {
-            if (Area.gameView == GameView.Spectator)
+            if (GameManager.Instance.gameView == GameView.Spectator)
             {
                 guard.RenderGuard(true);
                 RenderIntruder(true);
             }
-            else if (Area.gameView == GameView.Intruder)
+            else if (GameManager.Instance.gameView == GameView.Intruder)
             {
                 RenderIntruder(true);
 
@@ -148,10 +161,7 @@ public class Intruder : NPC
     {
         m_CollectCoins++;
     }
-
-
-    private bool isWaiting = false;
-
+    
     public IEnumerator waitThenMove(Vector2 goal)
     {
         isWaiting = true;
@@ -160,7 +170,7 @@ public class Intruder : NPC
         yield return new WaitForSeconds(waitTime);
 
         if (!IsBusy())
-            SetGoal(goal, false);
+            SetDestination(goal, true, false);
 
         isWaiting = false;
     }

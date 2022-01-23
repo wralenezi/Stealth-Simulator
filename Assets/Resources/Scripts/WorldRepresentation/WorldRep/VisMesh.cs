@@ -55,7 +55,7 @@ public class VisMesh : WorldRep
         SetTimestamp();
 
         // Construct the VisMesh
-        ConstructVisMesh();
+        // ConstructVisMesh();
     }
 
     public override void UpdateWorld(GuardsManager guardsManager)
@@ -69,7 +69,7 @@ public class VisMesh : WorldRep
     // Update the world for the patrol routine
     private void UpdateForPatrol(GuardsManager guardsManager)
     {
-        ConstructVisMesh();
+        // ConstructVisMesh();
         base.UpdateWorld(guardsManager);
     }
 
@@ -104,7 +104,7 @@ public class VisMesh : WorldRep
     }
 
     // Get the new partitioning and populate the VisMesh
-    private void ConstructVisMesh()
+    private void ConstructVisMesh(List<Guard> guards)
     {
         if (m_CurUnseenPolygons.Count > 0)
         {
@@ -116,7 +116,7 @@ public class VisMesh : WorldRep
         }
 
         // Decompose the area 
-        m_mapDecomposer.CreateVisMesh();
+        m_mapDecomposer.CreateVisMesh(guards);
 
         // Get the current polygons
         m_CurSeenPolygons = m_mapDecomposer.GetSeenPolygons();

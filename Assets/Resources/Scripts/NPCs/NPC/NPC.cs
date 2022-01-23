@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Runtime.InteropServices.WindowsRuntime;
-using TMPro;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -18,16 +13,15 @@ public abstract class NPC : MonoBehaviour
     private Rigidbody2D m_NpcRb;
 
     private Transform m_transform;
-
-    // The world representation
-    protected WorldRep World;
-
-    // The area of the game
-    protected StealthArea Area;
+    
+    // show the NPCs path to take
+    public bool ShowPath;
 
     // The path the agent is meant to follow
     private List<Vector2> PathToTake;
-    private Vector2? Goal;
+
+    // if the agent has to reach the goal or simply see it.
+    private bool m_hasToReach = false;
 
     // The sequence of Roadmap lines an NPC marked on their way;
     protected List<RoadMapLine> LinesToPassThrough;
@@ -35,6 +29,9 @@ public abstract class NPC : MonoBehaviour
     // NPC movement variables
     protected float NpcSpeed = Properties.NpcSpeed;
     protected float NpcRotationSpeed = Properties.NpcRotationSpeed;
+
+    // Plan form the npc use
+    private PlanOutput m_planForm;
 
     // The game perspective
     protected GameView GameView;
@@ -51,7 +48,6 @@ public abstract class NPC : MonoBehaviour
     // The Current FoV
     private List<Polygon> m_FovPolygon;
 
-
     //************** Logging data ***************//
     // Variables for the distance travelled by a character
     // The last position the NPC was logged until
@@ -60,27 +56,26 @@ public abstract class NPC : MonoBehaviour
     // The total distance the guard travelled
     [SerializeField] private float m_TotalDistanceTravelled;
 
-    // show the NPCs path to take
-    public bool ShowPath;
+    // Voice parameters for WebGL
+    private VoiceParams m_voiceParam;
 
     // Called when the agent is first created
-    public virtual void Initiate(StealthArea area, NpcData data)
+    public virtual void Initiate(NpcData data, VoiceParams _voice)
     {
+        m_voiceParam = _voice;
         PathToTake = new List<Vector2>();
         LinesToPassThrough = new List<RoadMapLine>();
-
-        Area = area;
+        
         m_transform = transform;
-        World = GetTransform().parent.parent.Find("Map").GetComponent<WorldRep>();
+
         Data = data;
         m_NpcRb = GetComponent<Rigidbody2D>();
         m_FovPolygon = new List<Polygon>() {new Polygon()};
 
-        ShowPath = true;
-
         AddFoV();
-    }
 
+        // ShowPath = true;
+    }
 
     // The set up of the start of the episode
     public virtual void ResetNpc()
@@ -91,15 +86,13 @@ public abstract class NPC : MonoBehaviour
         SetPosition();
         m_FovPolygon[0].Clear();
 
-
         Renderer = GetComponent<Renderer>();
         FovRenderer = Fov.GetComponent<Renderer>();
     }
 
     // Clear the designated goal and path to take
-    public void ClearGoal()
+    public virtual void ClearGoal()
     {
-        Goal = null;
         PathToTake.Clear();
         ClearLines();
     }
@@ -156,6 +149,11 @@ public abstract class NPC : MonoBehaviour
         return m_transform;
     }
 
+    public VoiceParams GetVoiceParam()
+    {
+        return m_voiceParam;
+    }
+
     // Get field of vision
     public Polygon GetFovPolygon()
     {
@@ -177,6 +175,11 @@ public abstract class NPC : MonoBehaviour
         return m_FovPolygon;
     }
 
+    public void ForceToReachGoal(bool _toReach)
+    {
+        m_hasToReach = _toReach;
+    }
+
     // Get a vector that represents the agents facing direction around the z-axis
     public Vector2 GetDirection()
     {
@@ -190,7 +193,7 @@ public abstract class NPC : MonoBehaviour
     }
 
     // Place the NPC's start position
-    public void ResetLocation(List<MeshPolygon> navMesh, List<Guard> guards, List<Polygon> mapWalls,
+    public void ResetLocation(List<MeshPolygon> navMesh, List<Guard> guards, //List<Polygon> mapWalls,
         Session sessionInfo)
     {
         // If there is no location specified for the agent to be set in; place them randomly.
@@ -207,19 +210,19 @@ public abstract class NPC : MonoBehaviour
             else if (Data.npcType == NpcType.Intruder)
             {
                 // If the scenario is a chase then place the intruder somewhere a guard can see
-                if (sessionInfo.scenario == Scenario.Chase)
-                {
-                    int guardIndex = Random.Range(0, guards.Count);
-                    Guard guard = guards[guardIndex];
-                    GetTransform().position = GetPositionNearNpc(guard.GetTransform(), mapWalls);
+                if (sessionInfo.scenario != Scenario.Chase) return;
 
-                    // Find the angle needed to rotate to face the desired direction
-                    Vector2 rotateDir = (GetTransform().position - guard.GetTransform().position).normalized;
-                    float m_goalAngle = Vector2.SignedAngle(Vector2.up, rotateDir);
-
-                    Quaternion toRotation = Quaternion.AngleAxis(m_goalAngle, Vector3.forward);
-                    guard.GetTransform().rotation = toRotation;
-                }
+                GetTransform().position = PlaceInGuardFoV(guards, navMesh);
+                // int guardIndex = Random.Range(0, guards.Count);
+                // Guard guard = guards[guardIndex];
+                // GetTransform().position = GetPositionNearNpc(guard.GetTransform(), mapWalls);
+                //
+                // // Find the angle needed to rotate to face the desired direction
+                // Vector2 rotateDir = (GetTransform().position - guard.GetTransform().position).normalized;
+                // float m_goalAngle = Vector2.SignedAngle(Vector2.up, rotateDir);
+                //
+                // Quaternion toRotation = Quaternion.AngleAxis(m_goalAngle, Vector3.forward);
+                // guard.GetTransform().rotation = toRotation;
             }
         }
         else
@@ -228,6 +231,22 @@ public abstract class NPC : MonoBehaviour
             GetTransform().position = (Vector2) Data.location.Value.position;
             GetTransform().rotation = Quaternion.AngleAxis(Data.location.Value.rotation, Vector3.forward);
         }
+    }
+
+    private Vector2 PlaceInGuardFoV(List<Guard> guards, List<MeshPolygon> navMesh)
+    {
+        foreach (var guard in guards)
+        {
+            Vector2 center = guard.GetFovPolygon().GetCentroidPosition();
+            if (guard.GetFovPolygon().IsCircleInPolygon(center, 0.5f))
+                return center;
+        }
+
+        if (guards.Count > 0) return GetTransform().position;
+        
+        
+        int polygonIndex = Random.Range(0, navMesh.Count);
+        return navMesh[polygonIndex].GetCentroidPosition();
     }
 
 
@@ -257,104 +276,103 @@ public abstract class NPC : MonoBehaviour
 
     // Define a goal for the agent and set the path to navigate to it,
     // param@isForced forces the guard to forget its current path and make a new one.
-    public void SetGoal(Vector2 _goal, bool isForced)
+    public void SetDestination(Vector2 _goal, bool hasToReach, bool isForced)
     {
-        if (!IsBusy() || isForced)
-        {
-            Goal = _goal;
+        if (IsBusy() && !isForced) return;
 
-            // Get the shortest path to the goal
-            PathFinding.GetShortestPath(World.GetNavMesh(),
-                GetTransform().position, Goal.Value, PathToTake);
-        }
+        m_hasToReach = hasToReach;
+
+        // Get the shortest path to the goal
+        PathFinding.GetShortestPath(GetTransform().position, _goal, ref PathToTake);
     }
 
-    // Update the word state variables
-    public virtual void UpdateWldStatV(List<Guard> npcs)
+    public Vector2? GetGoal()
     {
-        // The orientation of the NPC's goal
-        string heading = "NA";
-
-
-        if (GetGoal() != null)
-        {
-            heading = WorldState.GetDirectionName(GetTransform().position, GetGoal().Value);
-
-            foreach (var npc in npcs)
-            {
-                UpdtOtherGuardWrldStat(npc);
-            }
-        }
-
-
-        // Set the heading value
-        WorldState.Set(name + "_goal", heading);
-
-        // NpcSpeed
-
-        // Debug.Log(GetRemainingDistanceToGoal() / NpcSpeed);
+        Vector2? goal = null;
+        if (PathToTake.Count > 0) goal = PathToTake[PathToTake.Count - 1];
+        return goal;
     }
 
-
-    // 
-    private void UpdtOtherGuardWrldStat(NPC npc)
-    {
-        const int decimalSpots = 3;
-        float multiplier = Mathf.Pow(10f, decimalSpots);
-
-        // Update the path distance between these two NPCs
-        float distance = PathFinding.GetShortestPathDistance(World.GetNavMesh(), npc.GetTransform().position,
-            GetTransform().position);
-
-        // Normalize the distance
-        distance /= Properties.MaxPathDistance;
-        distance = Mathf.Round(distance * multiplier) / multiplier;
-
-        if (!Equals(this, npc))
-            WorldState.Set("dst_" + name + "_to_" + npc.name, distance.ToString());
-
-
-        // Set the distance from the other NPC to the goal of this
-        if (!Equals(GetGoal(), null))
-        {
-            distance = PathFinding.GetShortestPathDistance(World.GetNavMesh(), npc.GetTransform().position,
-                GetGoal().Value);
-
-            // Normalize the distance
-            distance /= Properties.MaxPathDistance;
-            distance = Mathf.Round(distance * multiplier) / multiplier;
-
-            WorldState.Set("dst_goal_" + name + "_to_" + npc.name, distance.ToString());
-        }
-        else
-            WorldState.Set("dst_goal_" + name + "_to_" + npc.name, "NA");
+    // // Update the word state variables
+    // public virtual void UpdateWldStatV(List<Guard> npcs)
+    // {
+    //     // // The orientation of the NPC's goal
+    //     // string heading = "NA";
+    //     //
+    //     // if (!Equals(GetGoal(), null))
+    //     // {
+    //     //     heading = WorldState.GetDirectionName(GetTransform().position, GetGoal().Value);
+    //     //
+    //     //     foreach (var npc in npcs)
+    //     //     {
+    //     //         UpdtOtherGuardWrldStat(npc);
+    //     //     }
+    //     // }
+    //     //
+    //     // // Set the heading value
+    //     // WorldState.Set(name + "_goal", heading);
+    //
+    //     // foreach (var npc in npcs)
+    //     // {
+    //     //     UpdtOtherGuardWrldStat(npc);
+    //     // }
+    //
+    //     RegionLabelsManager.SetRegions(this);
+    // }
 
 
-        // Set the distance from the goal of the other NPC and the goal of this NPC
-        if (!Equals(this, npc) && !Equals(GetGoal(), null) && !Equals(npc.GetGoal(), null))
-        {
-            distance = PathFinding.GetShortestPathDistance(World.GetNavMesh(), npc.GetGoal().Value,
-                GetGoal().Value);
-            distance /= Properties.MaxPathDistance;
-            distance = Mathf.Round(distance * multiplier) / multiplier;
-
-            WorldState.Set("dst_goal_" + name + "_to_goal_" + npc.name, distance.ToString());
-        }
-        else
-            WorldState.Set("dst_goal_" + name + "_to_goal_" + npc.name, "NA");
-    }
+    // private void UpdtOtherGuardWrldStat(NPC npc)
+    // {
+    //     const int decimalSpots = 3;
+    //     float multiplier = Mathf.Pow(10f, decimalSpots);
+    //
+    //     // Update the path distance between these two NPCs
+    //     float distance = PathFinding.GetShortestPathDistance(World.GetNavMesh(), npc.GetTransform().position,
+    //         GetTransform().position);
+    //
+    //     // Normalize the distance
+    //     distance /= Properties.MaxPathDistance;
+    //     distance = Mathf.Round(distance * multiplier) / multiplier;
+    //
+    //     if (!Equals(this, npc))
+    //         WorldState.Set("dst_" + name + "_to_" + npc.name, distance.ToString());
+    //
+    //
+    //     // Set the distance from the other NPC to the goal of this
+    //     if (!Equals(GetGoal(), null))
+    //     {
+    //         distance = PathFinding.GetShortestPathDistance(World.GetNavMesh(), npc.GetTransform().position,
+    //             GetGoal().Value);
+    //
+    //         // Normalize the distance
+    //         distance /= Properties.MaxPathDistance;
+    //         distance = Mathf.Round(distance * multiplier) / multiplier;
+    //
+    //         WorldState.Set("dst_goal_" + name + "_to_" + npc.name, distance.ToString());
+    //     }
+    //     else
+    //         WorldState.Set("dst_goal_" + name + "_to_" + npc.name, "NA");
+    //
+    //
+    //     // Set the distance from the goal of the other NPC and the goal of this NPC
+    //     if (!Equals(this, npc) && !Equals(GetGoal(), null) && !Equals(npc.GetGoal(), null))
+    //     {
+    //         distance = PathFinding.GetShortestPathDistance(World.GetNavMesh(), npc.GetGoal().Value,
+    //             GetGoal().Value);
+    //         distance /= Properties.MaxPathDistance;
+    //         distance = Mathf.Round(distance * multiplier) / multiplier;
+    //
+    //         WorldState.Set("dst_goal_" + name + "_to_goal_" + npc.name, distance.ToString());
+    //     }
+    //     else
+    //         WorldState.Set("dst_goal_" + name + "_to_goal_" + npc.name, "NA");
+    // }
 
 
     // If the NPC has a path to take then they are busy.
     public virtual bool IsBusy()
     {
         return PathToTake.Count > 0;
-    }
-
-    // Get the agents goal
-    public Vector2? GetGoal()
-    {
-        return Goal;
     }
 
     // Get the current metrics of the agent's performance
@@ -366,27 +384,40 @@ public abstract class NPC : MonoBehaviour
     }
 
     // Move the NPC through it's path
-    public void ExecutePlan(IState state, GuardRole? guardRole, float deltaTime)
+    public void ExecutePlan(IState state, float deltaTime)
     {
-        if (GetNpcData().intruderPlanner == IntruderPlanner.UserInput)
+        if (CheckIfUserInput(state))
             MoveByInput(deltaTime);
         else if (PathToTake.Count > 0)
-            if (GoStraightTo(PathToTake[0], state, guardRole, deltaTime))
+            if (GoStraightTo(PathToTake[0], deltaTime))
             {
                 PathToTake.RemoveAt(0);
 
                 // When the path is over clear the goal.
-                if (PathToTake.Count == 0)
-                    ClearGoal();
+                if (PathToTake.Count == 0) ClearGoal();
             }
 
         // Update the total distance traveled
-        if (m_LastPosition != null)
-            UpdateDistance();
+        if (m_LastPosition != null) UpdateDistance();
     }
 
+    private bool CheckIfUserInput(IState state)
+    {
+        if (state is Patrol)
+            return GetNpcData().behavior.patrol == PatrolPlanner.UserInput;
+
+        if (state is Chase)
+            return GetNpcData().behavior.alert == AlertPlanner.UserInput;
+
+        if (state is Search)
+            return GetNpcData().behavior.search == SearchPlanner.UserInput;
+
+        return false;
+    }
+
+
     // Rotate to a specific target and then move towards it; return a boolean if the point is reached or not
-    private bool GoStraightTo(Vector3 target, IState state, GuardRole? guardRole, float deltaTime)
+    private bool GoStraightTo(Vector3 target, float deltaTime)
     {
         Vector3 currentPosition = GetTransform().position;
         Quaternion currentRotation = GetTransform().rotation;
@@ -398,27 +429,27 @@ public abstract class NPC : MonoBehaviour
         Quaternion toRotation = Quaternion.AngleAxis(m_goalAngle, Vector3.forward);
         float angleLeft = Mathf.Round(toRotation.eulerAngles.z - currentRotation.eulerAngles.z);
 
-
         angleLeft *= angleLeft > 180 ? -1 : 1;
         float rotationStep = Mathf.Min(Mathf.Abs(angleLeft), NpcRotationSpeed * deltaTime);
         GetTransform().rotation = Quaternion.RotateTowards(currentRotation, toRotation,
             rotationStep);
 
-        // Make sure no rotation is due before moving
-        float angleDiffThreshold = state is Chase ? 180f : 0f;
-        if (Mathf.Abs(angleLeft) > angleDiffThreshold)
-            return false;
-
-
         // Handle movement
         float distanceLeft = Vector2.Distance(currentPosition, target);
 
+        // Make sure no rotation is due before moving
+        float angleDiffThreshold = 180f / Mathf.Abs(angleLeft);
+
+        if (Mathf.Abs(angleLeft) > angleDiffThreshold)
+            return false;
+
         // How to behavior when heading for the last way point (goal)
-        if (PathToTake[PathToTake.Count - 1] == (Vector2) target)
+        // ReSharper disable once PossibleInvalidOperationException
+        if (GetGoal().Value == (Vector2) target)
         {
             // If the guard is in patrol, it doesn't need to visit the goal on the path. Just see it
-            if (state is Patrol || state is Search)
-                distanceLeft -= m_FovRadius - 1f;
+            if (!m_hasToReach)
+                distanceLeft -= m_FovRadius * 0.7f;
         }
 
         if (distanceLeft > 0.1f)
@@ -429,6 +460,9 @@ public abstract class NPC : MonoBehaviour
 
             return false;
         }
+
+        // This is to set the default value to false.
+        m_hasToReach = false;
 
         // Since no changes were needed to the position then the agent reached the goal
         return true;
@@ -463,6 +497,13 @@ public abstract class NPC : MonoBehaviour
     public float GetRemainingDistanceToGoal()
     {
         float totalDistance = 0;
+
+        if (PathToTake.Count == 0) return totalDistance;
+
+        totalDistance += Vector2.Distance(GetTransform().position, PathToTake[0]);
+
+        if (PathToTake.Count < 2) return totalDistance;
+
         for (int i = 0; i < PathToTake.Count - 1; i++)
         {
             totalDistance += Vector2.Distance(PathToTake[i], PathToTake[i + 1]);
@@ -508,5 +549,20 @@ public abstract class NPC : MonoBehaviour
 
             Gizmos.DrawSphere(PathToTake[PathToTake.Count - 1], 0.1f);
         }
+    }
+}
+
+public struct VoiceParams
+{
+    // The pitch of the voice
+    public float Pitch;
+
+    // The voice index on the speechSynthesis voices 
+    public int VoiceIndex;
+
+    public VoiceParams(int _voiceIndex, float _pitch)
+    {
+        VoiceIndex = _voiceIndex;
+        Pitch = _pitch;
     }
 }

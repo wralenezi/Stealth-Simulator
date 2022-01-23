@@ -8,6 +8,8 @@ using TMPro;
 [JsonObject(MemberSerialization.OptIn)]
 public abstract class SurveyItem : MonoBehaviour
 {
+    protected ItemType type;
+    
     // The survey this item belongs to
     protected Survey survey;
 
@@ -17,7 +19,7 @@ public abstract class SurveyItem : MonoBehaviour
     protected Transform inputPanel;
 
     public bool isAnswered;
-
+    
     // Item info
     // Item name
     [JsonProperty("name")] private string m_name;
@@ -31,12 +33,13 @@ public abstract class SurveyItem : MonoBehaviour
     // code to determine if the answer is a color and should be handled
     protected string m_code;
 
-    public virtual void Initiate(string _name, Survey _survey, string _code)
+    public virtual void Initiate(string _name, ItemType _type, Survey _survey, string _code)
     {
         survey = _survey;
         gameObject.name = _name;
         m_name = name;
         m_code = _code;
+        type = _type;
 
         questionPanel = transform.Find("QuestionPanel");
         m_question = questionPanel.Find("Text").GetComponent<TextMeshProUGUI>();
@@ -67,5 +70,28 @@ public abstract class SurveyItem : MonoBehaviour
         m_desc = question;
     }
 
-    public abstract void Answer(string answer);
+    // public abstract void Answer(string answer);
+
+    public void Answer(string answer)
+    {
+        // Mark as answered and hide the game object
+        isAnswered = true;
+        gameObject.SetActive(false);
+
+        ProcessAnswer(answer);
+        
+        survey.NextItem();
+    }
+
+    public abstract void ProcessAnswer(string answer);
+}
+
+
+public enum ItemType
+{
+    Survey,
+    
+    RepeatEpisode,
+    
+    SkipEpisode
 }

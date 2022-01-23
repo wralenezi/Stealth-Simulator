@@ -45,18 +45,20 @@ public static class PathFinding
 
 
     // Return the shortest path as a sequence of points
-    public static void GetShortestPath(List<MeshPolygon> navMesh, Vector2 startPoint, Vector2 destinationPoint,
-        List<Vector2> resultPath)
+    public static void GetShortestPath(Vector2 startPoint, Vector2 destinationPoint,
+        ref List<Vector2> resultPath)
     {
+        List<MeshPolygon> navMesh = MapManager.Instance.GetNavMesh();
+        
         // Get shortest path in polygons
         SetShortestPathPolygons(navMesh, startPoint, destinationPoint);
 
-        GetPathBySSFA(startPoint, destinationPoint, resultPath);
+        GetPathBySSFA(startPoint, destinationPoint, ref resultPath);
     }
 
-    public static float GetShortestPathDistance(List<MeshPolygon> navMesh, Vector2 startPoint, Vector2 destinationPoint)
+    public static float GetShortestPathDistance(Vector2 startPoint, Vector2 destinationPoint)
     {
-        GetShortestPath(navMesh, startPoint, destinationPoint, shortestPath);
+        GetShortestPath(startPoint, destinationPoint, ref shortestPath);
 
         float totalDistance = 0f;
 
@@ -76,8 +78,8 @@ public static class PathFinding
 
         if (Equals(startPolygon, null) || Equals(destinationPolygon, null))
         {
-            Debug.LogError("Cannot Find the corresponding polygon.");
-            return;
+            // Debug.LogError("Cannot Find the corresponding polygon.");
+            throw new Exception();
         }
 
         openListMesh.Clear();
@@ -104,16 +106,16 @@ public static class PathFinding
             MeshPolygon current = openListMesh[0];
             openListMesh.RemoveAt(0);
 
-
             foreach (KeyValuePair<int, MeshPolygon> pPair in current.GetAdjcentPolygons())
             {
                 MeshPolygon p = pPair.Value;
 
-                Vector2 possibleNextWaypoint = current.GetMidPointOfDiagonalNeighbor(p);
+                // Vector2 possibleNextWaypoint = current.GetMidPointOfDiagonalNeighbor(p);
+                Vector2 possibleNextWaypoint = GetClosestPolygonVertex(current.GetEntryPoint().Value, p);
 
                 if (!closedListMesh.Contains(p))
                 {
-                    float gDistance = GetCostValue(current, p, destinationPolygon, destination);
+                    float gDistance = GetCostValue(current, p, possibleNextWaypoint, destinationPolygon, destination);
 
                     float hDistance = Vector2.Distance(possibleNextWaypoint, destination);
 
@@ -160,25 +162,44 @@ public static class PathFinding
         pathMesh.Reverse();
     }
 
+    /// <summary>
+    /// Get the closest vertex of a polygon to a point
+    /// </summary>
+    /// <param name="point"></param>
+    /// <param name="poly"></param>
+    /// <returns></returns>
+    static Vector2 GetClosestPolygonVertex(Vector2 point, Polygon poly)
+    {
+        float minDistance = Mathf.Infinity;
+        Vector2? output = null;
+
+        foreach (var v in poly.GetPoints())
+        {
+            float distance = Vector2.Distance(point, v.position);
+
+            if (minDistance < distance) continue;
+
+            minDistance = distance;
+            output = v.position;
+        }
+
+        return output.Value;
+    }
+
 
     // Get the Cost Value (G) for the Mesh polygons
-    static float GetCostValue(MeshPolygon previousPolygon, MeshPolygon currentPolygon, MeshPolygon destinationPolygon,
+    static float GetCostValue(MeshPolygon currentPolygon, MeshPolygon nextPolygon, Vector2 nextPoint,
+        MeshPolygon destinationPolygon,
         Vector2 destination)
     {
-        float costValue = previousPolygon.GetgDistance();
+        float costValue = currentPolygon.GetgDistance();
 
-        Vector2? previousWaypoint = previousPolygon.GetEntryPoint();
+        Vector2? previousWaypoint = currentPolygon.GetEntryPoint();
 
-        Vector2 possibleNextWaypoint;
-
-        if (currentPolygon.Equals(destinationPolygon))
-            possibleNextWaypoint = destination;
-        else
-            possibleNextWaypoint = currentPolygon.GetMidPointOfDiagonalNeighbor(previousPolygon);
+        if (nextPolygon.Equals(destinationPolygon)) nextPoint = destination;
 
         // Euclidean Distance
-        float
-            distance = Vector2.Distance(previousWaypoint.Value, possibleNextWaypoint);
+        float distance = Vector2.Distance(previousWaypoint.Value, nextPoint);
 
         costValue += distance;
 
@@ -259,7 +280,7 @@ public static class PathFinding
 
     // Get the path using the simple stupid funnel algorithm
     // http://ahamnett.blogspot.com/2012/10/funnel-algorithm.html
-    static void GetPathBySSFA(Vector2 startPoint, Vector2 destinationPoint, List<Vector2> path)
+    static void GetPathBySSFA(Vector2 startPoint, Vector2 destinationPoint, ref List<Vector2> path)
     {
         path.Clear();
 

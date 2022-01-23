@@ -93,7 +93,13 @@ public static class GeometryHelper
         return Vector2.Angle(v1 - v2, v3 - v2);
     }
 
-    // Get the normal for the corner v2
+    /// <summary>
+    /// Get the normal for the corner v2 
+    /// </summary>
+    /// <param name="v1"></param>
+    /// <param name="v2"></param>
+    /// <param name="v3"></param>
+    /// <returns></returns>
     public static Vector2 GetNormal(Vector2 v1, Vector2 v2, Vector2 v3)
     {
         Vector2 dir1 = v2 - v1;
@@ -195,13 +201,34 @@ public static class GeometryHelper
 
         return projection;
     }
-    
-    
+
+    /// <summary>
+    /// Check if two circles of the same size are mutually visible against colliders of a specific layer
+    /// </summary>
+    /// <param name="first">center of first circle</param>
+    /// <param name="second">center of the second circle</param>
+    /// <param name="radius">Radius of both circles</param>
+    /// <param name="layer">Layer of the collider</param>
+    /// <returns></returns>
+    public static bool IsCirclesVisible(Vector2 first, Vector2 second, float radius, string layer)
+    {
+        Vector2 dir = (second - first).normalized;
+        float distance = Vector2.Distance(first, second);
+
+        Vector2 left = Vector2.Perpendicular(dir);
+
+        RaycastHit2D hitLeft = Physics2D.Raycast(first + left * radius, dir, distance, LayerMask.GetMask(layer));
+        RaycastHit2D hitRight = Physics2D.Raycast(first - left * radius, dir, distance, LayerMask.GetMask(layer));
+
+        return Equals(hitLeft.collider, null) && Equals(hitRight.collider, null);
+    }
+
+
     public static void SimplifiyLine(List<Vector2> line, float epsilon)
     {
         float minAngle = 10f;
         float maxAngle = 160f;
-        
+
         for (int index = 1; index < line.Count - 1; index++)
         {
             // Remove the vertices if its angle is below the min threshold or more than the max threshold
@@ -224,5 +251,4 @@ public static class GeometryHelper
             }
         }
     }
-    
 }

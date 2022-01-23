@@ -4,11 +4,7 @@ using UnityEngine;
 
 public class MapRenderer : MonoBehaviour
 {
-    // Reference to the line prefab (for rendering the map)
-    private GameObject m_linePrefab;
-
-    // Reference to the wall prefab (for the map collider)
-    private GameObject m_wallPrefab;
+    private List<GameObject> m_wallOGs;
 
     // List of the walls in the map
     // the first polygon is the outer wall and the rest are the obstacles.
@@ -23,15 +19,15 @@ public class MapRenderer : MonoBehaviour
 
 
     // Initiate the map renderer
-    public void Initiate()
+    public void Initiate(MapData mapData)
     {
-        // Load the prefabs
-        m_wallPrefab = (GameObject) Resources.Load("Prefabs/Wall");
-        m_linePrefab = (GameObject) Resources.Load("Prefabs/Line");
+        m_wallOGs = new List<GameObject>();
 
         // Initiate the variables
         m_walls = new List<Polygon>();
         m_interiorWalls = new List<Polygon>();
+
+        LoadMap(mapData);
     }
 
     // Parse the map data where the map is stored in absolute coordinates 
@@ -141,14 +137,17 @@ public class MapRenderer : MonoBehaviour
     private void CreateCollider()
     {
         int wallId = 0;
+        GameObject wallsOGContainer = new GameObject("Walls");
+        wallsOGContainer.transform.parent = transform;
         foreach (var wall in m_walls)
         {
-            var wallObject = Instantiate(m_wallPrefab, transform, true);
+            GameObject wallObject = new GameObject(wallId.ToString().PadLeft(2, '0'));
+            wallObject.transform.parent = wallsOGContainer.transform;
 
             // Set the "Wall" layer for the ray cast purpose
             wallObject.layer = LayerMask.NameToLayer("Wall");
 
-            var wallCollider = wallObject.GetComponent<EdgeCollider2D>();
+            var wallCollider = wallObject.AddComponent<EdgeCollider2D>();
 
             // The vertices of the collider
             var colliderVertices = new Vector2[wall.GetVerticesCount() + 1];
@@ -158,63 +157,35 @@ public class MapRenderer : MonoBehaviour
 
             wallCollider.points = colliderVertices;
 
-            wallObject.GetComponent<Wall>().WallId = wallId++;
+            Wall wallComponent = wallObject.AddComponent<Wall>();
+            wallComponent.Initiate(wallId++, 0.2f);
 
-            // Draw a solid color in an obstacle
-            if (wall.DetermineWindingOrder() != Properties.outerPolygonWinding)
-                wallObject.GetComponent<Wall>().Draw();
+            // Draw a solid color in an obstacle; there is no need as long as the walkable area is colored.
+            // if (wall.DetermineWindingOrder() != Properties.outerPolygonWinding) wallObject.GetComponent<Wall>().Draw();
+
+            m_wallOGs.Add(wallObject);
         }
     }
-
-    // Draw the lines visible for the player
-    void RenderLines()
-    {
-        // Create the lines for rendering
-        foreach (Polygon wall in m_walls)
-        {
-            // Draw the lines that makes up the wall
-            for (int i = 0; i < wall.GetVerticesCount(); i++)
-                AddLine(wall.GetPoint(i), wall.GetPoint(i + 1));
-        }
-    }
-
-    // Add a line for rendering the map
-    void AddLine(Vector2 start, Vector2 end)
-    {
-        GameObject line = Instantiate(m_linePrefab, transform, true);
-
-        LineRenderer lineRenderer = line.GetComponent<LineRenderer>();
-
-        lineRenderer.positionCount = 2;
-
-        lineRenderer.SetPosition(0, start);
-        lineRenderer.SetPosition(1, end);
-    }
-
 
     // Load the map
-    public void LoadMap(string mapName, float mapScale)
+    public void LoadMap(MapData map)
     {
-        
         string mapData = GameManager.Instance.currentMapData;
-        
+
         // Parse the map data
         // if the file name has the world "_relative" then it is an SVG inspired coordinate system
-        if (!mapName.Contains("_relative"))
+        if (!map.name.Contains("_relative"))
             ParseMapStringAbsolute(mapData);
         else
             ParseMapStringRelative(mapData);
 
         // Scale the map
-        ScaleMap(mapScale);
+        ScaleMap(map.size);
 
         // Create the collider for the wall
         CreateCollider();
 
         CreateIntWalls();
-
-        // Draw the lines to render the map
-        RenderLines();
 
         SetMapMaxWidth();
     }
@@ -223,20 +194,20 @@ public class MapRenderer : MonoBehaviour
     // Set the maximum with of the bounding box of the map
     public void SetMapMaxWidth()
     {
-        m_walls[0].BoundingBox(out float minX, out float maxX, out float minY, out float maxY);
+        Bounds bounds = GetMapBoundingBox();
 
-        float maxWidth = Mathf.Abs(maxX - minX) > Mathf.Abs(maxY - minY)
-            ? Mathf.Abs(maxX - minX)
-            : Mathf.Abs(maxY - minY);
+        float maxWidth = Mathf.Abs(bounds.max.x - bounds.min.x) > Mathf.Abs(bounds.max.y - bounds.min.y)
+            ? Mathf.Abs(bounds.max.x - bounds.min.x)
+            : Mathf.Abs(bounds.max.y - bounds.min.y);
 
         m_MapBoundingBoxMaxWith = maxWidth;
 
         Properties.SetMapMaxWidth(maxWidth);
     }
 
-    public void GetMapBoundingBox(out float minX, out float maxX, out float minY, out float maxY)
+    public Bounds GetMapBoundingBox()
     {
-        m_walls[0].BoundingBox(out minX, out maxX, out minY, out maxY);
+        return m_walls[0].BoundingBox();
     }
 
     public float GetMaxWidth()

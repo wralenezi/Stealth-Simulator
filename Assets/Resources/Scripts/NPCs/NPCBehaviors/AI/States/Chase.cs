@@ -1,29 +1,26 @@
 ﻿// Guard chase state
-public class Chase : IState
+public class Chase : State
 {
-    // Reference for the guards behavior controller; this controls how the guards behave in the states
-    private GuardsBehaviorController m_GrdsCtrl;
+    public override void MakeState(GuardsBehaviorController gc, IntrudersBehaviorController ic)
+    {
+        base.MakeState(gc, ic);
+        name = "Chase";
+    }
     
-    private IntrudersBehaviorController m_IntrdrCtrl;
-
-    public Chase(GuardsBehaviorController _guardsManager,IntrudersBehaviorController intrdrCtrl)
+    public override void Enter()
     {
-        m_GrdsCtrl = _guardsManager;
-        m_IntrdrCtrl = intrdrCtrl;
+        m_GC.StartChase(NpcsManager.Instance.GetIntruders()[0]);
+        m_IC.StartChaseEvader();
     }
 
-    public void Enter()
+    public override void Execute()
     {
+        m_GC.Chase(NpcsManager.Instance.GetIntruders()[0]);
+        m_IC.KeepRunning();
     }
 
-    public void Execute()
+    public override void Exit()
     {
-        m_GrdsCtrl.Chase();
-        m_IntrdrCtrl.KeepRunning();
-    }
-
-    public void Exit()
-    {
-        m_GrdsCtrl.ClearGoals();
+        
     }
 }

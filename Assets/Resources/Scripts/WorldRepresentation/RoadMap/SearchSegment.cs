@@ -53,7 +53,7 @@ public class SearchSegment
     public void Reset()
     {
         SetDefaultProb();
-        SetTimestamp(0f);
+        SetTimestamp(StealthArea.GetElapsedTime());
         isPropagated = false;
     }
 
@@ -73,6 +73,11 @@ public class SearchSegment
         timestamp = tstamp;
     }
 
+    public float GetLastSeenTimeStamp()
+    {
+        return timestamp;
+    }
+
     public Vector2 GetMidPoint()
     {
         return (position1 + position2) / 2f;
@@ -83,11 +88,6 @@ public class SearchSegment
     {
         float age = StealthArea.GetElapsedTime() - timestamp;
         return age;
-    }
-
-    public bool IsActive()
-    {
-        return timestamp != 0f;
     }
 
     // Get the fitness value of the search segment
@@ -108,6 +108,7 @@ public class SearchSegment
 
     public void notSeen()
     {
+        if (IsObserved) SetTimestamp(StealthArea.GetElapsedTime());
         IsObserved = false;
     }
 
@@ -187,39 +188,37 @@ public class SearchSegment
         WayPoint wayPoint = index == 1 ? m_destination1 : m_destination2;
 
         // Don't propagate if the segment is zero
-        if (GetProbability() == MinProbability)
-            return;
+        if (Math.Abs(GetProbability() - MinProbability) < 0.00001f) return;
 
         // Give a portion of the probability
         float newProb = GetProbability() * (Properties.MaxPathDistance - Properties.GetMaxEdgeLength() * 1.5f) /
                         Properties.MaxPathDistance;
+        
+        if(newProb < 0.001f) return;
 
         // Create search segments in the other points connected to this destination
         foreach (var line in wayPoint.GetLines(false))
         {
             // Make sure the new point is not propagated before
-            if (line.GetSearchSegment() == this || line.GetSearchSegment().isPropagated) // GetProbability() < 0.1f ||
-                continue;
+            if (line.GetSearchSegment() == this || line.GetSearchSegment().isPropagated ||
+                line.GetSearchSegment().IsObserved) continue;
 
             // Don't propagate the probability if the destination has a higher value
-            if (line.GetSearchSegment().GetProbability() > GetProbability())
-                break;
+            if (line.GetSearchSegment().GetProbability() > GetProbability()) break;
 
             // Create the new search segment 
-            line.ProbabgateToSegment(wayPoint.GetPosition(), newProb, StealthArea.GetElapsedTime());
+            line.PropagateToSegment(wayPoint.GetPosition(), newProb, StealthArea.GetElapsedTime());
         }
     }
 
 
     // Draw the search segment
-    public void Draw()
+    public void Draw(string label)
     {
         Gizmos.color = Properties.GetSegmentColor(GetProbability());
         Gizmos.DrawLine(position1, position2);
-
-        //
-        // Handles.Label(position1, Vector2.Distance(position1,m_segmentMidPoint).ToString());
-        if (GetProbability() > 0f)
-            Handles.Label(GetMidPoint(), (Mathf.Round(GetProbability() * 100f) / 100f).ToString());
+#if UNITY_EDITOR
+        Handles.Label(GetMidPoint(), label);
+#endif
     }
 }

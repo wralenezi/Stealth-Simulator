@@ -6,12 +6,12 @@ public static class Properties
     // General game set up
     //----------------------------------------------------------
     // The number of episodes to record
-    public const int EpisodesCount = 1;
+    public const int EpisodesCount = 60;
 
     // The duration of an episode.
-    public const float EpisodeLength = 60f;
-     
-    
+    public const float EpisodeLength = 99f;
+
+
     //-------------------------------------------------------------------------//
     // Geometry Parameters
     // Winding order for outer polygons; inner polygon is opposite.
@@ -59,12 +59,12 @@ public static class Properties
 
     //------------------------------------------------------------------------------------------------------
     // NPC Properties
-    public const float SpeedMultiplyer = 1f;
+    public const float SpeedMultiplyer = 0.6f;
     public const float NpcSpeed = 4f * SpeedMultiplyer;
     public const float NpcRotationSpeed = 300f * SpeedMultiplyer;
 
     // The multiplier of the intruder's speed
-    public const float IntruderSpeedMulti = 1.2f;
+    public const float IntruderSpeedMulti = 1.5f;
     public const float IntruderRotationSpeedMulti = 2f;
 
     public static Color32 GetFovColor(NpcType npcType)
@@ -82,15 +82,15 @@ public static class Properties
         }
     }
 
-    private static float maxWidth; 
+    private static float maxWidth;
+
     public static void SetMapMaxWidth(float _maxWidth)
     {
         maxWidth = _maxWidth;
     }
 
 
-
-    public static float GuardsFovRadiusPercentage = 0.15f;
+    public static float GuardsFovRadiusPercentage = 0.1f;
 
     // Get the default value for view radius for the Npcs as a portion of a value
     public static float GetFovRadius(NpcType npcType)
@@ -105,7 +105,7 @@ public static class Properties
                 break;
 
             case NpcType.Intruder:
-                viewRadiusFractionOfMap = 0.4f;
+                viewRadiusFractionOfMap = 0f;
                 break;
 
             default:
@@ -129,7 +129,7 @@ public static class Properties
                 break;
 
             case NpcType.Intruder:
-                fovAngle = 360f;
+                fovAngle = 0f;
                 break;
 
             default:
@@ -160,7 +160,6 @@ public static class Properties
         return 2f;
     }
 
-
     // Max age a search segment can have
     public static float MaxAge = 255f;
 
@@ -173,17 +172,16 @@ public static class Properties
     // The Max path distance of the map, for normalization purposes. 
     public static float MaxPathDistance;
     public static float PathDenom = 150f;
-    
-    
+
+
     // Get a color opacity based a on a value from 0 to 1
     public static Color32 GetSegmentColor(float feature)
     {
         if (feature < 0f) feature = 0f;
-        
+
         // In case of using the likelihood feature
         byte opacity = (byte) Mathf.Round(feature * 255);
 
         return new Color32(255, 0, 0, opacity);
     }
-    
 }

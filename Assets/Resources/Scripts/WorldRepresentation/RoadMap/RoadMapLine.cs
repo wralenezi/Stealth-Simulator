@@ -35,7 +35,7 @@ public class RoadMapLine
 
         m_SearchSegment = new SearchSegment(wp1, wp1.GetPosition(), wp2, wp2.GetPosition());
     }
-    
+
     // Check if a way point is on this line
     public bool IsPointPartOfLine(WayPoint wp)
     {
@@ -92,10 +92,10 @@ public class RoadMapLine
         m_SearchSegment.SetTimestamp(timestamp);
     }
 
-    public void ProbabgateToSegment(Vector2 startPostion, float prob, float timeStamp)
+    public void PropagateToSegment(Vector2 startPosition, float prob, float timeStamp)
     {
+        SetSearchSegment(startPosition, startPosition, prob, timeStamp);
         GetSearchSegment().isPropagated = true;
-        SetSearchSegment(startPostion, startPostion, prob, timeStamp);
     }
 
     // Expand the search segments
@@ -109,11 +109,10 @@ public class RoadMapLine
     {
         SearchSegment sS = GetSearchSegment();
 
-        float ageThreshold = 0.1f * GetLength() * speed;
+        float ageThreshold = 0f; 
 
         // If the segment is just seen wait before incrementing its probability
-        if (sS.GetAge() < ageThreshold || GetSearchSegment().IsObserved)
-            return;
+        if (sS.GetAge() < ageThreshold || !GetSearchSegment().isPropagated) return;
 
         bool isValidToIncrement = false;
 
@@ -129,8 +128,7 @@ public class RoadMapLine
                 break;
             }
 
-            if (maxProb < wp1Ss.GetProbability())
-                maxProb = wp1Ss.GetProbability();
+            if (maxProb < wp1Ss.GetProbability()) maxProb = wp1Ss.GetProbability();
         }
 
         if (!isValidToIncrement)
@@ -144,26 +142,19 @@ public class RoadMapLine
                     break;
                 }
 
-                if (maxProb < wp1Ss.GetProbability())
-                    maxProb = wp1Ss.GetProbability();
+                if (maxProb < wp1Ss.GetProbability()) maxProb = wp1Ss.GetProbability();
             }
 
 
-        if (isValidToIncrement)
-            sS.AddProbability(Properties.ProbabilityIncreaseRate * deltaTime); // * maxProb);
+        if (isValidToIncrement) sS.AddProbability(Properties.ProbabilityIncreaseRate * deltaTime); // * maxProb);
     }
 
     // Propagate the search segment probability if needed.
-    public void PropagateProb(float speed, float timeDelta)
+    public void PropagateProb()
     {
         SearchSegment sS = GetSearchSegment();
 
-        // The age threshold of the search segment to propagate to other search segments
-        // float ageThreshold = (speed * timeDelta) / (lineLength * Time.timeScale);// * Properties.GetMaxEdgeLength()) ;
-
-        float ageThreshold = 0.005f * GetLength() * speed; // * Properties.MaxPathDistance / Properties.PathDenom;
-
-        if (GetSearchSegment().IsActive() && GetSearchSegment().GetAge() > ageThreshold && sS.IsReached())
+        if (sS.IsReached() && sS.isPropagated)
         {
             sS.PropagateDestination(1);
             sS.PropagateDestination(2);
@@ -185,7 +176,7 @@ public class RoadMapLine
         // Get the distance over the segment from the guard
         float distanceFromGuard = Vector2.Distance(GetSearchSegment().GetMidPoint(), guard.GetTransform().position);
 
-        // Ignore segments that are too far away
+        // Ignore segments that are too far away; to save computation
         if (distanceFromGuard > guard.GetFovRadius() * 1.5f)
             return;
 
@@ -242,10 +233,9 @@ public class RoadMapLine
     }
 
 
-    public void DrawSearchSegments()
+    public void DrawSearchSegment(string label)
     {
-        if (m_SearchSegment != null)
-            m_SearchSegment.Draw();
+        m_SearchSegment?.Draw(label);
     }
 
     public void DrawLine()

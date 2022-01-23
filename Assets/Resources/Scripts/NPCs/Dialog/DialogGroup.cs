@@ -25,7 +25,45 @@ public class DialogGroup
             Order.Dsc);
     }
 
-    public DialogLine ChooseDialog(ref NPC speaker, ref NPC listener, bool isVerbose)
+    public DialogLine ChooseDialogAndSpeaker<T>(List<T> npcs, ref NPC listener, SpeechType speechClass, bool isVerbose) where T : NPC
+    {
+        NPC speaker = null;
+        string dialog = "";
+        bool isFound = false;
+
+        // loop through the list of filler dialog and take the first the applies
+        for (int index = 0; index < m_DialogIds.Count; index++)
+        {
+            dialog = m_DialogIds[index];
+
+            int tries = 5;
+            while (tries > 0)
+            {
+                // Get a random npc
+                T npc = npcs[Random.Range(0, npcs.Count)];
+
+                if (WorldState.RulesPass( npc, listener, dialog, speechClass, isVerbose))
+                {
+                    speaker = npc;
+                    isFound = true;
+                    break;
+                }
+
+                tries--;
+            }
+
+            if (isFound) break;
+        }
+
+        if (!isFound) return null;
+
+        // Create the dialog line
+        DialogLine dialogLine = new DialogLine(dialog, speaker, listener);
+        return dialogLine;
+    }
+
+
+    public DialogLine ChooseDialog(ref NPC speaker, ref NPC listener, SpeechType speechClass, bool isVerbose)
     {
         // current dialog to be assessed
         string dialog = "";
@@ -35,27 +73,28 @@ public class DialogGroup
         for (int index = 0; index < m_DialogIds.Count; index++)
         {
             dialog = m_DialogIds[index];
-
-            if (Equals(speaker, null))
-            {
-                int tries = 5;
-                while (tries > 0)
-                {
-                    // Get a random guard
-                    List<Guard> guards = GameManager.Instance.GetActiveArea().guardsManager.GetGuards();
-                    Guard guard = guards[Random.Range(0, guards.Count)];
-
-                    if (WorldState.RulesPass(guard, listener, dialog, isVerbose))
-                    {
-                        speaker = guard;
-                        isFound = true;
-                        break;
-                    }
-
-                    tries--;
-                }
-            }
-            else if (WorldState.RulesPass(speaker, listener, dialog, isVerbose))
+            //
+            // if (Equals(speaker, null))
+            // {
+            //     int tries = 5;
+            //     while (tries > 0)
+            //     {
+            //         // Get a random guard
+            //         List<Guard> guards = GameManager.Instance.GetActiveArea().guardsManager.GetGuards();
+            //         Guard guard = guards[Random.Range(0, guards.Count)];
+            //
+            //         if (WorldState.RulesPass(guard, listener, dialog, speechClass, isVerbose))
+            //         {
+            //             speaker = guard;
+            //             isFound = true;
+            //             break;
+            //         }
+            //
+            //         tries--;
+            //     }
+            // }
+            // else
+            if (WorldState.RulesPass(speaker, listener, dialog, speechClass, isVerbose))
             {
                 isFound = true;
                 break;

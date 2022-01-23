@@ -5,6 +5,10 @@ using UnityEngine;
 // Polygon when it is a part of a mesh
 public class MeshPolygon : Polygon
 {
+    // The color this polygon; it marks the region it belongs to
+    public int regionID = -1; 
+    private Color32 m_RegionColor;
+    
     // number of polygons visible from this polygon
     private int m_VisibilityCount;
 
@@ -25,6 +29,17 @@ public class MeshPolygon : Polygon
 
     public MeshPolygon(Polygon p) : base(p)
     {
+        m_RegionColor = Color.white;
+    }
+
+    public void SetColors(Color32 region)
+    {
+        m_RegionColor = region;
+    }
+
+    public Color32 GetColor()
+    {
+        return m_RegionColor;
     }
 
     public void SetVisibilityCount(int count)
@@ -113,9 +128,16 @@ public class MeshPolygon : Polygon
 
     public override void Draw(string label)
     {
-        base.Draw(label);
-
         Gizmos.color = Color.green;
+
+        foreach (var neigh in GetAdjcentPolygons())
+        {
+            Vector2 mid = GetMidPointOfDiagonalNeighbor(neigh.Value);
+            Gizmos.DrawLine(GetCentroidPosition(), mid);
+        }
+
+
+        base.Draw(label);
     }
 
 

@@ -105,72 +105,72 @@ public class GridWorld : WorldRep
 
     public override void UpdateWorld(GuardsManager guardsManager)
     {
-        List<GridGuard> gridGuards = new List<GridGuard>();
-
-        foreach (var guard in guardsManager.GetGuards())
-            gridGuards.Add((GridGuard) guard);
-
-        UpdateGrid(gridGuards);
-
-        base.UpdateWorld(guardsManager);
-        // m_meshManager.RenderGrid(NodeList);
+        // List<GridGuard> gridGuards = new List<GridGuard>();
+        //
+        // foreach (var guard in guardsManager.GetGuards())
+        //     gridGuards.Add((GridGuard) guard);
+        //
+        // UpdateGrid(gridGuards);
+        //
+        // base.UpdateWorld(guardsManager);
+        // // m_meshManager.RenderGrid(NodeList);
     }
 
 
     // Update the grid 
-    void UpdateGrid(List<GridGuard> guards)
-    {
-        float totalStaleness = 0f;
-
-        SeenPortion = 0f;
-        UnseenPortion = 0f;
-
-        AverageStaleness = 0f;
-
-        foreach (GridGuard guard in guards)
-        {
-            guard.ResetSeenNodesCount();
-        }
-
-        // Get the staleness value since the last update
-        float stalenessDelta = GetTimeDelta() * Properties.StalenessRate;
-
-        foreach (Node node in NodeList)
-        {
-            // Pass if the node is un-walkable
-            if (!node.walkable)
-                continue;
-
-
-            // loop through the guards and check what nodes they can see
-            foreach (GridGuard guard in guards)
-            {
-                // Check if point seen by that guard
-                if (guard.IsNodeInSeenRegion(node.worldPosition))
-                {
-                    node.SetStaleness(Properties.StalenessLow);
-                    guard.IncrementSeenNodes();
-                }
-                else
-                {
-                    // Stale the node
-                    node.IncreaseStaleness(stalenessDelta);
-                }
-
-                // Set the node weighted staleness
-                node.SetWeightedStaleness(walkableNodesCount);
-            }
-
-            walkableNodesCount++;
-            totalStaleness += node.GetStaleness();
-
-            // Increment the number of unseen nodes
-            if (node.GetStaleness() > 0f)
-                UnseenPortion++;
-            else
-                SeenPortion++;
-        }
-
-        AverageStaleness = totalStaleness / UnseenPortion;
-    }
+    // void UpdateGrid(List<GridGuard> guards)
+    // {
+    //     float totalStaleness = 0f;
+    //
+    //     SeenPortion = 0f;
+    //     UnseenPortion = 0f;
+    //
+    //     AverageStaleness = 0f;
+    //
+    //     foreach (GridGuard guard in guards)
+    //     {
+    //         guard.ResetSeenNodesCount();
+    //     }
+    //
+    //     // Get the staleness value since the last update
+    //     float stalenessDelta = GetTimeDelta() * Properties.StalenessRate;
+    //
+    //     foreach (Node node in NodeList)
+    //     {
+    //         // Pass if the node is un-walkable
+    //         if (!node.walkable)
+    //             continue;
+    //
+    //
+    //         // loop through the guards and check what nodes they can see
+    //         foreach (GridGuard guard in guards)
+    //         {
+    //             // Check if point seen by that guard
+    //             if (guard.IsNodeInSeenRegion(node.worldPosition))
+    //             {
+    //                 node.SetStaleness(Properties.StalenessLow);
+    //                 guard.IncrementSeenNodes();
+    //             }
+    //             else
+    //             {
+    //                 // Stale the node
+    //                 node.IncreaseStaleness(stalenessDelta);
+    //             }
+    //
+    //             // Set the node weighted staleness
+    //             node.SetWeightedStaleness(walkableNodesCount);
+    //         }
+    //
+    //         walkableNodesCount++;
+    //         totalStaleness += node.GetStaleness();
+    //
+    //         // Increment the number of unseen nodes
+    //         if (node.GetStaleness() > 0f)
+    //             UnseenPortion++;
+    //         else
+    //             SeenPortion++;
+    //     }
+    //
+    //     AverageStaleness = totalStaleness / UnseenPortion;
+    // }
 }

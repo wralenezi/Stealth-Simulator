@@ -10,9 +10,6 @@ public class MapDecomposer : MonoBehaviour
     [Tooltip("Seen Regions")] public bool showSeenRegions;
     [Tooltip("Unseen Regions")] public bool showUnseenRegions;
 
-    // The main area
-    private StealthArea m_StealthArea;
-
     // NavMesh 
     private List<MeshPolygon> m_NavMesh;
 
@@ -31,22 +28,22 @@ public class MapDecomposer : MonoBehaviour
     private List<VisibilityPolygon> m_UnseenPolygons;
 
 
-    public void Initiate(StealthArea stealthArea)
+    public void Initiate(List<Polygon> walls)
     {
-        m_StealthArea = stealthArea;
-
         m_NavMesh = new List<MeshPolygon>();
-        m_WallBorders = m_StealthArea.mapRenderer.GetInteriorWalls();
-
         m_SeenRegions = new List<List<Polygon>>();
         m_UnseenRegions = new List<List<Polygon>>();
 
         m_SeenPolygons = new List<VisibilityPolygon>();
         m_UnseenPolygons = new List<VisibilityPolygon>();
+
+        m_WallBorders = walls;
+
+        CreateNavMesh();
     }
 
     // Create the NavMesh
-    public void CreateNavMesh()
+    private void CreateNavMesh()
     {
         // Cut the holes in the map
         Polygon simplePolygon = PolygonHelper.CutHoles(m_WallBorders);
@@ -63,31 +60,30 @@ public class MapDecomposer : MonoBehaviour
             m_WalakbleArea += p.GetArea();
 
         // Calculate the longest possible path in the map
-        List<Polygon> walls = m_StealthArea.mapRenderer.GetWalls();
-        
-        float maxDistance = Mathf.NegativeInfinity;
-        for (int j = 0; j < walls[0].GetVerticesCount(); j++)
-        for (int k = j + 1; k < walls[0].GetVerticesCount(); k++)
-        {
-            float distance = PathFinding.GetShortestPathDistance(GetNavMesh(),
-                walls[0].GetPoint(j), walls[0].GetPoint(k));
-            
-            if (maxDistance < distance)
-                maxDistance = distance;
-        }
+        List<Polygon> walls = m_WallBorders;
 
-        Properties.MaxPathDistance = maxDistance;
+        // float maxDistance = Mathf.NegativeInfinity;
+        // for (int j = 0; j < walls[0].GetVerticesCount(); j++)
+        // for (int k = j + 1; k < walls[0].GetVerticesCount(); k++)
+        // {
+        //     float distance = PathFinding.GetShortestPathDistance(
+        //         walls[0].GetPoint(j), walls[0].GetPoint(k));
+        //
+        //     if (maxDistance < distance)
+        //         maxDistance = distance;
+        // }
+        //
+        // Properties.MaxPathDistance = maxDistance;
     }
 
     // Create the VisMesh
-    public void CreateVisMesh()
+    public void CreateVisMesh(List<Guard> guards)
     {
         // Prepare the guards vision to be considered in the space decomposition
-        ConsiderGuardVision();
+        ConsiderGuardVision(guards);
 
         // Modify the regions to facilitate triangulation
         PrepareRegions();
-
 
         RegularizePolygons();
 
@@ -99,18 +95,17 @@ public class MapDecomposer : MonoBehaviour
     }
 
     // Model and Aggregate the guards seen region
-    void ConsiderGuardVision()
+    private void ConsiderGuardVision(List<Guard> guards)
     {
         m_SeenRegions.Clear();
 
         // Go through the guards
-        if (m_StealthArea.guardsManager != null)
-            foreach (var guard in m_StealthArea.guardsManager.GetGuards())
-            {
-                if (guard.GetSeenArea() != null && guard.GetSeenArea().Count > 0 &&
-                    guard.GetSeenArea()[0].GetVerticesCount() > 0)
-                    m_SeenRegions.Add(guard.CopySeenArea());
-            }
+        foreach (var guard in guards)
+        {
+            if (guard.GetSeenArea() != null && guard.GetSeenArea().Count > 0 &&
+                guard.GetSeenArea()[0].GetVerticesCount() > 0)
+                m_SeenRegions.Add(guard.CopySeenArea());
+        }
 
         // Merge the guards seen areas if they intersect
         MergeGuardSeenAreas();
@@ -385,7 +380,9 @@ public class MapDecomposer : MonoBehaviour
         if (showNavMesh)
         {
             foreach (var poly in m_NavMesh)
+            {
                 poly.Draw(poly.GetgDistance().ToString());
+            }
         }
 
         if (showSeenRegions)

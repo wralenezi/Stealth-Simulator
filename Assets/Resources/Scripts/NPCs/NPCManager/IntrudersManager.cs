@@ -5,26 +5,21 @@ using UnityEngine;
 
 public class IntrudersManager : Agent
 {
-    private StealthArea m_SA;
-
-    private IntrudersBehaviorController m_iCtrl;
-
     // List of Intruders
     private List<Intruder> m_Intruders;
+
+    private IntrudersBehaviorController m_iCtrl;
 
     // The npc layer to ignore collisions between Npcs
     private LayerMask m_npcLayer;
 
-
-    public void Initiate(StealthArea _stealthArea, Transform map)
+    public void Initiate(Session session, MapManager mapManager)
     {
-        m_SA = _stealthArea;
-
         m_Intruders = new List<Intruder>();
 
         // Initiate the intruder behavior controller
         m_iCtrl = gameObject.AddComponent<IntrudersBehaviorController>();
-        m_iCtrl.Initiate(m_SA, map);
+        m_iCtrl.Initiate(session.GetIntrudersData()[0].behavior, mapManager);
 
         // Ignore collision between NPCs
         m_npcLayer = LayerMask.NameToLayer("NPC");
@@ -32,20 +27,20 @@ public class IntrudersManager : Agent
     }
 
 
-    public void Reset(List<MeshPolygon> navMesh)
+    public void Reset(List<MeshPolygon> navMesh, List<Guard> guards, Session session)
     {
         // Reset Intruders
         foreach (var intruder in m_Intruders)
         {
-            intruder.ResetLocation(navMesh, m_SA.guardsManager.GetGuards(), m_SA.GetMap().GetWalls(),
-                m_SA.GetSessionInfo());
+            intruder.ResetLocation(navMesh, guards, session);
             intruder.ResetNpc();
         }
     }
 
 
     // Create the intruder
-    private void CreateIntruder(NpcData npcData, WorldRepType world, List<MeshPolygon> navMesh, StealthArea area)
+    private void CreateIntruder(NpcData npcData, List<MeshPolygon> navMesh, List<Guard> guards, // List<Polygon> walls,
+        Session session)
     {
         // Create the gameObject 
         // Set the NPC as a child to the manager
@@ -72,16 +67,16 @@ public class IntrudersManager : Agent
         CircleCollider2D cd = npcGameObject.AddComponent<CircleCollider2D>();
         cd.radius = npcSprite.rect.width * 0.003f;
 
-        npcGameObject.name = "Intruder" + npcData.id.ToString().PadLeft(2, '0');
+        npcGameObject.name = "Intruder" + (npcData.id + 1).ToString().PadLeft(2, '0');
         NPC npc = npcGameObject.AddComponent<Intruder>();
         spriteRenderer.color = Color.black;
 
         m_Intruders.Add((Intruder) npc);
 
-        npc.Initiate(area, npcData);
+        npc.Initiate(npcData, GameManager.Instance.GetVoice());
 
         // Allocate the NPC based on the specified scenario
-        npc.ResetLocation(navMesh, area.guardsManager.GetGuards(), area.GetMap().GetWalls(), area.GetSessionInfo());
+        npc.ResetLocation(navMesh, guards, session);
 
         npcGameObject.layer = m_npcLayer;
     }
@@ -91,10 +86,10 @@ public class IntrudersManager : Agent
         return m_iCtrl;
     }
 
-    public void CreateIntruders(Session scenario, List<MeshPolygon> navMesh, StealthArea area)
+    public void CreateIntruders(Session session, List<Guard> guards , List<MeshPolygon> navMesh)
     {
-        foreach (var npcData in scenario.GetIntrudersData())
-            CreateIntruder(npcData, scenario.worldRepType, navMesh, area);
+        foreach (var npcData in session.GetIntrudersData())
+            CreateIntruder(npcData, navMesh, guards, session);
     }
 
     // Let NPCs cast their vision
@@ -104,12 +99,12 @@ public class IntrudersManager : Agent
             intruder.CastVision();
     }
 
-    public void Move(float deltaTime)
+    public void Move(IState state, float deltaTime)
     {
         foreach (var intruder in m_Intruders)
         {
-            intruder.ExecutePlan(m_SA.guardsManager.GetState(), null, deltaTime);
-            intruder.UpdateMetrics(m_SA.guardsManager.GetState(), deltaTime);
+            intruder.ExecutePlan(state, deltaTime);
+            intruder.UpdateMetrics(state, deltaTime);
         }
     }
 

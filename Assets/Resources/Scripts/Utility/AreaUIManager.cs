@@ -95,11 +95,11 @@ public class AreaUIManager : MonoBehaviour
         int time = Mathf.RoundToInt(remainingTime);
         timeLabel.text = time.ToString();
 
+        if (Time.timeScale > 1f) return;
+
         if (time <= 3f)
         {
             timeLabel.color = Color.red;
-
-            // timeGo.position = canvasRect.sizeDelta / 2f;
 
             if (blinking == null)
             {

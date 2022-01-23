@@ -8,8 +8,6 @@ using Random = UnityEngine.Random;
 
 public class Interceptor : MonoBehaviour
 {
-    private StealthArea m_StealthArea;
-
     // The distance the interception points are placed on
     private float m_futureDistance = 8f;
 
@@ -24,11 +22,10 @@ public class Interceptor : MonoBehaviour
     public bool RenderRoadMap;
 
     // Start is called before the first frame update
-    public void Initiate(StealthArea stealthArea)
+    public void Initiate(MapManager mapManager)
     {
         m_interceptionPoints = new List<InterceptionPoint>();
-        m_StealthArea = stealthArea;
-        m_roadMap = m_StealthArea.roadMap;
+        m_roadMap = mapManager.GetRoadMap();
     }
 
     // Anticipate future positions based on the distance measure from the current position for the pursuit phase

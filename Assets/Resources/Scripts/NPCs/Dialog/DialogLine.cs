@@ -42,8 +42,31 @@ public class DialogLine
     // Replace the variable name with the values in the line
     private void EvaluateLine()
     {
-        // `SPEAKER_HEADING is the heading of the speaker. Duh.
-        Line = Line.Replace("`SPEAKER_GOAL", WorldState.Get(speaker.name+"_goal"));
+        // Evaluate the variables
+        if (Line.Contains("{speaker_goal_region}"))
+        {
+            string value = WorldState.Get(speaker.name + "_goal_region");
+            value = Equals(value, WorldState.EMPTY_VALUE) ? "around" : value;
+            Line = Line.Replace("{speaker_goal_region}", value);
+        }
+
+        if (Line.Contains("{speaker_middle_region}"))
+        {
+            string value = WorldState.Get(speaker.name + "_middle_region");
+            Line = Line.Replace("{speaker_middle_region}", value);
+        }
+
+        if (Line.Contains("{speaker_start_region}"))
+        {
+            string value = WorldState.Get(speaker.name + "_start_region");
+            Line = Line.Replace("{speaker_start_region}", value);
+        }
+
+        if (Line.Contains("{intruder_last_seen_region}"))
+        {
+            string value = WorldState.Get("intruder_last_seen_region");
+            Line = Line.Replace("{intruder_last_seen_region}", value);
+        }
     }
 
     private void SetPriority()

@@ -1,30 +1,28 @@
 ﻿// Guard search state (after losing sight of all intruders)
 
-public class Search : IState
+public class Search : State
 {
-    private GuardsBehaviorController m_GrdsCtrl;
-
-    private IntrudersBehaviorController m_IntrdrCtrl;
-
-    public Search(GuardsBehaviorController _guardsManager, IntrudersBehaviorController intrdrCtrl)
+    public override void MakeState(GuardsBehaviorController gc, IntrudersBehaviorController ic)
     {
-        m_GrdsCtrl = _guardsManager;
-        m_IntrdrCtrl = intrdrCtrl;
+        base.MakeState(gc, ic);
+        name = "Search";
+    }
+    
+    public override void Enter()
+    {
+        m_GC.StartSearch(NpcsManager.Instance.GetIntruders()[0]);
+        m_IC.StartHiding();
     }
 
-    public void Enter()
+    public override void Execute()
     {
-        m_IntrdrCtrl.StartHiding();
+        m_GC.Search(NpcsManager.Instance.GetIntruders()[0]);
+        m_IC.KeepHiding();
     }
 
-    public void Execute()
+    public override void Exit()
     {
-        m_GrdsCtrl.Search();
-        m_IntrdrCtrl.KeepHiding();
+        
     }
-
-    public void Exit()
-    {
-        m_GrdsCtrl.EndSearch();
-    }
+    
 }

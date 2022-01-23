@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Newtonsoft.Json;
+using UnityEngine.UI;
 
 [JsonObject(MemberSerialization.OptIn)]
 public class Survey : MonoBehaviour
@@ -71,7 +72,7 @@ public class Survey : MonoBehaviour
         surveyItemGo.SetActive(false);
 
         SurveyMultiple surveyMultiple = surveyItemGo.AddComponent<SurveyMultiple>();
-        surveyMultiple.Initiate(id, this, code);
+        surveyMultiple.Initiate(id, ItemType.Survey, this, code);
 
         // Add the question
         surveyMultiple.SetQuestion(question);
@@ -90,34 +91,54 @@ public class Survey : MonoBehaviour
         GameObject surveyItemGo = Instantiate(surveyItemPrefab, transform);
         surveyItemGo.SetActive(false);
 
-        RepeatTutorial repeatTutorial = surveyItemGo.AddComponent<RepeatTutorial>();
+        GameControlQuestion repeatTutorial = surveyItemGo.AddComponent<GameControlQuestion>();
         string name = "repeatTutorial";
         string question = "Would you like to repeat the tutorial level?";
-        repeatTutorial.Initiate(name,this,"");
-        
+        repeatTutorial.Initiate(name,ItemType.RepeatEpisode, this, "");
+
         // Add the question
         repeatTutorial.SetQuestion(question);
-        
+
         List<Choice> choices = new List<Choice>();
-        choices.Add(new Choice("Yes", "Yes", ButtonType.Survey));
-        choices.Add(new Choice("No", "No", ButtonType.Survey));
+        choices.Add(new Choice("Yes", "Yes", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
+        choices.Add(new Choice("No", "No", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
 
         // Add the options
         foreach (var choice in choices)
             repeatTutorial.AddChoice(choice);
-        
+
         items.Add(repeatTutorial);
     }
+    
+    public void AddTutorialSkip()
+    {
+        // Create the item object and hide it
+        GameObject surveyItemGo = Instantiate(surveyItemPrefab, transform);
+        surveyItemGo.SetActive(false);
 
+        GameControlQuestion skipTutorial = surveyItemGo.AddComponent<GameControlQuestion>();
+        string name = "skipTutorial";
+        string question = "Would you like to skip the tutorial level?";
+        skipTutorial.Initiate(name,ItemType.SkipEpisode, this, "");
+
+        // Add the question
+        skipTutorial.SetQuestion(question);
+
+        List<Choice> choices = new List<Choice>();
+        choices.Add(new Choice("Yes", "Yes", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
+        choices.Add(new Choice("No", "No", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
+
+        // Add the options
+        foreach (var choice in choices)
+            skipTutorial.AddChoice(choice);
+
+        items.Add(skipTutorial);
+    }
+    
     public SurveyManager GetManager()
     {
         return m_SurveyManager;
     }
-
-
-
-
-
 
     public void SetSession(Session session)
     {
@@ -156,6 +177,11 @@ public class Survey : MonoBehaviour
             items[currentSurveyIndex].DeactivateInput(previousButtonName);
         }
     }
+    
+    public void ClearSurveyItems()
+    {        
+        items.Clear();
+    }
 
     public void NextItem()
     {
@@ -167,6 +193,18 @@ public class Survey : MonoBehaviour
             EndSurvey();
     }
 
+    public void SetQuestionIndex(int index)
+    {
+        currentSurveyIndex = Mathf.Clamp(index,0, items.Count);
+    }
+
+    public int GetQuestionsCount()
+    {
+        return items.Count;
+    }
+
+
+
     public void EndSurvey()
     {
         string surveyJson = JsonConvert.SerializeObject(this);
@@ -175,7 +213,7 @@ public class Survey : MonoBehaviour
         {
             case SurveyType.NewUser:
                 StartCoroutine(FileUploader.UploadData(null,
-                    "userSurvey", "application/json", surveyJson));
+                    FileType.User, "application/json", surveyJson));
                 break;
 
             case SurveyType.EndTutorial:
@@ -185,25 +223,27 @@ public class Survey : MonoBehaviour
 
             case SurveyType.BehaviorEval:
                 StartCoroutine(FileUploader.UploadData(currentSession,
-                    "sessionSurvey", "application/json", surveyJson));
+                    FileType.Survey, "application/json", surveyJson));
                 break;
 
             case SurveyType.EndEpisode:
                 StartCoroutine(FileUploader.UploadData(currentSession,
-                    "sessionSurvey", "application/json", surveyJson));
+                    FileType.Survey, "application/json", surveyJson));
                 break;
 
             case SurveyType.SpeechEval:
                 StartCoroutine(FileUploader.UploadData(currentSession,
-                    "sessionSurvey", "application/json", surveyJson));
+                    FileType.Survey, "application/json", surveyJson));
                 break;
 
             case SurveyType.End:
                 Application.Quit();
                 break;
         }
+        
 
         m_SurveyManager.ClearImage();
-        GameManager.Instance.StartAreaAfterSurvey();
+        // GameManager.Instance.StartAreaAfterSurvey();
+        StartCoroutine(GameManager.Instance.StartGamePostSurvey());
     }
 }

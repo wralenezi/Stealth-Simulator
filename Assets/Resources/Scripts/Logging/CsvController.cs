@@ -1,27 +1,24 @@
 ﻿using System;
 using System.Data;
 using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using Unity.Barracuda;
 using UnityEngine;
 
 // CSV Handler 
 public static class CsvController
 {
-    public static string GetPath(Session sa, int episodesCount)
+    public static string GetPath(Session sa, FileType fileType, int episodesCount)
     {
-        return GameManager.LogsPath + GetFileName(sa) + " " + episodesCount + ".csv";
+        return GameManager.LogsPath + GetFileName(fileType, sa) + " " + episodesCount + ".csv";
     }
 
     // Get the number of files that starts with a certain string
-    public static int ReadFileStartWith(Session sa)
+    public static int ReadFileStartWith(FileType fileType, Session sa)
     {
         int episodesCount = 0;
 
         string[] allFiles = Directory.GetFiles(GameManager.LogsPath);
 
-        string fileName = GameManager.LogsPath + GetFileName(sa);
+        string fileName = GameManager.LogsPath + GetFileName(fileType, sa);
 
         foreach (var file in allFiles)
         {
@@ -34,8 +31,7 @@ public static class CsvController
 
     public static DataTable ConvertCSVtoDataTable(string strFilePath)
     {
-        if (GameManager.Instance.IsOnlineBuild)
-            return GetOnlineDialogs();
+        if (GameManager.Instance.IsOnlineBuild) return GetOnlineDialogs();
 
         DataTable dt = new DataTable();
         using StreamReader sr = new StreamReader(strFilePath);
@@ -69,11 +65,13 @@ public static class CsvController
         // Split data by lines
         string[] lines = GameManager.DialogLines.Split('\n');
 
+        char sep = ',';
+
         DataTable dt = new DataTable();
 
         for (var lineIndex = 0; lineIndex < lines.Length; lineIndex++)
         {
-            string[] row = lines[lineIndex].Split(',');
+            string[] row = lines[lineIndex].Split(sep);
 
             if (row.Length == 0) continue;
 
@@ -87,6 +85,7 @@ public static class CsvController
             else
             {
                 DataRow dr = dt.NewRow();
+
                 for (int i = 0; i < dt.Columns.Count; i++)
                 {
                     dr[i] = row[i];
@@ -96,14 +95,12 @@ public static class CsvController
             }
         }
 
-
         return dt;
     }
 
-
-    private static string GetFileName(Session sa)
+    private static string GetFileName(FileType fileType, Session sa)
     {
-        return sa.ToString();
+        return fileType + " " + sa;
     }
 
 
@@ -156,19 +153,15 @@ public static class CsvController
 
         return episodesCount;
     }
+}
 
+public enum FileType
+{
+    Performance,
 
-    // public static int GetFileLength(string gameCode, float mapScale, string worldRep, string mapName,
-    //     int resetThreshold,
-    //     string dataLevel)
-    // {
-    //     string path = GetPath(gameCode, mapScale, worldRep, mapName, resetThreshold, dataLevel);
-    //
-    //     FileInfo file = new FileInfo(path);
-    //
-    //     if (file.Exists)
-    //         return File.ReadLines(path).Count() - 1;
-    //     else
-    //         return 0;
-    // }
+    Npcs,
+    
+    User,
+
+    Survey
 }

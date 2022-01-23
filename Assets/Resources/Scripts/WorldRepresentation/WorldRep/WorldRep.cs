@@ -73,12 +73,6 @@ public abstract class WorldRep : MonoBehaviour
         return m_hidingSpots;
     }
     
-    
-    public List<MeshPolygon> GetNavMesh()
-    {
-        return m_mapDecomposer.GetNavMesh();
-    }
-    
     public float GetTotalArea()
     {
         return SeenPortion + UnseenPortion;

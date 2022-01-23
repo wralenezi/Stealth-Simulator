@@ -34,8 +34,8 @@ public class CoinSpawner : MonoBehaviour
             GameObject coinGo = Instantiate(m_coinPrefab, transform);
             coinGo.SetActive(false);
             Coin coin = coinGo.GetComponent<Coin>();
-            coin.Initiate(GameManager.Instance.GetActiveArea().intrdrManager.GetIntruders());
-            m_coins.Add(coin);
+            // coin.Initiate(GameManager.Instance.GetActiveArea().intrdrManager.GetIntruders());
+            // m_coins.Add(coin);
         }
     }
 

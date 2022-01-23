@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 // The controller for the hiding spots the intruders can use
@@ -8,52 +9,75 @@ public class HidingSpotsCtrlr
     // the hiding spots
     private List<HidingSpot> m_HidingSpots;
 
-    public HidingSpotsCtrlr(MapRenderer mapRndr)
+    public HidingSpotsCtrlr(List<Polygon> walls)
     {
         m_HidingSpots = new List<HidingSpot>();
 
-        CreateHidingSpots(mapRndr);
+        CreateHidingSpots(walls);
     }
 
 
-    // Place the hiding spots
-    private void CreateHidingSpots(MapRenderer mapRndr)
+    /// <summary>
+    /// Place the spots on the map
+    /// </summary>
+    /// <param name="walls"></param>
+    private void CreateHidingSpots(List<Polygon> walls)
     {
-        List<Polygon> walls = mapRndr.GetWalls();
-        for (int i = 0; i < walls.Count; i++)
+        foreach (var wall in walls)
         {
-            for (int j = 0; j < walls[i].GetVerticesCount(); j++)
+            for (int j = 0; j < wall.GetVerticesCount(); j++)
             {
-                Polygon wall = walls[i];
                 Vector2 angleNormal =
                     GeometryHelper.GetNormal(wall.GetPoint(j - 1), wall.GetPoint(j), wall.GetPoint(j + 1));
 
+                // How long is the normal
                 angleNormal *= 0.8f;
-                float distanceFromCorner = 1f;
 
                 // Inverse the sign for the inner polygons which are obstacles 
                 if (GeometryHelper.IsReflex(wall.GetPoint(j - 1), wall.GetPoint(j), wall.GetPoint(j + 1)))
                 {
-                    HidingSpot hS = new HidingSpot(wall.GetPoint(j) - angleNormal);
-                    if (PolygonHelper.IsPointInPolygons(mapRndr.GetInteriorWalls(), hS.Position))
-                        m_HidingSpots.Add(hS);
+                    // // Place one spot in the corner
+                    Vector2 spotPosition = wall.GetPoint(j) - angleNormal;
+                    PlaceHidingSpot(spotPosition, walls);
                 }
                 else
                 {
-                    Vector2 rightSide = (wall.GetPoint(j) - wall.GetPoint(j - 1)).normalized * distanceFromCorner;
-                    Vector2 leftSide = (wall.GetPoint(j + 1) - wall.GetPoint(j)).normalized * distanceFromCorner;
+                    // How long is the distance from the reflex edge
+                    float distanceFromCorner = 1f;
 
-                    HidingSpot hSr = new HidingSpot(wall.GetPoint(j) + angleNormal - rightSide);
-                    HidingSpot hSl = new HidingSpot(wall.GetPoint(j) + angleNormal + leftSide);
+                    // Minimum edge length to place a hiding spot
+                    float minEdge = 0.5f;
 
-                    if (PolygonHelper.IsPointInPolygons(mapRndr.GetInteriorWalls(), hSr.Position))
-                        m_HidingSpots.Add(hSr);
+                    float rightEdgeLength = Vector2.Distance(wall.GetPoint(j), wall.GetPoint(j - 1));
+                    if (minEdge < rightEdgeLength)
+                    {
+                        // Place a spot on the right side of the corner
+                        Vector2 rightSide = (wall.GetPoint(j) - wall.GetPoint(j - 1)).normalized * distanceFromCorner;
+                        Vector2 rightSpotPosition = wall.GetPoint(j) + angleNormal - rightSide;
+                        PlaceHidingSpot(rightSpotPosition, walls);
+                    }
 
-                    if (PolygonHelper.IsPointInPolygons(mapRndr.GetInteriorWalls(), hSl.Position))
-                        m_HidingSpots.Add(hSl);
+                    float leftEdgeLength = Vector2.Distance(wall.GetPoint(j + 1), wall.GetPoint(j));
+                    if (minEdge < leftEdgeLength)
+                    {
+                        // Place a spot on the left side of the corner
+                        Vector2 leftSide = (wall.GetPoint(j + 1) - wall.GetPoint(j)).normalized * distanceFromCorner;
+                        Vector2 leftSpotPosition = wall.GetPoint(j) + angleNormal + leftSide;
+                        PlaceHidingSpot(leftSpotPosition, walls);
+                    }
                 }
             }
         }
+    }
+
+
+    private void PlaceHidingSpot(Vector2 position, List<Polygon> interiorWalls)
+    {
+        // Make sure the position is inside the walls
+        if (!PolygonHelper.IsPointInPolygons(interiorWalls, position)) return;
+
+        HidingSpot hSr = new HidingSpot(position, Isovists.Instance.GetCoverRatio(position));
+        m_HidingSpots.Add(hSr);
     }
 
 
@@ -62,7 +86,58 @@ public class HidingSpotsCtrlr
     /// </summary>
     public void UpdatePointsFitness(List<PossiblePosition> guardsPositions)
     {
-        
+        foreach (var hidingSpot in m_HidingSpots)
+        {
+            float fitness = 0f;
+
+            // fitness += GetAverageDistancesToHidingSpots(hidingSpot, guardsPositions);
+
+            // fitness += GetMinDistanceToHidingSpots(hidingSpot, guardsPositions);
+
+            // How hidden is the hiding spot; 0 is easily observable, 1 is well hidden.
+            fitness += hidingSpot.CoverRatio;
+
+            hidingSpot.Fitness = fitness;
+        }
+    }
+
+
+    private float GetAverageDistancesToHidingSpots(HidingSpot hidingSpot, List<PossiblePosition> possiblePositions)
+    {
+        float totalDistances = 0;
+        foreach (var possiblePosition in possiblePositions)
+            totalDistances += Vector2.Distance(possiblePosition.position, hidingSpot.Position) *
+                              possiblePosition.safetyMultiplier;
+
+
+        return totalDistances / (Properties.MaxPathDistance * possiblePositions.Count);
+    }
+
+    private float GetMinDistanceToHidingSpots(HidingSpot hidingSpot, List<PossiblePosition> possiblePositions)
+    {
+        float minDistance = Mathf.Infinity;
+        foreach (var possiblePosition in possiblePositions)
+        {
+            float distance = Vector2.Distance(possiblePosition.position, hidingSpot.Position) *
+                             possiblePosition.safetyMultiplier;
+
+            minDistance = (distance < minDistance) ? distance : minDistance;
+        }
+
+        return minDistance / Properties.MaxPathDistance;
+    }
+
+
+    // Assign the fitness value of each hiding spot based on the guards distance to them
+    public void AssignHidingSpotsFitness(List<Guard> guards, List<MeshPolygon> navMesh)
+    {
+        foreach (var hidingSpot in m_HidingSpots)
+        {
+            hidingSpot.Fitness = 0f;
+            foreach (var g in guards)
+                hidingSpot.Fitness +=
+                    PathFinding.GetShortestPathDistance(hidingSpot.Position, g.transform.position);
+        }
     }
 
 
@@ -88,7 +163,7 @@ public class HidingSpotsCtrlr
     {
         foreach (var spot in m_HidingSpots)
         {
-            Gizmos.DrawSphere(spot.Position, 0.1f);
+            spot.Draw();
         }
     }
 }
@@ -96,11 +171,30 @@ public class HidingSpotsCtrlr
 public class HidingSpot
 {
     public Vector2 Position;
+
+    /// <summary>
+    /// How well the spot is generally hidden in the map; 0 is easily observable, 1 is well hidden.
+    /// </summary>
+    public float CoverRatio;
+
+    /// <summary>
+    /// Indicator of how good a hiding spot is; it is between 0 and 1.
+    /// </summary>
     public float Fitness;
 
-    public HidingSpot(Vector2 _position)
+    public HidingSpot(Vector2 _position, float _coverRatio)
     {
         Position = _position;
+        CoverRatio = _coverRatio;
         Fitness = 0f;
+    }
+
+    public void Draw()
+    {
+        Gizmos.DrawSphere(Position, 0.2f);
+
+#if UNITY_EDITOR
+        Handles.Label(Position, (Mathf.Round(Fitness * 100f) / 100f).ToString());
+#endif
     }
 }

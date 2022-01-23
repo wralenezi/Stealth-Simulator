@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Unity.MLAgents;
 using Unity.MLAgents.Actuators;
 using Unity.MLAgents.Policies;
@@ -11,15 +10,14 @@ using UnityEngine.UI;
 
 public class GuardsManager : Agent
 {
-    private StealthArea m_SA;
-    
+    // List of Guards
+    private List<Guard> m_Guards;
+
     // Guards behavior controller
     private GuardsBehaviorController m_gCtrl;
 
-    // public GuardDecisionStyle decisionStyle;
-
-    // List of Guards
-    private List<Guard> m_Guards;
+    // For voicing the npcs
+    private Scriptor m_script;
 
     // Score 
     private float m_score;
@@ -37,19 +35,21 @@ public class GuardsManager : Agent
     public static float GuardsOverlapTime;
 
     // The weights for deciding the heuristic
-    public SearchWeights searchWeights;
+    // public SearchWeights searchWeights;
 
 
     // Start the NPC manager
-    public void Initiate(StealthArea _stealthArea, Transform map)
+    public void Initiate(Session session, MapManager mapManager)
     {
-        m_SA = _stealthArea;
-
         m_Guards = new List<Guard>();
-
+        
         // Initiate the guard behavior controller
         m_gCtrl = gameObject.AddComponent<GuardsBehaviorController>();
-        m_gCtrl.Initiate(_stealthArea, map);
+        m_gCtrl.Initiate(session, mapManager);
+
+        m_script = gameObject.AddComponent<Scriptor>();
+        m_script.Initialize(m_Guards, session.speechType);
+
         // m_StealthArea.AreaUiManager.UpdateGuardLabel(GetState());
 
         // Ignore collision between NPCs
@@ -72,13 +72,13 @@ public class GuardsManager : Agent
     {
         base.CollectObservations(sensor);
 
-        // The fraction of the guards count.
-        float guardsPresence = m_SA.GetSessionInfo().guardsCount / Properties.MaxGuardCount;
-        sensor.AddObservation(guardsPresence);
-
-        // The normalized area of the map
-        float mapsRelativeArea = m_SA.mapDecomposer.GetNavMeshArea() / Properties.MaxWalkableArea;
-        sensor.AddObservation(mapsRelativeArea);
+        // // The fraction of the guards count.
+        // float guardsPresence = m_SA.GetSessionInfo().guardsCount / Properties.MaxGuardCount;
+        // sensor.AddObservation(guardsPresence);
+        //
+        // // The normalized area of the map
+        // float mapsRelativeArea = m_SA.mapDecomposer.GetNavMeshArea() / Properties.MaxWalkableArea;
+        // sensor.AddObservation(mapsRelativeArea);
 
         // Debug.Log("  Map Area: " + m_StealthArea.mapDecomposer.GetNavMeshArea());
     }
@@ -87,18 +87,18 @@ public class GuardsManager : Agent
     public override void OnActionReceived(ActionBuffers actionBuffers)
     {
         base.OnActionReceived(actionBuffers);
-
-        float minBound = -1f;
-        float maxBound = 1f;
-
-        float scaleFactor = 10f;
-
-        searchWeights.probWeight = Mathf.Clamp(actionBuffers.ContinuousActions[0], minBound, maxBound) * scaleFactor;
-        searchWeights.ageWeight = Mathf.Clamp(actionBuffers.ContinuousActions[1], minBound, maxBound) * scaleFactor;
-        searchWeights.dstToGuardsWeight =
-            Mathf.Clamp(actionBuffers.ContinuousActions[2], minBound, maxBound) * scaleFactor;
-        searchWeights.dstFromOwnWeight =
-            Mathf.Clamp(actionBuffers.ContinuousActions[3], minBound, maxBound) * scaleFactor;
+        //
+        // float minBound = -1f;
+        // float maxBound = 1f;
+        //
+        // float scaleFactor = 10f;
+        //
+        // searchWeights.probWeight = Mathf.Clamp(actionBuffers.ContinuousActions[0], minBound, maxBound) * scaleFactor;
+        // searchWeights.ageWeight = Mathf.Clamp(actionBuffers.ContinuousActions[1], minBound, maxBound) * scaleFactor;
+        // searchWeights.dstToGuardsWeight =
+        //     Mathf.Clamp(actionBuffers.ContinuousActions[2], minBound, maxBound) * scaleFactor;
+        // searchWeights.dstFromOwnWeight =
+        //     Mathf.Clamp(actionBuffers.ContinuousActions[3], minBound, maxBound) * scaleFactor;
     }
 
     // What to do when there is no Learning behavior
@@ -135,7 +135,7 @@ public class GuardsManager : Agent
     #region NPC creation
 
     // Create an NPC
-    private void CreateGuard(NpcData npcData, WorldRepType world, List<MeshPolygon> navMesh, StealthArea area)
+    private void CreateGuard(Session session, NpcData npcData, List<MeshPolygon> navMesh)
     {
         // Create the gameObject 
         // Set the NPC as a child to the manager
@@ -157,7 +157,6 @@ public class GuardsManager : Agent
         rb.gravityScale = 0f;
         rb.freezeRotation = true;
 
-
         // Add Collider to the NPC
         CircleCollider2D cd = npcGameObject.AddComponent<CircleCollider2D>();
         cd.radius = npcSprite.rect.width * 0.003f;
@@ -167,18 +166,14 @@ public class GuardsManager : Agent
         switch (npcData.npcType)
         {
             case NpcType.Guard:
-                npcGameObject.name = "Guard" + npcData.id.ToString().PadLeft(2, '0');
-                if (world != WorldRepType.Grid)
-                    npc = npcGameObject.AddComponent<VisMeshGuard>();
-                else
-                    npc = npcGameObject.AddComponent<GridGuard>();
+                npcGameObject.name = "Guard" + (npcData.id + 1).ToString().PadLeft(2, '0');
+                npc = npcGameObject.AddComponent<VisMeshGuard>();
 
                 Color color = Color.clear;
-                ColorUtility.TryParseHtmlString(area.GetSessionInfo().guardColor, out color);
+                ColorUtility.TryParseHtmlString(session.guardColor, out color);
                 spriteRenderer.color = color;
 
-                m_SA.AreaUiManager.UpdateGuardLabel(area.GetSessionInfo().guardColor, spriteRenderer.color);
-
+                // m_SA.AreaUiManager.UpdateGuardLabel(session.guardColor, spriteRenderer.color);
                 m_Guards.Add((Guard) npc);
                 break;
 
@@ -188,10 +183,10 @@ public class GuardsManager : Agent
         }
 
         // 
-        npc.Initiate(area, npcData);
+        npc.Initiate(npcData, GameManager.Instance.GetVoice());
 
         // Allocate the NPC based on the specified scenario
-        npc.ResetLocation(navMesh, m_Guards, area.GetMap().GetWalls(), area.GetSessionInfo());
+        npc.ResetLocation(navMesh, m_Guards, session);
 
         npcGameObject.layer = m_npcLayer;
     }
@@ -200,50 +195,60 @@ public class GuardsManager : Agent
     // Param: npcsData - List of the NPCdata
     // Param: navMesh - List of polygons the NPCs will spawn on
     // Param: Area -  a reference to the main script of the instance
-    public void CreateGuards(Session scenario, List<MeshPolygon> navMesh, StealthArea area)
+    public void CreateGuards(Session session, List<MeshPolygon> navMesh)
     {
-        foreach (var npcData in scenario.GetGuardsData())
-            CreateGuard(npcData, scenario.worldRepType, navMesh, area);
+        foreach (var npcData in session.GetGuardsData())
+            CreateGuard(session, npcData, navMesh);
 
         // Get one of the guards planner
-        if (m_Guards.Count > 0)
-            m_gCtrl.SetGuardPlanner(m_Guards[0].GetNpcData().guardPlanner.Value);
+        if (m_Guards.Count > 0) m_gCtrl.SetGuardPlanner(m_Guards[0].GetNpcData().behavior);
     }
 
     // Reset NPCs at the end of the round
-    public void Reset(List<MeshPolygon> navMesh, StealthArea area)
+    public void Reset(List<MeshPolygon> navMesh, Session session)
     {
-        SetScore(100);
-        
+        SetScore(0f);
+
         GuardsOverlapTime = 0f;
 
         // Reset guards
         foreach (var guard in m_Guards)
         {
-            guard.ResetLocation(navMesh, m_Guards, area.GetMap().GetWalls(), area.GetSessionInfo());
+            guard.ResetLocation(navMesh, m_Guards, session);
             guard.ResetNpc();
         }
 
-        m_gCtrl.ResetBehavior();
+        // m_gCtrl.ResetBehavior();
     }
 
     #endregion
 
 
-    // Update the variables for the guards
-    public void UpdateWldStNpcs()
+    public void Speak(NPC speaker, string lineType, float prob)
     {
-        // WorldState.Set("guard_state", GetState().ToString());
-
-        foreach (var guard in m_Guards)
-            guard.UpdateWldStatV(m_Guards);
+        m_script.ChooseDialog(speaker,null,lineType,prob,GetGuards());
     }
+
+
+    public GuardsBehaviorController GetController()
+    {
+        return m_gCtrl;
+    }
+
+    // // Update the variables for the guards
+    // public void UpdateWldStNpcs()
+    // {
+    //     // WorldState.Set("guard_state", GetState().ToString());
+    //
+    //     foreach (var guard in m_Guards)
+    //         guard.UpdateWldStatV(m_Guards);
+    // }
 
     public void CoinPicked()
     {
         if (GetState() is Search)
         {
-            IncrementScore(15);
+            IncrementScore(20f);
         }
     }
 
@@ -252,7 +257,7 @@ public class GuardsManager : Agent
         m_score += score;
         m_score = Mathf.Max(0, m_score);
         SetScore(m_score);
-        m_SA.AreaUiManager.ShakeScore(score);
+        // m_SA.AreaUiManager.ShakeScore(score);
     }
 
 
@@ -260,7 +265,7 @@ public class GuardsManager : Agent
     {
         m_score = score;
         AreaUIManager.Score = Mathf.Round(m_score * 10f) / 10f;
-        m_SA.AreaUiManager.UpdateScore(AreaUIManager.Score);
+        // m_SA.AreaUiManager.UpdateScore(AreaUIManager.Score);
     }
 
 
@@ -272,77 +277,67 @@ public class GuardsManager : Agent
         return m_gCtrl.GetState();
     }
 
-
-    //
-    // public void AddDialogLine(NPC speaker, string dialogId, bool isVerbose)
+    // private NPC GetLastGuard()
     // {
-    //     if (DialogGroup.RulesPass(speaker, dialogId,isVerbose))
-    //         m_Scriptor.AppendDialogLine(speaker, dialogId);
-    // }
+    //     NPC intruder = m_SA.intrdrManager.GetIntruders()[0];
     //
-
-
-    private NPC GetLastGuard()
-    {
-        NPC intruder = m_SA.intrdrManager.GetIntruders()[0];
-
-        // The last time an opponent was seen
-        float maxTime = Mathf.NegativeInfinity;
-        Guard lastGuard = null;
-
-        foreach (var guard in m_Guards)
-        {
-            string timeString = WorldState.Get("last_time_" + guard.name + "_saw_" + intruder.name);
-            timeString = Equals(timeString, WorldState.EMPTY_VALUE) ? "0" : timeString;
-            float lastTime = float.Parse(timeString);
-
-            if (lastTime > maxTime)
-            {
-                maxTime = lastTime;
-                lastGuard = guard;
-            }
-        }
-
-        return lastGuard;
-    }
+    //     // The last time an opponent was seen
+    //     float maxTime = Mathf.NegativeInfinity;
+    //     Guard lastGuard = null;
+    //
+    //     foreach (var guard in m_Guards)
+    //     {
+    //         string timeString = WorldState.Get("last_time_" + guard.name + "_saw_" + intruder.name);
+    //         timeString = Equals(timeString, WorldState.EMPTY_VALUE) ? "0" : timeString;
+    //         float lastTime = float.Parse(timeString);
+    //
+    //         if (lastTime > maxTime)
+    //         {
+    //             maxTime = lastTime;
+    //             lastGuard = guard;
+    //         }
+    //     }
+    //
+    //     return lastGuard;
+    // }
 
     #endregion
 
 
     // Assign a role flag to the closest guard to the intruder's last known position.
     // Order that guard to navigate to that position. 
-    public void AssignGuardRoles()
-    {
-        // Set the first intruder 
-        Intruder firstIntruder = m_SA.intrdrManager.GetIntruders()[0];
-
-        // Assign the guard closest to the intruder's last position to chase them
-        Guard closestGuard = null;
-        float minDistance = Mathf.Infinity;
-
-        foreach (var guard in m_Guards)
-        {
-            float distance = PathFinding.GetShortestPathDistance(m_SA.worldRep.GetNavMesh(),
-                guard.transform.position,
-                firstIntruder.GetLastKnownLocation());
-
-            if (distance < minDistance)
-            {
-                closestGuard = guard;
-                minDistance = distance;
-            }
-        }
-
-        // Set the closest guard to the position the intruder was last seen on to chase and the rest to intercept
-        foreach (var guard in m_Guards)
-            if (guard == closestGuard)
-            {
-                guard.role = GuardRole.Chase;
-                guard.SetGoal(firstIntruder.GetLastKnownLocation(), true);
-            }
-            else
-                guard.role = GuardRole.Intercept;
-    }
+    // public void AssignGuardRoles()
+    // {
+    //     // Set the first intruder 
+    //     Intruder firstIntruder = m_SA.intrdrManager.GetIntruders()[0];
+    //
+    //     // Assign the guard closest to the intruder's last position to chase them
+    //     Guard closestGuard = null;
+    //     float minDistance = Mathf.Infinity;
+    //
+    //     foreach (var guard in m_Guards)
+    //     {
+    //         float distance = PathFinding.GetShortestPathDistance(m_SA.worldRep.GetNavMesh(),
+    //             guard.transform.position,
+    //             firstIntruder.GetLastKnownLocation());
+    //
+    //         if (distance < minDistance)
+    //         {
+    //             closestGuard = guard;
+    //             minDistance = distance;
+    //         }
+    //     }
+    //
+    //     // Set the closest guard to the position the intruder was last seen on to chase and the rest to intercept
+    //     foreach (var guard in m_Guards)
+    //         if (guard == closestGuard)
+    //         {
+    //             guard.role = GuardRole.Chase;
+    //             guard.SetGoal(firstIntruder.GetLastKnownLocation(), true);
+    //         }
+    //         else
+    //             guard.role = GuardRole.Intercept;
+    // }
 
 
     // Let NPCs cast their vision
@@ -352,19 +347,19 @@ public class GuardsManager : Agent
             guard.CastVision();
     }
 
-    // NPCs decide plans if idle
-    public void MakeDecision()
-    {
-        // Update the state of the guards manager
-        m_gCtrl.ExecuteState();
-    }
+    // // NPCs decide plans if idle
+    // public void MakeDecision()
+    // {
+    //     // Update the state of the guards manager
+    //     m_gCtrl.ExecuteState();
+    // }
 
 
     // Execute NPCs plans
-    public void Move(float deltaTime)
+    public void Move(IState state, float deltaTime)
     {
         foreach (var guard in m_Guards)
-            guard.ExecutePlan(GetState(), guard.role, deltaTime);
+            guard.ExecutePlan(state, deltaTime);
     }
 
 
@@ -392,60 +387,51 @@ public class GuardsManager : Agent
     public void UpdateGuardManager(Session session)
     {
         // Restrict Guards Seen Area
-        ResetGuardSeenArea(session.coveredRegionResetThreshold);
-
-        // Update the guards observations
-        // UpdateObservations();
-
-        // UpdatePotentialFuturePosition();
-
-        // Mark visited nodes
-        // m_interceptor.MarkVisitedInterceptionPoints(m_Guards, m_state.GetState());
+        // ResetGuardSeenArea(session.coveredRegionResetThreshold);
     }
 
 
     // Update the guards FoV
-    public void UpdateGuardVision()
-    {
-        
-        bool intruderSpotted = false;
-        NPC spotter = null;
-        foreach (var guard in m_Guards)
-        {
-            // Accumulate the Seen Area of the guard
-            // guard.AccumulateSeenArea(); // Disabled since it is not needed
-
-            // Check if any intruders are spotted
-            bool seen = guard.SpotIntruders(m_SA.intrdrManager.GetIntruders());
-
-            if (!intruderSpotted)
-            {
-                intruderSpotted = seen;
-                spotter = guard;
-            }
-        }
-
-        // Render guards if the intruder can see them
-        foreach (var intruder in m_SA.intrdrManager.GetIntruders())
-        {
-            intruder.SpotGuards(m_Guards);
-
-            if (m_SA.GetSessionInfo().gameType == GameType.CoinCollection)
-                intruder.SpotCoins(m_SA.coinSpawner.GetCoins());
-        }
-
-        // Switch the state of the guards 
-        if (intruderSpotted)
-        {
-            // Guards knows the intruders location
-            m_gCtrl.StartChase(spotter);
-        }
-        else if (GetState() is Chase)
-        {
-            // if the intruder is not seen and the guards were chasing then start searching
-            m_gCtrl.StartSearch();
-        }
-    }
+    // public void UpdateGuardVision()
+    // {
+    //     bool intruderSpotted = false;
+    //     NPC spotter = null;
+    //     foreach (var guard in m_Guards)
+    //     {
+    //         // Accumulate the Seen Area of the guard
+    //         // guard.AccumulateSeenArea(); // Disabled since it is not needed
+    //
+    //         // Check if any intruders are spotted
+    //         bool seen = guard.SpotIntruders(m_SA.intrdrManager.GetIntruders());
+    //
+    //         if (!intruderSpotted)
+    //         {
+    //             intruderSpotted = seen;
+    //             spotter = guard;
+    //         }
+    //     }
+    //
+    //     // Render guards if the intruder can see them
+    //     foreach (var intruder in m_SA.intrdrManager.GetIntruders())
+    //     {
+    //         intruder.SpotGuards(m_Guards);
+    //
+    //         if (m_SA.GetSessionInfo().gameType == GameType.CoinCollection)
+    //             intruder.SpotCoins(m_SA.coinSpawner.GetCoins());
+    //     }
+    //
+    //     // Switch the state of the guards 
+    //     if (intruderSpotted)
+    //     {
+    //         // Guards knows the intruders location
+    //         m_gCtrl.StartChase(spotter);
+    //     }
+    //     else if (GetState() is Chase)
+    //     {
+    //         // if the intruder is not seen and the guards were chasing then start searching
+    //         m_gCtrl.StartSearch();
+    //     }
+    // }
 
     public void ResetGuardSeenArea(float resetThreshold)
     {
@@ -459,7 +445,6 @@ public class GuardsManager : Agent
     {
         return m_Guards;
     }
-
 }
 
 

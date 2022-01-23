@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Numerics;
+﻿using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using Vector2 = UnityEngine.Vector2;
@@ -149,12 +147,12 @@ public class Polygon
 
 
     // Get the bounding box of polygon
-    public void BoundingBox(out float minX, out float maxX, out float minY, out float maxY)
+    public Bounds BoundingBox()
     {
-        minX = Mathf.Infinity;
-        minY = Mathf.Infinity;
-        maxX = Mathf.NegativeInfinity;
-        maxY = Mathf.NegativeInfinity;
+        float minX = Mathf.Infinity;
+        float minY = Mathf.Infinity;
+        float maxX = Mathf.NegativeInfinity;
+        float maxY = Mathf.NegativeInfinity;
 
         for (int i = 0; i < GetVerticesCount(); i++)
         {
@@ -168,6 +166,10 @@ public class Polygon
             if (maxY < p.y)
                 maxY = p.y;
         }
+
+        Bounds bounds = new Bounds {min = new Vector3(minX, minY), max = new Vector3(maxX, maxY)};
+
+        return bounds;
     }
 
     // Check if a point is in polygon 
@@ -215,17 +217,16 @@ public class Polygon
     // Get a random position inside the polygon
     public Vector2 GetRandomPosition()
     {
-        BoundingBox(out float minX, out float maxX, out float minY, out float maxY);
+        Bounds bounds = BoundingBox();
 
         while (true)
         {
-            float xPos = Random.Range(minX, maxX);
-            float yPos = Random.Range(minY, maxY);
+            float xPos = Random.Range(bounds.min.x, bounds.max.x);
+            float yPos = Random.Range(bounds.min.y, bounds.max.y);
 
             Vector2 possiblePoint = new Vector2(xPos, yPos);
 
-            if (IsPointInPolygon(possiblePoint, false))
-                return possiblePoint;
+            if (IsPointInPolygon(possiblePoint, false)) return possiblePoint;
         }
     }
 
@@ -283,8 +284,9 @@ public class Polygon
             Gizmos.DrawLine(GetPoint(i), GetPoint(i + 1));
             // Handles.Label(GetPoint(i), i.ToString());
         }
-
-        // Handles.Label(GetCentroidPosition(), label);
+#if UNITY_EDITOR
+        Handles.Label(GetCentroidPosition(), label);
+#endif
     }
 
     // Get the centroid position of the polygon

@@ -1,12 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Threading;
-using Unity.Barracuda;
-using Unity.MLAgents.Policies;
-using UnityEditor;
 using UnityEngine;
-using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
 public class GameManager : MonoBehaviour
@@ -24,6 +19,10 @@ public class GameManager : MonoBehaviour
     // List of scenarios to be executed
     private List<Session> m_Sessions;
 
+    // To determine which perspective the game is viewed from
+    [Header("Game Mode")] [SerializeField] [Tooltip("What elements will be shown?")]
+    public GameView gameView;
+    
     // display survey?
     public bool showSurvey;
 
@@ -47,6 +46,7 @@ public class GameManager : MonoBehaviour
     public static string MapsDataPath = "MapsData/";
     public static string MapsPath = "Maps/";
     public static string RoadMapsPath = "RoadMaps/";
+    public static string DialogsPath = "Dialogs/";
 
     // The main camera
     public static Camera MainCamera;
@@ -62,6 +62,8 @@ public class GameManager : MonoBehaviour
     // The containers variables for the current map
     public string currentMapData { set; get; }
     public string currentRoadMapData { set; get; }
+
+    private List<VoiceParams> m_VoiceParamses;
 
     // Game manager instance handler
     public static GameManager Instance;
@@ -86,6 +88,8 @@ public class GameManager : MonoBehaviour
         MapsDataPath = DataPath + MapsDataPath;
         MapsPath = MapsDataPath + MapsPath;
         RoadMapsPath = MapsDataPath + RoadMapsPath;
+        // Dialogs path
+        DialogsPath = DataPath + DialogsPath;
 
         // Reference the main camera
         MainCamera = Camera.main;
@@ -103,8 +107,8 @@ public class GameManager : MonoBehaviour
 
         LoadingScreen = canvasGO.transform.Find("Loading Screen").GetComponent<LoadingScreenController>();
         LoadingScreen.Initiate();
-        
-        StartCoroutine(FileUploader.GetFile(DialogLines, "dialogs"));
+
+        if (IsOnlineBuild) StartCoroutine(FileUploader.GetFile(DialogLines, "dialogs"));
 
         // Load the sessions to play
         LoadSavedSessions();
@@ -117,7 +121,7 @@ public class GameManager : MonoBehaviour
         if (!showSurvey) return;
 
         // show the survey for new users
-        SurveyManager.CreateSurvey(_timeStamp, SurveyType.NewUser);
+        SurveyManager.CreateSurvey(_timeStamp, SurveyType.NewUser, 0f);
         SurveyManager.ShowSurvey();
     }
 
@@ -126,6 +130,28 @@ public class GameManager : MonoBehaviour
         return m_Sessions[0].gameType;
     }
 
+    private void FillVoices()
+    {
+        m_VoiceParamses = new List<VoiceParams>();
+
+        int[] voiceIndices = {0, 1};
+        float[] pitches = {0f, 1f, 2f};
+
+        foreach (var vI in voiceIndices)
+        foreach (var p in pitches)
+            m_VoiceParamses.Add(new VoiceParams(vI, p));
+    }
+
+    public VoiceParams GetVoice()
+    {
+        if (m_VoiceParamses.Count == 0) return new VoiceParams(0, 0f);
+
+        int randIndex = Random.Range(0, m_VoiceParamses.Count);
+        VoiceParams voice = m_VoiceParamses[randIndex];
+        m_VoiceParamses.RemoveAt(randIndex);
+
+        return voice;
+    }
 
     // This is to get a unique time stamp
     public static int GetDateTimestamp()
@@ -141,52 +167,12 @@ public class GameManager : MonoBehaviour
 
     private void LoadSavedSessions()
     {
-        // var sessions = SessionsSetup.StealthyPathingStudy();
-        // var sessions = SessionsSetup.PrepareStudySessions();
-        var sessions = SessionsSetup.PrepareTempSessions();
-
+        var sessions = SessionsSetup.SearchTacticEvaluation();
+        // List<Session> sessions = SessionsSetup.SecondStudySessions();
 
         // Each line represents a session
-        foreach (var session in sessions)
+        foreach (var sc in sessions)
         {
-            // Get the session info
-            var sc = new Session(session["GameCode"],
-                (GameType) Enum.Parse(typeof(GameType), session["GameType"], true),
-                (Scenario) Enum.Parse(typeof(Scenario), session["Scenario"], true), session["GuardColor"],
-                int.Parse(session["GuardsCount"]), int.Parse(session["IntudersCount"]),
-                int.Parse(session["CoverageResetThreshold"]),
-                (WorldRepType) Enum.Parse(typeof(WorldRepType), session["WorldRep"], true), session["Map"],
-                bool.Parse(session["dialogEnabled"]),
-                (SurveyType) Enum.Parse(typeof(SurveyType), session["SurveyType"], true),
-                float.Parse(session["MapScale"]));
-
-
-            // Set the guard behavior
-            GuardBehavior guardBehavior = new GuardBehavior(
-                (GuardPatrolPlanner) Enum.Parse(typeof(GuardPatrolPlanner), session["GuardPatrolPlanner"], true),
-                (GuardChasePlanner) Enum.Parse(typeof(GuardChasePlanner), session["GuardChasePlanner"], true),
-                (GuardSearchPlanner) Enum.Parse(typeof(GuardSearchPlanner), session["GuardSearchPlanner"], true));
-
-
-            // Add the guards
-            for (int i = 0; i < int.Parse(session["GuardsCount"]); i++)
-                sc.AddGuard(i + 1, NpcType.Guard, guardBehavior, null,
-                    (PathFindingHeursitic) Enum.Parse(typeof(PathFindingHeursitic), session["PathFindingHeursitic"],
-                        true),
-                    (PathFollowing) Enum.Parse(typeof(PathFollowing), session["PathFollowing"], true),
-                    null);
-
-
-            // Add the intruders
-            for (int i = 0; i < int.Parse(session["IntudersCount"]); i++)
-                sc.AddIntruder(i + 1, NpcType.Intruder, null,
-                    (IntruderPlanner) Enum.Parse(typeof(IntruderPlanner), session["IntruderPlanner"], true),
-                    (PathFindingHeursitic) Enum.Parse(typeof(PathFindingHeursitic), session["PathFindingHeursitic"],
-                        true),
-                    (PathFollowing) Enum.Parse(typeof(PathFollowing), session["PathFollowing"], true),
-                    null);
-
-
             // Check if the required number of Episodes is logged already or skip if logging is not required.
             if (loggingMethod != Logging.Local || !PerformanceMonitor.IsLogged(sc))
                 m_Sessions.Add(sc);
@@ -203,22 +189,21 @@ public class GameManager : MonoBehaviour
     /// </summary>
     /// <param name="map"> The name of the map</param>
     /// <param name="mapScale"> The scale multiplier of the map</param>
-    private void LoadMapData(string map, float mapScale)
+    private void LoadMapData(MapData map)
     {
         if (IsOnlineBuild)
         {
             // Load the map data
-            StartCoroutine(FileUploader.GetFile(map, "map"));
+            StartCoroutine(FileUploader.GetFile(map.name, "map"));
 
             // Load the road map data
-            StartCoroutine(FileUploader.GetFile(map, "roadMap", mapScale));
-            
+            StartCoroutine(FileUploader.GetFile(map.name, "roadMap", map.size));
         }
         else
         {
             // Get the map data
-            currentMapData = CsvController.ReadString(GetMapPath(map));
-            currentRoadMapData = CsvController.ReadString(GetRoadMapPath(map, mapScale));
+            currentMapData = CsvController.ReadString(GetMapPath(map.name));
+            currentRoadMapData = CsvController.ReadString(GetRoadMapPath(map.name, map.size));
         }
     }
 
@@ -272,7 +257,7 @@ public class GameManager : MonoBehaviour
             // Load the map data
             currentMapData = "";
             currentRoadMapData = "";
-            LoadMapData(currentSession.map, currentSession.mapScale);
+            LoadMapData(currentSession.GetMap());
 
             // wait until the map data is loaded.
             while ((Equals(currentMapData, "") || Equals(currentRoadMapData, "") ||
@@ -282,6 +267,8 @@ public class GameManager : MonoBehaviour
             }
 
             LoadingScreen.Deactivate();
+
+            FillVoices();
 
             // Create the session
             CreateArea(currentSession);
@@ -305,10 +292,32 @@ public class GameManager : MonoBehaviour
         else
         {
             // Show the end message
-            SurveyManager.CreateSurvey(_timeStamp, SurveyType.End);
+            SurveyManager.CreateSurvey(_timeStamp, SurveyType.End, 0f);
             SurveyManager.ShowSurvey();
         }
     }
+
+    public IEnumerator StartGamePostSurvey()
+    {
+        while (m_Sessions.Count > 0)
+        {
+            yield return new WaitForSecondsRealtime(0.5f);
+
+            if (IsAreaLoaded()) break;
+        }
+
+        if (IsAreaLoaded())
+        {
+            m_ActiveArea.StartArea();
+            SurveyManager.SetSession(m_ActiveArea.GetSessionInfo());
+            yield break;
+        }
+
+        // Show the end message
+        SurveyManager.CreateSurvey(_timeStamp, SurveyType.End, 0f);
+        SurveyManager.ShowSurvey();
+    }
+
 
     public StealthArea GetActiveArea()
     {
@@ -370,79 +379,6 @@ public enum WorldRepType
     Grid
 }
 
-// Guard decision maker for patrol
-public enum GuardPatrolPlanner
-{
-    Stalest,
-    Random,
-    UserInput
-}
-
-// Guard decision maker for chasing an intruder
-public enum GuardChasePlanner
-{
-    Simple,
-    Intercepting
-}
-
-// Guard decision maker for searching for an intruder
-public enum GuardSearchPlanner
-{
-    // Randomly traverse the nodes of the Abstraction graph
-    Random,
-
-    // The guards search the road map while propagating the probability of the intruder's presence.
-    // The probability is diffused similarly to Damian Isla's implementation
-    RmPropOccupancyDiffusal,
-
-    // The probability is simply propagated through the road map.
-    RmPropSimple,
-
-    // The guards know the intruder's position at all times.
-    Cheating
-}
-
-
-// The style the guard makes a decision
-public enum GuardDecisionStyle
-{
-    // The guard chooses a point and navigate to it.
-    individual,
-
-    // The guard finds a path.
-    path
-}
-
-
-// Intruder behavior 
-public enum IntruderPlanner
-{
-    Random,
-    RandomMoving,
-    UserInput,
-    Heuristic,
-    HeuristicMoving
-}
-
-// Heuristic for path finding 
-public enum PathFindingHeursitic
-{
-    EuclideanDst
-}
-
-// Path following algorithm
-public enum PathFollowing
-{
-    SimpleFunnel
-}
-
-
-public enum NpcType
-{
-    Guard,
-    Intruder
-}
-
 // the scenario session will be set in
 public enum Scenario
 {
@@ -482,22 +418,6 @@ public enum GameView
 }
 
 
-// Struct for the guard planners
-public struct GuardBehavior
-{
-    public GuardPatrolPlanner patrol;
-    public GuardChasePlanner chase;
-    public GuardSearchPlanner search;
-
-    public GuardBehavior(GuardPatrolPlanner _patrol, GuardChasePlanner _chase, GuardSearchPlanner _search)
-    {
-        patrol = _patrol;
-        chase = _chase;
-        search = _search;
-    }
-}
-
-
 [Serializable]
 public struct NpcData
 {
@@ -507,28 +427,25 @@ public struct NpcData
     // The NPC type
     public NpcType npcType;
 
-    // The Planner the guard uses to find its next move
-    public GuardBehavior? guardPlanner;
-
-    // Intruder planner
-    public IntruderPlanner? intruderPlanner;
+    public Behavior behavior;
 
     // The A* search heuristic
     public PathFindingHeursitic npcHeuristic;
 
-    // Navmesh following behavior
+    // NavMesh following behavior
     public PathFollowing npcPathFollowing;
 
     // Initial position for the NPC
     public NpcLocation? location;
 
-    public NpcData(int _id, NpcType pNpcType, GuardBehavior? _guardPlanner, IntruderPlanner? _intruderPlanner,
+    public NpcData(int _id, NpcType pNpcType, Behavior _behavior,
         PathFindingHeursitic pPathFindingHeuristic, PathFollowing pNpcPathFollowing, NpcLocation? _location)
     {
         id = _id;
         npcType = pNpcType;
-        guardPlanner = _guardPlanner;
-        intruderPlanner = _intruderPlanner;
+        behavior = _behavior;
+        // guardPlanner = _guardPlanner;
+        // intruderPlanner = _intruderPlanner;
         npcHeuristic = pPathFindingHeuristic;
         npcPathFollowing = pNpcPathFollowing;
         location = _location;
@@ -541,7 +458,7 @@ public struct NpcData
         var data = "";
         data += npcType + ",";
         data += id + ",";
-        data += guardPlanner + ",";
+        data += behavior + ",";
         data += npcHeuristic + ",";
         data += npcPathFollowing;
 
@@ -563,11 +480,11 @@ public struct NpcLocation
 
 // Session info
 [Serializable]
-public struct Session
+public class Session
 {
     // the ID of the game session
-    public string id;
-    
+    private string timeStamp;
+
     // Game Code is the scenario for the NPC
     public string gameCode;
 
@@ -577,28 +494,18 @@ public struct Session
     // Session scenario
     public Scenario scenario;
 
-    // World Representation
-    public WorldRepType worldRepType;
-
-    // The Threshold at which the covered region is reset 
-    public int coveredRegionResetThreshold;
-
     public string guardColor;
 
     // Number of guards
-    public float guardsCount;
+    public int guardsCount;
 
     // Number of Intruders
     public int intruderCount;
 
     // dialog flag if enabled
-    public bool isDialogEnabled;
+    public SpeechType speechType;
 
-    // The map 
-    public string map;
-
-    // The map Scale
-    public float mapScale;
+    private MapData map;
 
     // Guards Data
     public List<NpcData> guardsList;
@@ -609,53 +516,53 @@ public struct Session
     // the type of survey that will be showed after this session 
     public SurveyType surveyType;
 
-    public Session(string pGameCode, GameType _gameType, Scenario pScenario, string _guardColor, int pGuardsCount,
+    public Session(string _gameCode, GameType _gameType, Scenario pScenario, string _guardColor, int pGuardsCount,
         int pIntruderCount,
-        int pCoveredRegionResetThreshold,
-        WorldRepType pWorldRepType,
-        string pMap,
-        bool _isDialogEnabled,
-        SurveyType _surveyType = SurveyType.End,
-        float pMapScale = 1f)
+        MapData _map,
+        SpeechType _speechType,
+        SurveyType _surveyType = SurveyType.End)
     {
-        gameCode = pGameCode;
+        gameCode = _gameCode;
         scenario = pScenario;
         guardColor = _guardColor;
         guardsCount = pGuardsCount;
         intruderCount = pIntruderCount;
-        coveredRegionResetThreshold = pCoveredRegionResetThreshold;
-        worldRepType = pWorldRepType;
-        map = pMap;
+        map = _map;
         guardsList = new List<NpcData>();
         intrudersList = new List<NpcData>();
-        mapScale = pMapScale;
         gameType = _gameType;
-        isDialogEnabled = _isDialogEnabled;
+        speechType = _speechType;
         surveyType = _surveyType;
-        id = "";
+        timeStamp = "";
     }
 
-
-    public float GetMapScale()
+    public void SetTimestamp()
     {
-        return mapScale;
+        timeStamp = GameManager.GetDateTimestamp().ToString();
+    }
+
+    public MapData GetMap()
+    {
+        return map;
     }
 
     // Add a NPC to the list
-    public void AddGuard(int id, NpcType npcType, GuardBehavior? guardPlanner, IntruderPlanner? intruderPlanner,
+    public void AddNpc(int id, NpcType _type, Behavior _planner,
         PathFindingHeursitic pathFindingHeuristic, PathFollowing pathFollowing, NpcLocation? npcLocation)
     {
-        guardsList.Add(new NpcData(id, npcType, guardPlanner, intruderPlanner, pathFindingHeuristic, pathFollowing,
-            npcLocation));
-    }
+        switch (_type)
+        {
+            case NpcType.Guard:
+                guardsList.Add(new NpcData(id, _type, _planner, pathFindingHeuristic, pathFollowing,
+                    npcLocation));
+                break;
 
-    public void AddIntruder(int id, NpcType npcType, GuardBehavior? guardPlanner, IntruderPlanner? intruderPlanner,
-        PathFindingHeursitic pathFindingHeuristic, PathFollowing pathFollowing, NpcLocation? npcLocation)
-    {
-        intrudersList.Add(new NpcData(id, npcType, guardPlanner, intruderPlanner, pathFindingHeuristic, pathFollowing,
-            npcLocation));
+            case NpcType.Intruder:
+                intrudersList.Add(new NpcData(id, _type, _planner, pathFindingHeuristic, pathFollowing,
+                    npcLocation));
+                break;
+        }
     }
-
 
     // Add the NPC data
     public List<NpcData> GetGuardsData()
@@ -671,37 +578,44 @@ public struct Session
     public override string ToString()
     {
         // Separator
-        string sep = " ";
+        string sep = "_";
 
         string sessionInfo = "";
 
+        // Id
+        sessionInfo += timeStamp + sep;
+
         // Game code
-        sessionInfo += gameCode + sep;
+        // sessionInfo += gameCode + sep;
 
         // Game type
-        sessionInfo += gameType + sep;
+        // sessionInfo += gameType + sep;
 
         // Man name
-        sessionInfo += map + sep;
+        sessionInfo += map.name + sep;
 
-        // Map scale
-        sessionInfo += GetMapScale() + sep;
+        // Speech type
+        sessionInfo += speechType + sep;
 
         // Guard planner 
-        sessionInfo += (GetGuardsData().Count > 0 ? GetGuardsData()[0].guardPlanner.Value.search.ToString() : "") + sep;
+        sessionInfo += (GetGuardsData().Count > 0 ? GetGuardsData()[0].behavior.search.ToString() : "") + sep;
+
+        // Search format
+        sessionInfo +=
+            (GetGuardsData().Count > 0 ? GetGuardsData()[0].behavior.searchFormat.ToString() : "") + sep;
 
         // Guard FoV percentage of the longest path in the map
-        sessionInfo += Properties.GuardsFovRadiusPercentage + sep;
+        // sessionInfo += Properties.GuardsFovRadiusPercentage + sep;
 
         // Number of guards
-        sessionInfo += guardsCount + sep;
+        // sessionInfo += guardsCount + sep;
 
         // Intruder planner 
         // sessionInfo += (GetIntrudersData().Count > 0 ? GetIntrudersData()[0].intruderPlanner.Value.ToString() : "") +
         //                sep;
 
         // Intruder's speed percentage to guards
-        sessionInfo += Properties.IntruderSpeedMulti + sep;
+        // sessionInfo += Properties.IntruderSpeedMulti + sep;
 
         // Length of the episode
         sessionInfo += Properties.EpisodeLength;

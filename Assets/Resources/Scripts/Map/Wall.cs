@@ -11,24 +11,24 @@ public class Wall : MonoBehaviour
     MeshFilter m_viewMeshFilter;
     Mesh m_viewMesh;
 
-    private float m_ColliderRadius = 0.07f; 
+    // private float m_ColliderRadius = 0.07f; 
 
     EdgeCollider2D m_edgeCollider2D;
     
     // The ID of the wall
     public int WallId;
 
-    private void Awake()
+    public void Initiate(int _wallId, float colliderRadius)
     {
         // Assign the references to the mesh
-        m_viewMesh = new Mesh();
-        m_viewMeshFilter = GetComponent<MeshFilter>();
-        m_viewMeshFilter.mesh = m_viewMesh;
-
+        // m_viewMesh = new Mesh();
+        // m_viewMeshFilter = GetComponent<MeshFilter>();
+        // m_viewMeshFilter.mesh = m_viewMesh;
+        WallId = _wallId;
 
         gameObject.layer = LayerMask.NameToLayer("Wall");
         m_edgeCollider2D = GetComponent<EdgeCollider2D>(); 
-        m_edgeCollider2D.edgeRadius = m_ColliderRadius;
+        m_edgeCollider2D.edgeRadius = colliderRadius;
 
         // Add the RigidBody
         Rigidbody2D rb = gameObject.AddComponent<Rigidbody2D>();

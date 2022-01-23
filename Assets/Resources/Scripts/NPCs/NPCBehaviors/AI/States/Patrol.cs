@@ -1,30 +1,27 @@
 ﻿// Guard patrol state
 
-public class Patrol : IState
+public class Patrol : State
 {
-    private GuardsBehaviorController m_GrdsCtrl;
-
-    private IntrudersBehaviorController m_IntrdrCtrl;
-
-    public Patrol(GuardsBehaviorController _guardsManager, IntrudersBehaviorController intrdrCtrl)
+    public override void MakeState(GuardsBehaviorController gc, IntrudersBehaviorController ic)
     {
-        m_GrdsCtrl = _guardsManager;
-        m_IntrdrCtrl = intrdrCtrl;
+        base.MakeState(gc, ic);
+        name = "Patrol";
+    }
+    
+    public override void Enter()
+    {
+        m_GC.StartShift();
+        m_IC.StartScouter();
     }
 
-    public void Enter()
+    public override void Execute()
     {
-        m_GrdsCtrl.StartShift();
+        m_GC.Patrol();
+        m_IC.StayIncognito();
     }
 
-    public void Execute()
+    public override void Exit()
     {
-        m_GrdsCtrl.Patrol();
-        m_IntrdrCtrl.StayIncognito();
-    }
-
-    public void Exit()
-    {
-        m_GrdsCtrl.ClearGoals();
+        m_GC.ClearGoals();
     }
 }

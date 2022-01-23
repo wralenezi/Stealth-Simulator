@@ -1,19 +1,38 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 using UnityEngine;
 
 public class PerformanceMonitor : MonoBehaviour
 {
-    public Session Sa;
-
-    public List<LogSnapshot> snapshots;
-
     // Number of episodes done
     private int m_episodeCount;
 
-    public void ResetResults()
+    public Session Sa;
+
+    private List<LogSnapshot> snapshots;
+
+    private Dictionary<string, NPCReplay> m_npcsRecording;
+
+
+    public void Initialize()
     {
         snapshots = new List<LogSnapshot>();
+        m_npcsRecording = new Dictionary<string, NPCReplay>();
+    }
+
+    public void ResetResults()
+    {
+        snapshots.Clear();
+        m_npcsRecording.Clear();
+
+        foreach (var guard in NpcsManager.Instance.GetGuards())
+            m_npcsRecording[guard.name] = new NPCReplay(guard.GetNpcData().id, guard.GetNpcData().npcType);
+
+
+        foreach (var intruder in NpcsManager.Instance.GetIntruders())
+            m_npcsRecording[intruder.name] = new NPCReplay(intruder.GetNpcData().id, intruder.GetNpcData().npcType);
     }
 
     public void SetArea(Session sa)
@@ -32,12 +51,12 @@ public class PerformanceMonitor : MonoBehaviour
     // Update the Episode count if there are any before
     public void GetEpisodesCountInLogs()
     {
-        m_episodeCount = CsvController.ReadFileStartWith(Sa);
+        m_episodeCount = CsvController.ReadFileStartWith(FileType.Performance, Sa);
     }
 
     public static bool IsLogged(Session sa)
     {
-        int episodeCount = CsvController.ReadFileStartWith(sa);
+        int episodeCount = CsvController.ReadFileStartWith(FileType.Performance, sa);
 
         return episodeCount >= Properties.EpisodesCount;
     }
@@ -48,10 +67,26 @@ public class PerformanceMonitor : MonoBehaviour
         return m_episodeCount >= Properties.EpisodesCount;
     }
 
-    public void UpdateProgress(LogSnapshot logSnapshot)
+    public void UpdateProgress()
     {
-        snapshots.Add(logSnapshot);
+        float timeElapsed = StealthArea.GetElapsedTime();
+
+        foreach (var guard in NpcsManager.Instance.GetGuards())
+        {
+            snapshots.Add(guard.LogNpcProgress());
+            m_npcsRecording[guard.name].AddSnapshot(new ReplaySnapshot(timeElapsed,
+                new Position2D(guard.GetTransform().position.x, guard.GetTransform().position.y)));
+        }
+
+        foreach (var intruder in NpcsManager.Instance.GetIntruders())
+        {
+            snapshots.Add(intruder.LogNpcProgress());
+            m_npcsRecording[intruder.name]
+                .AddSnapshot(new ReplaySnapshot(timeElapsed,
+                    new Position2D(intruder.GetTransform().position.x, intruder.GetTransform().position.y)));
+        }
     }
+
 
     public void IncrementEpisode()
     {
@@ -66,8 +101,12 @@ public class PerformanceMonitor : MonoBehaviour
         if (snapshots.Count > 0)
         {
             CsvController.WriteString(
-                CsvController.GetPath(Sa, m_episodeCount),
+                CsvController.GetPath(Sa, FileType.Performance, m_episodeCount),
                 GetEpisodeResults(), true);
+
+            CsvController.WriteString(
+                CsvController.GetPath(Sa, FileType.Npcs, m_episodeCount),
+                GetNpcDataJson(), true);
         }
 
         // Reset results
@@ -77,9 +116,21 @@ public class PerformanceMonitor : MonoBehaviour
     // Upload the results to the server
     public void UploadEpisodeData()
     {
-        StartCoroutine(FileUploader.UploadData(Sa, "gameData", "text/csv", GetEpisodeResults()));
+        StartCoroutine(FileUploader.UploadData(Sa, FileType.Performance, "text/csv", GetEpisodeResults()));
+        StartCoroutine(FileUploader.UploadData(Sa, FileType.Npcs, "text/csv", GetNpcDataJson()));
     }
 
+    private string GetNpcDataJson()
+    {
+        string output = JsonConvert.SerializeObject(m_npcsRecording, Formatting.None,
+            new JsonSerializerSettings()
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+            });
+
+        // var object = JsonConvert.DeserializeObject<Dictionary<string, NPCReplay>>(json);
+        return output;
+    }
 
     // return the data of the episode's result into a string
     public string GetEpisodeResults()
@@ -90,7 +141,8 @@ public class PerformanceMonitor : MonoBehaviour
             string data = "";
 
             data +=
-                "GameCode," + LogSnapshot.Headers + "\n";  //"guardType,guardId,guardPlanner,guardHeuristic,guardPathFollowing,elapsedTime,distanceTravelled,state,NoTimesSpotted,alertTime,searchedTime,GuardsOverlapTime,foundHidingSpots,stalenessAverages\n";
+                "GameCode," + LogSnapshot.Headers +
+                "\n"; //"guardType,guardId,guardPlanner,guardHeuristic,guardPathFollowing,elapsedTime,distanceTravelled,state,NoTimesSpotted,alertTime,searchedTime,GuardsOverlapTime,foundHidingSpots,stalenessAverages\n";
 
             for (int i = 0; i < snapshots.Count; i++)
             {
@@ -183,5 +235,55 @@ public struct LogSnapshot
                         "," + Score;
 
         return output;
+    }
+}
+
+[Serializable]
+public class NPCReplay
+{
+    public int npcId;
+    public NpcType npcType;
+    public List<ReplaySnapshot> replaySnapshots;
+
+    public NPCReplay(int _npcId, NpcType _npcType)
+    {
+        npcId = _npcId;
+        npcType = _npcType;
+        replaySnapshots = new List<ReplaySnapshot>();
+    }
+
+    public void AddSnapshot(ReplaySnapshot snapshot)
+    {
+        replaySnapshots.Add(snapshot);
+    }
+}
+
+/// <summary>
+/// A snapshot of the agents reply
+/// </summary>
+[Serializable]
+public struct ReplaySnapshot
+{
+    public float timeStamp;
+
+    public Position2D position;
+
+    public ReplaySnapshot(float _timeSnapshot, Position2D _position)
+    {
+        timeStamp = _timeSnapshot;
+        position = _position;
+    }
+}
+
+[Serializable]
+public struct Position2D
+{
+    public float x;
+    public float y;
+
+    public Position2D(float _x, float _y)
+    {
+        x = _x;
+        y = _y;
     }
 }

@@ -13,9 +13,9 @@ public class SurveyMultiple : SurveyItem
     private List<Button> buttons;
 
 
-    public override void Initiate(string name, Survey survey, string code)
+    public override void Initiate(string name, ItemType _type, Survey survey, string code)
     {
-        base.Initiate(name, survey, code);
+        base.Initiate(name, _type, survey, code);
 
         BtnPrefab = (GameObject) Resources.Load(btnPath);
 
@@ -33,16 +33,18 @@ public class SurveyMultiple : SurveyItem
         ButtonController btnCon = btnGo.GetComponent<ButtonController>();
         btnCon.Initiate(this, choice.type);
 
+        // Set the color
+        ColorBlock colorBlock = ColorBlock.defaultColorBlock;
+        colorBlock.normalColor = choice.color - new Color(0.3f, 0.3f, 0.3f, 0f);;
+        colorBlock.highlightedColor = colorBlock.normalColor - new Color(0.2f, 0.2f, 0.2f,0f);
+        btn.colors = colorBlock;
+
+
         buttons.Add(btn);
     }
 
-
-    public override void Answer(string _answer)
+    public override void ProcessAnswer(string _answer)
     {
-        // Mark as answered and hide the game object
-        isAnswered = true;
-        gameObject.SetActive(false);
-
         // Check the answer and process it based on the code.
         if (Equals(m_code, "color"))
         {
@@ -56,7 +58,5 @@ public class SurveyMultiple : SurveyItem
         }
         else
             m_answer = _answer;
-
-        survey.NextItem();
     }
 }

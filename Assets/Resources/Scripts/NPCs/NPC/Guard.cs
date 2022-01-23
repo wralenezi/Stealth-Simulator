@@ -4,7 +4,7 @@ using TMPro;
 using UnityEngine;
 
 
-public abstract class Guard : NPC
+public class Guard : NPC
 {
     private GameObject m_excMarkPrefab;
     private GameObject m_excMarkGo;
@@ -27,9 +27,10 @@ public abstract class Guard : NPC
     protected int m_FoundHidingSpots;
 
     // Initialize the guard
-    public override void Initiate(StealthArea area, NpcData data)
+    public override void Initiate(NpcData data, VoiceParams _voice)
     {
-        base.Initiate(area, data);
+        base.Initiate(data, _voice);
+
         SeenArea = new List<Polygon>();
         m_excMarkPrefab = (GameObject) Resources.Load("Prefabs/exclamation_mark");
         m_excMarkGo = Instantiate(m_excMarkPrefab, GameManager.Instance.GetActiveArea().transform);
@@ -47,7 +48,6 @@ public abstract class Guard : NPC
         textMeshPro.fontSize = 4;
         textMeshPro.sortingOrder = 5;
         textMeshPro.color = Color.black;
-        
     }
 
     public override void ResetNpc()
@@ -57,7 +57,28 @@ public abstract class Guard : NPC
         SeenArea.Clear();
     }
 
-    public abstract float GetPassingsAverage();
+    // Clear the lines the guard planned to go through
+    public override void ClearLines()
+    {
+        while (LinesToPassThrough.Count > 0)
+        {
+            RoadMapLine current = LinesToPassThrough[0];
+            current.RemovePassingGuard(this);
+            LinesToPassThrough.RemoveAt(0);
+        }
+    }
+
+    public float GetPassingsAverage()
+    {
+        float sum = 0f;
+
+        foreach (var line in LinesToPassThrough)
+        {
+            sum += line.GetPassingGuardsCount() - 1;
+        }
+
+        return sum / LinesToPassThrough.Count;
+    }
 
     // resets the guards covered area
     public void RestrictSeenArea(float resetThreshold)
@@ -71,12 +92,6 @@ public abstract class Guard : NPC
         SeenArea.Clear();
     }
 
-    // Get the guard to patrol 
-    public void Patrol()
-    {
-        if (!IsBusy())
-            SetGoal(GetPatrolGoal().Value, false);
-    }
 
     // Check if any intruder is spotted, return true if at least one is spotted
     public bool SpotIntruders(List<Intruder> intruders)
@@ -88,10 +103,15 @@ public abstract class Guard : NPC
             {
                 intruder.Seen();
                 WorldState.Set(name + "_see_" + intruder.name, true.ToString());
-                WorldState.Set("last_time_"+name+"_saw_"+intruder.name, Time.time.ToString());
+                WorldState.Set("last_time_" + name + "_saw_" + intruder.name, Time.time.ToString());
                 RenderIntruder(intruder, true);
-                ShowExclamation();
-                return true;
+
+                // skip if the intruder is in ghost mode
+                if (!intruder.isGhost)
+                {
+                    ShowExclamation();
+                    return true;
+                }
             }
 
             // Intruder not seen
@@ -115,13 +135,13 @@ public abstract class Guard : NPC
     // Rendering the intruder
     public void RenderIntruder(Intruder intruder, bool seen)
     {
-        if (Area.gameView == GameView.Spectator)
+        if (GameManager.Instance.gameView == GameView.Spectator)
         {
             intruder.RenderIntruder(true);
             intruder.RenderIntruderFov(true);
             RenderGuard(true);
         }
-        else if (Area.gameView == GameView.Guard)
+        else if (GameManager.Instance.gameView == GameView.Guard)
         {
             RenderGuard(true);
             if (seen)
@@ -140,7 +160,7 @@ public abstract class Guard : NPC
         FovRenderer.enabled = isSeen;
     }
 
-    public abstract Vector2? GetPatrolGoal();
+    // public abstract Vector2? GetPatrolGoal();
 
     // Add the FoV to the Overall Seen Area
     public void AccumulateSeenArea()
@@ -156,7 +176,7 @@ public abstract class Guard : NPC
             SeenArea = PolygonHelper.MergePolygons(GetFov(), SeenArea, ClipType.ctUnion);
         }
 
-        CheckForFoundHidingSpots();
+        // CheckForFoundHidingSpots();
     }
 
     // 
@@ -172,27 +192,7 @@ public abstract class Guard : NPC
 
         return seenArea;
     }
-
-    // Check if a spot is seen
-    void CheckForFoundHidingSpots()
-    {
-        List<Vector2> hidingSpots = World.GetHidingSpots();
-
-        int index = 0;
-        while (index < hidingSpots.Count)
-        {
-            if (IsPointInFoV(hidingSpots[index]))
-            {
-                hidingSpots.RemoveAt(index);
-                m_FoundHidingSpots++;
-            }
-            else
-            {
-                index++;
-            }
-        }
-    }
-
+    
     // Check if a point is in the FoV
     public bool IsPointInFoV(Vector2 point)
     {
@@ -209,6 +209,13 @@ public abstract class Guard : NPC
     {
         return SeenArea;
     }
+
+    public override LogSnapshot LogNpcProgress()
+    {
+        return new LogSnapshot(GetTravelledDistance(), StealthArea.GetElapsedTime(), Data, "", 0, 0f, 0f, 0f,
+            m_FoundHidingSpots, 0f, 0);
+    }
+
 
     private void OnDrawGizmos()
     {

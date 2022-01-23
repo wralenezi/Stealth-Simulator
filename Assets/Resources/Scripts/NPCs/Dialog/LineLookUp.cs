@@ -18,12 +18,14 @@ public class LineLookUp
     // the dialog priority
     private static Dictionary<string, int> _priorityLookUp;
 
+    private static Dictionary<string, SpeechType> _speechClasses;
+
     // Dialog groups to choose among for playing lines
     private static Dictionary<string, DialogGroup> _dialogs;
 
     public static void Initiate()
     {
-        string path = Application.dataPath + "/" + "dialog_lines.csv";
+        string path = GameManager.DialogsPath + "dialog_lines.csv";
 
         DataTable data = CsvController.ConvertCSVtoDataTable(path);
 
@@ -31,15 +33,18 @@ public class LineLookUp
         _ruleLookUp = new Dictionary<string, Rules>();
         _rspnsLookUp = new Dictionary<string, Responses>();
         _priorityLookUp = new Dictionary<string, int>();
+        _speechClasses = new Dictionary<string, SpeechType>();
         _dialogs = new Dictionary<string, DialogGroup>();
-        
+
         for (int i = 0; i < data.Rows.Count; i++)
         {
             DataRow row = data.Rows[i];
-            AddLines(row["dialogId"].ToString(), row["lines"].ToString());
+            AddLines(row["dialogId"].ToString(), row[data.Columns[data.Columns.Count - 1]].ToString()); // Get the lines
             AddRule(row["dialogId"].ToString(), row["rules"].ToString());
             AddResponses(row["dialogId"].ToString(), row["responses"].ToString());
             AddDialogGroup(row["type"].ToString(), row["dialogId"].ToString());
+            AddClass(row["dialogId"].ToString(),
+                (SpeechType) Enum.Parse(typeof(SpeechType), row["class"].ToString(), true));
             _priorityLookUp.Add(row["dialogId"].ToString(), int.Parse(row["priority"].ToString()));
         }
     }
@@ -71,6 +76,11 @@ public class LineLookUp
         _ruleLookUp.Add(dialogId, rules);
     }
 
+    private static void AddClass(string dialogId, SpeechType speechClass)
+    {
+        _speechClasses.Add(dialogId, speechClass);
+    }
+
     private static void AddResponses(string dialogId, string responseData)
     {
         Responses responses = new Responses(responseData);
@@ -88,6 +98,11 @@ public class LineLookUp
             Debug.LogError(dialogId + " - Error");
             throw;
         }
+    }
+
+    public static SpeechType GetDialogLineClass(string dialogId)
+    {
+        return _speechClasses[dialogId];
     }
 
     public static string GetResponseForDialog(string dialogId)
@@ -179,8 +194,8 @@ public class Lines
 
         while (n > 1)
         {
+            int k = Random.Range(0, n);
             n--;
-            int k = Random.Range(0, n + 1);
             string value = m_Lines[k];
             m_Lines[k] = m_Lines[n];
             m_Lines[n] = value;
@@ -219,6 +234,8 @@ public class Lines
         {
             ShuffleLines();
         } while (line == m_Lines[index]);
+
+        line = m_Lines[index++];
 
         return line;
     }
