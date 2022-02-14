@@ -320,7 +320,7 @@ public class RoadMap
         float maxStep = totalDistance / pointCount;
 
         float nextStep = Mathf.Min(maxStep, totalDistance);
-        m_Points.Enqueue(new PointToProp(source, nextWayPoint, line, nextStep, totalDistance, 0f));
+        m_Points.Enqueue(new PointToProp(source, nextWayPoint, line, nextStep, totalDistance, 0f, npc));
 
 
         // Loop to insert the possible positions
@@ -376,11 +376,101 @@ public class RoadMap
 
                     // Add the point to the list
                     m_Points.Enqueue(new PointToProp(pt.target.GetPosition(), nextWp, newConn, pt.nextStep,
-                        pt.remainingDist, pt.distance));
+                        pt.remainingDist, pt.distance, npc));
                 }
             }
         }
     }
+
+
+    public void ProjectPositionsInDirection(ref List<PossibleTrajectory> trajectory, Vector2 pointOnRoadMap,
+        RoadMapLine line, float totalDistance, NPC npc)
+    {
+        m_Points.Clear();
+
+        // Get the next Way point 
+        WayPoint nextWayPoint = GetWayPointInDirection(pointOnRoadMap, npc.GetDirection(), line);
+        Vector2 source = pointOnRoadMap;
+
+        float maxStep = totalDistance;
+
+        float nextStep = Mathf.Min(maxStep, totalDistance);
+
+        PointToProp ptp = new PointToProp(source, nextWayPoint, line, nextStep, totalDistance, 0f, npc);
+        ptp.GetTrajectory().AddPoint(source);
+
+
+        m_Points.Enqueue(ptp);
+
+        // Loop to insert the possible positions
+        while (m_Points.Count > 0)
+        {
+            PointToProp pt = m_Points.Dequeue();
+
+            float distance = Vector2.Distance(pt.source, pt.target.GetPosition());
+            pt.nextStep = pt.nextStep <= 0f ? maxStep : pt.nextStep;
+            pt.nextStep = Mathf.Min(pt.nextStep, pt.remainingDist);
+
+            if (pt.nextStep <= distance)
+            {
+                Vector2 displacement = (pt.target.GetPosition() - pt.source).normalized * pt.nextStep;
+                Vector2 newPosition = pt.source + displacement;
+                pt.distance += pt.nextStep;
+
+                // Add the possible position
+                pt.GetTrajectory().AddPoint(newPosition);
+
+                // Update the point's data
+                pt.remainingDist -= pt.nextStep;
+                pt.source = newPosition;
+                pt.nextStep -= pt.nextStep;
+
+                // If there are distance remaining then enqueue the point
+                if (pt.remainingDist > 0f)
+                    m_Points.Enqueue(pt);
+                else
+                    trajectory.Add(pt.GetTrajectory());
+            }
+            else
+            {
+                // Subtract the distance
+                pt.remainingDist -= distance;
+                pt.distance += distance;
+                pt.nextStep -= distance;
+
+                // If it is a dead end then place a point at the end
+                if (pt.target.GetLines(true).Count == 1)
+                {
+                    pt.GetTrajectory().AddPoint(pt.target.GetPosition());
+
+                    trajectory.Add(pt.GetTrajectory());
+
+                    continue;
+                }
+
+                // Loop through the connections of next Way point to add the points to propagate.
+                foreach (var newConn in pt.target.GetLines(true))
+                {
+                    // Skip if the line is the same
+                    if (Equals(newConn, pt.line)) continue;
+
+                    // set the new target
+                    WayPoint nextWp = Equals(newConn.wp1, pt.target) ? newConn.wp2 : newConn.wp1;
+                    
+                    pt.GetTrajectory().AddPoint(pt.target.GetPosition());
+
+                    // Add the point to the list
+                    PointToProp newPt = new PointToProp(pt.target.GetPosition(), nextWp, newConn, pt.nextStep,
+                        pt.remainingDist, pt.distance, npc);
+
+                    newPt.GetTrajectory().CopyTrajectory(pt.GetTrajectory());
+                    
+                    m_Points.Enqueue(newPt);
+                }
+            }
+        }
+    }
+
 
     private WayPoint GetWayPointInDirection(Vector2 source, Vector2 dir, RoadMapLine line)
     {
@@ -696,8 +786,10 @@ class PointToProp
     // Accumulated distance from the beginning to this point
     public float distance;
 
+    private PossibleTrajectory m_trajectory;
+
     public PointToProp(Vector2 _source, WayPoint _target, RoadMapLine _line, float _nextStep, float _remainingDist,
-        float _distance)
+        float _distance, NPC npc)
     {
         source = _source;
         target = _target;
@@ -705,5 +797,16 @@ class PointToProp
         remainingDist = _remainingDist;
         nextStep = _nextStep;
         distance = _distance;
+        m_trajectory = new PossibleTrajectory(npc);
+    }
+
+    public List<Vector2> GetTrajectoriesCount()
+    {
+        return m_trajectory.GetPath();
+    }
+
+    public PossibleTrajectory GetTrajectory()
+    {
+        return m_trajectory;
     }
 }

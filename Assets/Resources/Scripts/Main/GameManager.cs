@@ -93,10 +93,7 @@ public class GameManager : MonoBehaviour
 
         // Reference the main camera
         MainCamera = Camera.main;
-
-        // Initiate the containers for path finding.
-        PathFinding.Initiate();
-
+        
         // World state storage
         WorldState.Initialize();
 
@@ -174,7 +171,7 @@ public class GameManager : MonoBehaviour
         foreach (var sc in sessions)
         {
             // Check if the required number of Episodes is logged already or skip if logging is not required.
-            if (loggingMethod != Logging.Local || !PerformanceMonitor.IsLogged(sc))
+            if (loggingMethod != Logging.Local || !PerformanceLogger.IsLogged(sc))
                 m_Sessions.Add(sc);
         }
     }

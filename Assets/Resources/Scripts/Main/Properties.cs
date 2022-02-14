@@ -9,7 +9,7 @@ public static class Properties
     public const int EpisodesCount = 60;
 
     // The duration of an episode.
-    public const float EpisodeLength = 99f;
+    public const float EpisodeLength = 1000f;
 
 
     //-------------------------------------------------------------------------//
@@ -168,11 +168,6 @@ public static class Properties
 
     // The Maximum number of guards available.
     public static int MaxGuardCount = 10;
-
-    // The Max path distance of the map, for normalization purposes. 
-    public static float MaxPathDistance;
-    public static float PathDenom = 150f;
-
 
     // Get a color opacity based a on a value from 0 to 1
     public static Color32 GetSegmentColor(float feature)

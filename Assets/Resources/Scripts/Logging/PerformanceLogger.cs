@@ -1,15 +1,17 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using UnityEngine;
 
-public class PerformanceMonitor : MonoBehaviour
+public class PerformanceLogger : MonoBehaviour
 {
+    public Session Sa;
+
+    // Last timestamp the game was logged.
+    private float m_lastLoggedTime;
+
     // Number of episodes done
     private int m_episodeCount;
-
-    public Session Sa;
 
     private List<LogSnapshot> snapshots;
 
@@ -24,6 +26,8 @@ public class PerformanceMonitor : MonoBehaviour
 
     public void ResetResults()
     {
+        m_lastLoggedTime = 0f;
+
         snapshots.Clear();
         m_npcsRecording.Clear();
 
@@ -42,6 +46,47 @@ public class PerformanceMonitor : MonoBehaviour
         if (GameManager.Instance.loggingMethod == Logging.Local)
             GetEpisodesCountInLogs();
     }
+
+    public bool IsTimeToLog()
+    {
+        if (StealthArea.GetElapsedTime() - m_lastLoggedTime >= 0.5f)
+        {
+            m_lastLoggedTime = StealthArea.GetElapsedTime();
+            return true;
+        }
+
+        return false;
+    }
+
+    public void Log()
+    {
+        if ((GameManager.Instance.loggingMethod != Logging.None) && IsTimeToLog())
+            UpdateProgress();
+    }
+    
+    public void FinalizeLogging(Logging type)
+    {
+        UpdateProgress();
+
+        switch (type)
+        {
+            // Log the overall performance in case of local logging.
+            case Logging.Local:
+                LogEpisodeFinish();
+                IncrementEpisode();
+                break;
+
+            // Log the performance of this episode and upload it to the server.
+            case Logging.Cloud:
+                UploadEpisodeData();
+                break;
+
+            case Logging.None:
+                break;
+        }
+    }
+
+
 
     public int GetEpisodeNo()
     {
@@ -212,7 +257,7 @@ public struct LogSnapshot
         StalenessAverage = stalenessAverage;
         NoTimesSpotted = noTimesSpotted;
         CollectedCoin = collectedCoin;
-        Score = AreaUIManager.Score;
+        Score = ScoreController.Instance.score;
     }
 
     // Headers

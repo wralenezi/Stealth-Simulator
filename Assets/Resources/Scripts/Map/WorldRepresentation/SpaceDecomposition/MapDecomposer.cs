@@ -58,22 +58,6 @@ public class MapDecomposer : MonoBehaviour
         m_WalakbleArea = 0f;
         foreach (var p in GetNavMesh())
             m_WalakbleArea += p.GetArea();
-
-        // Calculate the longest possible path in the map
-        List<Polygon> walls = m_WallBorders;
-
-        // float maxDistance = Mathf.NegativeInfinity;
-        // for (int j = 0; j < walls[0].GetVerticesCount(); j++)
-        // for (int k = j + 1; k < walls[0].GetVerticesCount(); k++)
-        // {
-        //     float distance = PathFinding.GetShortestPathDistance(
-        //         walls[0].GetPoint(j), walls[0].GetPoint(k));
-        //
-        //     if (maxDistance < distance)
-        //         maxDistance = distance;
-        // }
-        //
-        // Properties.MaxPathDistance = maxDistance;
     }
 
     // Create the VisMesh

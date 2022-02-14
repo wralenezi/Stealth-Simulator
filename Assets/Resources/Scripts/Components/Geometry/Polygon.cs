@@ -39,6 +39,11 @@ public class Polygon
         return m_Vertices[i].position;
     }
 
+    public Vector2 GetAngelNormal(int i)
+    {
+        return GeometryHelper.GetNormal(GetPoint(i - 1), GetPoint(i), GetPoint(i + 1));
+    }
+
     public void RemovePoint(int i)
     {
         m_Vertices.RemoveAt(i);

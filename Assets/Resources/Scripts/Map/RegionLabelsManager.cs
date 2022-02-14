@@ -99,7 +99,7 @@ public class RegionLabelsManager : MonoBehaviour
         }
 
         // Get the normalized remaining distance to the goal
-        float normalizedDistance = npc.GetRemainingDistanceToGoal() / Properties.MaxPathDistance;
+        float normalizedDistance = npc.GetRemainingDistanceToGoal() / PathFinding.Instance.longestPath;
         WorldState.Set(npc.name + "_path_distance", normalizedDistance.ToString());
         // Mark the regions the npc will pass through
         WorldState.Set(npc.name + "_start_region", startRegion);

@@ -5,8 +5,6 @@ using UnityEngine;
 
 public class Patroler : MonoBehaviour
 {
-    // private StealthArea m_SA;
-    //
     // Road map of the level
     private RoadMap m_RoadMap;
 
@@ -16,7 +14,6 @@ public class Patroler : MonoBehaviour
 
     public void Initiate(MapManager mapManager)
     {
-        // m_SA = stealthArea;
         m_RoadMap = mapManager.GetRoadMap();
         open = new List<RoadMapLine>();
         closed = new List<RoadMapLine>();

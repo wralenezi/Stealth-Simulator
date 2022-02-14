@@ -6,25 +6,30 @@ using Random = UnityEngine.Random;
 
 public class CoinSpawner : MonoBehaviour
 {
-    private int concurrentCoinCount;
+    private int concurrentCoinCount = 1;
     private GameObject m_coinPrefab;
-    
+
     private List<Coin> m_coins;
 
     private List<Intruder> m_intruders;
-    
-    public void Inititate()
+
+    public void Inititate(Session session, List<MeshPolygon> navMesh)
     {
         m_coins = new List<Coin>();
         m_coinPrefab = (GameObject) Resources.Load("Prefabs/Coin");
 
-        concurrentCoinCount = 1;
-        CreateCoins();
+        if (session.gameType == GameType.CoinCollection)
+        {
+            CreateCoins();
+            Reset(navMesh);
+        }
+        else if (session.gameType == GameType.Stealth)
+            DisableCoins();
     }
 
-    public void Reset()
+    public void Reset(List<MeshPolygon> navMesh)
     {
-        SpawnCoins();
+        SpawnCoins(navMesh);
     }
 
     public void CreateCoins()
@@ -34,8 +39,8 @@ public class CoinSpawner : MonoBehaviour
             GameObject coinGo = Instantiate(m_coinPrefab, transform);
             coinGo.SetActive(false);
             Coin coin = coinGo.GetComponent<Coin>();
-            // coin.Initiate(GameManager.Instance.GetActiveArea().intrdrManager.GetIntruders());
-            // m_coins.Add(coin);
+            coin.Initiate();
+            m_coins.Add(coin);
         }
     }
 
@@ -43,16 +48,18 @@ public class CoinSpawner : MonoBehaviour
     {
         foreach (var coin in m_coins)
         {
-            coin.gameObject.SetActive(false);;
+            coin.gameObject.SetActive(false);
         }
     }
 
-    public void SpawnCoins()
+    public void SpawnCoins(List<MeshPolygon> navMesh)
     {
         foreach (var coin in m_coins)
         {
-            coin.Spawn();
-        } 
+            int randIndex = Random.Range(0, navMesh.Count);
+            Vector2 coinPos = navMesh[randIndex].GetRandomPosition();
+            coin.Spawn(coinPos, navMesh);
+        }
     }
 
 
@@ -60,5 +67,4 @@ public class CoinSpawner : MonoBehaviour
     {
         return m_coins;
     }
-    
 }

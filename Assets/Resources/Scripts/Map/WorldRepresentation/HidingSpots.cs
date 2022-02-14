@@ -92,7 +92,7 @@ public class HidingSpots : MonoBehaviour
 
             foreach (var g in guards)
                 hidingSpot.Fitness +=
-                    PathFinding.GetShortestPathDistance(hidingSpot.Position, g.transform.position);
+                    PathFinding.Instance.GetShortestPathDistance(hidingSpot.Position, g.transform.position);
         }
     }
 

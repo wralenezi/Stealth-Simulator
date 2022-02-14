@@ -33,7 +33,8 @@ public class Guard : NPC
 
         SeenArea = new List<Polygon>();
         m_excMarkPrefab = (GameObject) Resources.Load("Prefabs/exclamation_mark");
-        m_excMarkGo = Instantiate(m_excMarkPrefab, GameManager.Instance.GetActiveArea().transform);
+        m_excMarkGo = Instantiate(m_excMarkPrefab, transform);
+        m_excMarkGo.AddComponent<SeparateRotator>();
         m_excMarkGo.SetActive(false);
 
         // Add guard label
@@ -68,17 +69,17 @@ public class Guard : NPC
         }
     }
 
-    public float GetPassingsAverage()
-    {
-        float sum = 0f;
-
-        foreach (var line in LinesToPassThrough)
-        {
-            sum += line.GetPassingGuardsCount() - 1;
-        }
-
-        return sum / LinesToPassThrough.Count;
-    }
+    // public float GetPassingsAverage()
+    // {
+    //     float sum = 0f;
+    //
+    //     foreach (var line in LinesToPassThrough)
+    //     {
+    //         sum += line.GetPassingGuardsCount() - 1;
+    //     }
+    //
+    //     return sum / LinesToPassThrough.Count;
+    // }
 
     // resets the guards covered area
     public void RestrictSeenArea(float resetThreshold)

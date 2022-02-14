@@ -10,16 +10,13 @@ public class GuardsBehaviorController : MonoBehaviour
 
     // Guards behavior managers
     private Patroler patroler;
-
-    // Interceptor controller for controlling how guards act when chasing an intruder in sight.
-    private Interceptor interceptor;
-
+    
     // Search controller for controlling how guards searched for an intruder.
     private Searcher searcher;
 
-    // Guards planner
-    private Behavior m_guardPlanner;
-
+    // Interceptor controller for controlling how guards act when chasing an intruder in sight.
+    private Interceptor interceptor;
+    
     // Time it takes to make a decision for all guards
     public float Decision;
 
@@ -59,30 +56,8 @@ public class GuardsBehaviorController : MonoBehaviour
         }
 
         searcher.Initiate(session, mapManager);
-
-        // // Initiate the FSM to patrol for the guards
-        // m_state = new StateMachine();
-        // ChangeState(new Patrol(this, m_SA.intrdrManager.GetController()));
     }
-
-    // public void ResetBehavior()
-    // {
-    //     // Set the guards to the default mode (patrol)
-    //     ChangeState(new Patrol(this, m_SA.intrdrManager.GetController()));
-    // }
-
-    public void SetGuardPlanner(Behavior gb)
-    {
-        m_guardPlanner = gb;
-    }
-
-
-    // public void ExecuteState()
-    // {
-    //     m_state.UpdateState();
-    // }
-
-
+    
     // Start patrol shift
     public void StartShift()
     {
@@ -100,10 +75,7 @@ public class GuardsBehaviorController : MonoBehaviour
     public void StartSearch(Intruder intruder)
     {
         // if we were chasing then switch to search
-        if (!(NpcsManager.Instance.GetState() is Chase)) return;
-
-        // // Change the guard state
-        // NpcsManager.Instance.ChangeState<Search>();
+        // if (!(NpcsManager.Instance.GetState() is Chase)) return;
 
         // m_StealthArea.AreaUiManager.UpdateGuardLabel(GetState());
 
@@ -112,10 +84,7 @@ public class GuardsBehaviorController : MonoBehaviour
 
         // Flow the probability for intruder positions
         searcher.StartSearch(intruder);
-
-        // Assign the guard roles
-        // AssignGuardRoles();
-
+        
         // Order the guards to go the intruder's last known position
         foreach (var guard in NpcsManager.Instance.GetGuards())
             guard.SetDestination(intruder.GetLastKnownLocation(), true, true);
@@ -187,7 +156,7 @@ public class GuardsBehaviorController : MonoBehaviour
         foreach (var guard in NpcsManager.Instance.GetGuards())
         {
             // Decide the guard behavior in chasing based on its parameter
-            if (m_guardPlanner.alert == AlertPlanner.Intercepting)
+            if (behavior.alert == AlertPlanner.Intercepting)
             {
                 if (guard.role == GuardRole.Chase || !guard.IsBusy())
                     guard.SetDestination(intruder.GetLastKnownLocation(), true, true);
@@ -238,7 +207,7 @@ public class GuardsBehaviorController : MonoBehaviour
 
 
     // Get current state
-    public IState GetState()
+    public State GetState()
     {
         return NpcsManager.Instance.GetState();
     }

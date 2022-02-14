@@ -26,6 +26,7 @@ public enum PatrolPlanner
 {
     gStalest,
     iSimple,
+    iRoadMap,
     Random,
     UserInput
 }

@@ -10,10 +10,10 @@ public abstract class ChaseEvader : MonoBehaviour
 
     public virtual void Initiate(MapManager mapManager)
     {
-        m_HsC = new HidingSpotsCtrlr(mapManager.GetWalls());
+        m_HsC = new HidingSpotsCtrlr(mapManager.GetWalls(), mapManager.mapRenderer.GetMapBoundingBox(), 10,10);
     }
-    
+
     public abstract void Begin();
-    
+
     public abstract void Refresh();
 }

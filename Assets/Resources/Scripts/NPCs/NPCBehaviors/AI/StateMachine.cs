@@ -1,20 +1,15 @@
-﻿using UnityEngine;
-
-public interface IState
-{
-    public string name { get; }
-    
-    void Enter();
-    void Execute();
-    void Exit();
-}
+﻿using System;
+using UnityEngine;
 
 // State class
+[Serializable]
 public class StateMachine
 {
-    private IState m_CurrentState;
+    [SerializeField] private string m_name;
+    
+    public State m_CurrentState;
 
-    public IState GetState()
+    public State GetState()
     {
         return m_CurrentState;
     }
@@ -26,6 +21,7 @@ public class StateMachine
 
         m_CurrentState = newState;
 
+        m_name = m_CurrentState.name;
         m_CurrentState.Enter();
         WorldState.Set("last" + m_CurrentState?.name + "TimeStart", StealthArea.GetElapsedTime().ToString());
         WorldState.Set("last" + m_CurrentState?.name + "TimeEnd", WorldState.EMPTY_VALUE);

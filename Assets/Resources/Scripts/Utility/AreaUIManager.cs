@@ -29,7 +29,6 @@ public class AreaUIManager : MonoBehaviour
 
     private Vector2 timeLabelPosition;
 
-    public static float Score;
 
     public void Initiate()
     {
@@ -45,8 +44,6 @@ public class AreaUIManager : MonoBehaviour
 
         announcementLabel = transform.Find("Announcement").GetComponent<TextMeshProUGUI>();
         announcementLabel.text = "";
-
-        Score = 0f;
     }
 
 
@@ -60,7 +57,7 @@ public class AreaUIManager : MonoBehaviour
 
 
     // Update the label of the status of the game.
-    public void UpdateGuardLabel(IState state)
+    public void UpdateGuardLabel(State state)
     {
         if (state is Chase)
         {
@@ -130,15 +127,15 @@ public class AreaUIManager : MonoBehaviour
         }
     }
 
-    public void UpdateScore(float score)
-    {
-        Score = score;
-
-        if (GameManager.Instance.GetActiveArea().GetSessionInfo().gameType == GameType.CoinCollection)
-            scoreLabel.text = "Score: " + score;
-        else
-            scoreLabel.text = "Score: " + score + " %";
-    }
+    // public void UpdateScore(float score)
+    // {
+    //     Score = score;
+    //
+    //     if (GameManager.Instance.GetActiveArea().GetSessionInfo().gameType == GameType.CoinCollection)
+    //         scoreLabel.text = "Score: " + score;
+    //     else
+    //         scoreLabel.text = "Score: " + score + " %";
+    // }
 
 
     public void ShakeScore(float scoreChange)
@@ -172,4 +169,22 @@ public class AreaUIManager : MonoBehaviour
         textMeshPro.transform.position = originalPosition;
         scoreShaking = null;
     }
+    
+    // Show countdown to start the episode
+    // private IEnumerator Countdown()
+    // {
+    //     // AreaUiManager.DisplayLabel("3");
+    //     // yield return new WaitForSecondsRealtime(1f);
+    //     // AreaUiManager.DisplayLabel("2");
+    //     // yield return new WaitForSecondsRealtime(1f);
+    //     // AreaUiManager.DisplayLabel("1");
+    //     // yield return new WaitForSecondsRealtime(1f);
+    //     // AreaUiManager.DisplayLabel("Go");
+    //     // yield return new WaitForSecondsRealtime(0.2f);
+    //     // AreaUiManager.DisplayLabel("");
+    //     // Time.timeScale = 1f;
+    //     // yield return new WaitForSecondsRealtime(6f);
+    //     // intrdrManager.HideLabels();
+    // }
+
 }

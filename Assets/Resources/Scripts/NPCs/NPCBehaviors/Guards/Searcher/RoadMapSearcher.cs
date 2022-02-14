@@ -42,11 +42,13 @@ public abstract class RoadMapSearcher : Searcher
 
         m_ExpandedPoints = new List<PossiblePosition>();
 
-        m_MaxLength = Properties.MaxPathDistance;
+        m_MaxLength = PathFinding.Instance.longestPath;
 
         m_goalProb = new float[session.guardsCount];
 
         m_searchWeights = new SearchWeights(1f, 0f, 1f, -1f);
+
+        // RenderSearchSegments = true;
     }
 
     public override void CommenceSearch(NPC target)
@@ -110,8 +112,8 @@ public abstract class RoadMapSearcher : Searcher
 
             if (guard.GetLinesToPass().Count == 0) return;
 
-            m_goalProb[guard.GetNpcData().id] = guard.GetLinesToPass()[guard.GetLinesToPass().Count - 1]
-                .GetSearchSegment().GetProbability();
+            // m_goalProb[guard.GetNpcData().id] = guard.GetLinesToPass()[guard.GetLinesToPass().Count - 1]
+            //     .GetSearchSegment().GetProbability();
         }
         else
         {
@@ -160,7 +162,7 @@ public abstract class RoadMapSearcher : Searcher
                     continue;
 
                 float distanceToGuardGoal =
-                    PathFinding.GetShortestPathDistance(sS.GetMidPoint(), guard.GetGoal().Value);
+                    PathFinding.Instance.GetShortestPathDistance(sS.GetMidPoint(), guard.GetGoal().Value);
 
                 if (minGoalDistance > distanceToGuardGoal)
                     minGoalDistance = distanceToGuardGoal;
@@ -169,7 +171,7 @@ public abstract class RoadMapSearcher : Searcher
             minGoalDistance = float.IsPositiveInfinity(minGoalDistance) ? 0f : minGoalDistance;
 
             // Get the distance from the requesting guard
-            float distanceToGuard = PathFinding.GetShortestPathDistance((sS.position1 + sS.position2) / 2f,
+            float distanceToGuard = PathFinding.Instance.GetShortestPathDistance((sS.position1 + sS.position2) / 2f,
                 requestingGuard.transform.position);
 
             // Calculate the fitness of the search segment
@@ -179,8 +181,8 @@ public abstract class RoadMapSearcher : Searcher
             // Calculate the overall heuristic of this search segment
             ssFitness = ssFitness * m_searchWeights.probWeight +
                         (sS.GetAge() / Properties.MaxAge) * m_searchWeights.ageWeight +
-                        (minGoalDistance / Properties.MaxPathDistance) * m_searchWeights.dstToGuardsWeight +
-                        (distanceToGuard / Properties.MaxPathDistance) * m_searchWeights.dstFromOwnWeight;
+                        (minGoalDistance / PathFinding.Instance.longestPath) * m_searchWeights.dstToGuardsWeight +
+                        (distanceToGuard / PathFinding.Instance.longestPath) * m_searchWeights.dstFromOwnWeight;
 
 
             if (maxFitnessValue < ssFitness)
@@ -207,7 +209,7 @@ public abstract class RoadMapSearcher : Searcher
         foreach (var curGuard in guards)
         {
             // float dstToOldGuard = Vector2.Distance(curGuard.transform.position, newGoal);
-            float dstToOldGuard = PathFinding.GetShortestPathDistance(curGuard.transform.position, newGoal);
+            float dstToOldGuard = PathFinding.Instance.GetShortestPathDistance(curGuard.transform.position, newGoal);
 
             // Check if the other guard is closer
             if (minDistance > dstToOldGuard)
@@ -376,7 +378,7 @@ public abstract class RoadMapSearcher : Searcher
         // Get the path member variable to load it to the guard
         List<Vector2> path = guard.GetPath();
 
-        PathFinding.GetShortestPath(guard.GetTransform().position, startLine.GetMid(),
+        PathFinding.Instance.GetShortestPath(guard.GetTransform().position, startLine.GetMid(),
             ref path);
 
         // path.Add(guard.GetTransform().position);
@@ -617,7 +619,7 @@ public abstract class RoadMapSearcher : Searcher
         // Get the path member variable to load it to the guard
         List<Vector2> path = guard.GetPath();
 
-        PathFinding.GetShortestPath(guard.GetTransform().position, startLine.GetMid(),
+        PathFinding.Instance.GetShortestPath(guard.GetTransform().position, startLine.GetMid(),
             ref path);
 
         path.Insert(0, guard.GetTransform().position);
@@ -690,16 +692,9 @@ public abstract class RoadMapSearcher : Searcher
             float margine = 0.1f;
             float distance = Vector2.Distance(first, second);
 
-            // Vector2 dir = (second - first).normalized;
-            // Vector2 left = Vector2.Perpendicular(dir);
-            //
-            // RaycastHit2D hitLeft = Physics2D.Raycast(first + left * margine, dir, distance, LayerMask.GetMask("Wall"));
-            // RaycastHit2D hitRight = Physics2D.Raycast(first - left * margine, dir, distance, LayerMask.GetMask("Wall"));
-
             bool isMutuallyVisible = GeometryHelper.IsCirclesVisible(first, second, margine, "Wall");
 
-            if (distance < 0.1f || isMutuallyVisible
-            ) // (Equals(hitLeft.collider, null) && Equals(hitRight.collider, null)))
+            if (distance < 0.1f || isMutuallyVisible)
             {
                 path.RemoveAt(i + 1);
                 i--;
@@ -729,6 +724,7 @@ public abstract class RoadMapSearcher : Searcher
 
     public void OnDrawGizmos()
     {
+        
         if (RenderSearchSegments)
             if (m_RoadMap != null)
             {

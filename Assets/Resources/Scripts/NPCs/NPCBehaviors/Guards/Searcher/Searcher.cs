@@ -24,7 +24,6 @@ public abstract class Searcher : MonoBehaviour
 
     public virtual void Initiate(Session session, MapManager mapManager)
     {
-        // m_SA = stealthArea;
     }
 
     /// <summary>
@@ -43,11 +42,6 @@ public abstract class Searcher : MonoBehaviour
         StartCoroutine(RememberIntruderDetails());
     }
 
-    public float GetSearchTime()
-    {
-        return StealthArea.GetElapsedTime() - m_SearchstartTimestamp;
-    }
-
     IEnumerator RememberIntruderDetails()
     {
         isStillCheating = true;
@@ -58,9 +52,7 @@ public abstract class Searcher : MonoBehaviour
 
     public abstract void CommenceSearch(NPC target);
 
-    public virtual void UpdateSearcher(float speed, List<Guard> guards, float timeDelta)
-    {
-    }
+    public virtual void UpdateSearcher(float speed, List<Guard> guards, float timeDelta) { }
 
     public abstract void Search(Guard guard);
 

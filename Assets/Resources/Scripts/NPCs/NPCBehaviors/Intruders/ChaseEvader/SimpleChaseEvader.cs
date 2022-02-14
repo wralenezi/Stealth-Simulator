@@ -14,14 +14,10 @@ public class SimpleChaseEvader : ChaseEvader
     {
         foreach (var intruder in NpcsManager.Instance.GetIntruders())
         {
-            // if (intruder.GetNpcData().intruderPlanner == IntruderPlanner.UserInput) return;
-            
-            if(intruder.IsBusy()) return;
-            
-            m_HsC.AssignHidingSpotsFitness(NpcsManager.Instance.GetGuards(), MapManager.Instance.GetNavMesh());
+            if (intruder.IsBusy()) return;
+
+            m_HsC.AssignHidingSpotsFitness(NpcsManager.Instance.GetGuards());
             intruder.SetDestination(m_HsC.GetBestHidingSpot().Value, true, false);
         }
     }
-    
-    
 }

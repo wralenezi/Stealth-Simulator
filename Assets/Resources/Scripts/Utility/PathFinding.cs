@@ -3,32 +3,42 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using DataStructures.PriorityQueue;
+using UnityEditor;
 
-public static class PathFinding
+public class PathFinding : MonoBehaviour
 {
+    [SerializeField] private float m_longestPathInMap;
+
+
+    public float longestPath => m_longestPathInMap;
+
     // Simple Funnel Offset
-    static float offsetMultiplier = 0.25f;
+    private float offsetMultiplier = 0.25f;
 
     // Containers for the path finding
-    private static List<MeshPolygon> openListMesh;
-    private static List<MeshPolygon> closedListMesh;
-    private static List<MeshPolygon> pathMesh;
+    private List<MeshPolygon> openListMesh;
+    private List<MeshPolygon> closedListMesh;
+    private List<MeshPolygon> pathMesh;
 
     // Temp path (used for just finding the shortest path distance
-    private static List<Vector2> shortestPath;
+    private List<Vector2> shortestPath;
 
     // Simple stupid funnel variables
-    private static List<Vector2> leftVertices;
-    private static List<Vector2> rightVertices;
+    private List<Vector2> leftVertices;
+    private List<Vector2> rightVertices;
 
     // For road map path finding
-    private static List<WayPoint> openListRoadMap;
-    private static List<WayPoint> closedListRoadMap;
-    private static List<Vector2> pathRoadMap;
+    private List<WayPoint> openListRoadMap;
+    private List<WayPoint> closedListRoadMap;
+    private List<Vector2> pathRoadMap;
+
+    public static PathFinding Instance;
 
     // Initiate containers; to improve garbage collection
-    public static void Initiate()
+    public void Initiate()
     {
+        Instance ??= this;
+
         openListMesh = new List<MeshPolygon>();
         closedListMesh = new List<MeshPolygon>();
         pathMesh = new List<MeshPolygon>();
@@ -41,22 +51,43 @@ public static class PathFinding
         openListRoadMap = new List<WayPoint>();
         closedListRoadMap = new List<WayPoint>();
         pathRoadMap = new List<Vector2>();
+
+        CalculateLongestPathLength(MapManager.Instance.mapRenderer.GetInteriorWalls());
+    }
+
+
+    // Calculate the longest possible path in the map
+    private void CalculateLongestPathLength(List<Polygon> walls)
+    {
+        float lengthFromPoint = 0.1f;
+        float maxDistance = Mathf.NegativeInfinity;
+        for (int j = 0; j < walls[0].GetVerticesCount(); j++)
+        for (int k = j + 1; k < walls[0].GetVerticesCount(); k++)
+        {
+            float distance = GetShortestPathDistance(
+                walls[0].GetAngelNormal(j) * lengthFromPoint + walls[0].GetPoint(j), walls[0].GetAngelNormal(k) * lengthFromPoint + walls[0].GetPoint(k));
+
+            if (maxDistance < distance)
+                maxDistance = distance;
+        }
+
+        m_longestPathInMap = maxDistance;
     }
 
 
     // Return the shortest path as a sequence of points
-    public static void GetShortestPath(Vector2 startPoint, Vector2 destinationPoint,
+    public void GetShortestPath(Vector2 startPoint, Vector2 destinationPoint,
         ref List<Vector2> resultPath)
     {
         List<MeshPolygon> navMesh = MapManager.Instance.GetNavMesh();
-        
+
         // Get shortest path in polygons
         SetShortestPathPolygons(navMesh, startPoint, destinationPoint);
 
         GetPathBySSFA(startPoint, destinationPoint, ref resultPath);
     }
 
-    public static float GetShortestPathDistance(Vector2 startPoint, Vector2 destinationPoint)
+    public float GetShortestPathDistance(Vector2 startPoint, Vector2 destinationPoint)
     {
         GetShortestPath(startPoint, destinationPoint, ref shortestPath);
 
@@ -70,7 +101,7 @@ public static class PathFinding
 
 
     // Receive Polygon start and end position and return Polygon based path
-    private static void SetShortestPathPolygons(List<MeshPolygon> navMesh, Vector2 start,
+    private void SetShortestPathPolygons(List<MeshPolygon> navMesh, Vector2 start,
         Vector2 destination)
     {
         MeshPolygon startPolygon = GetCorrespondingPolygon(navMesh, start);
@@ -280,7 +311,7 @@ public static class PathFinding
 
     // Get the path using the simple stupid funnel algorithm
     // http://ahamnett.blogspot.com/2012/10/funnel-algorithm.html
-    static void GetPathBySSFA(Vector2 startPoint, Vector2 destinationPoint, ref List<Vector2> path)
+    private void GetPathBySSFA(Vector2 startPoint, Vector2 destinationPoint, ref List<Vector2> path)
     {
         path.Clear();
 
@@ -313,6 +344,8 @@ public static class PathFinding
         // Go through the polygons
         for (int i = 1; i <= pathMesh.Count; i++)
         {
+            // if (path.Count > 60) break;
+
             // If new left vertex is different from the current, the check
             if (leftVertices[i] != leftVertices[left] && i > left)
             {
@@ -450,7 +483,7 @@ public static class PathFinding
                         }
 
                         // Reset the funnel
-                        apex = newApex; // - normal * offsetDistance;
+                        apex = newApex;
                         left = next;
                         right = next;
                         i = next;
@@ -472,7 +505,7 @@ public static class PathFinding
     // Get shortest path on the road map
     // The start node is a node on the road map and the goal is the position of the phantom 
     // for ease of implementation we start the search from the goal to the start node
-    public static List<Vector2> GetShortestPath(List<WayPoint> roadmap, InterceptionPoint goalPh, WayPoint start)
+    public List<Vector2> GetShortestPath(List<WayPoint> roadmap, InterceptionPoint goalPh, WayPoint start)
     {
         WayPoint goal = goalPh.destination;
 
@@ -550,7 +583,7 @@ public static class PathFinding
     }
 
 
-    public static float GetShortestPathDistance(List<WayPoint> roadmap, InterceptionPoint goalPh, WayPoint start)
+    public float GetShortestPathDistance(List<WayPoint> roadmap, InterceptionPoint goalPh, WayPoint start)
     {
         List<Vector2> path = GetShortestPath(roadmap, goalPh, start);
 
@@ -564,19 +597,27 @@ public static class PathFinding
         return totalDistance;
     }
 
-    // Helper function
-    public static T KeyByValue<T, W>(this Dictionary<T, W> dict, W val)
-    {
-        T key = default;
-        foreach (KeyValuePair<T, W> pair in dict)
-        {
-            if (EqualityComparer<W>.Default.Equals(pair.Value, val))
-            {
-                key = pair.Key;
-                break;
-            }
-        }
 
-        return key;
+    public void OnDrawGizmos()
+    {
+        if (Equals(pathMesh, null))
+            foreach (var p in pathMesh)
+            {
+                p.Draw("");
+            }
+
+        if (Equals(leftVertices, null))
+            foreach (var v in leftVertices)
+            {
+                Gizmos.color = Color.blue;
+                Gizmos.DrawSphere(v, 0.5f);
+            }
+
+        if (Equals(rightVertices, null))
+            foreach (var v in rightVertices)
+            {
+                Gizmos.color = Color.red;
+                Gizmos.DrawSphere(v, 0.5f);
+            }
     }
 }

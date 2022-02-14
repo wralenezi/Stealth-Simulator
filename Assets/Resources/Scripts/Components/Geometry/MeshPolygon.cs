@@ -56,7 +56,7 @@ public class MeshPolygon : Polygon
 
     public void GetDiagonalOfNeighbor(MeshPolygon nearbyPolygon, out Vector2 left, out Vector2 right)
     {
-        int key = m_NeighborPolygons.KeyByValue(nearbyPolygon);
+        int key = m_NeighborPolygons.GetKeyByValue(nearbyPolygon);
 
         left = GetPoint(key);
         right = GetPoint(key + 1);
@@ -139,6 +139,7 @@ public class MeshPolygon : Polygon
 
         base.Draw(label);
     }
+
 
 
     // Add a neighbor polygon to this polygon on the NavMesh

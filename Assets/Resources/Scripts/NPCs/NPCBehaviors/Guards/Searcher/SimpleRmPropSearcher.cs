@@ -22,6 +22,8 @@ public class SimpleRmPropSearcher : RoadMapSearcher
         // Spread the probability similarly to Third eye crime
         foreach (var line in m_RoadMap.GetLines(false))
         {
+            // Debug.Log("searching");
+
             line.PropagateProb();
             line.IncreaseProbability(speed, timeDelta);
             line.ExpandSs(speed * m_expansionMultiplier, timeDelta);
@@ -37,9 +39,6 @@ public class SimpleRmPropSearcher : RoadMapSearcher
                 break;
             }
         }
-
-        // // Cheat if they lost track by spreading the location
-        // if (float.IsNegativeInfinity(maxProbability)) CommenceSearch(m_Intruder);
 
         if (maxProbability < m_minSegThreshold) NormalizeSegments(maxProbability);
     }

@@ -42,7 +42,7 @@ public class GuardsManager : Agent
     public void Initiate(Session session, MapManager mapManager)
     {
         m_Guards = new List<Guard>();
-        
+
         // Initiate the guard behavior controller
         m_gCtrl = gameObject.AddComponent<GuardsBehaviorController>();
         m_gCtrl.Initiate(session, mapManager);
@@ -167,7 +167,7 @@ public class GuardsManager : Agent
         {
             case NpcType.Guard:
                 npcGameObject.name = "Guard" + (npcData.id + 1).ToString().PadLeft(2, '0');
-                npc = npcGameObject.AddComponent<VisMeshGuard>();
+                npc = npcGameObject.AddComponent<Guard>();
 
                 Color color = Color.clear;
                 ColorUtility.TryParseHtmlString(session.guardColor, out color);
@@ -199,15 +199,12 @@ public class GuardsManager : Agent
     {
         foreach (var npcData in session.GetGuardsData())
             CreateGuard(session, npcData, navMesh);
-
-        // Get one of the guards planner
-        if (m_Guards.Count > 0) m_gCtrl.SetGuardPlanner(m_Guards[0].GetNpcData().behavior);
     }
 
     // Reset NPCs at the end of the round
     public void Reset(List<MeshPolygon> navMesh, Session session)
     {
-        SetScore(0f);
+        // SetScore(0f);
 
         GuardsOverlapTime = 0f;
 
@@ -226,7 +223,7 @@ public class GuardsManager : Agent
 
     public void Speak(NPC speaker, string lineType, float prob)
     {
-        m_script.ChooseDialog(speaker,null,lineType,prob,GetGuards());
+        m_script.ChooseDialog(speaker, null, lineType, prob, GetGuards());
     }
 
 
@@ -256,23 +253,23 @@ public class GuardsManager : Agent
     {
         m_score += score;
         m_score = Mathf.Max(0, m_score);
-        SetScore(m_score);
+        // SetScore(m_score);
         // m_SA.AreaUiManager.ShakeScore(score);
     }
 
 
-    public void SetScore(float score)
-    {
-        m_score = score;
-        AreaUIManager.Score = Mathf.Round(m_score * 10f) / 10f;
-        // m_SA.AreaUiManager.UpdateScore(AreaUIManager.Score);
-    }
+    // public void SetScore(float score)
+    // {
+    //     m_score = score;
+    //     AreaUIManager.Score = Mathf.Round(m_score * 10f) / 10f;
+    //     // m_SA.AreaUiManager.UpdateScore(AreaUIManager.Score);
+    // }
 
 
     #region FSM functions
 
     // Get current state
-    public IState GetState()
+    public State GetState()
     {
         return m_gCtrl.GetState();
     }
@@ -356,7 +353,7 @@ public class GuardsManager : Agent
 
 
     // Execute NPCs plans
-    public void Move(IState state, float deltaTime)
+    public void Move(State state, float deltaTime)
     {
         foreach (var guard in m_Guards)
             guard.ExecutePlan(state, deltaTime);

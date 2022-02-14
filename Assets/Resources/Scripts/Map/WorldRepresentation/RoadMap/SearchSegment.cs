@@ -191,8 +191,8 @@ public class SearchSegment
         if (Math.Abs(GetProbability() - MinProbability) < 0.00001f) return;
 
         // Give a portion of the probability
-        float newProb = GetProbability() * (Properties.MaxPathDistance - Properties.GetMaxEdgeLength() * 1.5f) /
-                        Properties.MaxPathDistance;
+        float newProb = GetProbability() * (PathFinding.Instance.longestPath - Properties.GetMaxEdgeLength() * 1.5f) /
+                        PathFinding.Instance.longestPath;
         
         if(newProb < 0.001f) return;
 

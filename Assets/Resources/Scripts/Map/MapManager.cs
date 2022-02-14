@@ -11,6 +11,8 @@ public class MapManager : MonoBehaviour
     // Convex decomposer of the space
     public MapDecomposer mapDecomposer { get; private set; }
 
+    public PathFinding pathFinder { get; private set; }
+
     // Isovist map
     public Isovists isovists { get; private set; }
 
@@ -42,6 +44,11 @@ public class MapManager : MonoBehaviour
         // Create the NavMesh
         mapDecomposer = gameObject.AddComponent<MapDecomposer>();
         mapDecomposer.Initiate(mapRenderer.GetInteriorWalls());
+
+        pathFinder = gameObject.AddComponent<PathFinding>();
+        pathFinder.Initiate();
+
+        // CalculateLongestPathLength(mapRenderer.GetInteriorWalls());
 
         // Isovists map initiate
         isovists = gameObject.AddComponent<Isovists>();
@@ -80,8 +87,6 @@ public class MapManager : MonoBehaviour
     {
         return roadMap;
     }
-
-
-
+    
 
 }

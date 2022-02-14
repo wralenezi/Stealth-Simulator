@@ -7,15 +7,15 @@ public class MapRenderer : MonoBehaviour
     private List<GameObject> m_wallOGs;
 
     // List of the walls in the map
+    public bool showWalls;
     // the first polygon is the outer wall and the rest are the obstacles.
     private List<Polygon> m_walls;
-
-    // inner walls which are on an offset from the actual wall.
-    private List<Polygon> m_interiorWalls;
-
+    
     private float m_MapBoundingBoxMaxWith;
 
     public bool showInteriorWalls;
+    // inner walls which are on an offset from the actual wall.
+    private List<Polygon> m_interiorWalls;
 
 
     // Initiate the map renderer
@@ -242,6 +242,13 @@ public class MapRenderer : MonoBehaviour
 
     public void OnDrawGizmos()
     {
+        
+        if (showWalls)
+        {
+            foreach (var poly in GetWalls())
+                poly.Draw("");
+        }
+        
         if (showInteriorWalls)
         {
             foreach (var poly in GetInteriorWalls())

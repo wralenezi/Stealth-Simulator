@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Numerics;
 using UnityEngine;
+using Vector2 = UnityEngine.Vector2;
 
 public static class GeometryHelper
 {
@@ -185,19 +187,19 @@ public static class GeometryHelper
         return closestIntersection;
     }
 
-    // Return minimum distance between line segment qr and point p
-    public static Vector2 ClosestProjectionOnSegment(Vector2 q, Vector2 r, Vector2 p)
+    // Return closest point to point p on line segment qr.
+    public static Vector2 ClosestProjectionOnSegment(Vector2 segP1, Vector2 segP2, Vector2 p)
     {
-        float length2 = Mathf.Pow(Vector2.Distance(q, r), 2);
+        float length2 = Mathf.Pow(Vector2.Distance(segP1, segP2), 2);
 
-        if (Math.Abs(length2) < 0.00001f) return q;
+        if (Math.Abs(length2) < 0.00001f) return segP1;
 
         // Consider the line extending the segment, parameterized as r + t (q - r).
         // We find projection of point p onto the line. 
         // It falls where t = [(p-r) . (q-r)] / |q-r|^2
         // We clamp t from [0,1] to handle points outside the segment qr.
-        float t = Mathf.Max(0, Mathf.Min(1, Vector2.Dot(p - r, q - r) / length2));
-        Vector2 projection = r + t * (q - r); // Projection falls on the segment
+        float t = Mathf.Max(0, Mathf.Min(1, Vector2.Dot(p - segP2, segP1 - segP2) / length2));
+        Vector2 projection = segP2 + t * (segP1 - segP2); // Projection falls on the segment
 
         return projection;
     }
@@ -221,6 +223,28 @@ public static class GeometryHelper
         RaycastHit2D hitRight = Physics2D.Raycast(first - left * radius, dir, distance, LayerMask.GetMask(layer));
 
         return Equals(hitLeft.collider, null) && Equals(hitRight.collider, null);
+    }
+
+    public static Vector2? GetClosetPointOnPath(List<Vector2> path, Vector2 point)
+    {
+        float minSqrMag = Mathf.Infinity;
+        Vector2? projection = null;
+
+        for (int i = 0; i < path.Count - 1; i++)
+        {
+            Vector2 pOnSegment = ClosestProjectionOnSegment(path[i], path[i + 1], point);
+
+            Vector2 diff = point - pOnSegment;
+            float sqrMag = diff.sqrMagnitude;
+            
+            if (minSqrMag > sqrMag)
+            {
+                minSqrMag = sqrMag;
+                projection = pOnSegment;
+            }
+        }
+
+        return  projection;
     }
 
 

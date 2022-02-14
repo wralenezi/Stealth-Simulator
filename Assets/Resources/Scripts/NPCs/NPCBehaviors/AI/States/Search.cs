@@ -1,5 +1,8 @@
 ﻿// Guard search state (after losing sight of all intruders)
 
+using System;
+
+[Serializable]
 public class Search : State
 {
     public override void MakeState(GuardsBehaviorController gc, IntrudersBehaviorController ic)
@@ -22,7 +25,7 @@ public class Search : State
 
     public override void Exit()
     {
-        
+        m_GC.ClearSearch();
     }
     
 }

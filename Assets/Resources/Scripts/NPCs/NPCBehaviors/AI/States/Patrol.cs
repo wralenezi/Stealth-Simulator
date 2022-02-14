@@ -1,5 +1,7 @@
-﻿// Guard patrol state
+﻿using System;
 
+// Guard patrol state
+[Serializable]
 public class Patrol : State
 {
     public override void MakeState(GuardsBehaviorController gc, IntrudersBehaviorController ic)

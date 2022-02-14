@@ -99,7 +99,7 @@ public class IntrudersManager : Agent
             intruder.CastVision();
     }
 
-    public void Move(IState state, float deltaTime)
+    public void Move(State state, float deltaTime)
     {
         foreach (var intruder in m_Intruders)
         {

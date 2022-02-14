@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+[Serializable]
 public class NpcsManager : MonoBehaviour
 {
     // Guards manager
@@ -9,19 +11,14 @@ public class NpcsManager : MonoBehaviour
     // Intruder Manager
     private IntrudersManager m_intrudersManager;
 
-    private StateMachine m_state;
+    [SerializeField]
+    public StateMachine m_state;
 
     public static NpcsManager Instance;
 
     public void Initialize(Session session, MapManager mapManager)
     {
         Instance ??= this;
-
-        // Add the Intruder manager
-        GameObject intrudersOG = new GameObject("Intruders");
-        intrudersOG.transform.parent = transform;
-        m_intrudersManager = gameObject.AddComponent<IntrudersManager>();
-        m_intrudersManager.Initiate(session, mapManager);
 
         // Assign the Guard Manager
         GameObject guardsOG = new GameObject("Guards");
@@ -31,11 +28,16 @@ public class NpcsManager : MonoBehaviour
 
         // Create the Guards
         m_guardsManager.CreateGuards(session, mapManager.GetNavMesh());
+        
+        // Add the Intruder manager
+        GameObject intrudersOG = new GameObject("Intruders");
+        intrudersOG.transform.parent = transform;
+        m_intrudersManager = intrudersOG.AddComponent<IntrudersManager>();
+        m_intrudersManager.Initiate(session, mapManager);
 
         // Create the intruders
         m_intrudersManager.CreateIntruders(session, m_guardsManager.GetGuards(), mapManager.GetNavMesh());
 
-        // Initiate the FSM to patrol for the guards
         m_state = new StateMachine();
 
         ResetState();
@@ -110,7 +112,7 @@ public class NpcsManager : MonoBehaviour
     }
 
     // Get current state
-    public IState GetState()
+    public State GetState()
     {
         return m_state.GetState();
     }

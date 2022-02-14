@@ -147,8 +147,8 @@ public class SessionsSetup : MonoBehaviour
         // Methods that will be considered 
         List<SearchPlanner> guardMethods = new List<SearchPlanner>()
         {
-            // SearchPlanner.RmPropSimple//, SearchPlanner.RmPropOccupancyDiffusal
-            SearchPlanner.Random
+             SearchPlanner.RmPropSimple//, SearchPlanner.RmPropOccupancyDiffusal
+            // SearchPlanner.Random
         };
 
         List<PlanOutput> pathTypes = new List<PlanOutput>()
@@ -165,7 +165,7 @@ public class SessionsSetup : MonoBehaviour
         foreach (var guardMethod in guardMethods)
         foreach (var pathType in pathTypes)
         {
-            Session session = new Session("", GameType.CoinCollection, Scenario.Chase, color, 4, 1,
+            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, color, 4, 1,
                 new MapData("amongUs", 0.5f), speechMethod, SurveyType.EndEpisode);
 
             // Add guards
@@ -180,8 +180,12 @@ public class SessionsSetup : MonoBehaviour
             // Add intruders
             for (int i = 0; i < session.intruderCount; i++)
             {
-                Behavior behavior = new Behavior(PatrolPlanner.iSimple, AlertPlanner.iHeuristic,
+                // Behavior behavior = new Behavior(PatrolPlanner.UserInput, AlertPlanner.UserInput,
+                //     SearchPlanner.UserInput, pathType);
+                
+                Behavior behavior = new Behavior(PatrolPlanner.iRoadMap, AlertPlanner.iHeuristic,
                     SearchPlanner.iHeuristic, pathType);
+                
                 session.AddNpc(i + 1, NpcType.Intruder, behavior, PathFindingHeursitic.EuclideanDst,
                     PathFollowing.SimpleFunnel, null);
             }

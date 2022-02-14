@@ -1,4 +1,7 @@
-﻿// Guard chase state
+﻿using System;
+
+// Guard chase state
+[Serializable]
 public class Chase : State
 {
     public override void MakeState(GuardsBehaviorController gc, IntrudersBehaviorController ic)
@@ -21,6 +24,6 @@ public class Chase : State
 
     public override void Exit()
     {
-        
+        m_GC.ClearGoals();
     }
 }

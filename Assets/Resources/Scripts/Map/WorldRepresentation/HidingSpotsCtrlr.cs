@@ -9,9 +9,14 @@ public class HidingSpotsCtrlr
     // the hiding spots
     private List<HidingSpot> m_HidingSpots;
 
-    public HidingSpotsCtrlr(List<Polygon> walls)
+    private PartitionGrid<HidingSpot> m_spots;
+
+
+    public HidingSpotsCtrlr(List<Polygon> walls, Bounds bounds, int colCount, int rowCount)
     {
         m_HidingSpots = new List<HidingSpot>();
+
+        m_spots = new PartitionGrid<HidingSpot>(bounds, colCount, rowCount);
 
         CreateHidingSpots(walls);
     }
@@ -77,30 +82,10 @@ public class HidingSpotsCtrlr
         if (!PolygonHelper.IsPointInPolygons(interiorWalls, position)) return;
 
         HidingSpot hSr = new HidingSpot(position, Isovists.Instance.GetCoverRatio(position));
+
         m_HidingSpots.Add(hSr);
+        m_spots.Add(hSr, hSr.Position);
     }
-
-
-    /// <summary>
-    /// Update the fitness of the hiding positions based on the guards' possible positions.
-    /// </summary>
-    public void UpdatePointsFitness(List<PossiblePosition> guardsPositions)
-    {
-        foreach (var hidingSpot in m_HidingSpots)
-        {
-            float fitness = 0f;
-
-            // fitness += GetAverageDistancesToHidingSpots(hidingSpot, guardsPositions);
-
-            // fitness += GetMinDistanceToHidingSpots(hidingSpot, guardsPositions);
-
-            // How hidden is the hiding spot; 0 is easily observable, 1 is well hidden.
-            fitness += hidingSpot.CoverRatio;
-
-            hidingSpot.Fitness = fitness;
-        }
-    }
-
 
     private float GetAverageDistancesToHidingSpots(HidingSpot hidingSpot, List<PossiblePosition> possiblePositions)
     {
@@ -110,7 +95,7 @@ public class HidingSpotsCtrlr
                               possiblePosition.safetyMultiplier;
 
 
-        return totalDistances / (Properties.MaxPathDistance * possiblePositions.Count);
+        return totalDistances / (PathFinding.Instance.longestPath * possiblePositions.Count);
     }
 
     private float GetMinDistanceToHidingSpots(HidingSpot hidingSpot, List<PossiblePosition> possiblePositions)
@@ -124,20 +109,24 @@ public class HidingSpotsCtrlr
             minDistance = (distance < minDistance) ? distance : minDistance;
         }
 
-        return minDistance / Properties.MaxPathDistance;
+        return minDistance / PathFinding.Instance.longestPath;
     }
 
-
     // Assign the fitness value of each hiding spot based on the guards distance to them
-    public void AssignHidingSpotsFitness(List<Guard> guards, List<MeshPolygon> navMesh)
+    public void AssignHidingSpotsFitness(List<Guard> guards)
     {
         foreach (var hidingSpot in m_HidingSpots)
         {
             hidingSpot.Fitness = 0f;
             foreach (var g in guards)
                 hidingSpot.Fitness +=
-                    PathFinding.GetShortestPathDistance(hidingSpot.Position, g.transform.position);
+                    PathFinding.Instance.GetShortestPathDistance(hidingSpot.Position, g.transform.position);
         }
+    }
+
+    public List<HidingSpot> GetHidingSpots(Vector3 position, int range)
+    {
+        return m_spots.GetPartitions(position, range);
     }
 
 
@@ -162,9 +151,10 @@ public class HidingSpotsCtrlr
     public void DrawHidingSpots()
     {
         foreach (var spot in m_HidingSpots)
-        {
             spot.Draw();
-        }
+
+
+        m_spots.Draw();
     }
 }
 
