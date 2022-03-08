@@ -64,7 +64,7 @@ public class PartitionGrid<T>
         return new Vector2(Mathf.RoundToInt(coordinates.x), Mathf.RoundToInt(coordinates.y));
     }
 
-    public List<T> GetPartitions(Vector3 worldPosition, int range)
+    public List<T> GetPartitionsContent(Vector3 worldPosition, int range)
     {
         m_tempContainer.Clear();
 
@@ -91,48 +91,12 @@ public class PartitionGrid<T>
     {
         if (ShowPartitions)
         {
-            // GetPartitions(coordinates, 1);
-            //
-            // foreach (var h in m_tempContainer)
-            // {
-            //     
-            // }
-
-            //
-            //
-            // int range = 0;
-            //
-            // for (int colN = 0 - range; colN <= range; colN++)
-            // for (int rowN = 0 - range; rowN <= range; rowN++)
-            // {
-            //     Gizmos.color = Color.red;
-            //
-            //     Gizmos.DrawCube(
-            //         GetWorldPosition(colN + Mathf.RoundToInt(coordinates.x), rowN + Mathf.RoundToInt(coordinates.y)),
-            //         new Vector3(cellWidth * 0.9f, cellHeight * 0.9f, 1f));
-            // }
-            //
-
-            // for (int col = 0; col < m_grid.GetLength(0); col++)
-            // for (int row = 0; row < m_grid.GetLength(1); row++)
-            // {
-            //     if (Mathf.RoundToInt(coordinates.x) == col && Mathf.RoundToInt(coordinates.y) == row)
-            //     {
-            //         int range = 1;
-            //
-            //         for (int colN = 0 - range; colN < range; colN++)
-            //         for (int rowN = 0 - range; rowN < range; rowN++)
-            //         {
-            //             Gizmos.color = Color.red;
-            //         }
-            //         
-            //     }
-            //     else
-            //         Gizmos.color = Color.grey;
-            //
-            //
-            //     Gizmos.DrawCube(GetWorldPosition(col, row), new Vector3(cellWidth * 0.9f, cellHeight * 0.9f, 1f));
-            // }
+            Gizmos.color = Color.gray;
+            for (int col = 0; col < m_grid.GetLength(0); col++)
+            for (int row = 0; row < m_grid.GetLength(1); row++)
+            {
+                Gizmos.DrawCube(GetWorldPosition(col, row), new Vector3(cellWidth * 0.9f, cellHeight * 0.9f, 1f));
+            }
         }
     }
 }

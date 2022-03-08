@@ -18,10 +18,7 @@ public class GuardsManager : Agent
 
     // For voicing the npcs
     private Scriptor m_script;
-
-    // Score 
-    private float m_score;
-
+    
     private readonly float AlarmCooldown = 2f;
     private AudioSource m_alarmAudio;
 
@@ -59,7 +56,6 @@ public class GuardsManager : Agent
 
 
     // This part controls the Reinforcement Learning part of the behavior
-
     #region RL behavior
 
     public override void OnEpisodeBegin()
@@ -204,8 +200,6 @@ public class GuardsManager : Agent
     // Reset NPCs at the end of the round
     public void Reset(List<MeshPolygon> navMesh, Session session)
     {
-        // SetScore(0f);
-
         GuardsOverlapTime = 0f;
 
         // Reset guards
@@ -239,30 +233,6 @@ public class GuardsManager : Agent
     //
     //     foreach (var guard in m_Guards)
     //         guard.UpdateWldStatV(m_Guards);
-    // }
-
-    public void CoinPicked()
-    {
-        if (GetState() is Search)
-        {
-            IncrementScore(20f);
-        }
-    }
-
-    public void IncrementScore(float score)
-    {
-        m_score += score;
-        m_score = Mathf.Max(0, m_score);
-        // SetScore(m_score);
-        // m_SA.AreaUiManager.ShakeScore(score);
-    }
-
-
-    // public void SetScore(float score)
-    // {
-    //     m_score = score;
-    //     AreaUIManager.Score = Mathf.Round(m_score * 10f) / 10f;
-    //     // m_SA.AreaUiManager.UpdateScore(AreaUIManager.Score);
     // }
 
 

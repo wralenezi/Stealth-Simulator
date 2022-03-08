@@ -32,7 +32,7 @@ public class Intruder : NPC
 
     public override void Initiate(NpcData data, VoiceParams _voice)
     {
-        isGhost = true;
+        // isGhost = true;
 
         base.Initiate(data, _voice);
 
@@ -61,16 +61,7 @@ public class Intruder : NPC
     {
         m_PlayerLabel.HideLabel();
     }
-
-    // // Run the state the intruder is in
-    // public void ExecuteState()
-    // {
-    //     // if (GetNpcData().intruderPlanner != IntruderPlanner.UserInput)
-    //     // {
-    //     //     m_state.UpdateState();
-    //     // }
-    // }
-
+    
     public void UpdateMetrics(State state, float timeDelta)
     {
         base.UpdateMetrics(timeDelta);
@@ -99,7 +90,6 @@ public class Intruder : NPC
 
     public void ClearIntruderGoal()
     {
-        // base.ClearGoal();
         isWaiting = false;
     }
 

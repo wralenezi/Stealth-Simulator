@@ -14,6 +14,9 @@ public class NpcsManager : MonoBehaviour
     [SerializeField]
     public StateMachine m_state;
 
+    // Score 
+    private float m_score;
+
     public static NpcsManager Instance;
 
     public void Initialize(Session session, MapManager mapManager)
@@ -51,6 +54,8 @@ public class NpcsManager : MonoBehaviour
 
     public void Reset(List<MeshPolygon> navMesh, Session session)
     {
+        m_score = 0f;
+        AreaUIManager.Instance.UpdateScore(m_score, m_score);
         m_guardsManager.Reset(navMesh, session);
         m_intrudersManager.Reset(navMesh, GetGuards(), session);
     }
@@ -98,6 +103,23 @@ public class NpcsManager : MonoBehaviour
     {
         m_state.UpdateState();
     }
+    
+    public void CoinPicked()
+    {
+        if (GetState() is Search)
+        {
+            IncrementScore(20f);
+        }
+    }
+
+    public void IncrementScore(float score)
+    {
+        float oldScore = m_score;
+        m_score += score;
+        m_score = Mathf.Max(0, m_score);
+        AreaUIManager.Instance.UpdateScore(m_score, oldScore);
+    }
+
 
 
     /// <summary>

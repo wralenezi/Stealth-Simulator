@@ -29,9 +29,13 @@ public class AreaUIManager : MonoBehaviour
 
     private Vector2 timeLabelPosition;
 
+    public static AreaUIManager Instance; 
+
 
     public void Initiate()
     {
+        Instance ??= this;
+        
         canvasRect = GetComponent<RectTransform>();
 
         guardsLabel = transform.Find("Guard state label").GetComponent<TextMeshProUGUI>();
@@ -44,6 +48,7 @@ public class AreaUIManager : MonoBehaviour
 
         announcementLabel = transform.Find("Announcement").GetComponent<TextMeshProUGUI>();
         announcementLabel.text = "";
+        
     }
 
 
@@ -127,25 +132,22 @@ public class AreaUIManager : MonoBehaviour
         }
     }
 
-    // public void UpdateScore(float score)
-    // {
-    //     Score = score;
-    //
-    //     if (GameManager.Instance.GetActiveArea().GetSessionInfo().gameType == GameType.CoinCollection)
-    //         scoreLabel.text = "Score: " + score;
-    //     else
-    //         scoreLabel.text = "Score: " + score + " %";
-    // }
+    public void UpdateScore(float score, float oldScore)
+    {
+        if (GameManager.Instance.GetActiveArea().GetSessionInfo().gameType == GameType.CoinCollection)
+            scoreLabel.text = "Score: " + score;
+        else
+            scoreLabel.text = "Score: " + score + " %";
+
+        ShakeScore(score - oldScore);
+    }
 
 
     public void ShakeScore(float scoreChange)
     {
         if (scoreShaking == null)
         {
-            if (scoreChange <= 0f)
-                scoreShaking = ShakeText(scoreLabel, Color.red);
-            else
-                scoreShaking = ShakeText(scoreLabel, Color.green);
+            scoreShaking = ShakeText(scoreLabel, scoreChange <= 0f ? Color.red : Color.green);
 
             StartCoroutine(scoreShaking);
         }
@@ -169,7 +171,7 @@ public class AreaUIManager : MonoBehaviour
         textMeshPro.transform.position = originalPosition;
         scoreShaking = null;
     }
-    
+
     // Show countdown to start the episode
     // private IEnumerator Countdown()
     // {
@@ -186,5 +188,4 @@ public class AreaUIManager : MonoBehaviour
     //     // yield return new WaitForSecondsRealtime(6f);
     //     // intrdrManager.HideLabels();
     // }
-
 }

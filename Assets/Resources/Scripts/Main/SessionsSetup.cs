@@ -135,7 +135,7 @@ public class SessionsSetup : MonoBehaviour
                 PathFollowing.SimpleFunnel, null);
         }
 
-        randomizedSessions.Insert(0, tutorialSession);
+        // randomizedSessions.Insert(0, tutorialSession);
 
         return randomizedSessions;
     }

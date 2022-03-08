@@ -35,13 +35,13 @@ public class StealthArea : MonoBehaviour
         // Get the map object 
         Map = UnityHelper.AddChildComponent<MapManager>(transform, "Map");
         Map.Initiate(GetSessionInfo().GetMap());
-        
+
         NpcManager = UnityHelper.AddChildComponent<NpcsManager>(transform, "NPCs");
         NpcManager.Initialize(GetSessionInfo(), Map);
-        
+
         CollectManager = UnityHelper.AddChildComponent<CollectablesManager>(transform, "Collectables");
         CollectManager.Initialize(GetSessionInfo());
-        
+
         scoreController = UnityHelper.AddChildComponent<ScoreController>(transform, "Scores");
         scoreController.Initialize();
 
@@ -80,10 +80,11 @@ public class StealthArea : MonoBehaviour
         float desiredHalfHeight = 0.5f * unitsPerPixel * Screen.height;
         GameManager.MainCamera.orthographicSize = desiredHalfHeight;
 
-        ColorUtility.TryParseHtmlString(GetSessionInfo().guardColor, out Color parsedColor);
+        ColorUtility.TryParseHtmlString(SessionInfo.guardColor, out Color parsedColor);
         GameManager.MainCamera.backgroundColor = parsedColor - new Color(0.5f, 0.5f, 0.5f, 0.1f);
 
         AreaUiManager.Reset();
+        AreaUiManager.UpdateGuardLabel(SessionInfo.guardColor, parsedColor);
 
         if (GameManager.Instance.showSurvey) Time.timeScale = 0f;
     }

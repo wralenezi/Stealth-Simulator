@@ -9,6 +9,7 @@ public class HidingSpotsCtrlr
     // the hiding spots
     private List<HidingSpot> m_HidingSpots;
 
+    
     private PartitionGrid<HidingSpot> m_spots;
 
 
@@ -126,7 +127,7 @@ public class HidingSpotsCtrlr
 
     public List<HidingSpot> GetHidingSpots(Vector3 position, int range)
     {
-        return m_spots.GetPartitions(position, range);
+        return m_spots.GetPartitionsContent(position, range);
     }
 
 

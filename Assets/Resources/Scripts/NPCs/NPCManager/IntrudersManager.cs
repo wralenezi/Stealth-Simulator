@@ -10,7 +10,7 @@ public class IntrudersManager : Agent
 
     private IntrudersBehaviorController m_iCtrl;
 
-    // The npc layer to ignore collisions between Npcs
+    // The npc layer to ignore collisions between NPCs
     private LayerMask m_npcLayer;
 
     public void Initiate(Session session, MapManager mapManager)
@@ -39,8 +39,7 @@ public class IntrudersManager : Agent
 
 
     // Create the intruder
-    private void CreateIntruder(NpcData npcData, List<MeshPolygon> navMesh, List<Guard> guards, // List<Polygon> walls,
-        Session session)
+    private void CreateIntruder(NpcData npcData, List<MeshPolygon> navMesh, List<Guard> guards, Session session)
     {
         // Create the gameObject 
         // Set the NPC as a child to the manager
