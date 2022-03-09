@@ -7,19 +7,6 @@
       "dependencies": {},
       "hash": "650007855ae04e4cf210a1259cb11ee67ad318ad"
     },
-    "com.unity.2d.animation": {
-      "version": "6.0.3",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {
-        "com.unity.2d.common": "5.0.0",
-        "com.unity.mathematics": "1.1.0",
-        "com.unity.2d.sprite": "1.0.0",
-        "com.unity.modules.animation": "1.0.0",
-        "com.unity.modules.uielements": "1.0.0"
-      },
-      "url": "https://packages.unity.com"
-    },
     "com.unity.2d.common": {
       "version": "5.0.0",
       "depth": 1,
@@ -42,17 +29,6 @@
       "depth": 0,
       "source": "registry",
       "dependencies": {},
-      "url": "https://packages.unity.com"
-    },
-    "com.unity.2d.psdimporter": {
-      "version": "5.0.3",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {
-        "com.unity.2d.common": "5.0.0",
-        "com.unity.2d.animation": "6.0.3",
-        "com.unity.2d.sprite": "1.0.0"
-      },
       "url": "https://packages.unity.com"
     },
     "com.unity.2d.sprite": {
@@ -80,18 +56,18 @@
       "dependencies": {}
     },
     "com.unity.barracuda": {
-      "version": "1.3.3-preview",
+      "version": "2.0.0",
       "depth": 1,
       "source": "registry",
       "dependencies": {
-        "com.unity.burst": "1.3.4",
+        "com.unity.burst": "1.6.0",
         "com.unity.modules.jsonserialize": "1.0.0",
         "com.unity.modules.imageconversion": "1.0.0"
       },
       "url": "https://packages.unity.com"
     },
     "com.unity.burst": {
-      "version": "1.5.4",
+      "version": "1.6.0",
       "depth": 2,
       "source": "registry",
       "dependencies": {
@@ -116,7 +92,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ide.rider": {
-      "version": "3.0.6",
+      "version": "3.0.12",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -142,20 +118,21 @@
     },
     "com.unity.mathematics": {
       "version": "1.2.1",
-      "depth": 1,
+      "depth": 3,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
     "com.unity.ml-agents": {
-      "version": "file:E:/Repos/Unity/ml-agents/com.unity.ml-agents",
+      "version": "2.0.1",
       "depth": 0,
-      "source": "local",
+      "source": "registry",
       "dependencies": {
-        "com.unity.barracuda": "1.3.3-preview",
+        "com.unity.barracuda": "2.0.0",
         "com.unity.modules.imageconversion": "1.0.0",
         "com.unity.modules.jsonserialize": "1.0.0"
-      }
+      },
+      "url": "https://packages.unity.com"
     },
     "com.unity.nuget.newtonsoft-json": {
       "version": "2.0.0",

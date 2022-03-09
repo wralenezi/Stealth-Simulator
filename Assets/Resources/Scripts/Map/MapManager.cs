@@ -66,7 +66,7 @@ public class MapManager : MonoBehaviour
         // visibilityGraph.Initiate(mapRenderer);
 
         regionMgr = UnityHelper.AddChildComponent<RegionLabelsManager>(transform, "Regions");
-        regionMgr.Initiate();
+        regionMgr.Initiate(mapData);
 
         // Mesh manager
         meshManager = UnityHelper.AddChildComponent<FloorTileManager>(transform, "MeshManager");

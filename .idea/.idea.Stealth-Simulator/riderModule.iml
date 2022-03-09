@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="RIDER_MODULE" version="4">
   <component name="NewModuleRootManager">
+    <content url="file://$USER_HOME$/AppData/Local/Unity/cache/packages/packages.unity.com/com.unity.mathematics@1.1.0" />
     <content url="file://$USER_HOME$/Desktop/MlAgents/ml-agents/com.unity.ml-agents" />
     <content url="file://$MODULE_DIR$/../.." />
-    <content url="file://$MODULE_DIR$/../../../../../../Repos/Unity/ml-agents/com.unity.ml-agents" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

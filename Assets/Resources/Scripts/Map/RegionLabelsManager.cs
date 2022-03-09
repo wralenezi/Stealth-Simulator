@@ -10,13 +10,14 @@ public class RegionLabelsManager : MonoBehaviour
     // Regions
     private static List<Region> m_Regions;
 
-    public void Initiate()
+    public void Initiate(MapData mapData)
     {
         m_Regions = new List<Region>();
         // ShowRegionAreas = true;
+        SetRegions(mapData);
     }
 
-    public void SetRegions(MapData map)
+    private void SetRegions(MapData map)
     {
         while (m_Regions.Count > 0)
         {
