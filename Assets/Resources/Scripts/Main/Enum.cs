@@ -42,6 +42,8 @@ public enum AlertPlanner
     iHeuristic
 }
 
+
+
 // Decision maker for search phase
 public enum SearchPlanner
 {

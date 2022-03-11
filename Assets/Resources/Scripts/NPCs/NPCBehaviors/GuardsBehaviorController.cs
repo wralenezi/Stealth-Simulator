@@ -61,7 +61,7 @@ public class GuardsBehaviorController : MonoBehaviour
     // Start patrol shift
     public void StartShift()
     {
-        patroler.FillSegments();
+        patroler.Start();
     }
 
     // Order Guards to patrol

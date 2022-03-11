@@ -92,17 +92,14 @@ public abstract class RoadMapSearcher : Searcher
             {
                 case PlanOutput.HillClimbPath:
                     GreedyPath(guard);
-                    // m_SA.scriptor.ChooseDialog(guard, null, "Plan", speechType, m_BarkProb);
                     break;
 
                 case PlanOutput.DijkstraPath:
                     BuildDijkstraPath(guard, false);
-                    // m_SA.scriptor.ChooseDialog(guard, null, "Plan", speechType, m_BarkProb);
                     break;
 
                 case PlanOutput.DijkstraPathMax:
                     BuildDijkstraPath(guard, true);
-                    // m_SA.scriptor.ChooseDialog(guard, null, "Plan", speechType, m_BarkProb);
                     break;
 
                 case PlanOutput.Point:

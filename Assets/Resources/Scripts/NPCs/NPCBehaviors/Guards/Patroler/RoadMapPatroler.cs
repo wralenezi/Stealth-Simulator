@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Patroler : MonoBehaviour
+public class RoadMapPatroler : Patroler
 {
     // Road map of the level
     private RoadMap m_RoadMap;
@@ -12,35 +12,20 @@ public class Patroler : MonoBehaviour
     private List<RoadMapLine> open;
     private List<RoadMapLine> closed;
 
-    public void Initiate(MapManager mapManager)
+
+    public override void Initiate(MapManager mapManager)
     {
         m_RoadMap = mapManager.GetRoadMap();
         open = new List<RoadMapLine>();
         closed = new List<RoadMapLine>();
     }
 
-    // Check for the seen search segments
-    private void CheckSeenSs(List<Guard> guards, RoadMapLine line)
+    public override void Start()
     {
-        foreach (var guard in guards)
-        {
-            // Trim the parts seen by the guards and reset the section if it is all seen 
-            line.CheckSeenSegment(guard);
-        }
+        FillSegments();
     }
 
-
-    // Set the road map segments to 1. To mark the beginning of the patrol shift
-    public void FillSegments()
-    {
-        foreach (var line in m_RoadMap.GetLines(false))
-        {
-            line.PropagateToSegment(line.GetMid(), 1f, StealthArea.GetElapsedTime());
-        }
-    }
-
-
-    public void UpdatePatroler(List<Guard> guards, float speed, float timeDelta)
+    public override void UpdatePatroler(List<Guard> guards, float speed, float timeDelta)
     {
         float maxProbability = 0f;
 
@@ -71,7 +56,6 @@ public class Patroler : MonoBehaviour
         AssignPaths(guards);
     }
 
-
     private void AssignPaths(List<Guard> guards)
     {
         foreach (var guard in guards)
@@ -80,8 +64,27 @@ public class Patroler : MonoBehaviour
                 GetPath(guard);
         }
     }
+    
+    // Check for the seen search segments
+    private void CheckSeenSs(List<Guard> guards, RoadMapLine line)
+    {
+        foreach (var guard in guards)
+        {
+            // Trim the parts seen by the guards and reset the section if it is all seen 
+            line.CheckSeenSegment(guard);
+        }
+    }
 
-    // // Get a complete path of no more than param@length that a guard needs to traverse to search for an intruder.
+    // Set the road map segments to 1. To mark the beginning of the patrol shift
+    public void FillSegments()
+    {
+        foreach (var line in m_RoadMap.GetLines(false))
+        {
+            line.PropagateToSegment(line.GetMid(), 1f, StealthArea.GetElapsedTime());
+        }
+    }
+    
+        // // Get a complete path of no more than param@length that a guard needs to traverse to search for an intruder.
     public void GetPath(Guard guard)
     {
         open.Clear();
@@ -276,4 +279,6 @@ public class Patroler : MonoBehaviour
             }
         }
     }
+
+
 }

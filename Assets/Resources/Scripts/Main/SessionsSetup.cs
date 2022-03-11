@@ -167,6 +167,65 @@ public class SessionsSetup : MonoBehaviour
         {
             Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, color, 4, 1,
                 new MapData("amongUs", 0.5f), speechMethod, SurveyType.EndEpisode);
+            
+            // MgsDock
+
+            // Add guards
+            for (int i = 0; i < session.guardsCount; i++)
+            {
+                Behavior behavior = new Behavior(PatrolPlanner.gStalest, AlertPlanner.Simple,
+                    guardMethod, pathType);
+                session.AddNpc(i + 1, NpcType.Guard, behavior, PathFindingHeursitic.EuclideanDst,
+                    PathFollowing.SimpleFunnel, null);
+            }
+
+            // Add intruders
+            for (int i = 0; i < session.intruderCount; i++)
+            {
+                // Behavior behavior = new Behavior(PatrolPlanner.UserInput, AlertPlanner.UserInput,
+                //     SearchPlanner.UserInput, pathType);
+                
+                Behavior behavior = new Behavior(PatrolPlanner.iRoadMap, AlertPlanner.iHeuristic,
+                    SearchPlanner.iHeuristic, pathType);
+                
+                session.AddNpc(i + 1, NpcType.Intruder, behavior, PathFindingHeursitic.EuclideanDst,
+                    PathFollowing.SimpleFunnel, null);
+            }
+
+            sessions.Add(session);
+        }
+
+        return sessions;
+    }
+    
+    
+        public static List<Session> StealthStudy()
+    {
+        List<Session> sessions = new List<Session>();
+
+        // Methods that will be considered 
+        List<SearchPlanner> guardMethods = new List<SearchPlanner>()
+        {
+             SearchPlanner.RmPropSimple//, SearchPlanner.RmPropOccupancyDiffusal
+            // SearchPlanner.Random
+        };
+
+        List<PlanOutput> pathTypes = new List<PlanOutput>()
+        {
+            //PlanOutput.Point,
+            PlanOutput.DijkstraPath //,
+            //PlanOutput.DijkstraPathMax,
+            //PlanOutput.HillClimbPath
+        };
+
+        SpeechType speechMethod = SpeechType.Simple;
+        string color = "blue";
+
+        foreach (var guardMethod in guardMethods)
+        foreach (var pathType in pathTypes)
+        {
+            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, color, 4, 1,
+                new MapData("MgsDock", 2f), speechMethod, SurveyType.EndEpisode);
 
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)

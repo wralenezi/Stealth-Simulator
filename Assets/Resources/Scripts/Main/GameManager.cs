@@ -165,7 +165,7 @@ public class GameManager : MonoBehaviour
     private void LoadSavedSessions()
     {
         // var sessions = SessionsSetup.SearchTacticEvaluation();
-        List<Session> sessions = SessionsSetup.SecondStudySessions();
+        List<Session> sessions = SessionsSetup.StealthStudy();
 
         // Each line represents a session
         foreach (var sc in sessions)
