@@ -114,7 +114,7 @@ public class SessionsSetup : MonoBehaviour
         {
             randomizedSessions[i].surveyType = SurveyType.BehaviorEval;
         }
-        
+
         // Add the tutorial session
         Session tutorialSession = new Session("tutorial", GameType.CoinCollection, Scenario.Chase, "grey", 2, 1,
             new MapData("MgsDock", 2f), SpeechType.None, SurveyType.EndTutorial);
@@ -147,7 +147,7 @@ public class SessionsSetup : MonoBehaviour
         // Methods that will be considered 
         List<SearchPlanner> guardMethods = new List<SearchPlanner>()
         {
-             SearchPlanner.RmPropSimple//, SearchPlanner.RmPropOccupancyDiffusal
+            SearchPlanner.RmPropSimple //, SearchPlanner.RmPropOccupancyDiffusal
             // SearchPlanner.Random
         };
 
@@ -167,7 +167,7 @@ public class SessionsSetup : MonoBehaviour
         {
             Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, color, 4, 1,
                 new MapData("amongUs", 0.5f), speechMethod, SurveyType.EndEpisode);
-            
+
             // MgsDock
 
             // Add guards
@@ -184,10 +184,10 @@ public class SessionsSetup : MonoBehaviour
             {
                 // Behavior behavior = new Behavior(PatrolPlanner.UserInput, AlertPlanner.UserInput,
                 //     SearchPlanner.UserInput, pathType);
-                
+
                 Behavior behavior = new Behavior(PatrolPlanner.iRoadMap, AlertPlanner.iHeuristic,
                     SearchPlanner.iHeuristic, pathType);
-                
+
                 session.AddNpc(i + 1, NpcType.Intruder, behavior, PathFindingHeursitic.EuclideanDst,
                     PathFollowing.SimpleFunnel, null);
             }
@@ -197,16 +197,16 @@ public class SessionsSetup : MonoBehaviour
 
         return sessions;
     }
-    
-    
-        public static List<Session> StealthStudy()
+
+
+    public static List<Session> StealthStudy()
     {
         List<Session> sessions = new List<Session>();
 
         // Methods that will be considered 
         List<SearchPlanner> guardMethods = new List<SearchPlanner>()
         {
-             SearchPlanner.RmPropSimple//, SearchPlanner.RmPropOccupancyDiffusal
+            SearchPlanner.RmPropSimple //, SearchPlanner.RmPropOccupancyDiffusal
             // SearchPlanner.Random
         };
 
@@ -224,29 +224,38 @@ public class SessionsSetup : MonoBehaviour
         foreach (var guardMethod in guardMethods)
         foreach (var pathType in pathTypes)
         {
-            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, color, 4, 1,
+            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, color, 2, 1,
                 new MapData("MgsDock", 2f), speechMethod, SurveyType.EndEpisode);
+
+
+            List<NpcLocation> guardLocations = new List<NpcLocation>();
+
+            guardLocations.Add(new NpcLocation(new Vector2(0.48f, 4.8f), 0f));
+            guardLocations.Add(new NpcLocation(new Vector2(-5.4f, -3.63f), 0f));
+            guardLocations.Add(new NpcLocation(new Vector2(0f, 0f), 0f));
+            guardLocations.Add(new NpcLocation(new Vector2(0f, 0f), 0f));
 
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)
             {
-                Behavior behavior = new Behavior(PatrolPlanner.gStalest, AlertPlanner.Simple,
+                Behavior behavior = new Behavior(PatrolPlanner.gScripted, AlertPlanner.Simple,
                     guardMethod, pathType);
+
                 session.AddNpc(i + 1, NpcType.Guard, behavior, PathFindingHeursitic.EuclideanDst,
-                    PathFollowing.SimpleFunnel, null);
+                    PathFollowing.SimpleFunnel, guardLocations[i]);
             }
 
             // Add intruders
             for (int i = 0; i < session.intruderCount; i++)
             {
-                // Behavior behavior = new Behavior(PatrolPlanner.UserInput, AlertPlanner.UserInput,
-                //     SearchPlanner.UserInput, pathType);
-                
-                Behavior behavior = new Behavior(PatrolPlanner.iRoadMap, AlertPlanner.iHeuristic,
-                    SearchPlanner.iHeuristic, pathType);
-                
+                Behavior behavior = new Behavior(PatrolPlanner.UserInput, AlertPlanner.UserInput,
+                    SearchPlanner.UserInput, pathType);
+
+                // Behavior behavior = new Behavior(PatrolPlanner.iRoadMap, AlertPlanner.iHeuristic,
+                // SearchPlanner.iHeuristic, pathType);
+
                 session.AddNpc(i + 1, NpcType.Intruder, behavior, PathFindingHeursitic.EuclideanDst,
-                    PathFollowing.SimpleFunnel, null);
+                    PathFollowing.SimpleFunnel, new NpcLocation(new Vector2(-13.25f, 4.4f), 0f));
             }
 
             sessions.Add(session);
@@ -254,8 +263,6 @@ public class SessionsSetup : MonoBehaviour
 
         return sessions;
     }
-
-
 
 
     /// <summary>

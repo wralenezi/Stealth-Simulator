@@ -6,7 +6,7 @@ public class SimpleGreedyScouter : Scouter
             intruder.ClearIntruderGoal();
     }
 
-    public override void Refresh()
+    public override void Refresh(GameType gameType)
     {
         foreach (var intruder in NpcsManager.Instance.GetIntruders())
         {

@@ -12,7 +12,6 @@ public class Coin : MonoBehaviour
 
     private AudioSource audioSource;
     
-
     public void Initiate()
     {
         renderer = GetComponent<Renderer>();
@@ -20,30 +19,48 @@ public class Coin : MonoBehaviour
         audioSource.volume = 0.4f;
     }
 
-    public void Spawn(Vector2 startPosition, List<MeshPolygon> navMesh)
+    public void Spawn(Vector2 startPosition, List<MeshPolygon> navMesh, MapData mapData, bool isRandom)
     {
-        bool positionFound = false;
         Vector2? chosenPos = null;
-        int numberRemainingAttempts = 100;
-        while (numberRemainingAttempts > 0 && !positionFound)
+        
+        if (!isRandom)
         {
-            int random = Random.Range(0, navMesh.Count);
-            Vector2 pos = navMesh[random].GetRandomPosition();
-            
-            float distance = PathFinding.Instance.GetShortestPathDistance(startPosition, pos);
-
-            if (distance > PathFinding.Instance.longestPath * 0.4f)
-            {
-                positionFound = true;
-                chosenPos = pos;
-            }
-
-            numberRemainingAttempts--;
+            chosenPos = GetGoalPosition(mapData);
         }
+        else
+        {
+            bool positionFound = false;
+            int numberRemainingAttempts = 100;
+            while (numberRemainingAttempts > 0 && !positionFound)
+            {
+                int random = Random.Range(0, navMesh.Count);
+                Vector2 pos = navMesh[random].GetRandomPosition();
+            
+                float distance = PathFinding.Instance.GetShortestPathDistance(startPosition, pos);
+
+                if (distance > PathFinding.Instance.longestPath * 0.4f)
+                {
+                    positionFound = true;
+                    chosenPos = pos;
+                }
+
+                numberRemainingAttempts--;
+            }
+        }
+
 
         transform.position = Equals(chosenPos, null) ? transform.position : (Vector3) chosenPos.Value;
         renderer.enabled = !m_isHideCoinWhenSpawned;
         gameObject.SetActive(true);
+    }
+
+    public Vector2 GetGoalPosition(MapData mapData)
+    {
+        Dictionary<string,Vector2> goals = new Dictionary<string, Vector2>();
+        
+        goals.Add("MgsDock",new Vector2(13.87f,-0.28f));
+        
+        return goals[mapData.name];
     }
 
     // public bool IsCoinSeen(Vector2 pos)
@@ -66,7 +83,7 @@ public class Coin : MonoBehaviour
 
     public void ModifyScore()
     {
-        // m_StealthArea.guardsManager.CoinPicked();
+        NpcsManager.Instance.CoinPicked();
     }
 
 
@@ -76,7 +93,7 @@ public class Coin : MonoBehaviour
         {
             audioSource.Play();
             ModifyScore();
-            Spawn(gameObject.transform.position, MapManager.Instance.GetNavMesh());
+            Spawn(gameObject.transform.position, MapManager.Instance.GetNavMesh(),MapManager.Instance.mapData, false);
             other.gameObject.GetComponent<Intruder>().AddCoin();
         }
     }

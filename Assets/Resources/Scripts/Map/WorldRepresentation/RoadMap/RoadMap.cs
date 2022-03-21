@@ -402,10 +402,14 @@ public class RoadMap
 
         m_Points.Enqueue(ptp);
 
+        int limit = 100;
+        int counter = 0;
+
         // Loop to insert the possible positions
-        while (m_Points.Count > 0)
+        while (m_Points.Count > 0 && counter < limit)
         {
             PointToProp pt = m_Points.Dequeue();
+            counter++;
 
             float distance = Vector2.Distance(pt.source, pt.target.GetPosition());
             pt.nextStep = pt.nextStep <= 0f ? maxStep : pt.nextStep;

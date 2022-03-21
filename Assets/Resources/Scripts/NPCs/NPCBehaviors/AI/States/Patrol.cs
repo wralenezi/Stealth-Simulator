@@ -16,10 +16,10 @@ public class Patrol : State
         m_IC.StartScouter();
     }
 
-    public override void Execute()
+    public override void Execute(GameType gameType)
     {
         m_GC.Patrol();
-        m_IC.StayIncognito();
+        m_IC.StayIncognito(gameType);
     }
 
     public override void Exit()

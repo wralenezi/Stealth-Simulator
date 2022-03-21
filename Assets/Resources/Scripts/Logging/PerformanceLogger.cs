@@ -331,4 +331,9 @@ public struct Position2D
         x = _x;
         y = _y;
     }
+
+    public override string ToString()
+    {
+        return "(" + x + "," + y + ")";
+    }
 }

@@ -134,7 +134,7 @@ public class StealthArea : MonoBehaviour
         NpcManager.ProcessNpcsVision(SessionInfo);
 
         // Idle NPCs make decisions
-        NpcManager.MakeDecisions();
+        NpcManager.MakeDecisions(GetSessionInfo().gameType);
     }
 
     public Session GetSessionInfo()
@@ -144,14 +144,23 @@ public class StealthArea : MonoBehaviour
 
     void CheckGameEnd()
     {
-        bool finished =
-            GetElapsedTime() >= Properties.EpisodeLength || scoreController.score >= 100f;
+        bool timeOver = GetElapsedTime() >= Properties.EpisodeLength;
+        bool highscoreReached = scoreController.score > 0f;
+        bool spotted = NpcManager.GetState() is Chase;
+
+        bool finished = timeOver || highscoreReached || spotted;
 
         // Log Guards progress
         performanceMonitor.Log();
 
         if (!finished) return;
 
+        FinishArea();
+    }
+
+
+    public void FinishArea()
+    {
         // End the episode
         performanceMonitor.FinalizeLogging(GameManager.Instance.loggingMethod);
 
@@ -165,12 +174,6 @@ public class StealthArea : MonoBehaviour
             GameManager.SurveyManager.ShowSurvey();
         }
 
-        FinishArea();
-    }
-
-
-    public void FinishArea()
-    {
         // End the episode for the ML agents
         EndEpisode();
 
@@ -185,8 +188,8 @@ public class StealthArea : MonoBehaviour
     // Destroy the area
     public void EndArea()
     {
-        // if (!GameManager.Instance.showSurvey && performanceMonitor.IsDone())
-        GameManager.Instance.RemoveArea(gameObject);
+        if (!GameManager.Instance.showSurvey && performanceMonitor.IsDone())
+            GameManager.Instance.RemoveArea(gameObject);
     }
 
     int GetRemainingTime()

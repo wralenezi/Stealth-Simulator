@@ -17,7 +17,7 @@ public abstract class Scouter : MonoBehaviour
     public abstract void Begin();
 
 
-    public abstract void Refresh();
+    public abstract void Refresh(GameType gameType);
 
 
     public void OnDrawGizmos()

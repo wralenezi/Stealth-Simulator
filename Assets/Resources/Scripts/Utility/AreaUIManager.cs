@@ -140,6 +140,9 @@ public class AreaUIManager : MonoBehaviour
             scoreLabel.text = "Score: " + score + " %";
 
         ShakeScore(score - oldScore);
+        
+        ScoreController.Instance.UpdateScore(score);
+
     }
 
 

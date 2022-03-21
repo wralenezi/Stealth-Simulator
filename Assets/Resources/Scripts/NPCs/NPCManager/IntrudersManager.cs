@@ -66,7 +66,7 @@ public class IntrudersManager : Agent
         CircleCollider2D cd = npcGameObject.AddComponent<CircleCollider2D>();
         cd.radius = npcSprite.rect.width * 0.003f;
 
-        npcGameObject.name = "Intruder" + (npcData.id + 1).ToString().PadLeft(2, '0');
+        npcGameObject.name = "Intruder" + (npcData.id).ToString().PadLeft(2, '0');
         NPC npc = npcGameObject.AddComponent<Intruder>();
         spriteRenderer.color = Color.black;
 

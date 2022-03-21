@@ -75,22 +75,32 @@ public class RoadMapScouter : Scouter
 
     public override void Begin()
     {
+        m_lastUpdateTimestamp = StealthArea.GetElapsedTime();
     }
 
-    public override void Refresh()
+    public override void Refresh(GameType gameType)
     {
         ProjectGuardPositions(NpcsManager.Instance.GetGuards());
-
+        
         foreach (var intruder in NpcsManager.Instance.GetIntruders())
         {
             if (intruder.IsBusy() && !IsUpdateDue()) return;
 
-            Vector2? goal = CollectablesManager.Instance.GetGoalPosition();
+            Vector2? goal = null;
 
-            // Vector2? destination = EvaluateHidingSpot(intruder, goal.Value);
+            switch (gameType)
+            {
+                case GameType.CoinCollection:
+                    goal = CollectablesManager.Instance.GetGoalPosition(gameType);
+                    break;
+                
+                case GameType.StealthPath:
+                    // goal =
+                    break;
+
+            }
 
             HidingSpot bestHs = EvaluateHidingSpot(intruder, goal.Value);
-
 
             if (Equals(goal, null) || Equals(bestHs, null)) return;
 
@@ -105,7 +115,7 @@ public class RoadMapScouter : Scouter
     public void ProjectGuardPositions(List<Guard> guards)
     {
         m_PossibleTrajectories.Clear();
-
+        
         float fov = Properties.GetFovRadius(NpcType.Guard);
 
         foreach (var guard in guards)
@@ -117,9 +127,12 @@ public class RoadMapScouter : Scouter
             if (!point.HasValue) return;
 
             _ProjectionDist = fov + guard.GetCurrentSpeed() * fov * 20f;
-
+            
             m_RoadMap.ProjectPositionsInDirection(ref m_PossibleTrajectories, point.Value, line,
                 _ProjectionDist, guard);
+            
+            return;
+
         }
     }
 

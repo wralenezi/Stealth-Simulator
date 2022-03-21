@@ -53,6 +53,10 @@ public class RoadMapPatroler : Patroler
                 sS.SetProb(sS.GetProbability());
         }
 
+    }
+
+    public override void Patrol(List<Guard> guards)
+    {
         AssignPaths(guards);
     }
 

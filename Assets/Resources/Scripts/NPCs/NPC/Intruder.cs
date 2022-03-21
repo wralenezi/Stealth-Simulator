@@ -45,6 +45,8 @@ public class Intruder : NPC
 
         m_PlayerLabel = gameLabelGo.GetComponent<PlayerLabelController>();
         m_PlayerLabel.Initiate(GetTransform());
+
+        // isGhost = true;
     }
 
     public override void ResetNpc()
@@ -184,7 +186,7 @@ public class Intruder : NPC
 
     public override LogSnapshot LogNpcProgress()
     {
-        return new LogSnapshot(GetTravelledDistance(), StealthArea.GetElapsedTime(), Data, "Chased",
+        return new LogSnapshot(GetTravelledDistance(), StealthArea.GetElapsedTime(), Data, NpcsManager.Instance.GetState().name,
             m_NoTimesSpotted, GuardsManager.GuardsOverlapTime,
             m_AlertTime, m_SearchedTime, 0, 0f, m_CollectCoins);
     }

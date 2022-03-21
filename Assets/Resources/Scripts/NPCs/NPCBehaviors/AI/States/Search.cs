@@ -17,7 +17,7 @@ public class Search : State
         m_IC.StartHiding();
     }
 
-    public override void Execute()
+    public override void Execute(GameType gameType)
     {
         m_GC.Search(NpcsManager.Instance.GetIntruders()[0]);
         m_IC.KeepHiding();

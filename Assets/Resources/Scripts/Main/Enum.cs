@@ -25,6 +25,8 @@ public struct Behavior
 public enum PatrolPlanner
 {
     gStalest,
+    gRoadMap,
+    gScripted,
     iSimple,
     iRoadMap,
     Random,

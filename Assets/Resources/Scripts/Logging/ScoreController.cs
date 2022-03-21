@@ -16,11 +16,6 @@ public class ScoreController : MonoBehaviour
     public void UpdateScore(float _score)
     {
         score = _score;
-
-        // if (GameManager.Instance.GetActiveArea().GetSessionInfo().gameType == GameType.CoinCollection)
-        //     scoreLabel.text = "Score: " + score;
-        // else
-        //     scoreLabel.text = "Score: " + score + " %";
     }
 
     

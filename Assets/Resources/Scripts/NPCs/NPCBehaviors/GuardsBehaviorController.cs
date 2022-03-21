@@ -28,8 +28,19 @@ public class GuardsBehaviorController : MonoBehaviour
         m_behavior = session.GetGuardsData()[0].behavior;
 
         // Patroler controller
-        patroler = gameObject.AddComponent<Patroler>();
+        switch (behavior.patrol)
+        {
+            case PatrolPlanner.gRoadMap:
+                patroler = gameObject.AddComponent<RoadMapPatroler>();
+                break;
+            
+            case PatrolPlanner.gScripted:
+                patroler = gameObject.AddComponent<ScriptedPatroler>();
+                break;
+        }
         patroler.Initiate(mapManager);
+
+
 
         // Interception controller
         interceptor = gameObject.AddComponent<Interceptor>();
@@ -68,6 +79,7 @@ public class GuardsBehaviorController : MonoBehaviour
     public void Patrol()
     {
         patroler.UpdatePatroler(NpcsManager.Instance.GetGuards(), 0.3f, Time.deltaTime);
+        patroler.Patrol(NpcsManager.Instance.GetGuards());
     }
 
 

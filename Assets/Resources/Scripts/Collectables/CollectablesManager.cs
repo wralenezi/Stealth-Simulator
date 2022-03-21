@@ -4,6 +4,8 @@ using UnityEngine;
 public class CollectablesManager : MonoBehaviour
 {
     private CoinSpawner m_coinManager;
+    
+    // private StealthGoalController
 
     public static CollectablesManager Instance; 
     public void Initialize(Session session)
@@ -19,7 +21,7 @@ public class CollectablesManager : MonoBehaviour
         m_coinManager.Reset(MapManager.Instance.GetNavMesh());
     }
 
-    public Vector2? GetGoalPosition()
+    public Vector2? GetGoalPosition(GameType gameType)
     {
         List<Coin> coins = m_coinManager.GetCoins();
 

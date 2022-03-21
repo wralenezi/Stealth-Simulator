@@ -22,6 +22,8 @@ public abstract class NPC : MonoBehaviour
     // The path the agent is meant to follow
     private List<Vector2> PathToTake;
 
+    private Vector2? FacingDirection;
+
     // if the agent has to reach the goal or simply see it.
     private bool m_hasToReach = false;
 
@@ -286,6 +288,11 @@ public abstract class NPC : MonoBehaviour
         PathFinding.Instance.GetShortestPath(GetTransform().position, _goal, ref PathToTake);
     }
 
+    public void SetDirection(Vector2 direction)
+    {
+        FacingDirection = direction;
+    }
+
     public Vector2? GetGoal()
     {
         Vector2? goal = null;
@@ -345,25 +352,32 @@ public abstract class NPC : MonoBehaviour
     private bool GoStraightTo(Vector3 target, float deltaTime)
     {
         SetPosition();
-        
+
         Vector3 currentPosition = GetTransform().position;
         Quaternion currentRotation = GetTransform().rotation;
-
+        
+        // Handle movement
+        float distanceLeft = Vector2.Distance(currentPosition, target);
+        
         // Find the angle needed to rotate to face the desired direction
-        Vector2 rotateDir = (target - currentPosition).normalized;
-        float m_goalAngle = Vector2.SignedAngle(Vector2.up, rotateDir);
+        Vector2 rotateDir;
 
-        Quaternion toRotation = Quaternion.AngleAxis(m_goalAngle, Vector3.forward);
+        if (Equals(GetGoal().Value, (Vector2) target) && !Equals(FacingDirection, null) && distanceLeft <= 0.1f)
+            rotateDir = FacingDirection.Value;
+        else
+            rotateDir = (target - currentPosition).normalized;
+
+
+        float goalAngle = Vector2.SignedAngle(Vector2.up, rotateDir);
+
+        Quaternion toRotation = Quaternion.AngleAxis(goalAngle, Vector3.forward);
         float angleLeft = Mathf.Round(toRotation.eulerAngles.z - currentRotation.eulerAngles.z);
 
         angleLeft *= angleLeft > 180 ? -1 : 1;
         float rotationStep = Mathf.Min(Mathf.Abs(angleLeft), NpcRotationSpeed * deltaTime);
         GetTransform().rotation = Quaternion.RotateTowards(currentRotation, toRotation,
             rotationStep);
-
-        // Handle movement
-        float distanceLeft = Vector2.Distance(currentPosition, target);
-
+        
         // Make sure no rotation is due before moving
         float angleDiffThreshold = 180f / Mathf.Abs(angleLeft);
 
@@ -375,8 +389,7 @@ public abstract class NPC : MonoBehaviour
         if (GetGoal().Value == (Vector2) target)
         {
             // If the guard is in patrol, it doesn't need to visit the goal on the path. Just see it
-            if (!m_hasToReach)
-                distanceLeft -= m_FovRadius * 0.7f;
+            if (!m_hasToReach) distanceLeft -= m_FovRadius * 0.7f;
         }
 
         if (distanceLeft > 0.1f)
@@ -390,6 +403,8 @@ public abstract class NPC : MonoBehaviour
 
         // This is to set the default value to false.
         m_hasToReach = false;
+
+        FacingDirection = null;
 
         // Since no changes were needed to the position then the agent reached the goal
         return true;

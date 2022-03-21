@@ -47,6 +47,8 @@ public class GameManager : MonoBehaviour
     public static string MapsPath = "Maps/";
     public static string RoadMapsPath = "RoadMaps/";
     public static string DialogsPath = "Dialogs/";
+    public static string PatrolPathsPath = "NPCs/PatrolPaths/";
+
 
     // The main camera
     public static Camera MainCamera;
@@ -90,6 +92,8 @@ public class GameManager : MonoBehaviour
         RoadMapsPath = MapsDataPath + RoadMapsPath;
         // Dialogs path
         DialogsPath = DataPath + DialogsPath;
+        // Patrol Paths
+        PatrolPathsPath = DataPath + PatrolPathsPath;
 
         // Reference the main camera
         MainCamera = Camera.main;
@@ -150,10 +154,10 @@ public class GameManager : MonoBehaviour
         return voice;
     }
 
-    // This is to get a unique time stamp
+    // This is to get a unique time stamp composed of seconds
     public static int GetDateTimestamp()
     {
-        DateTime epochStart = new DateTime(2021, 5, 1, 0, 0, 0, DateTimeKind.Utc);
+        DateTime epochStart = new DateTime(2022, 3, 15, 0, 0, 0, DateTimeKind.Utc);
         return (int) (DateTime.UtcNow - epochStart).TotalSeconds;
     }
 
@@ -397,7 +401,9 @@ public enum GameType
 {
     CoinCollection,
 
-    Stealth
+    Stealth,
+    
+    StealthPath
 }
 
 
@@ -441,8 +447,6 @@ public struct NpcData
         id = _id;
         npcType = pNpcType;
         behavior = _behavior;
-        // guardPlanner = _guardPlanner;
-        // intruderPlanner = _intruderPlanner;
         npcHeuristic = pPathFindingHeuristic;
         npcPathFollowing = pNpcPathFollowing;
         location = _location;
@@ -580,7 +584,8 @@ public class Session
         string sessionInfo = "";
 
         // Id
-        sessionInfo += timeStamp + sep;
+        sessionInfo += timeStamp;
+        sessionInfo += sep;
 
         // Game code
         // sessionInfo += gameCode + sep;
@@ -589,17 +594,18 @@ public class Session
         // sessionInfo += gameType + sep;
 
         // Man name
-        sessionInfo += map.name + sep;
+        sessionInfo += map.name;
+        sessionInfo += sep;
 
         // Speech type
-        sessionInfo += speechType + sep;
+        // sessionInfo += speechType + sep;
 
         // Guard planner 
-        sessionInfo += (GetGuardsData().Count > 0 ? GetGuardsData()[0].behavior.search.ToString() : "") + sep;
+        sessionInfo += (GetGuardsData().Count > 0 ? GetGuardsData()[0].behavior.patrol.ToString() : "");
 
         // Search format
-        sessionInfo +=
-            (GetGuardsData().Count > 0 ? GetGuardsData()[0].behavior.searchFormat.ToString() : "") + sep;
+        // sessionInfo +=
+            // (GetGuardsData().Count > 0 ? GetGuardsData()[0].behavior.searchFormat.ToString() : "") + sep;
 
         // Guard FoV percentage of the longest path in the map
         // sessionInfo += Properties.GuardsFovRadiusPercentage + sep;
@@ -615,7 +621,7 @@ public class Session
         // sessionInfo += Properties.IntruderSpeedMulti + sep;
 
         // Length of the episode
-        sessionInfo += Properties.EpisodeLength;
+        // sessionInfo += Properties.EpisodeLength;
 
         return sessionInfo;
     }

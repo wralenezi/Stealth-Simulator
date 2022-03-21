@@ -13,5 +13,7 @@ public abstract class Patroler : MonoBehaviour
 
 
     public abstract void UpdatePatroler(List<Guard> guards, float speed, float timeDelta);
-    
+
+    public abstract void Patrol(List<Guard> guards);
+
 }

@@ -18,7 +18,7 @@ public class GuardsManager : Agent
 
     // For voicing the npcs
     private Scriptor m_script;
-    
+
     private readonly float AlarmCooldown = 2f;
     private AudioSource m_alarmAudio;
 
@@ -56,6 +56,7 @@ public class GuardsManager : Agent
 
 
     // This part controls the Reinforcement Learning part of the behavior
+
     #region RL behavior
 
     public override void OnEpisodeBegin()
@@ -162,7 +163,7 @@ public class GuardsManager : Agent
         switch (npcData.npcType)
         {
             case NpcType.Guard:
-                npcGameObject.name = "Guard" + (npcData.id + 1).ToString().PadLeft(2, '0');
+                npcGameObject.name = "Guard" + (npcData.id).ToString().PadLeft(2, '0');
                 npc = npcGameObject.AddComponent<Guard>();
 
                 Color color = Color.clear;
@@ -208,8 +209,6 @@ public class GuardsManager : Agent
             guard.ResetLocation(navMesh, m_Guards, session);
             guard.ResetNpc();
         }
-
-        // m_gCtrl.ResetBehavior();
     }
 
     #endregion

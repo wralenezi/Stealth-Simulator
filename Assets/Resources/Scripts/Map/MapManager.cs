@@ -5,6 +5,8 @@ using UnityEngine;
 
 public class MapManager : MonoBehaviour
 {
+    public MapData mapData;
+    
     // Map renderer
     public MapRenderer mapRenderer { get; private set; }
 
@@ -33,13 +35,15 @@ public class MapManager : MonoBehaviour
 
     public static MapManager Instance;
 
-    public void Initiate(MapData mapData)
+    public void Initiate(MapData _mapData)
     {
         Instance ??= this;
 
+        mapData = _mapData;
+
         // Draw the map
         mapRenderer = gameObject.AddComponent<MapRenderer>();
-        mapRenderer.Initiate(mapData);
+        mapRenderer.Initiate(_mapData);
 
         // Create the NavMesh
         mapDecomposer = gameObject.AddComponent<MapDecomposer>();
@@ -56,7 +60,7 @@ public class MapManager : MonoBehaviour
 
         // Scale Area Transform
         sat = gameObject.AddComponent<SAT>();
-        sat.Initiate(mapRenderer, mapData);
+        sat.Initiate(mapRenderer, _mapData);
 
         // Build the road map based on the Scale Area Transform
         roadMap = new RoadMap(sat, mapRenderer);
@@ -66,7 +70,7 @@ public class MapManager : MonoBehaviour
         // visibilityGraph.Initiate(mapRenderer);
 
         regionMgr = UnityHelper.AddChildComponent<RegionLabelsManager>(transform, "Regions");
-        regionMgr.Initiate(mapData);
+        regionMgr.Initiate(_mapData);
 
         // Mesh manager
         meshManager = UnityHelper.AddChildComponent<FloorTileManager>(transform, "MeshManager");

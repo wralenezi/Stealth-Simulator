@@ -13,6 +13,8 @@ public class CoinSpawner : MonoBehaviour
 
     private List<Intruder> m_intruders;
 
+    private bool _isRandom = false;
+
     public void Inititate(Session session, List<MeshPolygon> navMesh)
     {
         m_coins = new List<Coin>();
@@ -58,7 +60,7 @@ public class CoinSpawner : MonoBehaviour
         {
             int randIndex = Random.Range(0, navMesh.Count);
             Vector2 coinPos = navMesh[randIndex].GetRandomPosition();
-            coin.Spawn(coinPos, navMesh);
+            coin.Spawn(coinPos, navMesh, MapManager.Instance.mapData,_isRandom);
         }
     }
 

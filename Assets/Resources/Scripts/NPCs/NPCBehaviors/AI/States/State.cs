@@ -21,7 +21,7 @@ public abstract class State //: IState
     {
     }
 
-    public virtual void Execute()
+    public virtual void Execute(GameType gameType)
     {
     }
 

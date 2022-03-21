@@ -58,6 +58,7 @@ public class NpcsManager : MonoBehaviour
         AreaUIManager.Instance.UpdateScore(m_score, m_score);
         m_guardsManager.Reset(navMesh, session);
         m_intrudersManager.Reset(navMesh, GetGuards(), session);
+        ChangeState<Patrol>();
     }
 
     public void Done()
@@ -77,9 +78,9 @@ public class NpcsManager : MonoBehaviour
         m_intrudersManager.CastVision();
     }
 
-    public void MakeDecisions()
+    public void MakeDecisions(GameType gameType)
     {
-        m_state.UpdateState();
+        m_state.UpdateState(gameType);
     }
 
     public List<Guard> GetGuards()
@@ -99,14 +100,14 @@ public class NpcsManager : MonoBehaviour
     }
 
 
-    public void ExecuteState()
+    public void ExecuteState(GameType gameType)
     {
-        m_state.UpdateState();
+        m_state.UpdateState(gameType);
     }
     
     public void CoinPicked()
     {
-        if (GetState() is Search)
+        if (!(GetState() is Chase))
         {
             IncrementScore(20f);
         }

@@ -8,7 +8,7 @@ public static class CsvController
 {
     public static string GetPath(Session sa, FileType fileType, int episodesCount)
     {
-        return GameManager.LogsPath + GetFileName(fileType, sa) + " " + episodesCount + ".csv";
+        return GameManager.LogsPath + GetFileName(fileType, sa) + "_" + episodesCount + ".csv";
     }
 
     // Get the number of files that starts with a certain string

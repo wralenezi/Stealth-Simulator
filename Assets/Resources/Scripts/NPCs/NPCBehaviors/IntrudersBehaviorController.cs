@@ -70,11 +70,11 @@ public class IntrudersBehaviorController : MonoBehaviour
         m_Scouter.Begin();
     }
 
-    public void StayIncognito()
+    public void StayIncognito(GameType gameType)
     {
         if (Equals(behavior.search, SearchPlanner.UserInput)) return;
 
-        m_Scouter?.Refresh();
+        m_Scouter?.Refresh(gameType);
     }
 
     public void StartChaseEvader()
