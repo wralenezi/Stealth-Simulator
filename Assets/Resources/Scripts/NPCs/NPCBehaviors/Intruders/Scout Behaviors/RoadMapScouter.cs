@@ -8,8 +8,12 @@ public class RoadMapScouter : Scouter
     public bool showRoadmap;
     private RoadMap m_RoadMap;
 
+    // Predicted trajectories of guards
     public bool showProjectedTrajectories;
     private List<PossibleTrajectory> m_PossibleTrajectories;
+
+    // List of the most threatening position for each guard.
+    private List<PossiblePosition> m_MostThreateningPositions;
 
     // The distance of the possible position of the guards; the further it is the more cautious the intruder will be
     private static float _ProjectionDist = 8f;
@@ -31,6 +35,7 @@ public class RoadMapScouter : Scouter
         base.Initiate(mapManager);
 
         m_PossibleTrajectories = new List<PossibleTrajectory>();
+        m_MostThreateningPositions = new List<PossiblePosition>();
 
         m_RoadMap = mapManager.GetRoadMap();
         m_lastUpdateTimestamp = StealthArea.GetElapsedTime();
@@ -47,7 +52,7 @@ public class RoadMapScouter : Scouter
 
         for (float i = 0; i < 1; i += 0.1f)
         {
-            float y = (i <= 1f) ? i * 0.1f : i;
+            float y = (i <= 0.3) ? i * 0.1f : i;
             float x = i;
             Keyframe keyframe = new Keyframe(x, y);
             m_ThreatOfPossiblePositionsCurve.AddKey(keyframe);
@@ -156,41 +161,44 @@ public class RoadMapScouter : Scouter
 
             if (distanceToHs > radius) continue;
 
+            PossiblePosition closestPossiblePosition;
+            Vector2? closestPointOnTrajectory = null;
             foreach (var trajectory in m_PossibleTrajectories)
             {
-                Vector2? closestPointOnTrajectory =
+                closestPointOnTrajectory =
                     GeometryHelper.GetClosetPointOnPath(trajectory.GetPath(), hs.Position);
-
-                bool isMutuallyVisible =
-                    GeometryHelper.IsCirclesVisible(hs.Position, closestPointOnTrajectory.Value, 0.5f, "Wall");
-
-
-                float distanceHsToTrajectory =
-                    PathFinding.Instance.GetShortestPathDistance(closestPointOnTrajectory.Value,
-                        intruder.GetTransform().position);
-
-                float safetyUtilityInComingGuard = 0f;
-                if (!isMutuallyVisible && distanceHsToTrajectory >= guardFovRadius)
-                {
-                    float normalizedDistance = distanceHsToTrajectory / _ProjectionDist;
-                    safetyUtilityInComingGuard = m_ThreatOfPossiblePositionsCurve.Evaluate(normalizedDistance);
-                }
-
-                float distanceToGoal = Vector2.Distance(hs.Position, goal);
-                // float distanceToGoal = PathFinding.Instance.GetShortestPathDistance(hs.Position, goal);
-                float utilityToGoal = 1f - distanceToGoal / PathFinding.Instance.longestPath;
-
-                // safetyUtilityInComingGuard = 0f;
-
-                hs.Fitness = Mathf.Max(utilityToGoal, safetyUtilityInComingGuard);
-
-                hs.Fitness = Mathf.Round(hs.Fitness * 10000f) * 0.0001f;
-
-                if (!(maxFitness < hs.Fitness)) continue;
-
-                bestHs = hs;
-                maxFitness = hs.Fitness;
             }
+
+            bool isMutuallyVisible =
+                GeometryHelper.IsCirclesVisible(hs.Position, closestPointOnTrajectory.Value, 0.5f, "Wall");
+
+
+            float distanceHsToTrajectory =
+                PathFinding.Instance.GetShortestPathDistance(closestPointOnTrajectory.Value,
+                    intruder.GetTransform().position);
+
+            float safetyUtilityInComingGuard = 0f;
+            if (!isMutuallyVisible && distanceHsToTrajectory >= guardFovRadius)
+            {
+                float normalizedDistance = distanceHsToTrajectory / _ProjectionDist;
+                safetyUtilityInComingGuard = m_ThreatOfPossiblePositionsCurve.Evaluate(normalizedDistance);
+            }
+
+            float distanceToGoal = Vector2.Distance(hs.Position, goal);
+            // float distanceToGoal = PathFinding.Instance.GetShortestPathDistance(hs.Position, goal);
+            float utilityToGoal = 1f - distanceToGoal / PathFinding.Instance.longestPath;
+
+            // safetyUtilityInComingGuard = 0f;
+
+            hs.Fitness = Mathf.Max(utilityToGoal, safetyUtilityInComingGuard);
+            // hs.Fitness = (utilityToGoal + safetyUtilityInComingGuard) * 0.5f;
+
+            hs.Fitness = Mathf.Round(hs.Fitness * 10000f) * 0.0001f;
+
+            if (!(maxFitness < hs.Fitness)) continue;
+
+            bestHs = hs;
+            maxFitness = hs.Fitness;
         }
 
         return bestHs;
