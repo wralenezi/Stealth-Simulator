@@ -22,7 +22,7 @@ public class GameManager : MonoBehaviour
     // To determine which perspective the game is viewed from
     [Header("Game Mode")] [SerializeField] [Tooltip("What elements will be shown?")]
     public GameView gameView;
-    
+
     // display survey?
     public bool showSurvey;
 
@@ -97,7 +97,7 @@ public class GameManager : MonoBehaviour
 
         // Reference the main camera
         MainCamera = Camera.main;
-        
+
         // World state storage
         WorldState.Initialize();
 
@@ -402,7 +402,7 @@ public enum GameType
     CoinCollection,
 
     Stealth,
-    
+
     StealthPath
 }
 
@@ -605,7 +605,7 @@ public class Session
 
         // Search format
         // sessionInfo +=
-            // (GetGuardsData().Count > 0 ? GetGuardsData()[0].behavior.searchFormat.ToString() : "") + sep;
+        // (GetGuardsData().Count > 0 ? GetGuardsData()[0].behavior.searchFormat.ToString() : "") + sep;
 
         // Guard FoV percentage of the longest path in the map
         // sessionInfo += Properties.GuardsFovRadiusPercentage + sep;

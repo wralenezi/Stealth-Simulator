@@ -47,7 +47,7 @@ public class RoadMapScouter : Scouter
 
         for (float i = 0; i < 1; i += 0.1f)
         {
-            float y = (i <= 0.3f) ? i * 0.1f : i;
+            float y = (i <= 1f) ? i * 0.1f : i;
             float x = i;
             Keyframe keyframe = new Keyframe(x, y);
             m_ThreatOfPossiblePositionsCurve.AddKey(keyframe);
@@ -81,7 +81,7 @@ public class RoadMapScouter : Scouter
     public override void Refresh(GameType gameType)
     {
         ProjectGuardPositions(NpcsManager.Instance.GetGuards());
-        
+
         foreach (var intruder in NpcsManager.Instance.GetIntruders())
         {
             if (intruder.IsBusy() && !IsUpdateDue()) return;
@@ -93,19 +93,21 @@ public class RoadMapScouter : Scouter
                 case GameType.CoinCollection:
                     goal = CollectablesManager.Instance.GetGoalPosition(gameType);
                     break;
-                
+
                 case GameType.StealthPath:
                     // goal =
                     break;
-
             }
 
             HidingSpot bestHs = EvaluateHidingSpot(intruder, goal.Value);
 
             if (Equals(goal, null) || Equals(bestHs, null)) return;
 
+            float distanceToGoal = Vector2.Distance(goal.Value, bestHs.Position);
+            goal = distanceToGoal / PathFinding.Instance.longestPath < 0.1f ? goal.Value : bestHs.Position;
+
             // Update the fitness values of the hiding spots
-            intruder.SetDestination(bestHs.Position, true, false);
+            intruder.SetDestination(goal.Value, true, false);
         }
     }
 
@@ -115,7 +117,7 @@ public class RoadMapScouter : Scouter
     public void ProjectGuardPositions(List<Guard> guards)
     {
         m_PossibleTrajectories.Clear();
-        
+
         float fov = Properties.GetFovRadius(NpcType.Guard);
 
         foreach (var guard in guards)
@@ -127,12 +129,9 @@ public class RoadMapScouter : Scouter
             if (!point.HasValue) return;
 
             _ProjectionDist = fov + guard.GetCurrentSpeed() * fov * 20f;
-            
+
             m_RoadMap.ProjectPositionsInDirection(ref m_PossibleTrajectories, point.Value, line,
                 _ProjectionDist, guard);
-            
-            return;
-
         }
     }
 
@@ -165,6 +164,7 @@ public class RoadMapScouter : Scouter
                 bool isMutuallyVisible =
                     GeometryHelper.IsCirclesVisible(hs.Position, closestPointOnTrajectory.Value, 0.5f, "Wall");
 
+
                 float distanceHsToTrajectory =
                     PathFinding.Instance.GetShortestPathDistance(closestPointOnTrajectory.Value,
                         intruder.GetTransform().position);
@@ -176,12 +176,18 @@ public class RoadMapScouter : Scouter
                     safetyUtilityInComingGuard = m_ThreatOfPossiblePositionsCurve.Evaluate(normalizedDistance);
                 }
 
-                float distanceToGoal = PathFinding.Instance.GetShortestPathDistance(hs.Position, goal);
-                float utilityToGoal = (1f - distanceToGoal / PathFinding.Instance.longestPath);
+                float distanceToGoal = Vector2.Distance(hs.Position, goal);
+                // float distanceToGoal = PathFinding.Instance.GetShortestPathDistance(hs.Position, goal);
+                float utilityToGoal = 1f - distanceToGoal / PathFinding.Instance.longestPath;
 
-                hs.Fitness = Mathf.Max(utilityToGoal , safetyUtilityInComingGuard);
-                
+                // safetyUtilityInComingGuard = 0f;
+
+                hs.Fitness = Mathf.Max(utilityToGoal, safetyUtilityInComingGuard);
+
+                hs.Fitness = Mathf.Round(hs.Fitness * 10000f) * 0.0001f;
+
                 if (!(maxFitness < hs.Fitness)) continue;
+
                 bestHs = hs;
                 maxFitness = hs.Fitness;
             }

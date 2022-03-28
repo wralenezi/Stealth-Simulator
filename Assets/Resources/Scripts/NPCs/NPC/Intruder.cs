@@ -46,7 +46,7 @@ public class Intruder : NPC
         m_PlayerLabel = gameLabelGo.GetComponent<PlayerLabelController>();
         m_PlayerLabel.Initiate(GetTransform());
 
-        // isGhost = true;
+        isGhost = true;
     }
 
     public override void ResetNpc()

@@ -248,11 +248,11 @@ public class SessionsSetup : MonoBehaviour
             // Add intruders
             for (int i = 0; i < session.intruderCount; i++)
             {
-                Behavior behavior = new Behavior(PatrolPlanner.UserInput, AlertPlanner.UserInput,
-                    SearchPlanner.UserInput, pathType);
+                // Behavior behavior = new Behavior(PatrolPlanner.UserInput, AlertPlanner.UserInput,
+                //     SearchPlanner.UserInput, pathType);
 
-                // Behavior behavior = new Behavior(PatrolPlanner.iRoadMap, AlertPlanner.iHeuristic,
-                // SearchPlanner.iHeuristic, pathType);
+                Behavior behavior = new Behavior(PatrolPlanner.iRoadMap, AlertPlanner.iHeuristic,
+                SearchPlanner.iHeuristic, pathType);
 
                 session.AddNpc(i + 1, NpcType.Intruder, behavior, PathFindingHeursitic.EuclideanDst,
                     PathFollowing.SimpleFunnel, new NpcLocation(new Vector2(-13.25f, 4.4f), 0f));

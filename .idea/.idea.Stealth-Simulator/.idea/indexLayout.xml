@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="ContentModelUserStore">
+  <component name="UserContentModel">
     <attachedFolders>
+      <Path>$USER_HOME$/AppData/Local/Unity/cache/packages/packages.unity.com/com.unity.mathematics@1.1.0</Path>
       <Path>$USER_HOME$/Desktop/MlAgents/ml-agents/com.unity.ml-agents</Path>
     </attachedFolders>
     <explicitIncludes>
-      <Path>$USER_HOME$/AppData/Local/Unity/cache/packages/packages.unity.com/com.unity.mathematics@1.1.0</Path>
       <Path>Library/PackageCache/com.unity.2d.common@5.0.0</Path>
       <Path>Library/PackageCache/com.unity.2d.path@5.0.0</Path>
       <Path>Library/PackageCache/com.unity.2d.pixel-perfect@5.0.0</Path>
