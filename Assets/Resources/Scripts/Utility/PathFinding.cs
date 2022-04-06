@@ -10,7 +10,7 @@ public class PathFinding : MonoBehaviour
     [SerializeField] private float m_longestPathInMap;
 
 
-    public float longestPath => m_longestPathInMap;
+    public float longestShortestPath => m_longestPathInMap;
 
     // Simple Funnel Offset
     private float offsetMultiplier = 0.25f;

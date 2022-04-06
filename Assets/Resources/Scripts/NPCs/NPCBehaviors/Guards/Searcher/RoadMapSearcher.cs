@@ -42,7 +42,7 @@ public abstract class RoadMapSearcher : Searcher
 
         m_ExpandedPoints = new List<PossiblePosition>();
 
-        m_MaxLength = PathFinding.Instance.longestPath;
+        m_MaxLength = PathFinding.Instance.longestShortestPath;
 
         m_goalProb = new float[session.guardsCount];
 
@@ -178,8 +178,8 @@ public abstract class RoadMapSearcher : Searcher
             // Calculate the overall heuristic of this search segment
             ssFitness = ssFitness * m_searchWeights.probWeight +
                         (sS.GetAge() / Properties.MaxAge) * m_searchWeights.ageWeight +
-                        (minGoalDistance / PathFinding.Instance.longestPath) * m_searchWeights.dstToGuardsWeight +
-                        (distanceToGuard / PathFinding.Instance.longestPath) * m_searchWeights.dstFromOwnWeight;
+                        (minGoalDistance / PathFinding.Instance.longestShortestPath) * m_searchWeights.dstToGuardsWeight +
+                        (distanceToGuard / PathFinding.Instance.longestShortestPath) * m_searchWeights.dstFromOwnWeight;
 
 
             if (maxFitnessValue < ssFitness)

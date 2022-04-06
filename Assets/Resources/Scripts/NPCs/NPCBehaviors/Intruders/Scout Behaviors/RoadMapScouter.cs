@@ -104,7 +104,7 @@ public class RoadMapScouter : Scouter
             if (Equals(goal, null) || Equals(bestHs, null)) return;
 
             float distanceToGoal = Vector2.Distance(goal.Value, bestHs.Position);
-            goal = distanceToGoal / PathFinding.Instance.longestPath < 0.1f ? goal.Value : bestHs.Position;
+            goal = distanceToGoal / PathFinding.Instance.longestShortestPath < 0.1f ? goal.Value : bestHs.Position;
 
             // Update the fitness values of the hiding spots
             intruder.SetDestination(goal.Value, true, false);
@@ -202,7 +202,7 @@ public class RoadMapScouter : Scouter
     private HidingSpot EvaluateHidingSpot(Intruder intruder, Vector2 goal)
     {
         int numberOfAdjacentCell = 3;
-        float radius = PathFinding.Instance.longestPath * 0.5f;
+        float radius = PathFinding.Instance.longestShortestPath * 0.5f;
 
         m_tempSpots = m_HsC.GetHidingSpots(intruder.GetTransform().position, numberOfAdjacentCell);
 
@@ -219,12 +219,14 @@ public class RoadMapScouter : Scouter
             if (distanceToHs > radius) continue;
 
             float safetyUtility = GetSafetyUtility(hs);
-
             float utilityToGoal = GetGoalUtility(hs, goal);
+            float guardProximityUtility = GetGuardsProximityUtility(hs, NpcsManager.Instance.GetGuards());
+            float occlusionUtility = GetOcclusionUtility(hs, NpcsManager.Instance.GetGuards());
+
 
             // hs.Fitness = safetyUtility > 0.7f? utilityToGoal: safetyUtility;
-            hs.Fitness = (utilityToGoal + safetyUtility) * 0.5f;
-            // hs.Fitness = safetyUtility;
+            // hs.Fitness = (utilityToGoal + safetyUtility) * 0.5f;
+            hs.Fitness = safetyUtility;
 
             hs.Fitness = Mathf.Round(hs.Fitness * 10000f) * 0.0001f;
 
@@ -234,7 +236,7 @@ public class RoadMapScouter : Scouter
             maxFitness = hs.Fitness;
         }
 
-        // EditorApplication.isPaused = true;
+        EditorApplication.isPaused = true;
 
         return bestHs;
     }
@@ -266,11 +268,9 @@ public class RoadMapScouter : Scouter
                 GeometryHelper.GetClosetPointOnPath(trajectory.GetPath(), hs.Position);
 
             if (Equals(pointOnTrajectory, null)) continue;
-            
-            Debug.DrawLine(hs.Position, pointOnTrajectory.Value);
 
-            // float distance = PathFinding.Instance.GetShortestPathDistance(hs.Position, pointOnTrajectory.Value);
-            float distance = Vector2.Distance(hs.Position, pointOnTrajectory.Value);
+            float distance = PathFinding.Instance.GetShortestPathDistance(hs.Position, pointOnTrajectory.Value);
+            // float distance = Vector2.Distance(hs.Position, pointOnTrajectory.Value);
 
             if (distance >= shortestDistance) continue;
 
@@ -295,34 +295,91 @@ public class RoadMapScouter : Scouter
 
         float hsDistanceToGuard = Vector2.Distance(hs.Position, closestPointOnTrajectory.npc.GetTransform().position);
 
+        
+        Debug.DrawLine(closestPointOnTrajectory.npc.GetTransform().position, closestPointOnTrajectory.position);
 
         // This means that the projection is on the guard, which means that the hiding spot is behind the guard.
-        if (projectionDistanceToGuard <= 0.01f) safetyUtility = 1f;
-        // else if (projectionDistanceToGuard > 0.01f && projectionDistanceToGuard <= _GuardFovLength) safetyUtility = 0f;
-        else if(hsDistanceToGuard > 0.01f && projectionDistanceToGuard <= _GuardFovLength)  safetyUtility = 0f;
-        else if (hsDistanceToGuard > _GuardFovLength)
-        {
-            float maxDistance = _GuardFovLength * (_ProjectionMultipler - 1);
-            float distance = projectionDistanceToGuard - _GuardFovLength;
+        if (projectionDistanceToGuard <= 0.2f) safetyUtility = 2f;
+        else
+            safetyUtility = -1f;
 
-            float distanceNormalized = distance / maxDistance;
-            distanceNormalized = Mathf.Min(distanceNormalized, 1f);
-            safetyUtility = _SafetyCurve.Evaluate(distanceNormalized);
-        }
+        // else if (projectionDistanceToGuard > 0.01f && projectionDistanceToGuard <= _GuardFovLength) safetyUtility = 0f;
+        // else if(hsDistanceToGuard > 0.01f && projectionDistanceToGuard <= _GuardFovLength)  safetyUtility = 0f;
+        // else if (hsDistanceToGuard > _GuardFovLength)
+        // {
+        //     float maxDistance = _GuardFovLength * (_ProjectionMultipler - 1);
+        //     float distance = projectionDistanceToGuard - _GuardFovLength;
+        //
+        //     float distanceNormalized = distance / maxDistance;
+        //     distanceNormalized = Mathf.Min(distanceNormalized, 1f);
+        //     safetyUtility = _SafetyCurve.Evaluate(distanceNormalized);
+        // }
 
 
         return safetyUtility;
     }
 
+
+    // Get the utility value for being close to the goal position
     private float GetGoalUtility(HidingSpot hs, Vector2 goal)
     {
         float distanceToGoal = Vector2.Distance(hs.Position, goal);
         // float distanceToGoal = PathFinding.Instance.GetShortestPathDistance(hs.Position, goal);
-        float utilityToGoal = 1f - distanceToGoal / PathFinding.Instance.longestPath;
+        float utilityToGoal = 1f - distanceToGoal / PathFinding.Instance.longestShortestPath;
 
         return utilityToGoal;
     }
 
+    // Get the utility for being away from guards
+    private float GetGuardsProximityUtility(HidingSpot hs, List<Guard> guards)
+    {
+        float proximityUtility = 0f;
+
+        float denominator = PathFinding.Instance.longestShortestPath;
+
+        foreach (var guard in guards)
+        {
+            float distanceToHidingspot =
+                PathFinding.Instance.GetShortestPathDistance(hs.Position, guard.GetTransform().position);
+
+            float normalizedDistance = distanceToHidingspot / denominator;
+
+            if (proximityUtility < normalizedDistance)
+            {
+                proximityUtility = normalizedDistance;
+            }
+        }
+
+        return proximityUtility;
+    }
+
+    /// <summary>
+    /// Get the occlusion value of a hiding spot.
+    /// The value is between 0 and 1, it reflects the normalized distance to the closest non occluded guard.
+    /// </summary>
+    private float GetOcclusionUtility(HidingSpot hs, List<Guard> guards)
+    {
+        float utility = 1f;
+        float denominator = PathFinding.Instance.longestShortestPath;
+
+        foreach (var guard in guards)
+        {
+            bool isVisible = GeometryHelper.IsCirclesVisible(hs.Position, guard.GetTransform().position, 0.1f, "Wall");
+
+            if (!isVisible) continue;
+
+            float distanceToHidingspot = Vector2.Distance(hs.Position, guard.GetTransform().position);
+
+            float normalizedDistance = distanceToHidingspot / denominator;
+
+            if (utility > normalizedDistance)
+            {
+                utility = normalizedDistance;
+            }
+        }
+
+        return utility;
+    }
 
     public void OnDrawGizmos()
     {
@@ -338,7 +395,7 @@ public class RoadMapScouter : Scouter
         if (!Equals(m_tempSpots, null))
             foreach (var s in m_tempSpots)
             {
-                if (s.Fitness <= 0f) continue;
+                // if (s.Fitness <= 0f) continue;
 
                 Gizmos.DrawSphere(s.Position, 0.2f);
 

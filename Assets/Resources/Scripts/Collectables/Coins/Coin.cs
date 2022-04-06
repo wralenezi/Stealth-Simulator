@@ -38,7 +38,7 @@ public class Coin : MonoBehaviour
             
                 float distance = PathFinding.Instance.GetShortestPathDistance(startPosition, pos);
 
-                if (distance > PathFinding.Instance.longestPath * 0.4f)
+                if (distance > PathFinding.Instance.longestShortestPath * 0.4f)
                 {
                     positionFound = true;
                     chosenPos = pos;

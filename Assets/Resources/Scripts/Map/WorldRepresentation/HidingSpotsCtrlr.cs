@@ -96,7 +96,7 @@ public class HidingSpotsCtrlr
                               possiblePosition.safetyMultiplier;
 
 
-        return totalDistances / (PathFinding.Instance.longestPath * possiblePositions.Count);
+        return totalDistances / (PathFinding.Instance.longestShortestPath * possiblePositions.Count);
     }
 
     private float GetMinDistanceToHidingSpots(HidingSpot hidingSpot, List<PossiblePosition> possiblePositions)
@@ -110,7 +110,7 @@ public class HidingSpotsCtrlr
             minDistance = (distance < minDistance) ? distance : minDistance;
         }
 
-        return minDistance / PathFinding.Instance.longestPath;
+        return minDistance / PathFinding.Instance.longestShortestPath;
     }
 
     // Assign the fitness value of each hiding spot based on the guards distance to them
@@ -172,6 +172,9 @@ public class HidingSpot
     /// Indicator of how good a hiding spot is; it is between 0 and 1.
     /// </summary>
     public float Fitness;
+
+    // A flag if the spot is occluded from all guards on the map
+    public bool IsOccludedFromGuards;
 
     public HidingSpot(Vector2 _position, float _coverRatio)
     {
