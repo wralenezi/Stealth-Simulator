@@ -130,11 +130,11 @@ public class MeshPolygon : Polygon
     {
         Gizmos.color = Color.green;
 
-        foreach (var neigh in GetAdjcentPolygons())
-        {
-            Vector2 mid = GetMidPointOfDiagonalNeighbor(neigh.Value);
-            Gizmos.DrawLine(GetCentroidPosition(), mid);
-        }
+        // foreach (var neigh in GetAdjcentPolygons())
+        // {
+        //     Vector2 mid = GetMidPointOfDiagonalNeighbor(neigh.Value);
+        //     Gizmos.DrawLine(GetCentroidPosition(), mid);
+        // }
 
 
         base.Draw(label);

@@ -225,7 +225,7 @@ public static class GeometryHelper
         return Equals(hitLeft.collider, null) && Equals(hitRight.collider, null);
     }
 
-    public static Vector2? GetClosetPointOnPath(List<Vector2> path, Vector2 point)
+    public static Vector2? GetClosetPointOnPath(List<Vector2> path, Vector2 point, float radius)
     {
         float minSqrMag = Mathf.Infinity;
         Vector2? projection = null;
@@ -234,10 +234,12 @@ public static class GeometryHelper
         {
             Vector2 pOnSegment = ClosestProjectionOnSegment(path[i], path[i + 1], point);
 
+            bool isVisible = IsCirclesVisible(pOnSegment, point, radius, "Wall");
+
             Vector2 diff = point - pOnSegment;
             float sqrMag = diff.sqrMagnitude;
             
-            if (minSqrMag > sqrMag)
+            if (minSqrMag > sqrMag && isVisible)
             {
                 minSqrMag = sqrMag;
                 projection = pOnSegment;

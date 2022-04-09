@@ -76,7 +76,7 @@ public class PathFinding : MonoBehaviour
 
 
     // Return the shortest path as a sequence of points
-    public void GetShortestPath(Vector2 startPoint, Vector2 destinationPoint,
+    public float GetShortestPath(Vector2 startPoint, Vector2 destinationPoint,
         ref List<Vector2> resultPath)
     {
         List<MeshPolygon> navMesh = MapManager.Instance.GetNavMesh();
@@ -85,6 +85,13 @@ public class PathFinding : MonoBehaviour
         SetShortestPathPolygons(navMesh, startPoint, destinationPoint);
 
         GetPathBySSFA(startPoint, destinationPoint, ref resultPath);
+        
+        float totalDistance = 0f;
+
+        for (int i = 0; i < resultPath.Count - 1; i++)
+            totalDistance += Vector2.Distance(resultPath[i], resultPath[i + 1]);
+
+        return totalDistance;
     }
 
     public float GetShortestPathDistance(Vector2 startPoint, Vector2 destinationPoint)
@@ -109,7 +116,7 @@ public class PathFinding : MonoBehaviour
 
         if (Equals(startPolygon, null) || Equals(destinationPolygon, null))
         {
-            // Debug.LogError("Cannot Find the corresponding polygon.");
+            Debug.LogError("Cannot Find the corresponding polygon.");
             throw new Exception();
         }
 

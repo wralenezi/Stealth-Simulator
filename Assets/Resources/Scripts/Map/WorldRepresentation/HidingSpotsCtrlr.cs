@@ -169,6 +169,32 @@ public class HidingSpot
     public float CoverRatio;
 
     /// <summary>
+    /// How close this spot to the goal
+    /// </summary>
+    public float GoalUtility;
+
+    /// <summary>
+    /// Utility of how occluded the spot from guards
+    /// </summary>
+    public float OcclusionUtility;
+
+
+    public PossiblePosition ThreateningPosition;
+    
+    /// <summary>
+    /// Utility of how safe this spot from potential guard movements
+    /// </summary>
+    public float SafetyUtility;
+    // same value but before normalizing
+    public float SafetyAbsoluteValue;
+
+
+    /// <summary>
+    /// Utility of how far this spot is from guards' current positions.
+    /// </summary>
+    public float GuardProximityUtility;
+    
+    /// <summary>
     /// Indicator of how good a hiding spot is; it is between 0 and 1.
     /// </summary>
     public float Fitness;
@@ -181,6 +207,7 @@ public class HidingSpot
         Position = _position;
         CoverRatio = _coverRatio;
         Fitness = 0f;
+        ThreateningPosition = null;
     }
 
     public void Draw()
