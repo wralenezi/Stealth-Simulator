@@ -286,6 +286,8 @@ public abstract class NPC : MonoBehaviour
 
         // Get the shortest path to the goal
         PathFinding.Instance.GetShortestPath(GetTransform().position, _goal, ref PathToTake);
+        
+        PathToTake.RemoveAt(0);
     }
 
     public void SetDirection(Vector2 direction)

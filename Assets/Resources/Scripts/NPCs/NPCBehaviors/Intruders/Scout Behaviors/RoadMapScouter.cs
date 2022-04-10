@@ -14,7 +14,7 @@ public class RoadMapScouter : Scouter
     private List<PossibleTrajectory> m_PossibleTrajectories;
 
     public int trajectoryCounter = 0;
-
+    public Dictionary<string, float> _maxSafetyUtilitiesPerGuard;
 
     // The count of possible positions the will be distributed on the projection
     private int m_positionsCount = 1;
@@ -40,6 +40,7 @@ public class RoadMapScouter : Scouter
 
         SetCurves();
 
+        _maxSafetyUtilitiesPerGuard = new Dictionary<string, float>();
         _labels = new List<LabelSpot>();
 
         showProjectedTrajectories = true;
@@ -89,7 +90,7 @@ public class RoadMapScouter : Scouter
                     break;
             }
 
-            HidingSpot bestHs = EvaluateHidingSpot(intruder, goal.Value);
+            HidingSpot bestHs = EvaluateHidingSpot(intruder, goal.Value, NpcsManager.Instance.GetGuards());
 
             if (Equals(goal, null) || Equals(bestHs, null)) return;
 
@@ -199,7 +200,7 @@ public class RoadMapScouter : Scouter
     //     return bestHs;
     // }
 
-    private HidingSpot EvaluateHidingSpot(Intruder intruder, Vector2 goal)
+    private HidingSpot EvaluateHidingSpot(Intruder intruder, Vector2 goal, List<Guard> guards)
     {
         int numberOfAdjacentCell = 3;
         float radius = PathFinding.Instance.longestShortestPath * 0.5f;
@@ -207,7 +208,10 @@ public class RoadMapScouter : Scouter
 
         m_tempSpots = m_HsC.GetHidingSpots(intruder.GetTransform().position, numberOfAdjacentCell);
 
-        float maxSafetyValue = Mathf.NegativeInfinity;
+        _maxSafetyUtilitiesPerGuard.Clear();
+        foreach (var guard in guards)
+            _maxSafetyUtilitiesPerGuard.Add(guard.name, Mathf.NegativeInfinity);
+
         foreach (var hs in m_tempSpots)
         {
             float distanceToHs =
@@ -216,18 +220,20 @@ public class RoadMapScouter : Scouter
             if (distanceToHs > radius) continue;
 
             SetClosestGuardThreatPoint(hs);
-            if (hs.SafetyAbsoluteValue > maxSafetyValue) maxSafetyValue = hs.SafetyAbsoluteValue;
 
             hs.GoalUtility = GetGoalUtility(hs, goal);
             hs.GuardProximityUtility = GetGuardsProximityUtility(hs, NpcsManager.Instance.GetGuards());
             hs.OcclusionUtility = GetOcclusionUtility(hs, NpcsManager.Instance.GetGuards());
         }
 
+
         HidingSpot bestHs = null;
         float maxFitness = Mathf.NegativeInfinity;
         foreach (var hs in m_tempSpots)
         {
-            hs.SafetyUtility = hs.SafetyAbsoluteValue; /// maxSafetyValue;
+            EvaluateSafetyUtility(hs);
+            
+            hs.SafetyUtility = hs.SafetyAbsoluteValue / _maxSafetyUtilitiesPerGuard[hs.ThreateningPosition.npc.name];
 
             hs.Fitness = hs.SafetyUtility;
 
@@ -274,7 +280,7 @@ public class RoadMapScouter : Scouter
             {
                 closestPoint = trajectory.GetLastPoint();
                 distance =
-                    Vector2.Distance(closestPoint.Value, hs.Position);
+                    PathFinding.Instance.GetShortestPathDistance(closestPoint.Value, hs.Position);
             }
             else
             {
@@ -295,7 +301,24 @@ public class RoadMapScouter : Scouter
 
 
         hs.ThreateningPosition = closestPointOnTrajectory;
-        hs.SafetyAbsoluteValue = shortestDistance;
+        hs.SafetyAbsoluteValue =
+            PathFinding.Instance.GetShortestPathDistance(closestPointOnTrajectory.npc.GetTransform().position,
+                closestPointOnTrajectory.position);
+        
+        if (hs.SafetyAbsoluteValue > _maxSafetyUtilitiesPerGuard[hs.ThreateningPosition.npc.name])
+            _maxSafetyUtilitiesPerGuard[hs.ThreateningPosition.npc.name] = hs.SafetyAbsoluteValue;
+
+    }
+
+
+    public void EvaluateSafetyUtility(HidingSpot hs)
+    {
+        // Get the orientation of the threatening position to the guard.
+        bool isPointInFront = IsPointFrontNpc(hs.ThreateningPosition.npc, hs.Position);
+        
+
+        if (hs.SafetyAbsoluteValue < 0.5f && !isPointInFront)
+            hs.SafetyAbsoluteValue = _maxSafetyUtilitiesPerGuard[hs.ThreateningPosition.npc.name];
     }
 
     // Get the safety utility of a hiding spot.
@@ -524,7 +547,7 @@ public class RoadMapScouter : Scouter
                 Gizmos.color = Color.blue;
                 Gizmos.DrawSphere(hs.Position, 0.05f);
 #if UNITY_EDITOR
-                Handles.Label(0.4f * Vector2.up + hs.Position, hs.SafetyAbsoluteValue.ToString());
+                Handles.Label(0.4f * Vector2.up + hs.Position, hs.Fitness.ToString());
 #endif
 
                 Gizmos.color = Color.yellow;

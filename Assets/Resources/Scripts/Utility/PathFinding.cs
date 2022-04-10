@@ -65,7 +65,8 @@ public class PathFinding : MonoBehaviour
         for (int k = j + 1; k < walls[0].GetVerticesCount(); k++)
         {
             float distance = GetShortestPathDistance(
-                walls[0].GetAngelNormal(j) * lengthFromPoint + walls[0].GetPoint(j), walls[0].GetAngelNormal(k) * lengthFromPoint + walls[0].GetPoint(k));
+                walls[0].GetAngelNormal(j) * lengthFromPoint + walls[0].GetPoint(j),
+                walls[0].GetAngelNormal(k) * lengthFromPoint + walls[0].GetPoint(k));
 
             if (maxDistance < distance)
                 maxDistance = distance;
@@ -85,7 +86,10 @@ public class PathFinding : MonoBehaviour
         SetShortestPathPolygons(navMesh, startPoint, destinationPoint);
 
         GetPathBySSFA(startPoint, destinationPoint, ref resultPath);
-        
+
+        // Insert the first point to the path
+        resultPath.Insert(0, startPoint);
+
         float totalDistance = 0f;
 
         for (int i = 0; i < resultPath.Count - 1; i++)
@@ -98,6 +102,9 @@ public class PathFinding : MonoBehaviour
     {
         GetShortestPath(startPoint, destinationPoint, ref shortestPath);
 
+        // Insert the first point to the path
+        shortestPath.Insert(0, startPoint);
+        
         float totalDistance = 0f;
 
         for (int i = 0; i < shortestPath.Count - 1; i++)
@@ -148,7 +155,6 @@ public class PathFinding : MonoBehaviour
             {
                 MeshPolygon p = pPair.Value;
 
-                // Vector2 possibleNextWaypoint = current.GetMidPointOfDiagonalNeighbor(p);
                 Vector2 possibleNextWaypoint = GetClosestPolygonVertex(current.GetEntryPoint().Value, p);
 
                 if (!closedListMesh.Contains(p))

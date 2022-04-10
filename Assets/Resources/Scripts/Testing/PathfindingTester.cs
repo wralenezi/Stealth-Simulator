@@ -47,6 +47,9 @@ public class PathfindingTester : MonoBehaviour
             for (int i = 0; i < _path.Count - 1; i++)
                 Draw(_path[i], _path[i + 1]);
 
+            for (int i = 0; i < _path.Count; i++)
+                Gizmos.DrawSphere(_path[i], 0.05f);
+
             Gizmos.color = Color.yellow;
             Draw(from.position, to.position);
         }
