@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -6,12 +7,12 @@ using Random = UnityEngine.Random;
 public class Coin : MonoBehaviour
 {
     private Renderer renderer;
-    
+
     // Hide coins when spawned
     private bool m_isHideCoinWhenSpawned;
 
     private AudioSource audioSource;
-    
+
     public void Initiate()
     {
         renderer = GetComponent<Renderer>();
@@ -22,7 +23,7 @@ public class Coin : MonoBehaviour
     public void Spawn(Vector2 startPosition, List<MeshPolygon> navMesh, MapData mapData, bool isRandom)
     {
         Vector2? chosenPos = null;
-        
+
         if (!isRandom)
         {
             chosenPos = GetGoalPosition(mapData);
@@ -35,7 +36,7 @@ public class Coin : MonoBehaviour
             {
                 int random = Random.Range(0, navMesh.Count);
                 Vector2 pos = navMesh[random].GetRandomPosition();
-            
+
                 float distance = PathFinding.Instance.GetShortestPathDistance(startPosition, pos);
 
                 if (distance > PathFinding.Instance.longestShortestPath * 0.4f)
@@ -56,11 +57,21 @@ public class Coin : MonoBehaviour
 
     public Vector2 GetGoalPosition(MapData mapData)
     {
-        Dictionary<string,Vector2> goals = new Dictionary<string, Vector2>();
-        
-        goals.Add("MgsDock",new Vector2(13.87f,-0.28f));
-        
-        return goals[mapData.name];
+        try
+        {
+            Dictionary<string, Vector2> goals = new Dictionary<string, Vector2>();
+
+            goals.Add("MgsDock", new Vector2(13.87f, -0.28f));
+            
+            goals.Add("Hall", new Vector2(13.87f, -0.28f));
+
+            return goals[mapData.name];
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Goal location is missing for the map "+mapData.name+".");
+            throw;
+        }
     }
 
     // public bool IsCoinSeen(Vector2 pos)
@@ -93,7 +104,7 @@ public class Coin : MonoBehaviour
         {
             audioSource.Play();
             ModifyScore();
-            Spawn(gameObject.transform.position, MapManager.Instance.GetNavMesh(),MapManager.Instance.mapData, false);
+            Spawn(gameObject.transform.position, MapManager.Instance.GetNavMesh(), MapManager.Instance.mapData, false);
             other.gameObject.GetComponent<Intruder>().AddCoin();
         }
     }

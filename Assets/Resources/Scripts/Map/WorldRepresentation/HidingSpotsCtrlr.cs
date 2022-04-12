@@ -9,7 +9,7 @@ public class HidingSpotsCtrlr
     // the hiding spots
     private List<HidingSpot> m_HidingSpots;
 
-    
+
     private PartitionGrid<HidingSpot> m_spots;
 
 
@@ -180,11 +180,12 @@ public class HidingSpot
 
 
     public PossiblePosition ThreateningPosition;
-    
+
     /// <summary>
     /// Utility of how safe this spot from potential guard movements
     /// </summary>
     public float SafetyUtility;
+
     // same value but before normalizing
     public float SafetyAbsoluteValue;
 
@@ -193,7 +194,7 @@ public class HidingSpot
     /// Utility of how far this spot is from guards' current positions.
     /// </summary>
     public float GuardProximityUtility;
-    
+
     /// <summary>
     /// Indicator of how good a hiding spot is; it is between 0 and 1.
     /// </summary>
@@ -215,7 +216,10 @@ public class HidingSpot
         Gizmos.DrawSphere(Position, 0.2f);
 
 #if UNITY_EDITOR
-        Handles.Label(Position, (Mathf.Round(Fitness * 100f) / 100f).ToString());
+        string label = "";
+        label += "Safety: " + (Mathf.Round(SafetyUtility * 100f) / 100f) + " \n";
+        label += "Goal: " + (Mathf.Round(GoalUtility * 100f) / 100f) + " \n";
+        Handles.Label(Position, label);
 #endif
     }
 }

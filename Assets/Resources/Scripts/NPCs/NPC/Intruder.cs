@@ -47,6 +47,7 @@ public class Intruder : NPC
         m_PlayerLabel.Initiate(GetTransform());
 
         isGhost = true;
+        ShowPath = true;
     }
 
     public override void ResetNpc()

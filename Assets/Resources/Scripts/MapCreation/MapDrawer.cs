@@ -60,7 +60,7 @@ public class MapDrawer : MonoBehaviour
 
         // Define the paths for the game
         // Main path
-        DataPath = Application.dataPath + "/Data/";
+        DataPath = Application.dataPath + "/../Data/";
         // Map related data paths
         MapsDataPath = DataPath + MapsDataPath;
         MapsPath = MapsDataPath + MapsPath;
@@ -86,13 +86,25 @@ public class MapDrawer : MonoBehaviour
 
         m_walls.Add(new List<Vector2>());
 
-        GameObject currentWall = Instantiate(m_wallPrefab, transform, true);
+        // GameObject currentWall = Instantiate(m_wallPrefab, transform, true);
+        GameObject currentWall = GetLineGameObject();
+        currentWall.transform.parent = transform;
         currentWall.layer = LayerMask.NameToLayer("Wall");
 
         m_WallsGameObjects.Add(currentWall);
 
         m_Lines.Add(currentWall.GetComponent<LineRenderer>());
         m_Lines[m_Lines.Count - 1].positionCount = 0;
+    }
+
+
+    private GameObject GetLineGameObject()
+    {
+        GameObject gameObject = new GameObject();
+
+        gameObject.AddComponent<LineRenderer>();
+
+        return gameObject;
     }
 
     // Add point on mouse position

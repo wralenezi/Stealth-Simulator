@@ -101,7 +101,8 @@ public static class Properties
         switch (npcType)
         {
             case NpcType.Guard:
-                viewRadiusFractionOfMap = GuardsFovRadiusPercentage;
+                // viewRadiusFractionOfMap = GuardsFovRadiusPercentage;
+                viewRadiusFractionOfMap = GetGuardFovForMap(MapManager.Instance.mapData.name);
                 break;
 
             case NpcType.Intruder:
@@ -114,6 +115,18 @@ public static class Properties
         }
 
         return maxWidth * viewRadiusFractionOfMap;
+    }
+
+    private static float GetGuardFovForMap(string mapName)
+    {
+        switch (mapName)
+        {
+            case "Hall":
+                return 0.3f;
+            
+            default:
+                return 0.1f;
+        }
     }
 
     // Get the FoV angle based on the type of the npc.
