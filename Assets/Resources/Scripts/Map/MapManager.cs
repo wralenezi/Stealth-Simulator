@@ -28,7 +28,7 @@ public class MapManager : MonoBehaviour
     public RegionLabelsManager regionMgr { get; private set; }
 
     // Road map of the level.
-    private RoadMap roadMap {  get; set; }
+    private RoadMap _roadMap {  get; set; }
 
     // Mesh Manager
     public FloorTileManager meshManager { get; private set; }
@@ -63,7 +63,7 @@ public class MapManager : MonoBehaviour
         sat.Initiate(mapRenderer, _mapData);
 
         // Build the road map based on the Scale Area Transform
-        roadMap = new RoadMap(sat, mapRenderer);
+        _roadMap = new RoadMap(sat, mapRenderer);
         
         // // Visibility graph
         // visibilityGraph = gameObject.AddComponent<VisibilityGraph>();
@@ -89,7 +89,7 @@ public class MapManager : MonoBehaviour
 
     public RoadMap GetRoadMap()
     {
-        return roadMap;
+        return _roadMap;
     }
     
 

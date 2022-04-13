@@ -112,9 +112,6 @@ public class StealthArea : MonoBehaviour
         // Update the time label
         AreaUiManager.UpdateTime(GetRemainingTime());
 
-        // Update metrics for logging
-        // guardsManager.UpdateMetrics(deltaTime);
-
         // Check for game end
         CheckGameEnd();
     }

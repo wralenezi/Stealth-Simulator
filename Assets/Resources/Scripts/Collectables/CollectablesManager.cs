@@ -5,15 +5,15 @@ public class CollectablesManager : MonoBehaviour
 {
     private CoinSpawner m_coinManager;
     
-    // private StealthGoalController
-
+    
+    
     public static CollectablesManager Instance; 
     public void Initialize(Session session)
     {
         Instance ??= this;
         
         m_coinManager = gameObject.AddComponent<CoinSpawner>();
-        m_coinManager.Inititate(session, MapManager.Instance.GetNavMesh());
+        m_coinManager.Initiate(session, MapManager.Instance.GetNavMesh());
     }
     
     public void Reset()

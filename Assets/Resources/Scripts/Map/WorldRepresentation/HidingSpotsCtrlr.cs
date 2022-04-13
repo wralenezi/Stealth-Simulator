@@ -213,12 +213,14 @@ public class HidingSpot
 
     public void Draw()
     {
-        Gizmos.DrawSphere(Position, 0.2f);
+        Gizmos.DrawSphere(Position + Vector2.down * 0.2f, 0.2f);
 
 #if UNITY_EDITOR
         string label = "";
         label += "Safety: " + (Mathf.Round(SafetyUtility * 100f) / 100f) + " \n";
         label += "Goal: " + (Mathf.Round(GoalUtility * 100f) / 100f) + " \n";
+        label += "GuardProximity: " + (Mathf.Round(GuardProximityUtility * 100f) / 100f) + " \n";
+        label += "CoverRatio: " + (Mathf.Round(CoverRatio * 100f) / 100f) + " \n";
         Handles.Label(Position, label);
 #endif
     }

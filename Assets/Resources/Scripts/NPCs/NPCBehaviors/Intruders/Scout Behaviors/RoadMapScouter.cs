@@ -121,6 +121,8 @@ public class RoadMapScouter : Scouter
             intruder.SetDestination(goal.Value, true, false);
         }
     }
+    
+    
 
     /// <summary>
     /// Project the guards position on the road map.
@@ -151,11 +153,12 @@ public class RoadMapScouter : Scouter
     private float GetGuardProjectionOffset(NPC npc)
     {
         float fov = Properties.GetFovRadius(NpcType.Guard);
-        return npc.GetCurrentSpeed() * fov * 20f;
+        return Mathf.Max(npc.GetCurrentSpeed() * fov * 20f, fov * 1.1f);
     }
 
     private void EvaluateSpots(Intruder intruder, Vector2 goal, List<Guard> guards)
     {
+        // Parameters
         int numberOfAdjacentCell = 12;
         float radius = PathFinding.Instance.longestShortestPath * 1f;
 
@@ -179,7 +182,7 @@ public class RoadMapScouter : Scouter
                 continue;
             }
 
-            SetClosestGuardThreatPoint(hs);
+            SetSafetyValue(hs);
             SetGoalUtility(hs, goal);
             SetGuardsProximityUtility(hs, NpcsManager.Instance.GetGuards());
             SetOcclusionUtility(hs, NpcsManager.Instance.GetGuards());
@@ -194,7 +197,8 @@ public class RoadMapScouter : Scouter
 
     private HidingSpot GetBestSpot()
     {
-        return GetBestHidingSpot_fixedValues();
+        // return GetBestHidingSpot_fixedValues();
+        return GetBestSpot_Simple();
     }
 
 
@@ -214,7 +218,7 @@ public class RoadMapScouter : Scouter
             maxFitness = hs.Fitness;
         }
 
-        EditorApplication.isPaused = true;
+        // EditorApplication.isPaused = true;
 
         return bestHs;
     }
@@ -245,11 +249,12 @@ public class RoadMapScouter : Scouter
         return bestHs;
     }
 
-    private void SetClosestGuardThreatPoint(HidingSpot hs)
+    private void SetSafetyValue(HidingSpot hs)
     {
         float NPC_RADIUS = 0.05f;
+        float guardFovRadius = Properties.GetFovRadius(NpcType.Guard);
 
-        float shortestDistance = Mathf.Infinity;
+        float shortestDistanceToTrajectory = Mathf.Infinity;
         PossiblePosition closestPointOnTrajectory = null;
         foreach (var trajectory in _possibleTrajectories)
         {
@@ -271,30 +276,39 @@ public class RoadMapScouter : Scouter
             }
 
 
-            if (distance < shortestDistance)
+            if (distance < shortestDistanceToTrajectory)
             {
                 closestPointOnTrajectory ??= new PossiblePosition(closestPoint.Value, trajectory.npc);
 
                 closestPointOnTrajectory.position = closestPoint.Value;
                 closestPointOnTrajectory.npc = trajectory.npc;
-                shortestDistance = distance;
+                shortestDistanceToTrajectory = distance;
             }
         }
 
 
         hs.ThreateningPosition = closestPointOnTrajectory;
 
+        // Assign the maximum safety value
+        float safetyValue = GetGuardProjectionDistance(hs.ThreateningPosition.npc);
 
-        hs.SafetyAbsoluteValue =
-            PathFinding.Instance.GetShortestPathDistance(closestPointOnTrajectory.npc.GetTransform().position,
+        // If the hiding position is approx within radius of guard trajectory, then adjust it's safety value.
+        if (shortestDistanceToTrajectory <= guardFovRadius)
+        {
+            float distanceFromGuardToPoint = PathFinding.Instance.GetShortestPathDistance(
+                closestPointOnTrajectory.npc.GetTransform().position,
                 closestPointOnTrajectory.position);
 
-        // Subtract the guard's FOV radius 
-        hs.SafetyAbsoluteValue -= Properties.GetFovRadius(NpcType.Guard);
-        hs.SafetyAbsoluteValue = Mathf.Max(0f, hs.SafetyAbsoluteValue);
+            // Subtract the Fov radius so if the hiding position is already within vision it is not safe anymore.
+            safetyValue = distanceFromGuardToPoint - guardFovRadius;
+            safetyValue = Mathf.Max(0f, safetyValue);
+        }
 
-        if (hs.SafetyAbsoluteValue > _maxSafetyUtilitiesPerGuard[hs.ThreateningPosition.npc.name])
-            _maxSafetyUtilitiesPerGuard[hs.ThreateningPosition.npc.name] = hs.SafetyAbsoluteValue;
+        hs.SafetyAbsoluteValue = safetyValue;
+
+
+        // if (hs.SafetyAbsoluteValue > _maxSafetyUtilitiesPerGuard[hs.ThreateningPosition.npc.name])
+        //     _maxSafetyUtilitiesPerGuard[hs.ThreateningPosition.npc.name] = hs.SafetyAbsoluteValue;
     }
 
 

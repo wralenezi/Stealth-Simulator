@@ -7,43 +7,47 @@ using UnityEngine;
 public class RoadMap
 {
     // Way Points of the road map (including way points introduced by dividing the edges)
-    private List<WayPoint> m_WayPoints;
+    private List<WayPoint> _wayPoints;
 
     // Line Segments of the road map ( the divided segments)
-    private List<RoadMapLine> m_Lines;
+    private List<RoadMapLine> _lines;
 
     // Way points that are dead ends
-    private List<WayPoint> m_endPoints;
+    private List<WayPoint> _endPoints;
 
     // Actual nodes in the road map (since m_Waypoints contain all waypoints of the divided segments)
-    private List<WayPoint> m_WpsActual;
+    private List<WayPoint> _wpsActual;
 
     // The original lines of the road map before dividing the edges.
-    private List<RoadMapLine> m_LinesActual;
+    private List<RoadMapLine> _linesActual;
 
-    private SAT m_Sat;
+    // Temporary nodes on the road map, contains those nodes added when some segments of the road map is removed.
+    private List<WayPoint> _tempWpsActual;
 
-    private List<Vector2> m_intersectionsWithRoadmap;
+    private SAT _sat;
+
+    private List<Vector2> _intersectionsWithRoadmap;
 
     // List of points to be propagated on the roadmap.
-    private Queue<PointToProp> m_Points;
+    private Queue<PointToProp> _points;
 
     // AdHoc way point placed on the map when the intruder is seen in a place far from the road map.
-    private WayPoint m_AdHocWp;
-    private RoadMapLine m_AdHocRmLine;
+    private WayPoint _adHocWp;
+    private RoadMapLine _adHocRmLine;
 
-    private MapRenderer m_mapRenderer;
+    private MapRenderer _mapRenderer;
 
-    public RoadMap(SAT sat, MapRenderer _mapRenderer)
+    public RoadMap(SAT sat, MapRenderer mapRenderer)
     {
-        m_Sat = sat;
-        m_WayPoints = m_Sat.GetDividedRoadMap();
-        m_WpsActual = m_Sat.GetOriginalRoadMap();
-        m_mapRenderer = _mapRenderer;
+        _sat = sat;
+        _wayPoints = _sat.GetDividedRoadMap();
+        _wpsActual = _sat.GetOriginalRoadMap();
+        _tempWpsActual = new List<WayPoint>();
+        _mapRenderer = mapRenderer;
 
-        m_intersectionsWithRoadmap = new List<Vector2>();
+        _intersectionsWithRoadmap = new List<Vector2>();
 
-        m_Points = new Queue<PointToProp>();
+        _points = new Queue<PointToProp>();
 
         PopulateEndNodes();
         PopulateLines();
@@ -54,62 +58,62 @@ public class RoadMap
     // Populate the end nodes on the road map
     private void PopulateEndNodes()
     {
-        m_endPoints = new List<WayPoint>();
+        _endPoints = new List<WayPoint>();
 
-        foreach (var wp in m_WayPoints.Where(wp => wp.GetConnections(true).Count == 1))
-            m_endPoints.Add(wp);
+        foreach (var wp in _wayPoints.Where(wp => wp.GetConnections(true).Count == 1))
+            _endPoints.Add(wp);
     }
 
     // Populate the unique line segments of the map
     private void PopulateLines()
     {
-        m_Lines = new List<RoadMapLine>();
-        m_LinesActual = new List<RoadMapLine>();
+        _lines = new List<RoadMapLine>();
+        _linesActual = new List<RoadMapLine>();
 
         // Add the original line segments 
-        foreach (var wp in m_WpsActual)
+        foreach (var wp in _wpsActual)
         foreach (var con in wp.GetConnections(true))
         {
             // Check if the connection already exist
-            bool isFound = m_LinesActual.Any(line => line.IsPointPartOfLine(wp) && line.IsPointPartOfLine(con));
+            bool isFound = _linesActual.Any(line => line.IsPointPartOfLine(wp) && line.IsPointPartOfLine(con));
 
-            if (!isFound) m_LinesActual.Add(new RoadMapLine(con, wp));
+            if (!isFound) _linesActual.Add(new RoadMapLine(con, wp));
         }
 
         // Add the line connected to the way point
-        foreach (var wp in m_WpsActual)
-            wp.AddLines(m_LinesActual, true);
+        foreach (var wp in _wpsActual)
+            wp.AddLines(_linesActual, true);
 
 
         // Add the divided lines segments 
-        foreach (var wp in m_WayPoints)
+        foreach (var wp in _wayPoints)
         foreach (var con in wp.GetConnections(false))
         {
             // Check if the connection already exist
-            bool isFound = m_Lines.Any(line => line.IsPointPartOfLine(wp) && line.IsPointPartOfLine(con));
+            bool isFound = _lines.Any(line => line.IsPointPartOfLine(wp) && line.IsPointPartOfLine(con));
 
-            if (!isFound) m_Lines.Add(new RoadMapLine(con, wp));
+            if (!isFound) _lines.Add(new RoadMapLine(con, wp));
         }
 
         // Add the line connected to the way point
-        foreach (var wp in m_WayPoints)
-            wp.AddLines(m_Lines, false);
+        foreach (var wp in _wayPoints)
+            wp.AddLines(_lines, false);
     }
 
 
     // Get the reference of actual waypoints
     private void PopulateWayPoints()
     {
-        m_WpsActual = new List<WayPoint>();
+        _wpsActual = new List<WayPoint>();
 
-        foreach (var wp in m_WayPoints.Where(wp => wp.Id != 0))
-            m_WpsActual.Add(wp);
+        foreach (var wp in _wayPoints.Where(wp => wp.Id != 0))
+            _wpsActual.Add(wp);
     }
 
 
     public List<RoadMapLine> GetLines(bool isOriginal)
     {
-        return isOriginal ? m_LinesActual : m_Lines;
+        return isOriginal ? _linesActual : _lines;
     }
 
 
@@ -125,7 +129,7 @@ public class RoadMap
         dotProducts.Clear();
 
         // Loop through the way points
-        foreach (var wp in m_WayPoints)
+        foreach (var wp in _wayPoints)
         {
             // The distance from the way point to the intruder position
             float distance = Vector2.Distance(position, wp.GetPosition());
@@ -155,7 +159,7 @@ public class RoadMap
         for (int i = 0; i < distances.Count; i++)
         {
             // if not visible then skip
-            if (!m_mapRenderer.VisibilityCheck(position, m_WayPoints[i].GetPosition()))
+            if (!_mapRenderer.VisibilityCheck(position, _wayPoints[i].GetPosition()))
                 continue;
 
             if (minDistance > distances[i])
@@ -175,11 +179,11 @@ public class RoadMap
         }
 
         // If nothing is in the front then just get a visible closest node
-        if (closestFrontalWpIndex == -1) return m_WayPoints[closestWpIndex];
+        if (closestFrontalWpIndex == -1) return _wayPoints[closestWpIndex];
 
         try
         {
-            return m_WayPoints[closestFrontalWpIndex];
+            return _wayPoints[closestFrontalWpIndex];
         }
         catch (Exception e)
         {
@@ -225,7 +229,7 @@ public class RoadMap
         List<float> angleDiffs = new List<float>();
 
         // Loop through the way points
-        foreach (var wp in m_WayPoints)
+        foreach (var wp in _wayPoints)
         {
             // The distance from the way point to the intruder position
             float distance = Vector2.Distance(position, wp.GetPosition());
@@ -250,7 +254,7 @@ public class RoadMap
         float minDistance = Mathf.Infinity;
         for (int i = 0; i < distances.Count; i++)
         {
-            if (!m_mapRenderer.VisibilityCheck(position, m_WayPoints[i].GetPosition()) || angleDiffs[i] < 0.6f)
+            if (!_mapRenderer.VisibilityCheck(position, _wayPoints[i].GetPosition()) || angleDiffs[i] < 0.6f)
                 continue;
 
             if (minDistance > distances[i])
@@ -268,7 +272,7 @@ public class RoadMap
         //     1f,StealthArea.episodeTime);
 
 
-        WayPoint wp1 = m_WayPoints[closestWpIndex];
+        WayPoint wp1 = _wayPoints[closestWpIndex];
         foreach (var line in wp1.GetLines(false))
         {
             line.SetSearchSegment(wp1.GetPosition(), wp1.GetPosition(), 1f, StealthArea.GetElapsedTime());
@@ -295,7 +299,7 @@ public class RoadMap
 
             float distance = Vector2.Distance(position, projectionPoint);
 
-            if (distance < closetDistance && m_mapRenderer.VisibilityCheck(position, projectionPoint))
+            if (distance < closetDistance && _mapRenderer.VisibilityCheck(position, projectionPoint))
             {
                 closetDistance = distance;
                 closestPoint = projectionPoint;
@@ -311,7 +315,7 @@ public class RoadMap
     public void ProjectPositionsInDirection(ref List<PossiblePosition> positions, Vector2 pointOnRoadMap,
         RoadMapLine line, int pointCount, float totalDistance, NPC npc)
     {
-        m_Points.Clear();
+        _points.Clear();
 
         // Get the next Way point 
         WayPoint nextWayPoint = GetWayPointInDirection(pointOnRoadMap, npc.GetDirection(), line);
@@ -320,13 +324,13 @@ public class RoadMap
         float maxStep = totalDistance / pointCount;
 
         float nextStep = Mathf.Min(maxStep, totalDistance);
-        m_Points.Enqueue(new PointToProp(source, nextWayPoint, line, nextStep, totalDistance, 0f, npc));
+        _points.Enqueue(new PointToProp(source, nextWayPoint, line, nextStep, totalDistance, 0f, npc));
 
 
         // Loop to insert the possible positions
-        while (m_Points.Count > 0)
+        while (_points.Count > 0)
         {
-            PointToProp pt = m_Points.Dequeue();
+            PointToProp pt = _points.Dequeue();
 
             float distance = Vector2.Distance(pt.source, pt.target.GetPosition());
             pt.nextStep = pt.nextStep <= 0f ? maxStep : pt.nextStep;
@@ -348,7 +352,7 @@ public class RoadMap
                 pt.nextStep -= pt.nextStep;
 
                 // If there are distance remaining then enqueue the point
-                if (pt.remainingDist > 0f) m_Points.Enqueue(pt);
+                if (pt.remainingDist > 0f) _points.Enqueue(pt);
             }
             else
             {
@@ -375,10 +379,19 @@ public class RoadMap
                     WayPoint nextWp = Equals(newConn.wp1, pt.target) ? newConn.wp2 : newConn.wp1;
 
                     // Add the point to the list
-                    m_Points.Enqueue(new PointToProp(pt.target.GetPosition(), nextWp, newConn, pt.nextStep,
+                    _points.Enqueue(new PointToProp(pt.target.GetPosition(), nextWp, newConn, pt.nextStep,
                         pt.remainingDist, pt.distance, npc));
                 }
             }
+        }
+    }
+
+    // Remove the added waypoints, each added waypoint should be connected to two points at max
+    public void ResetTempWayPoints()
+    {
+        while (_tempWpsActual.Count > 0)
+        {
+            
         }
     }
 
@@ -386,7 +399,7 @@ public class RoadMap
     public void ProjectPositionsInDirection(ref List<PossibleTrajectory> trajectory, Vector2 pointOnRoadMap,
         RoadMapLine line, float totalDistance, NPC npc)
     {
-        m_Points.Clear();
+        _points.Clear();
 
         // Get the next Way point 
         WayPoint nextWayPoint = GetWayPointInDirection(pointOnRoadMap, npc.GetDirection(), line);
@@ -400,15 +413,15 @@ public class RoadMap
         ptp.GetTrajectory().AddPoint(source);
 
 
-        m_Points.Enqueue(ptp);
+        _points.Enqueue(ptp);
 
         int limit = 100;
         int counter = 0;
 
         // Loop to insert the possible positions
-        while (m_Points.Count > 0 && counter < limit)
+        while (_points.Count > 0 && counter < limit)
         {
-            PointToProp pt = m_Points.Dequeue();
+            PointToProp pt = _points.Dequeue();
             counter++;
 
             float distance = Vector2.Distance(pt.source, pt.target.GetPosition());
@@ -431,7 +444,7 @@ public class RoadMap
 
                 // If there are distance remaining then enqueue the point
                 if (pt.remainingDist > 0f)
-                    m_Points.Enqueue(pt);
+                    _points.Enqueue(pt);
                 else
                     trajectory.Add(pt.GetTrajectory());
             }
@@ -469,7 +482,7 @@ public class RoadMap
 
                     newPt.GetTrajectory().CopyTrajectory(pt.GetTrajectory());
                     
-                    m_Points.Enqueue(newPt);
+                    _points.Enqueue(newPt);
                 }
             }
         }
@@ -488,31 +501,31 @@ public class RoadMap
 
     private Vector2? GetClosestIntersectionWithRoadmap(Vector2 start, Vector2 end)
     {
-        m_intersectionsWithRoadmap.Clear();
+        _intersectionsWithRoadmap.Clear();
 
-        foreach (var line in m_Lines)
+        foreach (var line in _lines)
         {
             Vector2 intersection = GeometryHelper.GetIntersectionPointCoordinates(start, end, line.wp1.GetPosition(),
                 line.wp2.GetPosition(),
                 true, out bool isFound);
 
             if (isFound)
-                m_intersectionsWithRoadmap.Add(intersection);
+                _intersectionsWithRoadmap.Add(intersection);
         }
 
-        if (m_intersectionsWithRoadmap.Count == 0)
+        if (_intersectionsWithRoadmap.Count == 0)
             return null;
 
-        Vector2 closestIntersection = m_intersectionsWithRoadmap[0];
+        Vector2 closestIntersection = _intersectionsWithRoadmap[0];
         float closestDistance = Vector2.Distance(start, closestIntersection);
 
-        for (int i = 1; i < m_intersectionsWithRoadmap.Count; i++)
+        for (int i = 1; i < _intersectionsWithRoadmap.Count; i++)
         {
-            float distance = Vector2.Distance(start, m_intersectionsWithRoadmap[i]);
+            float distance = Vector2.Distance(start, _intersectionsWithRoadmap[i]);
 
             if (distance < closestDistance)
             {
-                closestIntersection = m_intersectionsWithRoadmap[i];
+                closestIntersection = _intersectionsWithRoadmap[i];
                 closestDistance = distance;
             }
         }
@@ -523,20 +536,20 @@ public class RoadMap
     // Remove the ad hoc way point and its line
     private void RemoveRoadLineMap()
     {
-        if (m_AdHocWp == null || m_AdHocRmLine == null)
+        if (_adHocWp == null || _adHocRmLine == null)
             return;
 
-        m_Lines.Remove(m_AdHocRmLine);
+        _lines.Remove(_adHocRmLine);
 
-        m_AdHocWp.RemoveLine(m_AdHocRmLine);
-        m_AdHocWp.GetConnections(false)[0].RemoveLine(m_AdHocRmLine);
+        _adHocWp.RemoveLine(_adHocRmLine);
+        _adHocWp.GetConnections(false)[0].RemoveLine(_adHocRmLine);
 
 
-        m_AdHocWp.GetConnections(false)[0].RemoveEdge(m_AdHocWp, false);
-        m_AdHocWp.RemoveEdge(m_AdHocWp.GetConnections(false)[0], false);
+        _adHocWp.GetConnections(false)[0].RemoveEdge(_adHocWp, false);
+        _adHocWp.RemoveEdge(_adHocWp.GetConnections(false)[0], false);
 
-        m_AdHocRmLine = null;
-        m_AdHocWp = null;
+        _adHocRmLine = null;
+        _adHocWp = null;
     }
 
     // // // Get a complete path of no more than param@length that a guard needs to traverse to search for an intruder.
@@ -738,14 +751,14 @@ public class RoadMap
 
     public void ClearSearchSegments()
     {
-        foreach (var line in m_Lines)
+        foreach (var line in _lines)
             line.ClearSearchSegs();
     }
 
 
     public void DrawWayPoints()
     {
-        foreach (var wp in m_WayPoints)
+        foreach (var wp in _wayPoints)
         {
             // Handles.Label(wp.GetPosition(), wp.Id.ToString());
         }
@@ -754,7 +767,7 @@ public class RoadMap
     // Render the lines of road map
     public void DrawDividedRoadMap()
     {
-        foreach (var line in m_Lines)
+        foreach (var line in _lines)
         {
             line.DrawLine();
         }
@@ -762,7 +775,7 @@ public class RoadMap
 
     public void DrawRoadMap()
     {
-        foreach (var line in m_LinesActual)
+        foreach (var line in _linesActual)
         {
             line.DrawLine();
         }

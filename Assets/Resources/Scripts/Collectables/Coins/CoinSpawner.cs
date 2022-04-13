@@ -15,7 +15,7 @@ public class CoinSpawner : MonoBehaviour
 
     private bool _isRandom = false;
 
-    public void Inititate(Session session, List<MeshPolygon> navMesh)
+    public void Initiate(Session session, List<MeshPolygon> navMesh)
     {
         m_coins = new List<Coin>();
         m_coinPrefab = (GameObject) Resources.Load("Prefabs/Coin");
