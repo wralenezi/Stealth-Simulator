@@ -8,23 +8,23 @@ using UnityEngine;
 public class WayPoint
 {
     // Position
-    private readonly Vector2 m_Position;
+    private readonly Vector2 _position;
 
     // Current connections to the way point (including the intermediate way points introduced by dividing the edges into segments.
-    private readonly List<WayPoint> m_Connections;
+    private readonly List<WayPoint> _connections;
 
     // The divided line segments connected to this way point. 
-    private readonly List<RoadMapLine> m_MapLines;
+    private readonly List<RoadMapLine> _mapLines;
 
     // Original connections of the way points before dividing the edges into segments. 
-    private readonly List<WayPoint> m_OriginalCons;
+    private readonly List<WayPoint> _originalCons;
 
     // The original lines connected to this way point
-    private readonly List<RoadMapLine> m_OriginalLines;
-
-    // Distance to incoming possible intruder position
-    private float m_Distance;
-
+    private readonly List<RoadMapLine> _originalLines;
+    
+    // probability that a guard is going to pass through here; when it is zero
+    private float _probabilityGuardPassing;
+    
     // The ID of the way point
     public int Id;
 
@@ -33,10 +33,7 @@ public class WayPoint
 
     // the ID of the wall this way point belong to. This is for the visibility graph
     public int WallId;
-
-    // Which guard targeted this way point to intercept in. If it is null then there is no incoming guard
-    public Guard InterceptingGuard;
-
+    
     // The node original location on the grid. Used in the grid simplification to a graph.
     public int row;
     public int col;
@@ -49,24 +46,24 @@ public class WayPoint
 
     public WayPoint(Vector2 _position, int _id = 0)
     {
-        m_Position = _position;
-        m_OriginalCons = new List<WayPoint>();
-        m_Connections = new List<WayPoint>();
-        m_MapLines = new List<RoadMapLine>();
-        m_OriginalLines = new List<RoadMapLine>();
+        this._position = _position;
+        _originalCons = new List<WayPoint>();
+        _connections = new List<WayPoint>();
+        _mapLines = new List<RoadMapLine>();
+        _originalLines = new List<RoadMapLine>();
         Id = _id;
     }
 
     public WayPoint(Vector2 _position, int _row, int _col, char _code)
     {
-        m_Position = _position;
+        this._position = _position;
         row = _row;
         col = _col;
         code = _code;
-        m_OriginalCons = new List<WayPoint>();
-        m_Connections = new List<WayPoint>();
-        m_MapLines = new List<RoadMapLine>();
-        m_OriginalLines = new List<RoadMapLine>();
+        _originalCons = new List<WayPoint>();
+        _connections = new List<WayPoint>();
+        _mapLines = new List<RoadMapLine>();
+        _originalLines = new List<RoadMapLine>();
         Id = 0;
     }
 
@@ -92,17 +89,17 @@ public class WayPoint
     private void AddEdge(WayPoint wp, bool isOriginal)
     {
         if (isOriginal)
-            m_OriginalCons.Add(wp);
+            _originalCons.Add(wp);
         else
-            m_Connections.Add(wp);
+            _connections.Add(wp);
     }
 
     public void RemoveEdge(WayPoint wp, bool isOriginal)
     {
         if (isOriginal)
-            m_OriginalCons.Remove(wp);
+            _originalCons.Remove(wp);
         else
-            m_Connections.Remove(wp);
+            _connections.Remove(wp);
 
     }
 
@@ -129,12 +126,7 @@ public class WayPoint
 
     public Vector2 GetPosition()
     {
-        return m_Position;
-    }
-
-    public void SetDistance(float distance)
-    {
-        m_Distance = (distance);
+        return _position;
     }
 
     public void AddLines(List<RoadMapLine> lines, bool isOriginal)
@@ -146,24 +138,24 @@ public class WayPoint
         }
     }
 
-    public void AddLine(RoadMapLine line, bool isOriginal)
+    private void AddLine(RoadMapLine line, bool isOriginal)
     {
         if (isOriginal)
-            m_OriginalLines.Add(line);
+            _originalLines.Add(line);
         else
-            m_MapLines.Add(line);
+            _mapLines.Add(line);
     }
 
     public void RemoveLine(RoadMapLine line)
     {
-        m_MapLines.Remove(line);
+        _mapLines.Remove(line);
     }
 
     public List<RoadMapLine> GetLines(bool isOriginal)
     {
-        if (isOriginal) return m_OriginalLines;
+        if (isOriginal) return _originalLines;
 
-        return m_MapLines;
+        return _mapLines;
     }
 
     public float GetFvalue()
@@ -171,21 +163,21 @@ public class WayPoint
         return hDistance + gDistance;
     }
 
+    public void SetProbability(float probability)
+    {
+        _probabilityGuardPassing = probability;
+    }
+
+    public float GetProbability()
+    {
+        return _probabilityGuardPassing;
+    }
 
     public List<WayPoint> GetConnections(bool isOriginal)
     {
-        return isOriginal ? m_OriginalCons : m_Connections;
+        return isOriginal ? _originalCons : _connections;
     }
 
-    // Insert the distance to the neighboring way points except the source
-    public void InsertDistancesToNeighbors(WayPoint source, float totalDistance)
-    {
-        foreach (var wayPoint in m_Connections)
-        {
-            if (!source.GetPosition().Equals(wayPoint.GetPosition()))
-                wayPoint.SetDistance(Vector2.Distance(GetPosition(), wayPoint.GetPosition()) + totalDistance);
-        }
-    }
 
     public void Draw()
     {
@@ -195,6 +187,8 @@ public class WayPoint
         //     distances += distance + "\n";
         // }
 
-        // Handles.Label(GetPosition(), Id.ToString());
+        Handles.Label(GetPosition(), _probabilityGuardPassing.ToString());
+        
+        
     }
 }

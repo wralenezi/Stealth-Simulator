@@ -33,6 +33,11 @@ public class RoadMapScouter : Scouter
     // List of curves to determine how utilities are mapped.
     [SerializeField] private AnimationCurve _SafetyCurve;
 
+    // path finding on the road map
+    List<WayPoint> openListRoadMap;
+    List<WayPoint> closedListRoadMap;
+
+    
     public override void Initiate(MapManager mapManager)
     {
         base.Initiate(mapManager);
@@ -43,6 +48,9 @@ public class RoadMapScouter : Scouter
         _lastUpdateTimestamp = StealthArea.GetElapsedTime();
 
         SetCurves();
+        
+        openListRoadMap = new List<WayPoint>();
+        closedListRoadMap = new List<WayPoint>();
 
         _maxSafetyUtilitiesPerGuard = new Dictionary<string, float>();
 
@@ -119,10 +127,119 @@ public class RoadMapScouter : Scouter
 
             // Update the fitness values of the hiding spots
             intruder.SetDestination(goal.Value, true, false);
+            
+            PathFinding.Instance.GetShortestPath()
         }
     }
-    
-    
+
+    private void SetPathOnRoadmap(Intruder intruder)
+    {
+        List<Vector2> pathToTake = intruder.GetPath();
+
+        GetShortestPath(_roadMap., new InterceptionPoint(), new WayPoint(new Vector2(0f, 0f)), pathToTake);
+    }
+
+        // Get shortest path on the road map
+    // The start node is a node on the road map and the goal is the position of the phantom 
+    // for ease of implementation we start the search from the goal to the start node
+    private void GetShortestPath(List<WayPoint> roadmap, Vector2 start, Vector2 goal, ref List<Vector2> path)
+    {
+        WayPoint startWp = new WayPoint(Vector2.zero);
+        WayPoint goalWp = new WayPoint(Vector2.zero);
+
+        openListRoadMap.Clear();
+        closedListRoadMap.Clear();
+
+        foreach (WayPoint p in roadmap)
+        {
+            p.gDistance = Mathf.Infinity;
+            p.hDistance = Mathf.Infinity;
+            p.parent = null;
+        }
+
+        // Set Cost of starting node
+        startWp.gDistance = 0f;
+        startWp.hDistance = Vector2.Distance(startWp.GetPosition(), goalWp.GetPosition());
+
+        while (openListRoadMap.Count > 0)
+        {
+            WayPoint current = openListRoadMap[0];
+            openListRoadMap.RemoveAt(0);
+
+            foreach (WayPoint p in current.GetConnections(true))
+            {
+                if (!closedListRoadMap.Contains(p))
+                {
+                    float gDistance = GetCostValue(current, p);
+                    float hDistance = GetHeuristicValue(current, goalWp);
+
+                    if (p.gDistance + p.hDistance > gDistance + hDistance)
+                    {
+                        p.hDistance = hDistance;
+                        p.gDistance = gDistance;
+
+                        p.parent = current;
+                    }
+
+
+                    openListRoadMap.InsertIntoSortedList(p,
+                        delegate(WayPoint x, WayPoint y) { return x.GetFvalue().CompareTo(y.GetFvalue()); }, Order.Asc);
+                }
+            }
+
+            closedListRoadMap.Add(current);
+
+            // Stop the search if we reached the destination way point
+            if (current.Equals(goalWp))
+                break;
+        }
+
+        path.Clear();
+
+        WayPoint currentWayPoint = goalWp;
+        while (currentWayPoint.parent != null)
+        {
+            path.Add(currentWayPoint.GetPosition());
+
+            if (currentWayPoint.parent == null)
+                break;
+
+            currentWayPoint = currentWayPoint.parent;
+        }
+
+        // Add the first way point to the path
+        path.Add(startWp.GetPosition());
+
+        // and add the actual phantom node position since we didn't include it in the A* search
+        path.Add(goalWp.GetPosition());
+
+        // reverse the path so it start from the start node
+        path.Reverse();
+
+    }
+
+
+    // Get heuristic value for way points road map
+    static float GetHeuristicValue(WayPoint currentWayPoint, WayPoint goal)
+    {
+        float heuristicValue = Vector2.Distance(currentWayPoint.GetPosition(), goal.GetPosition());
+
+        return heuristicValue;
+    }
+
+    // Get the Cost Value (G) for the Waypoints roadmap
+    static float GetCostValue(WayPoint previousWayPoint, WayPoint currentWayPoint)
+    {
+        float costValue = previousWayPoint.gDistance;
+
+        // Euclidean Distance
+        float distance = Vector2.Distance(previousWayPoint.GetPosition(), currentWayPoint.GetPosition());
+
+        costValue += distance;
+
+        return costValue;
+    }
+
 
     /// <summary>
     /// Project the guards position on the road map.
@@ -131,6 +248,8 @@ public class RoadMapScouter : Scouter
     {
         _possibleTrajectories.Clear();
 
+        _roadMap.ClearTempWayPoints();
+        
         foreach (var guard in guards)
         {
             // Get the closest point on the road map to the guard

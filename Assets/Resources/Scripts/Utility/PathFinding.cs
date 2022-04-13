@@ -250,20 +250,7 @@ public class PathFinding : MonoBehaviour
         return costValue;
     }
 
-
-    // Get the Cost Value (G) for the Waypoints roadmap
-    static float GetCostValue(WayPoint previousWayPoint, WayPoint currentWayPoint)
-    {
-        float costValue = previousWayPoint.gDistance;
-
-        // Euclidean Distance
-        float distance = Vector2.Distance(previousWayPoint.GetPosition(), currentWayPoint.GetPosition());
-
-        costValue += distance;
-
-        return costValue;
-    }
-
+    
 
     // Get heuristic value for mesh polygons
     static float GetHeuristicValue(MeshPolygon currentPolygon, MeshPolygon goal)
@@ -274,13 +261,6 @@ public class PathFinding : MonoBehaviour
     }
 
 
-    // Get heuristic value for way points road map
-    static float GetHeuristicValue(WayPoint currentWayPoint, WayPoint goal)
-    {
-        float heuristicValue = Vector2.Distance(currentWayPoint.GetPosition(), goal.GetPosition());
-
-        return heuristicValue;
-    }
 
     // Get the polygon that contains the specified point
     private static MeshPolygon GetCorrespondingPolygon(List<MeshPolygon> navMesh, Vector2 point)
@@ -515,100 +495,21 @@ public class PathFinding : MonoBehaviour
     }
 
 
-    // Get shortest path on the road map
-    // The start node is a node on the road map and the goal is the position of the phantom 
-    // for ease of implementation we start the search from the goal to the start node
-    public List<Vector2> GetShortestPath(List<WayPoint> roadmap, InterceptionPoint goalPh, WayPoint start)
-    {
-        WayPoint goal = goalPh.destination;
 
-        openListRoadMap.Clear();
-        closedListRoadMap.Clear();
-
-        foreach (WayPoint p in roadmap)
-        {
-            p.gDistance = Mathf.Infinity;
-            p.hDistance = Mathf.Infinity;
-            p.parent = null;
-        }
-
-        // Set Cost of starting node
-        start.gDistance = 0f;
-        start.hDistance = Vector2.Distance(start.GetPosition(), goal.GetPosition());
-
-        while (openListRoadMap.Count > 0)
-        {
-            WayPoint current = openListRoadMap[0];
-            openListRoadMap.RemoveAt(0);
-
-            foreach (WayPoint p in current.GetConnections(true))
-            {
-                if (!closedListRoadMap.Contains(p))
-                {
-                    float gDistance = GetCostValue(current, p);
-                    float hDistance = GetHeuristicValue(current, goal);
-
-                    if (p.gDistance + p.hDistance > gDistance + hDistance)
-                    {
-                        p.hDistance = hDistance;
-                        p.gDistance = gDistance;
-
-                        p.parent = current;
-                    }
-
-
-                    openListRoadMap.InsertIntoSortedList(p,
-                        delegate(WayPoint x, WayPoint y) { return x.GetFvalue().CompareTo(y.GetFvalue()); }, Order.Asc);
-                }
-            }
-
-            closedListRoadMap.Add(current);
-
-            // Stop the search if we reached the destination way point
-            if (current.Equals(goal))
-                break;
-        }
-
-        pathRoadMap.Clear();
-
-        WayPoint currentWayPoint = goal;
-        while (currentWayPoint.parent != null)
-        {
-            pathRoadMap.Add(currentWayPoint.GetPosition());
-
-            if (currentWayPoint.parent == null)
-                break;
-
-            currentWayPoint = currentWayPoint.parent;
-        }
-
-        // Add the first way point to the path
-        pathRoadMap.Add(start.GetPosition());
-
-        // and add the actual phantom node position since we didn't include it in the A* search
-        pathRoadMap.Add(goalPh.position);
-
-        // reverse the path so it start from the start node
-        pathRoadMap.Reverse();
-
-
-        return pathRoadMap;
-    }
-
-
-    public float GetShortestPathDistance(List<WayPoint> roadmap, InterceptionPoint goalPh, WayPoint start)
-    {
-        List<Vector2> path = GetShortestPath(roadmap, goalPh, start);
-
-        float totalDistance = 0f;
-
-        for (int i = 0; i < path.Count - 1; i++)
-        {
-            totalDistance += Vector2.Distance(path[i], path[i + 1]);
-        }
-
-        return totalDistance;
-    }
+    //
+    // public float GetShortestPathDistance(List<WayPoint> roadmap, InterceptionPoint goalPh, WayPoint start)
+    // {
+    //     List<Vector2> path = GetShortestPath(roadmap, goalPh, start);
+    //
+    //     float totalDistance = 0f;
+    //
+    //     for (int i = 0; i < path.Count - 1; i++)
+    //     {
+    //         totalDistance += Vector2.Distance(path[i], path[i + 1]);
+    //     }
+    //
+    //     return totalDistance;
+    // }
 
 
     public void OnDrawGizmos()

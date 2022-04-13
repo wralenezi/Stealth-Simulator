@@ -387,12 +387,45 @@ public class RoadMap
     }
 
     // Remove the added waypoints, each added waypoint should be connected to two points at max
-    public void ResetTempWayPoints()
+    public void ClearTempWayPoints()
     {
         while (_tempWpsActual.Count > 0)
         {
-            
+            WayPoint wpToRemove = _tempWpsActual[0];
+
+            // Get the connections
+            WayPoint firstWp = wpToRemove.GetConnections(true)[0];
+            WayPoint secWp = wpToRemove.GetConnections(true)[1];
+
+            // Remove the connections
+            wpToRemove.RemoveConnection(firstWp, true);
+            wpToRemove.RemoveConnection(secWp, true);
+
+            // Reconnect the original connection
+            firstWp.Connect(secWp, true);
+
+            _tempWpsActual.RemoveAt(0);
         }
+    }
+
+    // insert a new waypoint between two that currently connected 
+    public void InsertWpInLine(WayPoint firstWp, WayPoint secWp, WayPoint newWp)
+    {
+        // Disconnect the connected waypoints
+        firstWp.RemoveConnection(secWp, true);
+
+        // Connect the new waypoint
+        newWp.Connect(firstWp, true);
+        newWp.Connect(secWp, true);
+    }
+
+    public WayPoint GetGuardRoadMapNode(Vector2 position, float probability)
+    {
+        WayPoint newWp = new WayPoint(position);
+
+        newWp.SetProbability(probability);
+
+        return newWp;
     }
 
 
@@ -446,7 +479,15 @@ public class RoadMap
                 if (pt.remainingDist > 0f)
                     _points.Enqueue(pt);
                 else
+                {
                     trajectory.Add(pt.GetTrajectory());
+                    
+                    // Add a temporary waypoint to mark the guard possibly passing to
+                    WayPoint newWp = GetGuardRoadMapNode(newPosition, 1f);
+
+                    InsertWpInLine(pt.line.wp1, pt.line.wp2, newWp);
+                    _tempWpsActual.Add(newWp);
+                }
             }
             else
             {
@@ -473,7 +514,7 @@ public class RoadMap
 
                     // set the new target
                     WayPoint nextWp = Equals(newConn.wp1, pt.target) ? newConn.wp2 : newConn.wp1;
-                    
+
                     pt.GetTrajectory().AddPoint(pt.target.GetPosition());
 
                     // Add the point to the list
@@ -481,7 +522,7 @@ public class RoadMap
                         pt.remainingDist, pt.distance, npc);
 
                     newPt.GetTrajectory().CopyTrajectory(pt.GetTrajectory());
-                    
+
                     _points.Enqueue(newPt);
                 }
             }
@@ -779,6 +820,12 @@ public class RoadMap
         {
             line.DrawLine();
         }
+        
+        if(!Equals(_tempWpsActual, null))
+            foreach (var wp in _tempWpsActual)
+            {
+                wp.Draw();
+            }
     }
 }
 
