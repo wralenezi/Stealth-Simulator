@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 using UnityEngine;
 
 // The RoadMap the guards uses to for the search task
@@ -51,7 +52,7 @@ public class RoadMap
 
         PopulateEndNodes();
         PopulateLines();
-        PopulateWayPoints();
+        // PopulateWayPoints();
     }
 
 
@@ -100,8 +101,33 @@ public class RoadMap
             wp.AddLines(_lines, false);
     }
 
+    public WayPoint GetClosestNodes(Vector2 point, bool isOriginal)
+    {
+        List<WayPoint> nodes = isOriginal ? _wpsActual : _wayPoints;
 
-    // Get the reference of actual waypoints
+        float minMagDistance = Mathf.Infinity;
+        WayPoint closestWp = null;
+
+        foreach (var node in nodes)
+        {
+            float distance = Vector2.SqrMagnitude(point - node.GetPosition());
+
+            if (distance < minMagDistance)
+            {
+                minMagDistance = distance;
+                closestWp = node;
+            }
+        }
+
+        return closestWp;
+    }
+
+    public List<WayPoint> GetNode(bool isOriginal)
+    {
+        return isOriginal ? _wpsActual : _wayPoints;
+    }
+
+    // Get the reference of actual way points
     private void PopulateWayPoints()
     {
         _wpsActual = new List<WayPoint>();
@@ -389,22 +415,37 @@ public class RoadMap
     // Remove the added waypoints, each added waypoint should be connected to two points at max
     public void ClearTempWayPoints()
     {
-        while (_tempWpsActual.Count > 0)
+        try
         {
-            WayPoint wpToRemove = _tempWpsActual[0];
+            while (_tempWpsActual.Count > 0)
+            {
+                WayPoint wpToRemove = _tempWpsActual[0];
 
-            // Get the connections
-            WayPoint firstWp = wpToRemove.GetConnections(true)[0];
-            WayPoint secWp = wpToRemove.GetConnections(true)[1];
+                // Get the connections
+                WayPoint firstWp = wpToRemove.GetConnections(true)[0];
+                wpToRemove.RemoveConnection(firstWp, true);
+                
+                if (wpToRemove.GetConnections(true).Count >= 1)
+                {
+                    WayPoint secWp = wpToRemove.GetConnections(true)[0];
 
-            // Remove the connections
-            wpToRemove.RemoveConnection(firstWp, true);
-            wpToRemove.RemoveConnection(secWp, true);
+                    // Remove the connections
+                    wpToRemove.RemoveConnection(secWp, true);
 
-            // Reconnect the original connection
-            firstWp.Connect(secWp, true);
+                    // Reconnect the original connection
+                    firstWp.Connect(secWp, true);
+                }
 
-            _tempWpsActual.RemoveAt(0);
+                _tempWpsActual.RemoveAt(0);
+            }
+
+            foreach (var wp in _wpsActual)
+                wp.SetProbability(0f);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("The number of connections are: "+_tempWpsActual[0].GetConnections(true).Count);
+            throw e;
         }
     }
 
@@ -438,6 +479,11 @@ public class RoadMap
         WayPoint nextWayPoint = GetWayPointInDirection(pointOnRoadMap, npc.GetDirection(), line);
         Vector2 source = pointOnRoadMap;
 
+        // Add a temporary waypoint to mark the guard possibly passing to
+        WayPoint sourceWp = GetGuardRoadMapNode(source, 1f);
+        InsertWpInLine(line.wp1, line.wp2, sourceWp);
+        _tempWpsActual.Add(sourceWp);
+        
         float maxStep = totalDistance;
 
         float nextStep = Mathf.Min(maxStep, totalDistance);
@@ -461,6 +507,7 @@ public class RoadMap
             pt.nextStep = pt.nextStep <= 0f ? maxStep : pt.nextStep;
             pt.nextStep = Mathf.Min(pt.nextStep, pt.remainingDist);
 
+            // add a new point since it will not reach the next waypoint
             if (pt.nextStep <= distance)
             {
                 Vector2 displacement = (pt.target.GetPosition() - pt.source).normalized * pt.nextStep;
@@ -481,10 +528,9 @@ public class RoadMap
                 else
                 {
                     trajectory.Add(pt.GetTrajectory());
-                    
+
                     // Add a temporary waypoint to mark the guard possibly passing to
                     WayPoint newWp = GetGuardRoadMapNode(newPosition, 1f);
-
                     InsertWpInLine(pt.line.wp1, pt.line.wp2, newWp);
                     _tempWpsActual.Add(newWp);
                 }
@@ -495,6 +541,9 @@ public class RoadMap
                 pt.remainingDist -= distance;
                 pt.distance += distance;
                 pt.nextStep -= distance;
+
+                // Set the probability to non zero since a guard might pass through here
+                pt.target.SetProbability(1f);
 
                 // If it is a dead end then place a point at the end
                 if (pt.target.GetLines(true).Count == 1)
@@ -814,18 +863,45 @@ public class RoadMap
         }
     }
 
+
+    public void DrawWalkableRoadmap()
+    {
+        Gizmos.color = Color.yellow;
+        foreach (var t in _wpsActual)
+        {
+            if (t.GetProbability() == 0f)
+            {
+                Gizmos.DrawSphere(t.GetPosition(), 0.1f);
+                Handles.Label(t.GetPosition(), t.GetProbability().ToString());
+            }
+
+            foreach (var wp in t.GetConnections(true))
+                if (t.GetProbability() == 0f || wp.GetProbability() == 0f)
+                {
+                    Gizmos.DrawLine(t.GetPosition(), wp.GetPosition());
+                }
+        }
+
+        // for (int j = i + 1; j < _wpsActual.Count; j++)
+        //     if (_wpsActual[i].IsConnected(_wpsActual[j], true) && (_wpsActual[i].GetProbability() == 0f || _wpsActual[j].GetProbability() == 0f))
+        //     {
+        //         Gizmos.DrawLine(_wpsActual[i].GetPosition(), _wpsActual[j].GetPosition());
+        //     }
+    }
+
+
     public void DrawRoadMap()
     {
         foreach (var line in _linesActual)
         {
             line.DrawLine();
         }
-        
-        if(!Equals(_tempWpsActual, null))
-            foreach (var wp in _tempWpsActual)
-            {
-                wp.Draw();
-            }
+
+        // if (!Equals(_tempWpsActual, null))
+        //     foreach (var wp in _tempWpsActual)
+        //     {
+        //         wp.Draw();
+        //     }
     }
 }
 

@@ -27,7 +27,7 @@ public class SAT : MonoBehaviour
     CyclicalList<int> nC = new CyclicalList<int> {-1, 0, 1, 1, 1, 0, -1, -1};
 
     // RoadMap of the World
-    private List<WayPoint> m_roadMap;
+    private List<WayPoint> _roadMap;
 
     // Road map after dividing the edges
     private List<WayPoint> m_roadMapDivided;
@@ -73,7 +73,7 @@ public class SAT : MonoBehaviour
 
     private void ImportRoadMap(MapRenderer mapRenderer, MapData mapData)
     {
-        m_roadMap = new List<WayPoint>();
+        _roadMap = new List<WayPoint>();
         m_roadMapDivided = new List<WayPoint>();
 
         string mapString;
@@ -97,7 +97,7 @@ public class SAT : MonoBehaviour
             // Save the map data for future use.
             SaveMap(mapData);
 
-            m_roadMap = m_SatRoadMap;
+            _roadMap = m_SatRoadMap;
         }
     }
 
@@ -171,7 +171,7 @@ public class SAT : MonoBehaviour
                     position = transform.TransformPoint(position);
 
                     WayPoint newPoint = new WayPoint(position, lineIndex);
-                    m_roadMap.Add(newPoint);
+                    _roadMap.Add(newPoint);
                     m_roadMapDivided.Add(newPoint);
                 }
                 else
@@ -180,8 +180,8 @@ public class SAT : MonoBehaviour
                     int secondIndex = int.Parse(data[1]) - 1;
 
                     // Add two way edge
-                    m_roadMap[firstIndex].Connect(m_roadMap[secondIndex], true);
-                    m_roadMapDivided[firstIndex].Connect(m_roadMap[secondIndex], false);
+                    _roadMap[firstIndex].Connect(_roadMap[secondIndex], true);
+                    m_roadMapDivided[firstIndex].Connect(_roadMap[secondIndex], false);
                 }
             }
     }
@@ -1377,7 +1377,7 @@ public class SAT : MonoBehaviour
 
     public List<WayPoint> GetOriginalRoadMap()
     {
-        return m_roadMap;
+        return _roadMap;
     }
 
     public List<WayPoint> GetDividedRoadMap()
@@ -1387,7 +1387,7 @@ public class SAT : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        if (m_roadMap != null)
+        if (_roadMap != null)
         {
             // for (int x = 0; x < gridSizeRow; x++)
             // for (int y = 0; y < gridSizeCol; y++)

@@ -51,6 +51,7 @@ public class WayPoint
         _connections = new List<WayPoint>();
         _mapLines = new List<RoadMapLine>();
         _originalLines = new List<RoadMapLine>();
+        _probabilityGuardPassing = 0f;
         Id = _id;
     }
 

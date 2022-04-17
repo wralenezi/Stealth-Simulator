@@ -198,8 +198,6 @@ public abstract class RoadMapSearcher : Searcher
     // Assign goal to closest guard and swap goals if needed if the guard was busy.
     public void SwapGoal(Guard assignedGuard, List<Guard> guards, Vector2 newGoal, bool isEnabled)
     {
-        // Scriptor scriptor = m_SA.scriptor;
-
         // Find the closest guard to the new goal
         float minDistance = Vector2.Distance(assignedGuard.transform.position, newGoal);
         Guard closestGuard = null;
@@ -696,12 +694,6 @@ public abstract class RoadMapSearcher : Searcher
                 path.RemoveAt(i + 1);
                 i--;
             }
-
-            // else
-            // {
-            //     Debug.DrawLine(first + left * margine, (first + left * margine) + dir * distance, Color.red);
-            //     Debug.DrawLine(first - left * margine, (first - left * margine) + dir * distance, Color.red);
-            // }
         }
     }
 

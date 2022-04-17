@@ -33,11 +33,16 @@ public class RoadMapScouter : Scouter
     // List of curves to determine how utilities are mapped.
     [SerializeField] private AnimationCurve _SafetyCurve;
 
+
+    private WayPoint _startWP;
+    private WayPoint _goalWp;
+    private List<Vector2> _tempPath;
+
     // path finding on the road map
     List<WayPoint> openListRoadMap;
     List<WayPoint> closedListRoadMap;
 
-    
+
     public override void Initiate(MapManager mapManager)
     {
         base.Initiate(mapManager);
@@ -48,14 +53,17 @@ public class RoadMapScouter : Scouter
         _lastUpdateTimestamp = StealthArea.GetElapsedTime();
 
         SetCurves();
-        
+
+        _tempPath = new List<Vector2>();
+
         openListRoadMap = new List<WayPoint>();
         closedListRoadMap = new List<WayPoint>();
 
         _maxSafetyUtilitiesPerGuard = new Dictionary<string, float>();
 
         showAvailableHidingspots = true;
-        showProjectedTrajectories = true;
+        // showProjectedTrajectories = true;
+        showRoadmap = true;
     }
 
     private void SetCurves()
@@ -126,31 +134,39 @@ public class RoadMapScouter : Scouter
             goal = distanceToGoal / PathFinding.Instance.longestShortestPath < 0.1f ? goal.Value : bestHs.Position;
 
             // Update the fitness values of the hiding spots
-            intruder.SetDestination(goal.Value, true, false);
-            
-            PathFinding.Instance.GetShortestPath()
+            // intruder.SetDestination(goal.Value, true, false);
+
+
+            SetPathOnRoadmap(intruder, goal.Value, false);
+            // EditorApplication.isPaused = true;
         }
     }
 
-    private void SetPathOnRoadmap(Intruder intruder)
+    private void SetPathOnRoadmap(Intruder intruder, Vector2 goal, bool isForced)
     {
-        List<Vector2> pathToTake = intruder.GetPath();
-
-        GetShortestPath(_roadMap., new InterceptionPoint(), new WayPoint(new Vector2(0f, 0f)), pathToTake);
+        if (isForced || !intruder.IsBusy())
+        {
+            List<Vector2> pathToTake = intruder.GetPath();
+            GetShortestPath(intruder.GetTransform().position, goal, ref pathToTake, true);
+        }
     }
 
-        // Get shortest path on the road map
+
+    // Get shortest path on the road map
     // The start node is a node on the road map and the goal is the position of the phantom 
     // for ease of implementation we start the search from the goal to the start node
-    private void GetShortestPath(List<WayPoint> roadmap, Vector2 start, Vector2 goal, ref List<Vector2> path)
+    private void GetShortestPath(Vector2 start, Vector2 goal, ref List<Vector2> path, bool isOriginal)
     {
-        WayPoint startWp = new WayPoint(Vector2.zero);
-        WayPoint goalWp = new WayPoint(Vector2.zero);
+        WayPoint startWp = _roadMap.GetClosestNodes(start, isOriginal);
+        WayPoint goalWp = _roadMap.GetClosestNodes(goal, isOriginal);
+
+        _startWP = startWp;
+        _goalWp = goalWp;
 
         openListRoadMap.Clear();
         closedListRoadMap.Clear();
 
-        foreach (WayPoint p in roadmap)
+        foreach (WayPoint p in _roadMap.GetNode(isOriginal))
         {
             p.gDistance = Mathf.Infinity;
             p.hDistance = Mathf.Infinity;
@@ -159,14 +175,16 @@ public class RoadMapScouter : Scouter
 
         // Set Cost of starting node
         startWp.gDistance = 0f;
-        startWp.hDistance = Vector2.Distance(startWp.GetPosition(), goalWp.GetPosition());
+        startWp.hDistance = Vector2.Distance(startWp.GetPosition(), goal);
+        
+        openListRoadMap.Add(startWp);
 
         while (openListRoadMap.Count > 0)
         {
             WayPoint current = openListRoadMap[0];
             openListRoadMap.RemoveAt(0);
 
-            foreach (WayPoint p in current.GetConnections(true))
+            foreach (WayPoint p in current.GetConnections(isOriginal))
             {
                 if (!closedListRoadMap.Contains(p))
                 {
@@ -190,32 +208,35 @@ public class RoadMapScouter : Scouter
             closedListRoadMap.Add(current);
 
             // Stop the search if we reached the destination way point
-            if (current.Equals(goalWp))
-                break;
+            if (current.Equals(goalWp)) break;
         }
 
-        path.Clear();
-
+        // Get the path from the goal way point to the start way point.
+        _tempPath.Clear();
+        _tempPath.Add(goal);
         WayPoint currentWayPoint = goalWp;
         while (currentWayPoint.parent != null)
         {
-            path.Add(currentWayPoint.GetPosition());
+            _tempPath.Add(currentWayPoint.GetPosition());
 
-            if (currentWayPoint.parent == null)
-                break;
+            if (currentWayPoint.parent == null) break;
 
             currentWayPoint = currentWayPoint.parent;
         }
 
-        // Add the first way point to the path
-        path.Add(startWp.GetPosition());
-
-        // and add the actual phantom node position since we didn't include it in the A* search
-        path.Add(goalWp.GetPosition());
-
         // reverse the path so it start from the start node
-        path.Reverse();
+        _tempPath.Reverse();
+        
+        path.Clear();
 
+        PathFinding.Instance.GetShortestPath(start, startWp.GetPosition(),
+            ref path);
+
+        foreach (var node in _tempPath)
+            path.Add(node);
+
+
+        SimplifyPath(ref path);
     }
 
 
@@ -240,6 +261,25 @@ public class RoadMapScouter : Scouter
         return costValue;
     }
 
+    private void SimplifyPath(ref List<Vector2> path)
+    {
+        for (int i = 0; i < path.Count - 2; i++)
+        {
+            Vector2 first = path[i];
+            Vector2 second = path[i + 2];
+            float margine = 0.1f;
+            float distance = Vector2.Distance(first, second);
+
+            bool isMutuallyVisible = GeometryHelper.IsCirclesVisible(first, second, margine, "Wall");
+
+            if (distance < 0.1f || isMutuallyVisible)
+            {
+                path.RemoveAt(i + 1);
+                i--;
+            }
+        }
+    }
+
 
     /// <summary>
     /// Project the guards position on the road map.
@@ -249,7 +289,7 @@ public class RoadMapScouter : Scouter
         _possibleTrajectories.Clear();
 
         _roadMap.ClearTempWayPoints();
-        
+
         foreach (var guard in guards)
         {
             // Get the closest point on the road map to the guard
@@ -524,8 +564,25 @@ public class RoadMapScouter : Scouter
     {
         base.OnDrawGizmos();
 
+        if (Equals(_tempPath, null))
+            for (int i = 0; i < _tempPath.Count - 1; i++)
+            {
+                Gizmos.DrawLine(_tempPath[i], _tempPath[i + 1]);
+            }
+
+        if (!Equals(_startWP, null))
+        {
+            Handles.Label(_startWP.GetPosition(), "start");
+            Gizmos.DrawSphere(_startWP.GetPosition(), 0.05f);
+
+            Handles.Label(_goalWp.GetPosition(), "end");
+            Gizmos.DrawSphere(_goalWp.GetPosition(), 0.05f);
+        }
+
+        
+        
         if (showRoadmap)
-            _roadMap.DrawRoadMap();
+            _roadMap.DrawWalkableRoadmap();
 
         if (showProjectedTrajectories)
             foreach (var psbTrac in _possibleTrajectories)
