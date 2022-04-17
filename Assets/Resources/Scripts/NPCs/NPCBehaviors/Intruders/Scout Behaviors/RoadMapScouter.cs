@@ -33,9 +33,6 @@ public class RoadMapScouter : Scouter
     // List of curves to determine how utilities are mapped.
     [SerializeField] private AnimationCurve _SafetyCurve;
 
-
-    private WayPoint _startWP;
-    private WayPoint _goalWp;
     private List<Vector2> _tempPath;
 
     // path finding on the road map
@@ -138,7 +135,6 @@ public class RoadMapScouter : Scouter
 
 
             SetPathOnRoadmap(intruder, goal.Value, false);
-            // EditorApplication.isPaused = true;
         }
     }
 
@@ -148,6 +144,9 @@ public class RoadMapScouter : Scouter
         {
             List<Vector2> pathToTake = intruder.GetPath();
             GetShortestPath(intruder.GetTransform().position, goal, ref pathToTake, true);
+
+            // if (pathToTake.Count > 2)
+            //     EditorApplication.isPaused = true;
         }
     }
 
@@ -159,9 +158,6 @@ public class RoadMapScouter : Scouter
     {
         WayPoint startWp = _roadMap.GetClosestNodes(start, isOriginal);
         WayPoint goalWp = _roadMap.GetClosestNodes(goal, isOriginal);
-
-        _startWP = startWp;
-        _goalWp = goalWp;
 
         openListRoadMap.Clear();
         closedListRoadMap.Clear();
@@ -175,19 +171,22 @@ public class RoadMapScouter : Scouter
 
         // Set Cost of starting node
         startWp.gDistance = 0f;
-        startWp.hDistance = Vector2.Distance(startWp.GetPosition(), goal);
-        
+        startWp.hDistance = GetHeuristicValue(startWp, goalWp);
+
         openListRoadMap.Add(startWp);
 
         while (openListRoadMap.Count > 0)
         {
             WayPoint current = openListRoadMap[0];
+
+            // Debug.Log("Checking node:" + current.Id);
             openListRoadMap.RemoveAt(0);
 
             foreach (WayPoint p in current.GetConnections(isOriginal))
             {
                 if (!closedListRoadMap.Contains(p))
                 {
+                    // Debug.Log("Node:" + p.Id + " is child of " + current.Id);
                     float gDistance = GetCostValue(current, p);
                     float hDistance = GetHeuristicValue(current, goalWp);
 
@@ -224,9 +223,8 @@ public class RoadMapScouter : Scouter
             currentWayPoint = currentWayPoint.parent;
         }
 
-        // reverse the path so it start from the start node
         _tempPath.Reverse();
-        
+
         path.Clear();
 
         PathFinding.Instance.GetShortestPath(start, startWp.GetPosition(),
@@ -236,14 +234,15 @@ public class RoadMapScouter : Scouter
             path.Add(node);
 
 
-        SimplifyPath(ref path);
+        // SimplifyPath(ref path);
     }
 
 
     // Get heuristic value for way points road map
     static float GetHeuristicValue(WayPoint currentWayPoint, WayPoint goal)
     {
-        float heuristicValue = Vector2.Distance(currentWayPoint.GetPosition(), goal.GetPosition());
+        float heuristicValue =
+            PathFinding.Instance.GetShortestPathDistance(currentWayPoint.GetPosition(), goal.GetPosition());
 
         return heuristicValue;
     }
@@ -293,7 +292,8 @@ public class RoadMapScouter : Scouter
         foreach (var guard in guards)
         {
             // Get the closest point on the road map to the guard
-            Vector2? point = _roadMap.GetLineToPoint(guard.GetTransform().position, true, out RoadMapLine line);
+            Vector2? point = _roadMap.GetLineToPoint(guard.GetTransform().position, guard.GetDirection(), true,
+                out RoadMapLine line);
 
             // if there is no intersection then abort
             if (!point.HasValue) return;
@@ -376,8 +376,6 @@ public class RoadMapScouter : Scouter
             bestHs = hs;
             maxFitness = hs.Fitness;
         }
-
-        // EditorApplication.isPaused = true;
 
         return bestHs;
     }
@@ -564,23 +562,13 @@ public class RoadMapScouter : Scouter
     {
         base.OnDrawGizmos();
 
-        if (Equals(_tempPath, null))
-            for (int i = 0; i < _tempPath.Count - 1; i++)
-            {
-                Gizmos.DrawLine(_tempPath[i], _tempPath[i + 1]);
-            }
-
-        if (!Equals(_startWP, null))
-        {
-            Handles.Label(_startWP.GetPosition(), "start");
-            Gizmos.DrawSphere(_startWP.GetPosition(), 0.05f);
-
-            Handles.Label(_goalWp.GetPosition(), "end");
-            Gizmos.DrawSphere(_goalWp.GetPosition(), 0.05f);
-        }
-
+        // if (Equals(_tempPath, null))
+        //     for (int i = 0; i < _tempPath.Count - 1; i++)
+        //     {
+        //         Gizmos.DrawLine(_tempPath[i], _tempPath[i + 1]);
+        //     }
         
-        
+
         if (showRoadmap)
             _roadMap.DrawWalkableRoadmap();
 

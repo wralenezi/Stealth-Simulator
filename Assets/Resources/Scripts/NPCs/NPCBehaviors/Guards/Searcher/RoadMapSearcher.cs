@@ -300,7 +300,7 @@ public abstract class RoadMapSearcher : Searcher
         m_ExpandedPoints.Clear();
 
         // Get the closest point on the road map to the guard
-        Vector2? point = m_RoadMap.GetLineToPoint(guard.GetTransform().position, true, out RoadMapLine startLine);
+        Vector2? point = m_RoadMap.GetLineToPoint(guard.GetTransform().position, null, true, out RoadMapLine startLine);
 
         // if there is no intersection then abort
         if (!point.HasValue) return;
@@ -313,7 +313,7 @@ public abstract class RoadMapSearcher : Searcher
         float maxUtility = Mathf.NegativeInfinity;
         foreach (var expandedPoint in m_ExpandedPoints)
         {
-            point = m_RoadMap.GetLineToPoint(expandedPoint.position, true, out RoadMapLine tempLine);
+            point = m_RoadMap.GetLineToPoint(expandedPoint.position, null, true, out RoadMapLine tempLine);
 
             if (!point.HasValue) continue;
 
@@ -456,7 +456,7 @@ public abstract class RoadMapSearcher : Searcher
         m_ExpandedPoints.Clear();
 
         // Get the closest point on the road map to the guard
-        Vector2? point = m_RoadMap.GetLineToPoint(guard.GetTransform().position, true, out RoadMapLine startLine);
+        Vector2? point = m_RoadMap.GetLineToPoint(guard.GetTransform().position, null, true, out RoadMapLine startLine);
 
         // if there is no intersection then abort
         if (!point.HasValue) return;
@@ -469,7 +469,7 @@ public abstract class RoadMapSearcher : Searcher
         float maxUtility = Mathf.NegativeInfinity;
         foreach (var expandedPoint in m_ExpandedPoints)
         {
-            point = m_RoadMap.GetLineToPoint(expandedPoint.position, true, out RoadMapLine tempLine);
+            point = m_RoadMap.GetLineToPoint(expandedPoint.position, null, true, out RoadMapLine tempLine);
 
             if (!point.HasValue) continue;
 

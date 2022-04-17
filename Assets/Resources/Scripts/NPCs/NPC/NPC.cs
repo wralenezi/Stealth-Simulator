@@ -202,7 +202,7 @@ public abstract class NPC : MonoBehaviour
         float c = Mathf.Cos(rad);
         return new Vector2(
             dir.y * c + dir.x * s, dir.y * s - dir.x * c
-        );
+        ).normalized;
     }
 
     // Place the NPC's start position

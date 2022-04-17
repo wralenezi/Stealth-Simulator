@@ -110,7 +110,7 @@ public class RoadMap
 
         foreach (var node in nodes)
         {
-            float distance = Vector2.SqrMagnitude(point - node.GetPosition());
+            float distance = Vector2.Distance(point, node.GetPosition());
 
             if (distance < minMagDistance)
             {
@@ -309,13 +309,15 @@ public class RoadMap
     /// Get the closest road map line to a point 
     /// </summary>
     /// <param name="position"> The position to find the closest road map from. </param>
+    /// <param name="direction"> The direction of the npc, if it is not important then it is set as null</param>
     /// <param name="isOriginal"> To consider only the original road map</param>
     /// <param name="closestLine"> The output line. </param>
     /// <returns></returns>
-    public Vector2? GetLineToPoint(Vector2 position, bool isOriginal, out RoadMapLine closestLine)
+    public Vector2? GetLineToPoint(Vector2 position, Vector2? direction, bool isOriginal, out RoadMapLine closestLine)
     {
         closestLine = null;
         float closetDistance = Mathf.Infinity;
+        float angleCosineMax = Mathf.NegativeInfinity;
         Vector2? closestPoint = null;
 
         foreach (var line in GetLines(isOriginal))
@@ -325,8 +327,19 @@ public class RoadMap
 
             float distance = Vector2.Distance(position, projectionPoint);
 
-            if (distance < closetDistance && _mapRenderer.VisibilityCheck(position, projectionPoint))
+            if (distance <= closetDistance && _mapRenderer.VisibilityCheck(position, projectionPoint))
             {
+                if (Equals(direction, null))
+                {
+                    Vector2 lineDirection = (line.wp1.GetPosition() - line.wp2.GetPosition()).normalized;
+                    float angleCosine = Mathf.Abs(Vector2.Dot(direction.Value, lineDirection));
+
+                    if (angleCosine > angleCosineMax)
+                        angleCosineMax = angleCosine;
+                    else
+                        continue;
+                }
+
                 closetDistance = distance;
                 closestPoint = projectionPoint;
                 closestLine = line;
@@ -417,6 +430,9 @@ public class RoadMap
     {
         try
         {
+            foreach (var wp in _wpsActual)
+                wp.SetProbability(0f);
+
             while (_tempWpsActual.Count > 0)
             {
                 WayPoint wpToRemove = _tempWpsActual[0];
@@ -424,7 +440,7 @@ public class RoadMap
                 // Get the connections
                 WayPoint firstWp = wpToRemove.GetConnections(true)[0];
                 wpToRemove.RemoveConnection(firstWp, true);
-                
+
                 if (wpToRemove.GetConnections(true).Count >= 1)
                 {
                     WayPoint secWp = wpToRemove.GetConnections(true)[0];
@@ -438,13 +454,10 @@ public class RoadMap
 
                 _tempWpsActual.RemoveAt(0);
             }
-
-            foreach (var wp in _wpsActual)
-                wp.SetProbability(0f);
         }
         catch (Exception e)
         {
-            Debug.LogError("The number of connections are: "+_tempWpsActual[0].GetConnections(true).Count);
+            Debug.LogError("The number of connections are: " + _tempWpsActual[0].GetConnections(true).Count);
             throw e;
         }
     }
@@ -466,6 +479,8 @@ public class RoadMap
 
         newWp.SetProbability(probability);
 
+        newWp.Id = _wpsActual.Count + _tempWpsActual.Count;
+
         return newWp;
     }
 
@@ -479,18 +494,17 @@ public class RoadMap
         WayPoint nextWayPoint = GetWayPointInDirection(pointOnRoadMap, npc.GetDirection(), line);
         Vector2 source = pointOnRoadMap;
 
-        // Add a temporary waypoint to mark the guard possibly passing to
+        // Add a temporary way point to mark the guard possibly passing to
         WayPoint sourceWp = GetGuardRoadMapNode(source, 1f);
         InsertWpInLine(line.wp1, line.wp2, sourceWp);
         _tempWpsActual.Add(sourceWp);
-        
+
         float maxStep = totalDistance;
 
         float nextStep = Mathf.Min(maxStep, totalDistance);
 
         PointToProp ptp = new PointToProp(source, nextWayPoint, line, nextStep, totalDistance, 0f, npc);
         ptp.GetTrajectory().AddPoint(source);
-
 
         _points.Enqueue(ptp);
 
@@ -507,7 +521,7 @@ public class RoadMap
             pt.nextStep = pt.nextStep <= 0f ? maxStep : pt.nextStep;
             pt.nextStep = Mathf.Min(pt.nextStep, pt.remainingDist);
 
-            // add a new point since it will not reach the next waypoint
+            // add a new point since it will not reach the next way point
             if (pt.nextStep <= distance)
             {
                 Vector2 displacement = (pt.target.GetPosition() - pt.source).normalized * pt.nextStep;
@@ -529,7 +543,7 @@ public class RoadMap
                 {
                     trajectory.Add(pt.GetTrajectory());
 
-                    // Add a temporary waypoint to mark the guard possibly passing to
+                    // Add a temporary way point to mark the guard possibly passing to
                     WayPoint newWp = GetGuardRoadMapNode(newPosition, 1f);
                     InsertWpInLine(pt.line.wp1, pt.line.wp2, newWp);
                     _tempWpsActual.Add(newWp);
@@ -549,9 +563,12 @@ public class RoadMap
                 if (pt.target.GetLines(true).Count == 1)
                 {
                     pt.GetTrajectory().AddPoint(pt.target.GetPosition());
-
                     trajectory.Add(pt.GetTrajectory());
 
+                    // Add a temporary way point to mark the guard possibly passing to
+                    WayPoint newWp = GetGuardRoadMapNode(pt.target.GetPosition(), 1f);
+                    InsertWpInLine(pt.line.wp1, pt.line.wp2, newWp);
+                    _tempWpsActual.Add(newWp);
                     continue;
                 }
 
@@ -569,9 +586,7 @@ public class RoadMap
                     // Add the point to the list
                     PointToProp newPt = new PointToProp(pt.target.GetPosition(), nextWp, newConn, pt.nextStep,
                         pt.remainingDist, pt.distance, npc);
-
                     newPt.GetTrajectory().CopyTrajectory(pt.GetTrajectory());
-
                     _points.Enqueue(newPt);
                 }
             }
@@ -869,17 +884,33 @@ public class RoadMap
         Gizmos.color = Color.yellow;
         foreach (var t in _wpsActual)
         {
-            if (t.GetProbability() == 0f)
+            // if (t.GetProbability() == 0f)
             {
                 Gizmos.DrawSphere(t.GetPosition(), 0.1f);
-                Handles.Label(t.GetPosition(), t.GetProbability().ToString());
+                Handles.Label(t.GetPosition(), t.Id.ToString());
             }
 
             foreach (var wp in t.GetConnections(true))
-                if (t.GetProbability() == 0f || wp.GetProbability() == 0f)
+                if (t.GetProbability() != 0f || wp.GetProbability() != 0f)
                 {
                     Gizmos.DrawLine(t.GetPosition(), wp.GetPosition());
                 }
+        }
+
+        Gizmos.color = Color.red;
+        foreach (var t in _tempWpsActual)
+        {
+            Gizmos.DrawSphere(t.GetPosition(), 0.1f);
+            Handles.Label(t.GetPosition(), t.Id.ToString());
+
+            string label = "";
+            foreach (var wp in t.GetConnections(true))
+            {
+                // Gizmos.DrawLine(t.GetPosition(), wp.GetPosition());
+                label += wp.Id + " ";
+            }
+
+            Handles.Label(Vector2.down * 0.5f + t.GetPosition(), label);
         }
 
         // for (int j = i + 1; j < _wpsActual.Count; j++)
