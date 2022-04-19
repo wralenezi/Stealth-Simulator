@@ -20,11 +20,13 @@ public class WayPoint
     private readonly List<WayPoint> _originalCons;
 
     // The original lines connected to this way point
-    private readonly List<RoadMapLine> _originalLines;
+    private  List<RoadMapLine> _originalLines;
     
+    private readonly List<RoadMapLine> _readOnlyOriginalLines;
+
     // probability that a guard is going to pass through here; when it is zero
     private float _probabilityGuardPassing;
-    
+
     // The ID of the way point
     public int Id;
 
@@ -33,7 +35,7 @@ public class WayPoint
 
     // the ID of the wall this way point belong to. This is for the visibility graph
     public int WallId;
-    
+
     // The node original location on the grid. Used in the grid simplification to a graph.
     public int row;
     public int col;
@@ -51,6 +53,7 @@ public class WayPoint
         _connections = new List<WayPoint>();
         _mapLines = new List<RoadMapLine>();
         _originalLines = new List<RoadMapLine>();
+        _readOnlyOriginalLines = new List<RoadMapLine>();
         _probabilityGuardPassing = 0f;
         Id = _id;
     }
@@ -65,43 +68,75 @@ public class WayPoint
         _connections = new List<WayPoint>();
         _mapLines = new List<RoadMapLine>();
         _originalLines = new List<RoadMapLine>();
+        _readOnlyOriginalLines = new List<RoadMapLine>();
         Id = 0;
+    }
+
+    public void AddReadOnlyLine(RoadMapLine roadMapLine)
+    {
+        _readOnlyOriginalLines.Add(roadMapLine);
+    }
+
+    public List<RoadMapLine> GetReadOnlyLines()
+    {
+        return _readOnlyOriginalLines;
     }
 
 
     // Add the way points to each others list of connects.
-    public void Connect(WayPoint wp, bool isOriginal, bool isOverwrite)
+    public void Connect(WayPoint wp, bool isOriginal, bool isOverwrite, RoadMap roadMap)
     {
         bool sameNode = Equals(wp.GetPosition(), GetPosition());
 
         if (IsConnected(wp, isOriginal) || (sameNode && !isOverwrite)) return;
 
-        AddEdge(wp, isOriginal);
+        RoadMapLine line = AddEdge(wp, isOriginal);
         wp.AddEdge(this, isOriginal);
+        
+        if(Equals(roadMap, null)) return;
+
+        roadMap.AddLine(line, true);
     }
 
-    public void RemoveConnection(WayPoint wp, bool isOriginal)
+    public void RemoveConnection(WayPoint wp, bool isOriginal, RoadMap roadMap)
     {
-        RemoveEdge(wp, isOriginal);
-        wp.RemoveEdge(this, isOriginal);
+        RemoveEdge(wp, isOriginal, roadMap);
+        wp.RemoveEdge(this, isOriginal, roadMap);
     }
 
 
-    private void AddEdge(WayPoint wp, bool isOriginal)
+    private RoadMapLine AddEdge(WayPoint wp, bool isOriginal)
     {
         if (isOriginal)
             _originalCons.Add(wp);
         else
             _connections.Add(wp);
+
+        List<RoadMapLine> lines = isOriginal ? _originalLines : _mapLines;
+        RoadMapLine newLine = new RoadMapLine(this, wp);
+        lines.Add(newLine);
+
+        return newLine;
     }
 
-    public void RemoveEdge(WayPoint wp, bool isOriginal)
+    public void RemoveEdge(WayPoint wp, bool isOriginal, RoadMap roadMap)
     {
         if (isOriginal)
             _originalCons.Remove(wp);
         else
             _connections.Remove(wp);
 
+        List<RoadMapLine> lines = isOriginal ? _originalLines : _mapLines;
+
+        for (int i = 0; i < lines.Count; i++)
+        {
+            if (lines[i].IsPointPartOfLine(wp))
+            {
+                roadMap?.RemoveLine(lines[i], isOriginal);
+                lines.RemoveAt(i);
+                break;
+            }
+        }
     }
 
     public bool IsConnected(WayPoint wp, bool isOriginal)
@@ -139,7 +174,7 @@ public class WayPoint
         }
     }
 
-    private void AddLine(RoadMapLine line, bool isOriginal)
+    public void AddLine(RoadMapLine line, bool isOriginal)
     {
         if (isOriginal)
             _originalLines.Add(line);
@@ -154,9 +189,20 @@ public class WayPoint
 
     public List<RoadMapLine> GetLines(bool isOriginal)
     {
-        if (isOriginal) return _originalLines;
+        return isOriginal ? _originalLines : _mapLines;
+    }
 
-        return _mapLines;
+    public RoadMapLine GetLineWithWp(WayPoint wp, bool isOriginal)
+    {
+        List<RoadMapLine> lines = isOriginal ? _originalLines : _mapLines;
+        
+        foreach (var line in lines)
+        {
+            if (line.IsPointPartOfLine(this) && line.IsPointPartOfLine(wp))
+                return line;
+        }
+
+        return null;
     }
 
     public float GetFvalue()
@@ -189,7 +235,5 @@ public class WayPoint
         // }
 
         Handles.Label(GetPosition(), _probabilityGuardPassing.ToString());
-        
-        
     }
 }

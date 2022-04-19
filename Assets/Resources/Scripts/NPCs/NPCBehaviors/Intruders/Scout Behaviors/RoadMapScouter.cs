@@ -161,7 +161,7 @@ public class RoadMapScouter : Scouter
 
         openListRoadMap.Clear();
         closedListRoadMap.Clear();
-        
+
         foreach (WayPoint p in _roadMap.GetNode(isOriginal))
         {
             p.gDistance = Mathf.Infinity;
@@ -242,7 +242,7 @@ public class RoadMapScouter : Scouter
             path.Add(node);
 
 
-        SimplifyPath(ref path);
+        // SimplifyPath(ref path);
     }
 
 
@@ -306,6 +306,8 @@ public class RoadMapScouter : Scouter
             // if there is no intersection then abort
             if (!point.HasValue) return;
 
+            Debug.Log("Line is " + line.wp1);
+
             _roadMap.ProjectPositionsInDirection(ref _possibleTrajectories, point.Value, line,
                 GetGuardProjectionDistance(guard), guard);
         }
@@ -320,7 +322,8 @@ public class RoadMapScouter : Scouter
     private float GetGuardProjectionOffset(NPC npc)
     {
         float fov = Properties.GetFovRadius(NpcType.Guard);
-        return Mathf.Max(npc.GetCurrentSpeed() * fov * 20f, fov * 1.1f);
+        float speed = Equals(npc, null) ? Properties.NpcSpeed : npc.GetCurrentSpeed();
+        return Mathf.Max(speed * fov * 20f, fov * 1.1f);
     }
 
     private void EvaluateSpots(Intruder intruder, Vector2 goal, List<Guard> guards)
@@ -454,6 +457,14 @@ public class RoadMapScouter : Scouter
 
         hs.ThreateningPosition = closestPointOnTrajectory;
 
+        Debug.Log(hs.ThreateningPosition);
+
+        if (Equals(hs.ThreateningPosition, null))
+        {
+            hs.SafetyAbsoluteValue = GetGuardProjectionDistance(null);
+            return;
+        }
+
         // Assign the maximum safety value
         float safetyValue = GetGuardProjectionDistance(hs.ThreateningPosition.npc);
 
@@ -479,9 +490,16 @@ public class RoadMapScouter : Scouter
 
     private void EvaluateSafetyUtility(HidingSpot hs)
     {
-        // Get the orientation of the threatening position to the guard.
-        bool isPointInFront = IsPointFrontNpc(hs.ThreateningPosition.npc, hs.Position);
-
+        bool isPointInFront;
+        if (!Equals(hs.ThreateningPosition, null))
+            // Get the orientation of the threatening position to the guard.
+            isPointInFront = IsPointFrontNpc(hs.ThreateningPosition.npc, hs.Position);
+        else
+        {
+            hs.SafetyUtility = 1f;
+            return;
+        } 
+        
         if (hs.SafetyAbsoluteValue < 0.01f && !isPointInFront)
         {
             // hs.SafetyAbsoluteValue = _maxSafetyUtilitiesPerGuard[hs.ThreateningPosition.npc.name];

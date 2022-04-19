@@ -52,7 +52,6 @@ public class RoadMap
 
         PopulateEndNodes();
         PopulateLines();
-        // PopulateWayPoints();
     }
 
 
@@ -73,32 +72,55 @@ public class RoadMap
 
         // Add the original line segments 
         foreach (var wp in _wpsActual)
-        foreach (var con in wp.GetConnections(true))
         {
-            // Check if the connection already exist
-            bool isFound = _linesActual.Any(line => line.IsPointPartOfLine(wp) && line.IsPointPartOfLine(con));
+            foreach (var con in wp.GetConnections(true))
+            {
+                // Check if the connection already exist
+                bool isFound = _linesActual.Any(line => line.IsPointPartOfLine(wp) && line.IsPointPartOfLine(con));
 
-            if (!isFound) _linesActual.Add(new RoadMapLine(con, wp));
+                // if (!isFound) _linesActual.Add(new RoadMapLine(con, wp));
+
+                if (!isFound)
+                {
+                    RoadMapLine line = wp.GetLineWithWp(con, true);
+                    _linesActual.Add(line);
+                }
+
+                // wp.AddLine(new RoadMapLine(wp, con), true);
+                // AddLine(wp, con, true);
+            }
+
+            foreach (var line in wp.GetLines(true))
+                wp.AddReadOnlyLine(line);
+            
         }
 
         // Add the line connected to the way point
-        foreach (var wp in _wpsActual)
-            wp.AddLines(_linesActual, true);
+        // foreach (var wp in _wpsActual)
+        //     wp.AddLines(_linesActual, true);
 
 
         // Add the divided lines segments 
         foreach (var wp in _wayPoints)
         foreach (var con in wp.GetConnections(false))
         {
-            // Check if the connection already exist
+            // // Check if the connection already exist
             bool isFound = _lines.Any(line => line.IsPointPartOfLine(wp) && line.IsPointPartOfLine(con));
+            // if (!isFound) _lines.Add(new RoadMapLine(con, wp));
 
-            if (!isFound) _lines.Add(new RoadMapLine(con, wp));
+            if (!isFound)
+            {
+                RoadMapLine line = wp.GetLineWithWp(con, false);
+                _lines.Add(line);
+            }
+
+            // AddLine(wp, con, true);
+            // wp.AddLine(new RoadMapLine(wp, con), false);
         }
 
         // Add the line connected to the way point
-        foreach (var wp in _wayPoints)
-            wp.AddLines(_lines, false);
+        // foreach (var wp in _wayPoints)
+        //     wp.AddLines(_lines, false);
     }
 
     public WayPoint GetClosestNodes(Vector2 point, bool isOriginal)
@@ -120,6 +142,65 @@ public class RoadMap
         }
 
         return closestWp;
+    }
+
+    // public RoadMapLine AddLine(WayPoint wp1, WayPoint wp2, bool isOriginal)
+    // {
+    //     List<RoadMapLine> lines = isOriginal ? _linesActual : _lines;
+    //
+    //     bool isFound = lines.Any(line => line.IsPointPartOfLine(wp1) && line.IsPointPartOfLine(wp2));
+    //
+    //     RoadMapLine roadmapLine = null;
+    //     
+    //     if (!isFound)
+    //     {
+    //         roadmapLine = new RoadMapLine(wp1, wp2);
+    //         lines.Add(roadmapLine);
+    //     }
+    //
+    //     return roadmapLine;
+    // }
+
+
+    public void AddLine(RoadMapLine line, bool isOriginal)
+    {
+        List<RoadMapLine> lines = isOriginal ? _linesActual : _lines;
+
+        bool isAlreadyInsert = false;
+
+        foreach (var l in lines)
+        {
+            if (l.IsPointPartOfLine(line.wp1) && l.IsPointPartOfLine(line.wp2))
+            {
+                isAlreadyInsert = true;
+                break;
+            }
+        }
+
+        if (!isAlreadyInsert)
+            lines.Add(line);
+    }
+
+    public void RemoveLine(WayPoint wp1, WayPoint wp2, bool isOriginal)
+    {
+        List<RoadMapLine> lines = isOriginal ? _linesActual : _lines;
+
+        for (int i = 0; i < lines.Count; i++)
+        {
+            RoadMapLine line = lines[i];
+
+            if (line.IsPointPartOfLine(wp1) && line.IsPointPartOfLine(wp2))
+            {
+                lines.Remove(line);
+            }
+        }
+    }
+
+    public void RemoveLine(RoadMapLine line, bool isOriginal)
+    {
+        List<RoadMapLine> lines = isOriginal ? _linesActual : _lines;
+
+        lines.Remove(line);
     }
 
     public List<WayPoint> GetNode(bool isOriginal)
@@ -144,7 +225,17 @@ public class RoadMap
 
     public List<RoadMapLine> GetLines(bool isOriginal)
     {
-        return isOriginal ? _linesActual : _lines;
+        List<RoadMapLine> lines = isOriginal ? _linesActual : _lines;
+        // List<WayPoint> wayPoints = isOriginal ? _wpsActual : _wayPoints;
+        //
+        // lines.Clear();
+        // foreach (var wp in wayPoints)
+        // foreach (var line in wp.GetLines(isOriginal))
+        // {
+        //     lines.Add(line);
+        // }
+
+        return lines;
     }
 
 
@@ -325,6 +416,8 @@ public class RoadMap
         float angleCosineMax = Mathf.NegativeInfinity;
         Vector2? closestPoint = null;
 
+        Debug.Log(GetLines(isOriginal).Count);
+
         foreach (var line in GetLines(isOriginal))
         {
             Vector2 projectionPoint =
@@ -448,14 +541,14 @@ public class RoadMap
                     WayPoint originalWp = wpToRemove.GetConnections(true)[0];
 
                     while (originalWp.GetConnections(true).Count > 0)
-                        originalWp.RemoveConnection(originalWp.GetConnections(true)[0], true);
+                        originalWp.RemoveConnection(originalWp.GetConnections(true)[0], true, this);
 
-                    foreach (var line in originalWp.GetLines(true))
+                    foreach (var line in originalWp.GetReadOnlyLines())
                     {
                         if (Equals(line.wp1, originalWp))
-                            originalWp.Connect(line.wp2, true, false);
+                            originalWp.Connect(line.wp2, true, false, this);
                         else
-                            originalWp.Connect(line.wp1, true, false);
+                            originalWp.Connect(line.wp1, true, false, this);
                     }
                 }
 
@@ -473,11 +566,11 @@ public class RoadMap
     public void InsertWpInLine(WayPoint firstWp, WayPoint secWp, WayPoint newWp)
     {
         // Disconnect the connected waypoints
-        firstWp.RemoveConnection(secWp, true);
+        firstWp.RemoveConnection(secWp, true, this);
 
         // Connect the new waypoint
-        newWp.Connect(firstWp, true, true);
-        newWp.Connect(secWp, true, true);
+        newWp.Connect(firstWp, true, true, this);
+        newWp.Connect(secWp, true, true, this);
     }
 
     public WayPoint GetGuardRoadMapNode(Vector2 position, float probability)
@@ -571,12 +664,12 @@ public class RoadMap
                 {
                     pt.GetTrajectory().AddPoint(pt.target.GetPosition());
                     trajectory.Add(pt.GetTrajectory());
-                    
+
                     // Add a temporary way point to mark the guard possibly passing to
                     WayPoint newWp = GetGuardRoadMapNode(pt.target.GetPosition(), 1f);
                     InsertWpInLine(pt.target.GetLines(true)[0].wp1, pt.target.GetLines(true)[0].wp2, newWp);
                     _tempWpsActual.Add(newWp);
-                    
+
                     continue;
                 }
 
@@ -658,8 +751,8 @@ public class RoadMap
         _adHocWp.GetConnections(false)[0].RemoveLine(_adHocRmLine);
 
 
-        _adHocWp.GetConnections(false)[0].RemoveEdge(_adHocWp, false);
-        _adHocWp.RemoveEdge(_adHocWp.GetConnections(false)[0], false);
+        _adHocWp.GetConnections(false)[0].RemoveEdge(_adHocWp, false, this);
+        _adHocWp.RemoveEdge(_adHocWp.GetConnections(false)[0], false, this);
 
         _adHocRmLine = null;
         _adHocWp = null;
