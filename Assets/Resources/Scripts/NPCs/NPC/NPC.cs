@@ -488,10 +488,10 @@ public abstract class NPC : MonoBehaviour
             for (int i = 0; i < PathToTake.Count - 1; i++)
             {
                 Gizmos.DrawLine(PathToTake[i], PathToTake[i + 1]);
-                Gizmos.DrawSphere(PathToTake[i], 0.1f);
+                Gizmos.DrawSphere(PathToTake[i], 0.025f);
             }
 
-            Gizmos.DrawSphere(PathToTake[PathToTake.Count - 1], 0.1f);
+            Gizmos.DrawSphere(PathToTake[PathToTake.Count - 1], 0.025f);
         }
     }
 }

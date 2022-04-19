@@ -58,7 +58,7 @@ public class RoadMapScouter : Scouter
 
         _maxSafetyUtilitiesPerGuard = new Dictionary<string, float>();
 
-        showAvailableHidingspots = true;
+        // showAvailableHidingspots = true;
         // showProjectedTrajectories = true;
         showRoadmap = true;
     }
@@ -145,8 +145,8 @@ public class RoadMapScouter : Scouter
             List<Vector2> pathToTake = intruder.GetPath();
             GetShortestPath(intruder.GetTransform().position, goal, ref pathToTake, true);
 
-            // if (pathToTake.Count > 2)
-            //     EditorApplication.isPaused = true;
+            if (pathToTake.Count > 2)
+                EditorApplication.isPaused = true;
         }
     }
 
@@ -161,8 +161,15 @@ public class RoadMapScouter : Scouter
 
         openListRoadMap.Clear();
         closedListRoadMap.Clear();
-
+        
         foreach (WayPoint p in _roadMap.GetNode(isOriginal))
+        {
+            p.gDistance = Mathf.Infinity;
+            p.hDistance = Mathf.Infinity;
+            p.parent = null;
+        }
+
+        foreach (var p in _roadMap.GetTempNodes())
         {
             p.gDistance = Mathf.Infinity;
             p.hDistance = Mathf.Infinity;
@@ -179,14 +186,12 @@ public class RoadMapScouter : Scouter
         {
             WayPoint current = openListRoadMap[0];
 
-            // Debug.Log("Checking node:" + current.Id);
             openListRoadMap.RemoveAt(0);
 
             foreach (WayPoint p in current.GetConnections(isOriginal))
             {
                 if (!closedListRoadMap.Contains(p))
                 {
-                    // Debug.Log("Node:" + p.Id + " is child of " + current.Id);
                     float gDistance = GetCostValue(current, p);
                     float hDistance = GetHeuristicValue(current, goalWp);
 
@@ -200,7 +205,7 @@ public class RoadMapScouter : Scouter
 
 
                     openListRoadMap.InsertIntoSortedList(p,
-                        delegate(WayPoint x, WayPoint y) { return x.GetFvalue().CompareTo(y.GetFvalue()); }, Order.Asc);
+                        (x, y) => x.GetFvalue().CompareTo(y.GetFvalue()), Order.Asc);
                 }
             }
 
@@ -209,6 +214,9 @@ public class RoadMapScouter : Scouter
             // Stop the search if we reached the destination way point
             if (current.Equals(goalWp)) break;
         }
+
+        if (Equals(goalWp.parent, null))
+            return;
 
         // Get the path from the goal way point to the start way point.
         _tempPath.Clear();
@@ -234,7 +242,7 @@ public class RoadMapScouter : Scouter
             path.Add(node);
 
 
-        // SimplifyPath(ref path);
+        SimplifyPath(ref path);
     }
 
 
@@ -242,7 +250,7 @@ public class RoadMapScouter : Scouter
     static float GetHeuristicValue(WayPoint currentWayPoint, WayPoint goal)
     {
         float heuristicValue =
-            PathFinding.Instance.GetShortestPathDistance(currentWayPoint.GetPosition(), goal.GetPosition());
+            Vector2.Distance(currentWayPoint.GetPosition(), goal.GetPosition());
 
         return heuristicValue;
     }
@@ -567,7 +575,7 @@ public class RoadMapScouter : Scouter
         //     {
         //         Gizmos.DrawLine(_tempPath[i], _tempPath[i + 1]);
         //     }
-        
+
 
         if (showRoadmap)
             _roadMap.DrawWalkableRoadmap();

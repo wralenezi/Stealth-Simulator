@@ -127,6 +127,11 @@ public class RoadMap
         return isOriginal ? _wpsActual : _wayPoints;
     }
 
+    public List<WayPoint> GetTempNodes()
+    {
+        return _tempWpsActual;
+    }
+
     // Get the reference of actual way points
     private void PopulateWayPoints()
     {
@@ -433,23 +438,25 @@ public class RoadMap
             foreach (var wp in _wpsActual)
                 wp.SetProbability(0f);
 
+
             while (_tempWpsActual.Count > 0)
             {
                 WayPoint wpToRemove = _tempWpsActual[0];
 
-                // Get the connections
-                WayPoint firstWp = wpToRemove.GetConnections(true)[0];
-                wpToRemove.RemoveConnection(firstWp, true);
-
-                if (wpToRemove.GetConnections(true).Count >= 1)
+                while (wpToRemove.GetConnections(true).Count > 0)
                 {
-                    WayPoint secWp = wpToRemove.GetConnections(true)[0];
+                    WayPoint originalWp = wpToRemove.GetConnections(true)[0];
 
-                    // Remove the connections
-                    wpToRemove.RemoveConnection(secWp, true);
+                    while (originalWp.GetConnections(true).Count > 0)
+                        originalWp.RemoveConnection(originalWp.GetConnections(true)[0], true);
 
-                    // Reconnect the original connection
-                    firstWp.Connect(secWp, true);
+                    foreach (var line in originalWp.GetLines(true))
+                    {
+                        if (Equals(line.wp1, originalWp))
+                            originalWp.Connect(line.wp2, true, false);
+                        else
+                            originalWp.Connect(line.wp1, true, false);
+                    }
                 }
 
                 _tempWpsActual.RemoveAt(0);
@@ -469,8 +476,8 @@ public class RoadMap
         firstWp.RemoveConnection(secWp, true);
 
         // Connect the new waypoint
-        newWp.Connect(firstWp, true);
-        newWp.Connect(secWp, true);
+        newWp.Connect(firstWp, true, true);
+        newWp.Connect(secWp, true, true);
     }
 
     public WayPoint GetGuardRoadMapNode(Vector2 position, float probability)
@@ -564,11 +571,12 @@ public class RoadMap
                 {
                     pt.GetTrajectory().AddPoint(pt.target.GetPosition());
                     trajectory.Add(pt.GetTrajectory());
-
+                    
                     // Add a temporary way point to mark the guard possibly passing to
                     WayPoint newWp = GetGuardRoadMapNode(pt.target.GetPosition(), 1f);
-                    InsertWpInLine(pt.line.wp1, pt.line.wp2, newWp);
+                    InsertWpInLine(pt.target.GetLines(true)[0].wp1, pt.target.GetLines(true)[0].wp2, newWp);
                     _tempWpsActual.Add(newWp);
+                    
                     continue;
                 }
 
@@ -886,21 +894,21 @@ public class RoadMap
         {
             // if (t.GetProbability() == 0f)
             {
-                Gizmos.DrawSphere(t.GetPosition(), 0.1f);
+                Gizmos.DrawSphere(t.GetPosition(), 0.025f);
                 Handles.Label(t.GetPosition(), t.Id.ToString());
             }
 
             foreach (var wp in t.GetConnections(true))
-                if (t.GetProbability() != 0f || wp.GetProbability() != 0f)
-                {
-                    Gizmos.DrawLine(t.GetPosition(), wp.GetPosition());
-                }
+                // if (t.GetProbability() != 0f || wp.GetProbability() != 0f)
+            {
+                Gizmos.DrawLine(t.GetPosition(), wp.GetPosition());
+            }
         }
 
         Gizmos.color = Color.red;
         foreach (var t in _tempWpsActual)
         {
-            Gizmos.DrawSphere(t.GetPosition(), 0.1f);
+            Gizmos.DrawSphere(t.GetPosition(), 0.025f);
             Handles.Label(t.GetPosition(), t.Id.ToString());
 
             string label = "";

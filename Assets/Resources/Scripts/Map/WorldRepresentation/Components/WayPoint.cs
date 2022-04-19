@@ -70,11 +70,11 @@ public class WayPoint
 
 
     // Add the way points to each others list of connects.
-    public void Connect(WayPoint wp, bool isOriginal)
+    public void Connect(WayPoint wp, bool isOriginal, bool isOverwrite)
     {
         bool sameNode = Equals(wp.GetPosition(), GetPosition());
 
-        if (IsConnected(wp, isOriginal) || sameNode) return;
+        if (IsConnected(wp, isOriginal) || (sameNode && !isOverwrite)) return;
 
         AddEdge(wp, isOriginal);
         wp.AddEdge(this, isOriginal);
