@@ -78,26 +78,26 @@ public class RoadMap
                 // Check if the connection already exist
                 bool isFound = _linesActual.Any(line => line.IsPointPartOfLine(wp) && line.IsPointPartOfLine(con));
 
-                // if (!isFound) _linesActual.Add(new RoadMapLine(con, wp));
+                if (!isFound) _linesActual.Add(new RoadMapLine(con, wp));
 
-                if (!isFound)
-                {
-                    RoadMapLine line = wp.GetLineWithWp(con, true);
-                    _linesActual.Add(line);
-                }
+                // if (!isFound)
+                // {
+                //     RoadMapLine line = wp.GetLineWithWp(con, true);
+                //     _linesActual.Add(line);
+                // }
 
                 // wp.AddLine(new RoadMapLine(wp, con), true);
                 // AddLine(wp, con, true);
             }
 
-            foreach (var line in wp.GetLines(true))
-                wp.AddReadOnlyLine(line);
+            // foreach (var line in wp.GetLines(true))
+            //     wp.AddReadOnlyLine(line);
             
         }
 
         // Add the line connected to the way point
-        // foreach (var wp in _wpsActual)
-        //     wp.AddLines(_linesActual, true);
+        foreach (var wp in _wpsActual)
+            wp.AddLines(_linesActual, true);
 
 
         // Add the divided lines segments 
@@ -106,21 +106,21 @@ public class RoadMap
         {
             // // Check if the connection already exist
             bool isFound = _lines.Any(line => line.IsPointPartOfLine(wp) && line.IsPointPartOfLine(con));
-            // if (!isFound) _lines.Add(new RoadMapLine(con, wp));
+            if (!isFound) _lines.Add(new RoadMapLine(con, wp));
 
-            if (!isFound)
-            {
-                RoadMapLine line = wp.GetLineWithWp(con, false);
-                _lines.Add(line);
-            }
+            // if (!isFound)
+            // {
+            //     RoadMapLine line = wp.GetLineWithWp(con, false);
+            //     _lines.Add(line);
+            // }
 
             // AddLine(wp, con, true);
             // wp.AddLine(new RoadMapLine(wp, con), false);
         }
 
         // Add the line connected to the way point
-        // foreach (var wp in _wayPoints)
-        //     wp.AddLines(_lines, false);
+        foreach (var wp in _wayPoints)
+            wp.AddLines(_lines, false);
     }
 
     public WayPoint GetClosestNodes(Vector2 point, bool isOriginal)
@@ -543,7 +543,7 @@ public class RoadMap
                     while (originalWp.GetConnections(true).Count > 0)
                         originalWp.RemoveConnection(originalWp.GetConnections(true)[0], true, this);
 
-                    foreach (var line in originalWp.GetReadOnlyLines())
+                    foreach (var line in originalWp.GetLines(true))
                     {
                         if (Equals(line.wp1, originalWp))
                             originalWp.Connect(line.wp2, true, false, this);

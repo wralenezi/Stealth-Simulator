@@ -306,7 +306,7 @@ public class RoadMapScouter : Scouter
             // if there is no intersection then abort
             if (!point.HasValue) return;
 
-            Debug.Log("Line is " + line.wp1);
+            // Debug.Log("Line is " + line.wp1);
 
             _roadMap.ProjectPositionsInDirection(ref _possibleTrajectories, point.Value, line,
                 GetGuardProjectionDistance(guard), guard);
