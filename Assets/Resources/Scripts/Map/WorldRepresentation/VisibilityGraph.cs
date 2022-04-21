@@ -149,7 +149,7 @@ public class VisibilityGraph : MonoBehaviour
 
             if (isVisible)
             {
-                firstWp.Connect(secWp,true, false, null);
+                firstWp.Connect(secWp,true, false);
             }
         }
     }

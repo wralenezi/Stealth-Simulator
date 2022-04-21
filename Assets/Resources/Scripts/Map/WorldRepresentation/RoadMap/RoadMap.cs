@@ -92,7 +92,6 @@ public class RoadMap
 
             // foreach (var line in wp.GetLines(true))
             //     wp.AddReadOnlyLine(line);
-            
         }
 
         // Add the line connected to the way point
@@ -416,8 +415,6 @@ public class RoadMap
         float angleCosineMax = Mathf.NegativeInfinity;
         Vector2? closestPoint = null;
 
-        Debug.Log(GetLines(isOriginal).Count);
-
         foreach (var line in GetLines(isOriginal))
         {
             Vector2 projectionPoint =
@@ -448,6 +445,49 @@ public class RoadMap
     }
 
 
+    public Vector2? GetClosetWpPairToPoint(Vector2 position, Vector2? direction, bool isOriginal, out WayPoint wp1,
+        out WayPoint wp2)
+    {
+        // Output way points
+        wp1 = null;
+        wp2 = null;
+
+        float closetDistance = Mathf.Infinity;
+        float angleCosineMax = Mathf.NegativeInfinity;
+        Vector2? closestPoint = null;
+
+        foreach (var wp in GetNode(isOriginal))
+        foreach (var con in wp.GetConnections(true))
+        {
+            Vector2 projectionPoint =
+                GeometryHelper.ClosestProjectionOnSegment(wp.GetPosition(), con.GetPosition(), position);
+
+            float distance = Vector2.Distance(position, projectionPoint);
+
+            if (distance <= closetDistance && _mapRenderer.VisibilityCheck(position, projectionPoint))
+            {
+                if (Equals(direction, null))
+                {
+                    Vector2 lineDirection = (wp.GetPosition() - con.GetPosition()).normalized;
+                    float angleCosine = Mathf.Abs(Vector2.Dot(direction.Value, lineDirection));
+
+                    if (angleCosine > angleCosineMax)
+                        angleCosineMax = angleCosine;
+                    else
+                        continue;
+                }
+
+                closetDistance = distance;
+                closestPoint = projectionPoint;
+                wp1 = wp;
+                wp2 = con;
+            }
+        }
+
+        return closestPoint;
+    }
+
+
     // Get the possible possible positions when expanded in a direction for a certain distance
     public void ProjectPositionsInDirection(ref List<PossiblePosition> positions, Vector2 pointOnRoadMap,
         RoadMapLine line, int pointCount, float totalDistance, NPC npc)
@@ -469,13 +509,13 @@ public class RoadMap
         {
             PointToProp pt = _points.Dequeue();
 
-            float distance = Vector2.Distance(pt.source, pt.target.GetPosition());
+            float distance = Vector2.Distance(pt.source, pt.targetWp.GetPosition());
             pt.nextStep = pt.nextStep <= 0f ? maxStep : pt.nextStep;
             pt.nextStep = Mathf.Min(pt.nextStep, pt.remainingDist);
 
             if (pt.nextStep <= distance)
             {
-                Vector2 displacement = (pt.target.GetPosition() - pt.source).normalized * pt.nextStep;
+                Vector2 displacement = (pt.targetWp.GetPosition() - pt.source).normalized * pt.nextStep;
                 Vector2 newPosition = pt.source + displacement;
                 pt.distance += pt.nextStep;
 
@@ -499,24 +539,25 @@ public class RoadMap
                 pt.nextStep -= distance;
 
                 // If it is a dead end then place a point at the end
-                if (pt.target.GetLines(true).Count == 1)
+                if (pt.targetWp.GetLines(true).Count == 1)
                 {
-                    PossiblePosition possiblePosition = new PossiblePosition(pt.target.GetPosition(), npc, pt.distance);
+                    PossiblePosition possiblePosition =
+                        new PossiblePosition(pt.targetWp.GetPosition(), npc, pt.distance);
                     positions.Add(possiblePosition);
                     continue;
                 }
 
                 // Loop through the connections of next Way point to add the points to propagate.
-                foreach (var newConn in pt.target.GetLines(true))
+                foreach (var newConn in pt.targetWp.GetLines(true))
                 {
                     // Skip if the line is the same
                     if (Equals(newConn, pt.line)) continue;
 
                     // set the new target
-                    WayPoint nextWp = Equals(newConn.wp1, pt.target) ? newConn.wp2 : newConn.wp1;
+                    WayPoint nextWp = Equals(newConn.wp1, pt.targetWp) ? newConn.wp2 : newConn.wp1;
 
                     // Add the point to the list
-                    _points.Enqueue(new PointToProp(pt.target.GetPosition(), nextWp, newConn, pt.nextStep,
+                    _points.Enqueue(new PointToProp(pt.targetWp.GetPosition(), nextWp, newConn, pt.nextStep,
                         pt.remainingDist, pt.distance, npc));
                 }
             }
@@ -541,14 +582,14 @@ public class RoadMap
                     WayPoint originalWp = wpToRemove.GetConnections(true)[0];
 
                     while (originalWp.GetConnections(true).Count > 0)
-                        originalWp.RemoveConnection(originalWp.GetConnections(true)[0], true, this);
+                        originalWp.RemoveConnection(originalWp.GetConnections(true)[0], true);
 
                     foreach (var line in originalWp.GetLines(true))
                     {
                         if (Equals(line.wp1, originalWp))
-                            originalWp.Connect(line.wp2, true, false, this);
+                            originalWp.Connect(line.wp2, true, false);
                         else
-                            originalWp.Connect(line.wp1, true, false, this);
+                            originalWp.Connect(line.wp1, true, false);
                     }
                 }
 
@@ -566,11 +607,11 @@ public class RoadMap
     public void InsertWpInLine(WayPoint firstWp, WayPoint secWp, WayPoint newWp)
     {
         // Disconnect the connected waypoints
-        firstWp.RemoveConnection(secWp, true, this);
+        firstWp.RemoveConnection(secWp, true);
 
         // Connect the new waypoint
-        newWp.Connect(firstWp, true, true, this);
-        newWp.Connect(secWp, true, true, this);
+        newWp.Connect(firstWp, true, true);
+        newWp.Connect(secWp, true, true);
     }
 
     public WayPoint GetGuardRoadMapNode(Vector2 position, float probability)
@@ -584,26 +625,34 @@ public class RoadMap
         return newWp;
     }
 
+    // Get the probability to give for the intermediate points
+    private float GetProbabilityValue(float distance, float fov, float maxDistance)
+    {
+        float value = Mathf.Max(distance - fov, 0f);
+
+        if (fov >= maxDistance) return 1f;
+
+        return 1f - value / (maxDistance - fov);
+    }
+
 
     public void ProjectPositionsInDirection(ref List<PossibleTrajectory> trajectory, Vector2 pointOnRoadMap,
-        RoadMapLine line, float totalDistance, NPC npc)
+        WayPoint wp1, WayPoint wp2, float stepSize, float totalDistance, NPC npc)
     {
         _points.Clear();
 
         // Get the next Way point 
-        WayPoint nextWayPoint = GetWayPointInDirection(pointOnRoadMap, npc.GetDirection(), line);
+        WayPoint nextWayPoint = GetWayPointInDirection(pointOnRoadMap, npc.GetDirection(), wp1, wp2);
         Vector2 source = pointOnRoadMap;
 
-        // Add a temporary way point to mark the guard possibly passing to
-        WayPoint sourceWp = GetGuardRoadMapNode(source, 1f);
-        InsertWpInLine(line.wp1, line.wp2, sourceWp);
+        // Add a temporary way point to mark the guard's position on the road map
+        float fov = Properties.GetFovRadius(NpcType.Guard);
+
+        WayPoint sourceWp = GetGuardRoadMapNode(source, GetProbabilityValue(0, fov, totalDistance));
+        InsertWpInLine(wp1, wp2, sourceWp);
         _tempWpsActual.Add(sourceWp);
 
-        float maxStep = totalDistance;
-
-        float nextStep = Mathf.Min(maxStep, totalDistance);
-
-        PointToProp ptp = new PointToProp(source, nextWayPoint, line, nextStep, totalDistance, 0f, npc);
+        PointToProp ptp = new PointToProp(source, sourceWp, nextWayPoint, stepSize, stepSize, totalDistance, 0f, npc);
         ptp.GetTrajectory().AddPoint(source);
 
         _points.Enqueue(ptp);
@@ -617,14 +666,14 @@ public class RoadMap
             PointToProp pt = _points.Dequeue();
             counter++;
 
-            float distance = Vector2.Distance(pt.source, pt.target.GetPosition());
-            pt.nextStep = pt.nextStep <= 0f ? maxStep : pt.nextStep;
+            float distance = Vector2.Distance(pt.source, pt.targetWp.GetPosition());
+            pt.nextStep = pt.nextStep <= 0f ? pt.stepSize : pt.nextStep;
             pt.nextStep = Mathf.Min(pt.nextStep, pt.remainingDist);
 
             // add a new point since it will not reach the next way point
             if (pt.nextStep <= distance)
             {
-                Vector2 displacement = (pt.target.GetPosition() - pt.source).normalized * pt.nextStep;
+                Vector2 displacement = (pt.targetWp.GetPosition() - pt.source).normalized * pt.nextStep;
                 Vector2 newPosition = pt.source + displacement;
                 pt.distance += pt.nextStep;
 
@@ -633,21 +682,20 @@ public class RoadMap
 
                 // Update the point's data
                 pt.remainingDist -= pt.nextStep;
+                pt.nextStep = 0f;
                 pt.source = newPosition;
-                pt.nextStep -= pt.nextStep;
+
+                // Add a temporary way point to mark the guard possibly passing to
+                WayPoint newWp = GetGuardRoadMapNode(newPosition, GetProbabilityValue(pt.distance, fov, totalDistance));
+                InsertWpInLine(pt.sourceWp, pt.targetWp, newWp);
+                pt.sourceWp = newWp;
+                _tempWpsActual.Add(newWp);
 
                 // If there are distance remaining then enqueue the point
                 if (pt.remainingDist > 0f)
                     _points.Enqueue(pt);
                 else
-                {
                     trajectory.Add(pt.GetTrajectory());
-
-                    // Add a temporary way point to mark the guard possibly passing to
-                    WayPoint newWp = GetGuardRoadMapNode(newPosition, 1f);
-                    InsertWpInLine(pt.line.wp1, pt.line.wp2, newWp);
-                    _tempWpsActual.Add(newWp);
-                }
             }
             else
             {
@@ -657,35 +705,35 @@ public class RoadMap
                 pt.nextStep -= distance;
 
                 // Set the probability to non zero since a guard might pass through here
-                pt.target.SetProbability(1f);
+                pt.targetWp.SetProbability(GetProbabilityValue(pt.distance, fov, totalDistance));
 
                 // If it is a dead end then place a point at the end
-                if (pt.target.GetLines(true).Count == 1)
+                if (pt.targetWp.GetConnections(true).Count == 1)
                 {
-                    pt.GetTrajectory().AddPoint(pt.target.GetPosition());
+                    pt.GetTrajectory().AddPoint(pt.targetWp.GetPosition());
                     trajectory.Add(pt.GetTrajectory());
 
                     // Add a temporary way point to mark the guard possibly passing to
-                    WayPoint newWp = GetGuardRoadMapNode(pt.target.GetPosition(), 1f);
-                    InsertWpInLine(pt.target.GetLines(true)[0].wp1, pt.target.GetLines(true)[0].wp2, newWp);
+                    WayPoint newWp =
+                        GetGuardRoadMapNode(pt.targetWp.GetPosition(), GetProbabilityValue(pt.distance, fov, totalDistance));
+                    InsertWpInLine(pt.sourceWp, pt.targetWp, newWp);
+                    pt.sourceWp = newWp;
                     _tempWpsActual.Add(newWp);
 
                     continue;
                 }
 
                 // Loop through the connections of next Way point to add the points to propagate.
-                foreach (var newConn in pt.target.GetLines(true))
+                foreach (var con in pt.targetWp.GetConnections(true))
                 {
-                    // Skip if the line is the same
-                    if (Equals(newConn, pt.line)) continue;
+                    // Skip if the connection is the same
+                    if (Equals(con, pt.sourceWp)) continue;
 
-                    // set the new target
-                    WayPoint nextWp = Equals(newConn.wp1, pt.target) ? newConn.wp2 : newConn.wp1;
-
-                    pt.GetTrajectory().AddPoint(pt.target.GetPosition());
+                    pt.GetTrajectory().AddPoint(pt.targetWp.GetPosition());
 
                     // Add the point to the list
-                    PointToProp newPt = new PointToProp(pt.target.GetPosition(), nextWp, newConn, pt.nextStep,
+                    PointToProp newPt = new PointToProp(pt.targetWp.GetPosition(), pt.targetWp, con, pt.nextStep,
+                        pt.stepSize,
                         pt.remainingDist, pt.distance, npc);
                     newPt.GetTrajectory().CopyTrajectory(pt.GetTrajectory());
                     _points.Enqueue(newPt);
@@ -704,6 +752,14 @@ public class RoadMap
         return dirSimilarityWp1 > 0f ? line.wp1 : line.wp2;
     }
 
+    private WayPoint GetWayPointInDirection(Vector2 source, Vector2 dir, WayPoint wp1, WayPoint wp2)
+    {
+        Vector2 directionToEndLine = (wp1.GetPosition() - source).normalized;
+        float dirSimilarityWp1 = Vector2.Dot(directionToEndLine, dir);
+
+        // If the dot product is positive then it is on the same direction.
+        return dirSimilarityWp1 > 0f ? wp1 : wp2;
+    }
 
     private Vector2? GetClosestIntersectionWithRoadmap(Vector2 start, Vector2 end)
     {
@@ -751,8 +807,8 @@ public class RoadMap
         _adHocWp.GetConnections(false)[0].RemoveLine(_adHocRmLine);
 
 
-        _adHocWp.GetConnections(false)[0].RemoveEdge(_adHocWp, false, this);
-        _adHocWp.RemoveEdge(_adHocWp.GetConnections(false)[0], false, this);
+        _adHocWp.GetConnections(false)[0].RemoveEdge(_adHocWp, false);
+        _adHocWp.RemoveEdge(_adHocWp.GetConnections(false)[0], false);
 
         _adHocRmLine = null;
         _adHocWp = null;
@@ -988,7 +1044,7 @@ public class RoadMap
             // if (t.GetProbability() == 0f)
             {
                 Gizmos.DrawSphere(t.GetPosition(), 0.025f);
-                Handles.Label(t.GetPosition(), t.Id.ToString());
+                Handles.Label(t.GetPosition(), t.GetProbability().ToString());
             }
 
             foreach (var wp in t.GetConnections(true))
@@ -998,20 +1054,23 @@ public class RoadMap
             }
         }
 
+
         Gizmos.color = Color.red;
         foreach (var t in _tempWpsActual)
         {
             Gizmos.DrawSphere(t.GetPosition(), 0.025f);
-            Handles.Label(t.GetPosition(), t.Id.ToString());
+            Handles.Label(t.GetPosition(), t.GetProbability().ToString());
 
-            string label = "";
+            // string label = "";
             foreach (var wp in t.GetConnections(true))
             {
-                // Gizmos.DrawLine(t.GetPosition(), wp.GetPosition());
-                label += wp.Id + " ";
+                if (_tempWpsActual.Contains(wp))
+                    Gizmos.DrawLine(t.GetPosition(), wp.GetPosition());
+                // label += wp.Id + " ";
             }
 
-            Handles.Label(Vector2.down * 0.5f + t.GetPosition(), label);
+            //
+            // Handles.Label(Vector2.down * 0.5f + t.GetPosition(), label);
         }
 
         // for (int j = i + 1; j < _wpsActual.Count; j++)
@@ -1043,11 +1102,15 @@ class PointToProp
     // source position of the point
     public Vector2 source;
 
+    public WayPoint sourceWp;
+
     // target way point of the propagation
-    public WayPoint target;
+    public WayPoint targetWp;
 
     // Road Map Edge the propagation is happening on
     public RoadMapLine line;
+
+    public float stepSize;
 
     // The length of the next step
     public float nextStep;
@@ -1060,12 +1123,26 @@ class PointToProp
 
     private PossibleTrajectory m_trajectory;
 
-    public PointToProp(Vector2 _source, WayPoint _target, RoadMapLine _line, float _nextStep, float _remainingDist,
+    public PointToProp(Vector2 _source, WayPoint _sourceWp, WayPoint _targetWp, float _nextStep, float _stepSize,
+        float _remainingDist,
         float _distance, NPC npc)
     {
         source = _source;
-        target = _target;
+        sourceWp = _sourceWp;
+        targetWp = _targetWp;
+        remainingDist = _remainingDist;
+        stepSize = _stepSize;
+        nextStep = _nextStep;
+        distance = _distance;
+        m_trajectory = new PossibleTrajectory(npc);
+    }
+
+    public PointToProp(Vector2 _source, WayPoint _targetWp, RoadMapLine _line, float _nextStep, float _remainingDist,
+        float _distance, NPC npc)
+    {
+        source = _source;
         line = _line;
+        targetWp = _targetWp;
         remainingDist = _remainingDist;
         nextStep = _nextStep;
         distance = _distance;

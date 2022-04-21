@@ -297,18 +297,20 @@ public class RoadMapScouter : Scouter
 
         _roadMap.ClearTempWayPoints();
 
+
         foreach (var guard in guards)
         {
             // Get the closest point on the road map to the guard
-            Vector2? point = _roadMap.GetLineToPoint(guard.GetTransform().position, guard.GetDirection(), true,
-                out RoadMapLine line);
+            Vector2? point = _roadMap.GetClosetWpPairToPoint(guard.GetTransform().position, guard.GetDirection(), true,
+                out WayPoint wp1, out WayPoint wp2);
+
 
             // if there is no intersection then abort
             if (!point.HasValue) return;
 
-            // Debug.Log("Line is " + line.wp1);
+            float fov = Properties.GetFovRadius(NpcType.Guard);
 
-            _roadMap.ProjectPositionsInDirection(ref _possibleTrajectories, point.Value, line,
+            _roadMap.ProjectPositionsInDirection(ref _possibleTrajectories, point.Value, wp1, wp2, fov * 0.5f,
                 GetGuardProjectionDistance(guard), guard);
         }
     }
@@ -454,10 +456,7 @@ public class RoadMapScouter : Scouter
             }
         }
 
-
         hs.ThreateningPosition = closestPointOnTrajectory;
-
-        Debug.Log(hs.ThreateningPosition);
 
         if (Equals(hs.ThreateningPosition, null))
         {
@@ -498,8 +497,8 @@ public class RoadMapScouter : Scouter
         {
             hs.SafetyUtility = 1f;
             return;
-        } 
-        
+        }
+
         if (hs.SafetyAbsoluteValue < 0.01f && !isPointInFront)
         {
             // hs.SafetyAbsoluteValue = _maxSafetyUtilitiesPerGuard[hs.ThreateningPosition.npc.name];
