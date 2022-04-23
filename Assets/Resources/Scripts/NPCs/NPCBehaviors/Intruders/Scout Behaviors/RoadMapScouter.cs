@@ -133,20 +133,19 @@ public class RoadMapScouter : Scouter
             // Update the fitness values of the hiding spots
             // intruder.SetDestination(goal.Value, true, false);
 
-
-            SetPathOnRoadmap(intruder, goal.Value, false);
+            SetPathOnRoadmap(intruder, goal.Value, false, 1f);
         }
     }
 
-    private void SetPathOnRoadmap(Intruder intruder, Vector2 goal, bool isForced)
+    private void SetPathOnRoadmap(Intruder intruder, Vector2 goal, bool isForced, float probabilityThreshold)
     {
         if (isForced || !intruder.IsBusy())
         {
             List<Vector2> pathToTake = intruder.GetPath();
-            GetShortestPath(intruder.GetTransform().position, goal, ref pathToTake, true);
+            GetShortestPath(intruder.GetTransform().position, goal, ref pathToTake, true, probabilityThreshold);
 
-            if (pathToTake.Count > 2)
-                EditorApplication.isPaused = true;
+            // if (pathToTake.Count > 2)
+            // EditorApplication.isPaused = true;
         }
     }
 
@@ -154,7 +153,8 @@ public class RoadMapScouter : Scouter
     // Get shortest path on the road map
     // The start node is a node on the road map and the goal is the position of the phantom 
     // for ease of implementation we start the search from the goal to the start node
-    private void GetShortestPath(Vector2 start, Vector2 goal, ref List<Vector2> path, bool isOriginal)
+    private void GetShortestPath(Vector2 start, Vector2 goal, ref List<Vector2> path, bool isOriginal,
+        float highestProbThreshold)
     {
         WayPoint startWp = _roadMap.GetClosestNodes(start, isOriginal);
         WayPoint goalWp = _roadMap.GetClosestNodes(goal, isOriginal);
@@ -185,29 +185,29 @@ public class RoadMapScouter : Scouter
         while (openListRoadMap.Count > 0)
         {
             WayPoint current = openListRoadMap[0];
-
             openListRoadMap.RemoveAt(0);
 
-            foreach (WayPoint p in current.GetConnections(isOriginal))
-            {
-                if (!closedListRoadMap.Contains(p))
+            if (highestProbThreshold > current.GetProbability())
+                foreach (WayPoint p in current.GetConnections(isOriginal))
                 {
-                    float gDistance = GetCostValue(current, p);
-                    float hDistance = GetHeuristicValue(current, goalWp);
-
-                    if (p.gDistance + p.hDistance > gDistance + hDistance)
+                    if (!closedListRoadMap.Contains(p))
                     {
-                        p.hDistance = hDistance;
-                        p.gDistance = gDistance;
+                        float gDistance = GetCostValue(current, p);
+                        float hDistance = GetHeuristicValue(current, goalWp);
 
-                        p.parent = current;
+                        if (p.gDistance + p.hDistance > gDistance + hDistance)
+                        {
+                            p.hDistance = hDistance;
+                            p.gDistance = gDistance;
+
+                            p.parent = current;
+                        }
+
+
+                        openListRoadMap.InsertIntoSortedList(p,
+                            (x, y) => x.GetFvalue().CompareTo(y.GetFvalue()), Order.Asc);
                     }
-
-
-                    openListRoadMap.InsertIntoSortedList(p,
-                        (x, y) => x.GetFvalue().CompareTo(y.GetFvalue()), Order.Asc);
                 }
-            }
 
             closedListRoadMap.Add(current);
 
@@ -242,7 +242,7 @@ public class RoadMapScouter : Scouter
             path.Add(node);
 
 
-        // SimplifyPath(ref path);
+        SimplifyPath(ref path);
     }
 
 
@@ -297,7 +297,6 @@ public class RoadMapScouter : Scouter
 
         _roadMap.ClearTempWayPoints();
 
-
         foreach (var guard in guards)
         {
             // Get the closest point on the road map to the guard
@@ -325,7 +324,7 @@ public class RoadMapScouter : Scouter
     {
         float fov = Properties.GetFovRadius(NpcType.Guard);
         float speed = Equals(npc, null) ? Properties.NpcSpeed : npc.GetCurrentSpeed();
-        return Mathf.Max(speed * fov * 20f, fov * 1.1f);
+        return Mathf.Max(speed * fov * 25f, fov * 1.1f);
     }
 
     private void EvaluateSpots(Intruder intruder, Vector2 goal, List<Guard> guards)
