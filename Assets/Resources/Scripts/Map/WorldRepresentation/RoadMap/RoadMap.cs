@@ -715,7 +715,8 @@ public class RoadMap
 
                     // Add a temporary way point to mark the guard possibly passing to
                     WayPoint newWp =
-                        GetGuardRoadMapNode(pt.targetWp.GetPosition(), GetProbabilityValue(pt.distance, fov, totalDistance));
+                        GetGuardRoadMapNode(pt.targetWp.GetPosition(),
+                            GetProbabilityValue(pt.distance, fov, totalDistance));
                     InsertWpInLine(pt.sourceWp, pt.targetWp, newWp);
                     pt.sourceWp = newWp;
                     _tempWpsActual.Add(newWp);
@@ -1038,18 +1039,21 @@ public class RoadMap
 
     public void DrawWalkableRoadmap()
     {
-        Gizmos.color = Color.yellow;
         foreach (var t in _wpsActual)
         {
-            // if (t.GetProbability() == 0f)
-            {
-                Gizmos.DrawSphere(t.GetPosition(), 0.025f);
-                Handles.Label(t.GetPosition(), t.GetProbability().ToString());
-            }
+            Gizmos.DrawSphere(t.GetPosition(), 0.025f);
+            float prob = Mathf.Round(t.GetProbability() * 100f) * 0.01f;
+            Handles.Label(t.GetPosition(), prob.ToString());
+
 
             foreach (var wp in t.GetConnections(true))
-                // if (t.GetProbability() != 0f || wp.GetProbability() != 0f)
             {
+                if (t.GetProbability() != 0f && wp.GetProbability() != 0f)
+                    Gizmos.color = Color.red;
+                else
+                    Gizmos.color = Color.yellow;
+
+
                 Gizmos.DrawLine(t.GetPosition(), wp.GetPosition());
             }
         }
@@ -1059,25 +1063,15 @@ public class RoadMap
         foreach (var t in _tempWpsActual)
         {
             Gizmos.DrawSphere(t.GetPosition(), 0.025f);
-            Handles.Label(t.GetPosition(), t.GetProbability().ToString());
+            float prob = Mathf.Round(t.GetProbability() * 100f) * 0.01f;
+            Handles.Label(t.GetPosition(), prob.ToString());
 
-            // string label = "";
             foreach (var wp in t.GetConnections(true))
             {
                 if (_tempWpsActual.Contains(wp))
                     Gizmos.DrawLine(t.GetPosition(), wp.GetPosition());
-                // label += wp.Id + " ";
             }
-
-            //
-            // Handles.Label(Vector2.down * 0.5f + t.GetPosition(), label);
         }
-
-        // for (int j = i + 1; j < _wpsActual.Count; j++)
-        //     if (_wpsActual[i].IsConnected(_wpsActual[j], true) && (_wpsActual[i].GetProbability() == 0f || _wpsActual[j].GetProbability() == 0f))
-        //     {
-        //         Gizmos.DrawLine(_wpsActual[i].GetPosition(), _wpsActual[j].GetPosition());
-        //     }
     }
 
 
@@ -1087,12 +1081,6 @@ public class RoadMap
         {
             line.DrawLine();
         }
-
-        // if (!Equals(_tempWpsActual, null))
-        //     foreach (var wp in _tempWpsActual)
-        //     {
-        //         wp.Draw();
-        //     }
     }
 }
 

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -20,6 +21,14 @@ public class RoadMapScouter : Scouter
 
     private List<HidingSpot> _availableSpots;
 
+
+    
+    public bool showPossibleInterceptionSpots;
+    private List<HidingSpot> _interceptionSpots;
+    
+    private bool _isTrajectoryInterceptionCoRunning;
+    private float _TrajectoryInterceptionUpdateFreqPerSec = 0.5f;
+
     // Update frequency parameters
     private float _lastUpdateTimestamp;
     private const float UpdateIntervalInSeconds = 0.5f;
@@ -33,9 +42,9 @@ public class RoadMapScouter : Scouter
     // List of curves to determine how utilities are mapped.
     [SerializeField] private AnimationCurve _SafetyCurve;
 
-    private List<Vector2> _tempPath;
 
     // path finding on the road map
+    private List<Vector2> _tempPath;
     List<WayPoint> openListRoadMap;
     List<WayPoint> closedListRoadMap;
 
@@ -51,14 +60,16 @@ public class RoadMapScouter : Scouter
 
         SetCurves();
 
-        _tempPath = new List<Vector2>();
+        _interceptionSpots = new List<HidingSpot>();
 
+        _tempPath = new List<Vector2>();
         openListRoadMap = new List<WayPoint>();
         closedListRoadMap = new List<WayPoint>();
 
         _maxSafetyUtilitiesPerGuard = new Dictionary<string, float>();
 
-        // showAvailableHidingspots = true;
+        showAvailableHidingspots = true;
+        showPossibleInterceptionSpots = true;
         // showProjectedTrajectories = true;
         showRoadmap = true;
     }
@@ -130,11 +141,88 @@ public class RoadMapScouter : Scouter
             float distanceToGoal = Vector2.Distance(goal.Value, bestHs.Position);
             goal = distanceToGoal / PathFinding.Instance.longestShortestPath < 0.1f ? goal.Value : bestHs.Position;
 
-            // Update the fitness values of the hiding spots
-            // intruder.SetDestination(goal.Value, true, false);
-
             SetPathOnRoadmap(intruder, goal.Value, false, 1f);
         }
+
+        if (_isTrajectoryInterceptionCoRunning) return;
+
+    }
+
+    private IEnumerator TrajectoryInterceptionCO()
+    {
+        _isTrajectoryInterceptionCoRunning = true;
+        
+        
+        
+        yield return new WaitForSeconds(0.5f);
+        _isTrajectoryInterceptionCoRunning = false;
+    }
+
+    private void LayTrajectoryInterceptionPoints(Intruder intruder)
+    {
+        _interceptionSpots.Clear();
+
+        float NPC_RADIUS = 0.05f;
+        float guardFovRadius = Properties.GetFovRadius(NpcType.Guard);
+
+        float shortestDistanceToTrajectory = Mathf.Infinity;
+        PossiblePosition closestPointOnTrajectory = null;
+        foreach (var trajectory in _possibleTrajectories)
+        {
+            Vector2? pointOnTrajectory =
+                GeometryHelper.GetClosetPointOnPath(trajectory.GetPath(), hs.Position, NPC_RADIUS);
+
+            float distance;
+            Vector2? closestPoint;
+            if (Equals(pointOnTrajectory, null))
+            {
+                closestPoint = trajectory.GetLastPoint();
+                distance =
+                    PathFinding.Instance.GetShortestPathDistance(closestPoint.Value, hs.Position);
+            }
+            else
+            {
+                closestPoint = pointOnTrajectory.Value;
+                distance = Vector2.Distance(hs.Position, closestPoint.Value);
+            }
+
+
+            if (distance < shortestDistanceToTrajectory)
+            {
+                closestPointOnTrajectory ??= new PossiblePosition(closestPoint.Value, trajectory.npc);
+
+                closestPointOnTrajectory.position = closestPoint.Value;
+                closestPointOnTrajectory.npc = trajectory.npc;
+                shortestDistanceToTrajectory = distance;
+            }
+        }
+
+        hs.ThreateningPosition = closestPointOnTrajectory;
+
+        if (Equals(hs.ThreateningPosition, null))
+        {
+            hs.SafetyAbsoluteValue = GetGuardProjectionDistance(null);
+            return;
+        }
+
+        // Assign the maximum safety value
+        float safetyValue = GetGuardProjectionDistance(hs.ThreateningPosition.npc);
+
+        // If the hiding position is approx within radius of guard trajectory, then adjust it's safety value.
+        if (shortestDistanceToTrajectory <= guardFovRadius)
+        {
+            float distanceFromGuardToPoint = PathFinding.Instance.GetShortestPathDistance(
+                closestPointOnTrajectory.npc.GetTransform().position,
+                closestPointOnTrajectory.position);
+
+            // Subtract the Fov radius so if the hiding position is already within vision it is not safe anymore.
+            safetyValue = distanceFromGuardToPoint - guardFovRadius;
+            safetyValue = Mathf.Max(0f, safetyValue);
+        }
+
+        hs.SafetyAbsoluteValue = safetyValue;
+        
+        
     }
 
     private void SetPathOnRoadmap(Intruder intruder, Vector2 goal, bool isForced, float probabilityThreshold)
@@ -143,9 +231,6 @@ public class RoadMapScouter : Scouter
         {
             List<Vector2> pathToTake = intruder.GetPath();
             GetShortestPath(intruder.GetTransform().position, goal, ref pathToTake, true, probabilityThreshold);
-
-            // if (pathToTake.Count > 2)
-            // EditorApplication.isPaused = true;
         }
     }
 
@@ -329,7 +414,6 @@ public class RoadMapScouter : Scouter
 
     private void EvaluateSpots(Intruder intruder, Vector2 goal, List<Guard> guards)
     {
-        // Parameters
         int numberOfAdjacentCell = 12;
         float radius = PathFinding.Instance.longestShortestPath * 1f;
 
@@ -479,10 +563,6 @@ public class RoadMapScouter : Scouter
         }
 
         hs.SafetyAbsoluteValue = safetyValue;
-
-
-        // if (hs.SafetyAbsoluteValue > _maxSafetyUtilitiesPerGuard[hs.ThreateningPosition.npc.name])
-        //     _maxSafetyUtilitiesPerGuard[hs.ThreateningPosition.npc.name] = hs.SafetyAbsoluteValue;
     }
 
 
@@ -499,12 +579,9 @@ public class RoadMapScouter : Scouter
         }
 
         if (hs.SafetyAbsoluteValue < 0.01f && !isPointInFront)
-        {
-            // hs.SafetyAbsoluteValue = _maxSafetyUtilitiesPerGuard[hs.ThreateningPosition.npc.name];
             hs.SafetyAbsoluteValue = GetGuardProjectionDistance(hs.ThreateningPosition.npc);
-        }
 
-        // hs.SafetyUtility = hs.SafetyAbsoluteValue / _maxSafetyUtilitiesPerGuard[hs.ThreateningPosition.npc.name];
+
         hs.SafetyUtility = hs.SafetyAbsoluteValue / GetGuardProjectionDistance(hs.ThreateningPosition.npc);
     }
 
@@ -585,12 +662,6 @@ public class RoadMapScouter : Scouter
     public void OnDrawGizmos()
     {
         base.OnDrawGizmos();
-
-        // if (Equals(_tempPath, null))
-        //     for (int i = 0; i < _tempPath.Count - 1; i++)
-        //     {
-        //         Gizmos.DrawLine(_tempPath[i], _tempPath[i + 1]);
-        //     }
 
 
         if (showRoadmap)
@@ -680,6 +751,11 @@ public class PossibleTrajectory
     public List<Vector2> GetPath()
     {
         return m_path;
+    }
+
+    public Vector2 GetFirstPoint()
+    {
+        return m_path[0];
     }
 
     public Vector2 GetLastPoint()

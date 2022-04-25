@@ -213,7 +213,7 @@ public class HidingSpot
 
     public void Draw()
     {
-        Gizmos.DrawSphere(Position + Vector2.down * 0.2f, 0.2f);
+        Gizmos.DrawSphere(Position + Vector2.down * 0.2f, 0.1f);
 
 #if UNITY_EDITOR
         string label = "";
