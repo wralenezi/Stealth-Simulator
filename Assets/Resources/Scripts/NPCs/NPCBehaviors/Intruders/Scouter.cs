@@ -7,11 +7,11 @@ public abstract class Scouter : MonoBehaviour
 {
     // Hiding spots manager
     public bool ShowHidingSpots;
-    protected HidingSpotsCtrlr m_HsC;
+    protected HidingSpotsCtrlr _HsC;
 
     public virtual void Initiate(MapManager mapManager)
     {
-        m_HsC = new HidingSpotsCtrlr(mapManager.GetWalls(), mapManager.mapRenderer.GetMapBoundingBox(), 10, 10);
+        _HsC = new HidingSpotsCtrlr(mapManager.GetWalls(), mapManager.mapRenderer.GetMapBoundingBox(), 10, 10);
     }
 
     public abstract void Begin();
@@ -23,6 +23,6 @@ public abstract class Scouter : MonoBehaviour
     public void OnDrawGizmos()
     {
         if (ShowHidingSpots)
-            m_HsC?.DrawHidingSpots();
+            _HsC?.DrawHidingSpots();
     }
 }

@@ -20,7 +20,8 @@ public abstract class NPC : MonoBehaviour
     public bool ShowPath;
 
     // The path the agent is meant to follow
-    private List<Vector2> PathToTake;
+    private List<Vector2> _pathToTake;
+    private List<Vector2> _fullPath;
 
     private Vector2? FacingDirection;
 
@@ -67,7 +68,9 @@ public abstract class NPC : MonoBehaviour
     public virtual void Initiate(NpcData data, VoiceParams _voice)
     {
         m_voiceParam = _voice;
-        PathToTake = new List<Vector2>();
+        _pathToTake = new List<Vector2>();
+        _fullPath = new List<Vector2>();
+        
         LinesToPassThrough = new List<RoadMapLine>();
 
         m_transform = transform;
@@ -98,7 +101,8 @@ public abstract class NPC : MonoBehaviour
     // Clear the designated goal and path to take
     public virtual void ClearGoal()
     {
-        PathToTake.Clear();
+        _pathToTake.Clear();
+        _fullPath.Clear();
         ClearLines();
     }
 
@@ -180,7 +184,19 @@ public abstract class NPC : MonoBehaviour
 
     public List<Vector2> GetPath()
     {
-        return PathToTake;
+        return _pathToTake;
+    }
+
+    public List<Vector2> GetFullPath()
+    {
+        _fullPath.Clear();
+        
+        _fullPath.Add(GetTransform().position);
+
+        foreach (var p in GetPath()) 
+            _fullPath.Add(p);
+
+        return _fullPath;
     }
 
     public List<Polygon> GetFov()
@@ -285,9 +301,9 @@ public abstract class NPC : MonoBehaviour
         m_hasToReach = hasToReach;
 
         // Get the shortest path to the goal
-        PathFinding.Instance.GetShortestPath(GetTransform().position, _goal, ref PathToTake);
+        PathFinding.Instance.GetShortestPath(GetTransform().position, _goal, ref _pathToTake);
         
-        PathToTake.RemoveAt(0);
+        _pathToTake.RemoveAt(0);
     }
 
     public void SetDirection(Vector2 direction)
@@ -298,7 +314,7 @@ public abstract class NPC : MonoBehaviour
     public Vector2? GetGoal()
     {
         Vector2? goal = null;
-        if (PathToTake.Count > 0) goal = PathToTake[PathToTake.Count - 1];
+        if (_pathToTake.Count > 0) goal = _pathToTake[_pathToTake.Count - 1];
         return goal;
     }
 
@@ -306,7 +322,7 @@ public abstract class NPC : MonoBehaviour
     // If the NPC has a path to take then they are busy.
     public virtual bool IsBusy()
     {
-        return PathToTake.Count > 0;
+        return _pathToTake.Count > 0;
     }
 
     // Get the current metrics of the agent's performance
@@ -322,13 +338,13 @@ public abstract class NPC : MonoBehaviour
     {
         if (CheckIfUserInput(state))
             MoveByInput(deltaTime);
-        else if (PathToTake.Count > 0)
-            if (GoStraightTo(PathToTake[0], deltaTime))
+        else if (_pathToTake.Count > 0)
+            if (GoStraightTo(_pathToTake[0], deltaTime))
             {
-                PathToTake.RemoveAt(0);
+                _pathToTake.RemoveAt(0);
 
                 // When the path is over clear the goal.
-                if (PathToTake.Count == 0) ClearGoal();
+                if (_pathToTake.Count == 0) ClearGoal();
             }
 
         // Update the total distance traveled
@@ -442,15 +458,15 @@ public abstract class NPC : MonoBehaviour
     {
         float totalDistance = 0;
 
-        if (PathToTake.Count == 0) return totalDistance;
+        if (_pathToTake.Count == 0) return totalDistance;
 
-        totalDistance += Vector2.Distance(GetTransform().position, PathToTake[0]);
+        totalDistance += Vector2.Distance(GetTransform().position, _pathToTake[0]);
 
-        if (PathToTake.Count < 2) return totalDistance;
+        if (_pathToTake.Count < 2) return totalDistance;
 
-        for (int i = 0; i < PathToTake.Count - 1; i++)
+        for (int i = 0; i < _pathToTake.Count - 1; i++)
         {
-            totalDistance += Vector2.Distance(PathToTake[i], PathToTake[i + 1]);
+            totalDistance += Vector2.Distance(_pathToTake[i], _pathToTake[i + 1]);
         }
 
         return totalDistance;
@@ -483,15 +499,15 @@ public abstract class NPC : MonoBehaviour
 
     public void OnDrawGizmos()
     {
-        if (ShowPath && PathToTake != null & PathToTake.Count > 0)
+        if (ShowPath && _pathToTake != null & _pathToTake.Count > 0)
         {
-            for (int i = 0; i < PathToTake.Count - 1; i++)
+            for (int i = 0; i < _pathToTake.Count - 1; i++)
             {
-                Gizmos.DrawLine(PathToTake[i], PathToTake[i + 1]);
-                Gizmos.DrawSphere(PathToTake[i], 0.025f);
+                Gizmos.DrawLine(_pathToTake[i], _pathToTake[i + 1]);
+                Gizmos.DrawSphere(_pathToTake[i], 0.025f);
             }
 
-            Gizmos.DrawSphere(PathToTake[PathToTake.Count - 1], 0.025f);
+            Gizmos.DrawSphere(_pathToTake[_pathToTake.Count - 1], 0.025f);
         }
     }
 }

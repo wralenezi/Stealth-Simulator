@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -8,7 +7,6 @@ public class HidingSpotsCtrlr
 {
     // the hiding spots
     private List<HidingSpot> m_HidingSpots;
-
 
     private PartitionGrid<HidingSpot> m_spots;
 
@@ -54,13 +52,16 @@ public class HidingSpotsCtrlr
                     // Minimum edge length to place a hiding spot
                     float minEdge = 0.5f;
 
+                    HidingSpot leftSpot = null;
+                    HidingSpot rightSpot = null;
+
                     float rightEdgeLength = Vector2.Distance(wall.GetPoint(j), wall.GetPoint(j - 1));
                     if (minEdge < rightEdgeLength)
                     {
                         // Place a spot on the right side of the corner
                         Vector2 rightSide = (wall.GetPoint(j) - wall.GetPoint(j - 1)).normalized * distanceFromCorner;
                         Vector2 rightSpotPosition = wall.GetPoint(j) + angleNormal - rightSide;
-                        PlaceHidingSpot(rightSpotPosition, walls);
+                        leftSpot = PlaceHidingSpot(rightSpotPosition, walls);
                     }
 
                     float leftEdgeLength = Vector2.Distance(wall.GetPoint(j + 1), wall.GetPoint(j));
@@ -69,7 +70,12 @@ public class HidingSpotsCtrlr
                         // Place a spot on the left side of the corner
                         Vector2 leftSide = (wall.GetPoint(j + 1) - wall.GetPoint(j)).normalized * distanceFromCorner;
                         Vector2 leftSpotPosition = wall.GetPoint(j) + angleNormal + leftSide;
-                        PlaceHidingSpot(leftSpotPosition, walls);
+                        rightSpot = PlaceHidingSpot(leftSpotPosition, walls);
+                    }
+
+                    if (!Equals(leftSpot, null) && !Equals(rightSpot, null))
+                    {
+                        leftSpot.reflexNeighbour = rightSpot;
                     }
                 }
             }
@@ -77,15 +83,17 @@ public class HidingSpotsCtrlr
     }
 
 
-    private void PlaceHidingSpot(Vector2 position, List<Polygon> interiorWalls)
+    private HidingSpot PlaceHidingSpot(Vector2 position, List<Polygon> interiorWalls)
     {
         // Make sure the position is inside the walls
-        if (!PolygonHelper.IsPointInPolygons(interiorWalls, position)) return;
+        if (!PolygonHelper.IsPointInPolygons(interiorWalls, position)) return null;
 
         HidingSpot hSr = new HidingSpot(position, Isovists.Instance.GetCoverRatio(position));
 
         m_HidingSpots.Add(hSr);
         m_spots.Add(hSr, hSr.Position);
+
+        return hSr;
     }
 
     private float GetAverageDistancesToHidingSpots(HidingSpot hidingSpot, List<PossiblePosition> possiblePositions)
@@ -178,7 +186,6 @@ public class HidingSpot
     /// </summary>
     public float OcclusionUtility;
 
-
     public PossiblePosition ThreateningPosition;
 
     /// <summary>
@@ -203,13 +210,34 @@ public class HidingSpot
     // A flag if the spot is occluded from all guards on the map
     public bool IsOccludedFromGuards;
 
+    /// <summary>
+    /// Visible and neighbouring hiding spot
+    /// </summary>
+    public List<HidingSpot> _neighbouringSpots;
+
+    public HidingSpot reflexNeighbour;
+
     public HidingSpot(Vector2 _position, float _coverRatio)
     {
         Position = _position;
         CoverRatio = _coverRatio;
         Fitness = 0f;
         ThreateningPosition = null;
+        _neighbouringSpots = new List<HidingSpot>();
+        reflexNeighbour = null;
     }
+
+    public void PairHidingSpots(HidingSpot spot)
+    {
+        AddNeighbour(spot);
+        spot.AddNeighbour(this);
+    }
+
+    public void AddNeighbour(HidingSpot spot)
+    {
+        _neighbouringSpots.Add(spot);
+    }
+
 
     public void Draw()
     {

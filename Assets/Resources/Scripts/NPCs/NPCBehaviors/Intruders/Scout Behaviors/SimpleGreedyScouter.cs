@@ -12,9 +12,9 @@ public class SimpleGreedyScouter : Scouter
         {
             if (intruder.IsBusy()) return;
 
-            m_HsC.AssignHidingSpotsFitness(NpcsManager.Instance.GetGuards());
-            intruder.SetDestination(m_HsC.GetBestHidingSpot().Value, true, false);
-            StartCoroutine(intruder.waitThenMove(m_HsC.GetBestHidingSpot().Value));
+            _HsC.AssignHidingSpotsFitness(NpcsManager.Instance.GetGuards());
+            intruder.SetDestination(_HsC.GetBestHidingSpot().Value, true, false);
+            StartCoroutine(intruder.waitThenMove(_HsC.GetBestHidingSpot().Value));
         }
     }
 }
