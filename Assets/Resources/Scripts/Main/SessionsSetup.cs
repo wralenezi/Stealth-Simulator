@@ -265,6 +265,64 @@ public class SessionsSetup : MonoBehaviour
     }
 
 
+    public static List<Session> StealthStudyProcedural()
+    {
+        List<Session> sessions = new List<Session>();
+
+        // Methods that will be considered 
+        List<SearchPlanner> guardMethods = new List<SearchPlanner>()
+        {
+            SearchPlanner.RmPropSimple //, SearchPlanner.RmPropOccupancyDiffusal
+            // SearchPlanner.Random
+        };
+
+        List<PlanOutput> pathTypes = new List<PlanOutput>()
+        {
+            //PlanOutput.Point,
+            PlanOutput.DijkstraPath //,
+            //PlanOutput.DijkstraPathMax,
+            //PlanOutput.HillClimbPath
+        };
+
+        SpeechType speechMethod = SpeechType.Simple;
+        string color = "blue";
+
+        foreach (var guardMethod in guardMethods)
+        foreach (var pathType in pathTypes)
+        {
+            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, color, 2, 1,
+                new MapData("MgsDock", 2f), speechMethod, SurveyType.EndEpisode);
+
+            // Add guards
+            for (int i = 0; i < session.guardsCount; i++)
+            {
+                Behavior behavior = new Behavior(PatrolPlanner.gRoadMap, AlertPlanner.Simple,
+                    guardMethod, pathType);
+
+                session.AddNpc(i + 1, NpcType.Guard, behavior, PathFindingHeursitic.EuclideanDst,
+                    PathFollowing.SimpleFunnel, null);
+            }
+
+            // Add intruders
+            for (int i = 0; i < session.intruderCount; i++)
+            {
+                // Behavior behavior = new Behavior(PatrolPlanner.UserInput, AlertPlanner.UserInput,
+                //     SearchPlanner.UserInput, pathType);
+
+                Behavior behavior = new Behavior(PatrolPlanner.iRoadMap, AlertPlanner.iHeuristic,
+                    SearchPlanner.iHeuristic, pathType);
+
+                session.AddNpc(i + 1, NpcType.Intruder, behavior, PathFindingHeursitic.EuclideanDst,
+                    PathFollowing.SimpleFunnel, new NpcLocation(new Vector2(-13.25f, 4.4f), 0f));
+            }
+
+            sessions.Add(session);
+        }
+
+        return sessions;
+    }
+
+
     public static List<Session> StealthStudy002()
     {
         List<Session> sessions = new List<Session>();

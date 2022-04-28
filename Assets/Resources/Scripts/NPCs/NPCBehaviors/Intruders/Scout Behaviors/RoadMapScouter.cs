@@ -19,6 +19,7 @@ public class RoadMapScouter : Scouter
     /// List of hiding spots available for the intruder to choose from.
     /// </summary>
     public bool showAvailableHidingspots;
+
     private List<HidingSpot> _availableSpots;
 
     public bool showRiskSpots;
@@ -49,6 +50,8 @@ public class RoadMapScouter : Scouter
     public override void Initiate(MapManager mapManager)
     {
         base.Initiate(mapManager);
+
+        _availableSpots = new List<HidingSpot>();
 
         _possibleTrajectories = new List<PossibleTrajectory>();
 
@@ -137,7 +140,7 @@ public class RoadMapScouter : Scouter
             float distanceToGoal = Vector2.Distance(goal.Value, bestHs.Position);
             goal = distanceToGoal / PathFinding.Instance.longestShortestPath < 0.1f ? goal.Value : bestHs.Position;
 
-            SetPathOnRoadmap(intruder, goal.Value, false, 1f);
+            SetPathOnRoadmap(intruder, goal.Value, false, 0.7f);
         }
 
         if (_isTrajectoryInterceptionCoRunning && !intruder.IsBusy()) return;
@@ -147,14 +150,20 @@ public class RoadMapScouter : Scouter
     private IEnumerator TrajectoryInterceptionCO(Intruder intruder)
     {
         _isTrajectoryInterceptionCoRunning = true;
-        if (!IsPathSafe(intruder))
+        if (!IsPathSafe(intruder, 0.4f))
             intruder.ClearGoal();
         else
             yield return new WaitForSeconds(0.5f);
         _isTrajectoryInterceptionCoRunning = false;
     }
 
-    private bool IsPathSafe(Intruder intruder)
+    /// <summary>
+    /// CHecking if a path is safe to take
+    /// </summary>
+    /// <param name="intruder"></param>
+    /// <param name="safetyThreshold"> How safe we want the path to be, 0 is max prudent and 1 is the most careless</param>
+    /// <returns></returns>
+    private bool IsPathSafe(Intruder intruder, float safetyThreshold)
     {
         _riskSpots.Clear();
 
@@ -200,15 +209,28 @@ public class RoadMapScouter : Scouter
         riskSpot.risk = riskValue;
         _riskSpots.Add(riskSpot);
 
-        return riskSpot.risk <= 0.5f;
+        bool isSafe = riskValue <= safetyThreshold;
+
+        if (isSafe) return true;
+
+        return false;
+
+        // If it is risky and the current position of the intruder is risky as well, ignore the danger and consider it safe.
+        float distanceIntruderFromGuard = PathFinding.Instance.GetShortestPathDistance(
+            closestPointOnTrajectory.position,
+            closestTrajectory.npc.GetTransform().position);
+        float riskIntruderValue = RoadMap.GetProbabilityValue(distanceIntruderFromGuard, guardFovRadius,
+            GetGuardProjectionDistance(closestTrajectory.npc));
+        
+        return riskIntruderValue >= safetyThreshold;
     }
 
-    private void SetPathOnRoadmap(Intruder intruder, Vector2 goal, bool isForced, float probabilityThreshold)
+    private void SetPathOnRoadmap(Intruder intruder, Vector2 goal, bool isForced, float highestRiskThreshold)
     {
         if (isForced || !intruder.IsBusy())
         {
             List<Vector2> pathToTake = intruder.GetPath();
-            GetShortestPath(intruder.GetTransform().position, goal, ref pathToTake, true, probabilityThreshold);
+            GetShortestPath(intruder.GetTransform().position, goal, ref pathToTake, true, highestRiskThreshold);
         }
     }
 
@@ -217,7 +239,7 @@ public class RoadMapScouter : Scouter
     // The start node is a node on the road map and the goal is the position of the phantom 
     // for ease of implementation we start the search from the goal to the start node
     private void GetShortestPath(Vector2 start, Vector2 goal, ref List<Vector2> path, bool isOriginal,
-        float highestProbThreshold)
+        float highestRiskThreshold)
     {
         WayPoint startWp = _roadMap.GetClosestNodes(start, isOriginal);
         WayPoint goalWp = _roadMap.GetClosestNodes(goal, isOriginal);
@@ -250,7 +272,7 @@ public class RoadMapScouter : Scouter
             WayPoint current = openListRoadMap[0];
             openListRoadMap.RemoveAt(0);
 
-            if (highestProbThreshold > current.GetProbability())
+            if (highestRiskThreshold >= current.GetProbability())
                 foreach (WayPoint p in current.GetConnections(isOriginal))
                 {
                     if (!closedListRoadMap.Contains(p))
@@ -392,28 +414,36 @@ public class RoadMapScouter : Scouter
 
     private void EvaluateSpots(Intruder intruder, Vector2 goal, List<Guard> guards)
     {
-        int numberOfAdjacentCell = 12;
-        float radius = PathFinding.Instance.longestShortestPath * 1f;
+        _HsC.GetSpotsOfInterest(intruder.GetTransform().position, ref _availableSpots);
 
-        _availableSpots = _HsC.GetHidingSpots(intruder.GetTransform().position, numberOfAdjacentCell);
+        // int numberOfAdjacentCell = 12;
+        // _availableSpots = _HsC.GetHidingSpots(intruder.GetTransform().position, numberOfAdjacentCell);
+        //
+        
+        // Remove spots that are too far away
+        float radius = PathFinding.Instance.longestShortestPath * 0.5f;
+        int counter = 0;
+        while ( counter < _availableSpots.Count)
+        {
+            HidingSpot hs = _availableSpots[counter];
+        
+            float distanceToHs =
+                PathFinding.Instance.GetShortestPathDistance(hs.Position, intruder.GetTransform().position);
+            
+            if (distanceToHs > radius)
+            {
+                _availableSpots.RemoveAt(counter);
+                continue;
+            }
+        
+            counter++;
+        }
 
-        _maxSafetyUtilitiesPerGuard.Clear();
-        foreach (var guard in guards)
-            _maxSafetyUtilitiesPerGuard.Add(guard.name, Mathf.NegativeInfinity);
 
         int i = 0;
         while (i < _availableSpots.Count)
         {
             HidingSpot hs = _availableSpots[i];
-
-            float distanceToHs =
-                PathFinding.Instance.GetShortestPathDistance(hs.Position, intruder.GetTransform().position);
-
-            if (distanceToHs > radius)
-            {
-                _availableSpots.RemoveAt(i);
-                continue;
-            }
 
             SetSafetyValue(hs);
             SetGoalUtility(hs, goal);
@@ -430,8 +460,8 @@ public class RoadMapScouter : Scouter
 
     private HidingSpot GetBestSpot()
     {
-        // return GetBestHidingSpot_fixedValues();
-        return GetBestSpot_Simple();
+        return GetBestHidingSpot_fixedValues();
+        // return GetBestSpot_Simple();
     }
 
 

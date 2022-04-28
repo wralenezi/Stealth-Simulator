@@ -18,6 +18,8 @@ public class HidingSpotsCtrlr
         m_spots = new PartitionGrid<HidingSpot>(bounds, colCount, rowCount);
 
         CreateHidingSpots(walls);
+
+        PairHidingSpots();
     }
 
 
@@ -76,12 +78,61 @@ public class HidingSpotsCtrlr
                     if (!Equals(leftSpot, null) && !Equals(rightSpot, null))
                     {
                         leftSpot.reflexNeighbour = rightSpot;
+                        rightSpot.reflexNeighbour = leftSpot;
+                        leftSpot.PairHidingSpots(rightSpot);
                     }
                 }
             }
         }
     }
 
+
+    private void PairHidingSpots()
+    {
+        for (int i = 0; i < m_HidingSpots.Count; i++)
+        {
+            HidingSpot currentSpot = m_HidingSpots[i];
+
+            for (int j = i + 1; j < m_HidingSpots.Count; j++)
+            {
+                HidingSpot possibleNeighbour = m_HidingSpots[j];
+
+                bool isVisible =
+                    GeometryHelper.IsCirclesVisible(currentSpot.Position, possibleNeighbour.Position, 0.05f, "Wall");
+
+                if (!isVisible) continue;
+
+                currentSpot.PairHidingSpots(possibleNeighbour);
+                if (!Equals(possibleNeighbour.reflexNeighbour, null))
+                    currentSpot.AddNeighbour(possibleNeighbour.reflexNeighbour);
+            }
+        }
+    }
+
+    public void GetSpotsOfInterest(Vector2 intruderPosition, ref List<HidingSpot> hidingSpots)
+    {
+        hidingSpots.Clear();
+
+        float shortestSqrDistance = Mathf.Infinity;
+        HidingSpot closestSpot = null;
+        foreach (var spot in m_HidingSpots)
+        {
+            Vector2 offset = intruderPosition - spot.Position;
+            float sqrDistance = offset.SqrMagnitude();
+            if (shortestSqrDistance > sqrDistance)
+            {
+                shortestSqrDistance = sqrDistance;
+                closestSpot = spot;
+            }
+        }
+
+        if (Equals(closestSpot, null)) return;
+        
+        hidingSpots.Add(closestSpot);
+        List<HidingSpot> neighbours = closestSpot.GetNeighbours();
+        foreach (var n in neighbours)
+            hidingSpots.Add(n);
+    }
 
     private HidingSpot PlaceHidingSpot(Vector2 position, List<Polygon> interiorWalls)
     {
@@ -235,7 +286,13 @@ public class HidingSpot
 
     public void AddNeighbour(HidingSpot spot)
     {
-        _neighbouringSpots.Add(spot);
+        if (!_neighbouringSpots.Contains(spot))
+            _neighbouringSpots.Add(spot);
+    }
+
+    public List<HidingSpot> GetNeighbours()
+    {
+        return _neighbouringSpots;
     }
 
 
