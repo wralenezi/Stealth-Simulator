@@ -336,6 +336,8 @@ public abstract class NPC : MonoBehaviour
     // Move the NPC through it's path
     public void ExecutePlan(State state, float deltaTime)
     {
+        SetPosition();
+
         if (CheckIfUserInput(state))
             MoveByInput(deltaTime);
         else if (_pathToTake.Count > 0)
@@ -369,8 +371,6 @@ public abstract class NPC : MonoBehaviour
     // Rotate to a specific target and then move towards it; return a boolean if the point is reached or not
     private bool GoStraightTo(Vector3 target, float deltaTime)
     {
-        SetPosition();
-
         Vector3 currentPosition = GetTransform().position;
         Quaternion currentRotation = GetTransform().rotation;
         

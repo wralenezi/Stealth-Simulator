@@ -313,7 +313,7 @@ public abstract class RoadMapSearcher : Searcher
         float maxUtility = Mathf.NegativeInfinity;
         foreach (var expandedPoint in m_ExpandedPoints)
         {
-            point = m_RoadMap.GetLineToPoint(expandedPoint.position, null, true, out RoadMapLine tempLine);
+            point = m_RoadMap.GetLineToPoint(expandedPoint.GetPosition().Value, null, true, out RoadMapLine tempLine);
 
             if (!point.HasValue) continue;
 
@@ -469,7 +469,7 @@ public abstract class RoadMapSearcher : Searcher
         float maxUtility = Mathf.NegativeInfinity;
         foreach (var expandedPoint in m_ExpandedPoints)
         {
-            point = m_RoadMap.GetLineToPoint(expandedPoint.position, null, true, out RoadMapLine tempLine);
+            point = m_RoadMap.GetLineToPoint(expandedPoint.GetPosition().Value, null, true, out RoadMapLine tempLine);
 
             if (!point.HasValue) continue;
 
@@ -732,7 +732,7 @@ public abstract class RoadMapSearcher : Searcher
             {
                 foreach (var point in m_ExpandedPoints)
                 {
-                    Gizmos.DrawSphere(point.position, 0.5f);
+                    Gizmos.DrawSphere(point.GetPosition().Value, 0.5f);
                 }
             }
     }

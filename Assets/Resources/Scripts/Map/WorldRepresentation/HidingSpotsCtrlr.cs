@@ -10,6 +10,7 @@ public class HidingSpotsCtrlr
 
     private PartitionGrid<HidingSpot> m_spots;
 
+    private float NPC_RADIUS = 0.05f;
 
     public HidingSpotsCtrlr(List<Polygon> walls, Bounds bounds, int colCount, int rowCount)
     {
@@ -92,21 +93,28 @@ public class HidingSpotsCtrlr
         for (int i = 0; i < m_HidingSpots.Count; i++)
         {
             HidingSpot currentSpot = m_HidingSpots[i];
+            int visibleSpotsCount = 0;
 
             for (int j = i + 1; j < m_HidingSpots.Count; j++)
             {
                 HidingSpot possibleNeighbour = m_HidingSpots[j];
 
                 bool isVisible =
-                    GeometryHelper.IsCirclesVisible(currentSpot.Position, possibleNeighbour.Position, 0.05f, "Wall");
+                    GeometryHelper.IsCirclesVisible(currentSpot.Position, possibleNeighbour.Position, NPC_RADIUS,
+                        "Wall");
 
                 if (!isVisible) continue;
 
                 currentSpot.PairHidingSpots(possibleNeighbour);
-                if (!Equals(possibleNeighbour.reflexNeighbour, null))
-                    currentSpot.AddNeighbour(possibleNeighbour.reflexNeighbour);
+                visibleSpotsCount++;
             }
+
+            currentSpot.VisibleSpotsCount = visibleSpotsCount;
         }
+
+
+        foreach (var currentSpot in m_HidingSpots)
+            currentSpot.OcclusionUtility = 1f - currentSpot.VisibleSpotsCount / m_HidingSpots.Count;
     }
 
     public void GetSpotsOfInterest(Vector2 intruderPosition, ref List<HidingSpot> hidingSpots)
@@ -127,7 +135,7 @@ public class HidingSpotsCtrlr
         }
 
         if (Equals(closestSpot, null)) return;
-        
+
         hidingSpots.Add(closestSpot);
         List<HidingSpot> neighbours = closestSpot.GetNeighbours();
         foreach (var n in neighbours)
@@ -151,7 +159,7 @@ public class HidingSpotsCtrlr
     {
         float totalDistances = 0;
         foreach (var possiblePosition in possiblePositions)
-            totalDistances += Vector2.Distance(possiblePosition.position, hidingSpot.Position) *
+            totalDistances += Vector2.Distance(possiblePosition.GetPosition().Value, hidingSpot.Position) *
                               possiblePosition.safetyMultiplier;
 
 
@@ -163,7 +171,7 @@ public class HidingSpotsCtrlr
         float minDistance = Mathf.Infinity;
         foreach (var possiblePosition in possiblePositions)
         {
-            float distance = Vector2.Distance(possiblePosition.position, hidingSpot.Position) *
+            float distance = Vector2.Distance(possiblePosition.GetPosition().Value, hidingSpot.Position) *
                              possiblePosition.safetyMultiplier;
 
             minDistance = (distance < minDistance) ? distance : minDistance;
@@ -223,9 +231,9 @@ public class HidingSpot
     public Vector2 Position;
 
     /// <summary>
-    /// How well the spot is generally hidden in the map; 0 is easily observable, 1 is well hidden.
+    /// Utility of how risky this spot from potential guard movements
     /// </summary>
-    public float CoverRatio;
+    public float RiskLikelihood;
 
     /// <summary>
     /// How close this spot to the goal
@@ -233,20 +241,24 @@ public class HidingSpot
     public float GoalUtility;
 
     /// <summary>
-    /// Utility of how occluded the spot from guards
+    /// The cost of navigating to this spot 
     /// </summary>
-    public float OcclusionUtility;
-
-    public PossiblePosition ThreateningPosition;
+    public float CostUtility;
 
     /// <summary>
-    /// Utility of how safe this spot from potential guard movements
+    /// How well the spot is generally hidden in the map; 0 is easily observable, 1 is well hidden.
     /// </summary>
-    public float SafetyUtility;
+    public float CoverUtility;
 
-    // same value but before normalizing
-    public float SafetyAbsoluteValue;
+    /// <summary>
+    /// The number of visible hiding spots from this spot.
+    /// </summary>
+    public float VisibleSpotsCount;
 
+    /// <summary>
+    /// How well occluded this spot compare to the other spots, 0 means this spot is visible by all other spots, and 1 means no spots can see this spot.
+    /// </summary>
+    public float OcclusionUtility;
 
     /// <summary>
     /// Utility of how far this spot is from guards' current positions.
@@ -258,8 +270,7 @@ public class HidingSpot
     /// </summary>
     public float Fitness;
 
-    // A flag if the spot is occluded from all guards on the map
-    public bool IsOccludedFromGuards;
+    public PossiblePosition ThreateningPosition;
 
     /// <summary>
     /// Visible and neighbouring hiding spot
@@ -271,7 +282,7 @@ public class HidingSpot
     public HidingSpot(Vector2 _position, float _coverRatio)
     {
         Position = _position;
-        CoverRatio = _coverRatio;
+        CoverUtility = _coverRatio;
         Fitness = 0f;
         ThreateningPosition = null;
         _neighbouringSpots = new List<HidingSpot>();
@@ -302,10 +313,10 @@ public class HidingSpot
 
 #if UNITY_EDITOR
         string label = "";
-        label += "Safety: " + (Mathf.Round(SafetyUtility * 100f) / 100f) + " \n";
+        label += "Risk: " + (Mathf.Round(RiskLikelihood * 100f) / 100f) + " \n";
         label += "Goal: " + (Mathf.Round(GoalUtility * 100f) / 100f) + " \n";
-        label += "GuardProximity: " + (Mathf.Round(GuardProximityUtility * 100f) / 100f) + " \n";
-        label += "CoverRatio: " + (Mathf.Round(CoverRatio * 100f) / 100f) + " \n";
+        label += "Occlusion: " + (Mathf.Round(OcclusionUtility * 100f) / 100f) + " \n";
+        // label += "CoverRatio: " + (Mathf.Round(CoverUtility * 100f) / 100f) + " \n";
         Handles.Label(Position, label);
 #endif
     }

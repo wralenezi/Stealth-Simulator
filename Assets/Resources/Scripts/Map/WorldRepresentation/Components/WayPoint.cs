@@ -21,9 +21,10 @@ public class WayPoint
 
     // The original lines connected to this way point
     private List<RoadMapLine> _originalLines;
-
+    
     // probability that a guard is going to pass through here; when it is zero
     private float _probabilityGuardPassing;
+    private NPC _passingGuard;
 
     // The ID of the way point
     public int Id;
@@ -52,6 +53,7 @@ public class WayPoint
         _mapLines = new List<RoadMapLine>();
         _originalLines = new List<RoadMapLine>();
         _probabilityGuardPassing = 0f;
+        _passingGuard = null;
         Id = _id;
     }
 
@@ -65,6 +67,7 @@ public class WayPoint
         _connections = new List<WayPoint>();
         _mapLines = new List<RoadMapLine>();
         _originalLines = new List<RoadMapLine>();
+        _passingGuard = null;
         Id = 0;
     }
 
@@ -174,14 +177,20 @@ public class WayPoint
         return hDistance + gDistance;
     }
 
-    public void SetProbability(float probability)
+    public void SetProbability(NPC passingGuard, float probability)
     {
         _probabilityGuardPassing = probability;
+        _passingGuard = passingGuard;
     }
 
     public float GetProbability()
     {
         return _probabilityGuardPassing;
+    }
+
+    public NPC GetPassingGuard()
+    {
+        return _passingGuard;
     }
 
     public List<WayPoint> GetConnections(bool isOriginal)

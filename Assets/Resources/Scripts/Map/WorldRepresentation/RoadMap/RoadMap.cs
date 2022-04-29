@@ -570,7 +570,7 @@ public class RoadMap
         try
         {
             foreach (var wp in _wpsActual)
-                wp.SetProbability(0f);
+                wp.SetProbability(null,0f);
 
 
             while (_tempWpsActual.Count > 0)
@@ -614,11 +614,11 @@ public class RoadMap
         newWp.Connect(secWp, true, true);
     }
 
-    public WayPoint GetGuardRoadMapNode(Vector2 position, float probability)
+    public WayPoint GetGuardRoadMapNode(Vector2 position, NPC passingGuard,  float probability)
     {
         WayPoint newWp = new WayPoint(position);
 
-        newWp.SetProbability(probability);
+        newWp.SetProbability(passingGuard, probability);
 
         newWp.Id = _wpsActual.Count + _tempWpsActual.Count;
 
@@ -635,6 +635,10 @@ public class RoadMap
         return Mathf.Max(1f - value / (maxDistance - fov), 0f);
     }
 
+    public List<WayPoint> GetPossibleGuardPositions()
+    {
+        return _tempWpsActual;
+    }
 
     public void ProjectPositionsInDirection(ref List<PossibleTrajectory> trajectory, Vector2 pointOnRoadMap,
         WayPoint wp1, WayPoint wp2, float stepSize, float totalDistance, NPC npc)
@@ -648,7 +652,7 @@ public class RoadMap
         // Add a temporary way point to mark the guard's position on the road map
         float fov = Properties.GetFovRadius(NpcType.Guard);
 
-        WayPoint sourceWp = GetGuardRoadMapNode(source, GetProbabilityValue(0, fov, totalDistance));
+        WayPoint sourceWp = GetGuardRoadMapNode(source,npc, GetProbabilityValue(0, fov, totalDistance));
         InsertWpInLine(wp1, wp2, sourceWp);
         _tempWpsActual.Add(sourceWp);
 
@@ -686,7 +690,7 @@ public class RoadMap
                 pt.source = newPosition;
 
                 // Add a temporary way point to mark the guard possibly passing to
-                WayPoint newWp = GetGuardRoadMapNode(newPosition, GetProbabilityValue(pt.distance, fov, totalDistance));
+                WayPoint newWp = GetGuardRoadMapNode(newPosition,npc, GetProbabilityValue(pt.distance, fov, totalDistance));
                 InsertWpInLine(pt.sourceWp, pt.targetWp, newWp);
                 pt.sourceWp = newWp;
                 _tempWpsActual.Add(newWp);
@@ -705,7 +709,7 @@ public class RoadMap
                 pt.nextStep -= distance;
 
                 // Set the probability to non zero since a guard might pass through here
-                pt.targetWp.SetProbability(GetProbabilityValue(pt.distance, fov, totalDistance));
+                pt.targetWp.SetProbability(npc, GetProbabilityValue(pt.distance, fov, totalDistance));
 
                 // If it is a dead end then place a point at the end
                 if (pt.targetWp.GetConnections(true).Count == 1)
@@ -715,7 +719,7 @@ public class RoadMap
 
                     // Add a temporary way point to mark the guard possibly passing to
                     WayPoint newWp =
-                        GetGuardRoadMapNode(pt.targetWp.GetPosition(),
+                        GetGuardRoadMapNode(pt.targetWp.GetPosition(), npc,
                             GetProbabilityValue(pt.distance, fov, totalDistance));
                     InsertWpInLine(pt.sourceWp, pt.targetWp, newWp);
                     pt.sourceWp = newWp;

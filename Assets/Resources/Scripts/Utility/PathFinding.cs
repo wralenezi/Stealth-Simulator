@@ -123,7 +123,6 @@ public class PathFinding : MonoBehaviour
 
         if (Equals(startPolygon, null) || Equals(destinationPolygon, null))
         {
-            Debug.LogError("Cannot Find the corresponding polygon.");
             throw new Exception();
         }
 
