@@ -598,7 +598,6 @@ public class RoadMap
         }
         catch (Exception e)
         {
-            Debug.LogError("The number of connections are: " + _tempWpsActual[0].GetConnections(true).Count);
             throw e;
         }
     }

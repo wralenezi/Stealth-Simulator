@@ -315,7 +315,8 @@ public class HidingSpot
         string label = "";
         label += "Risk: " + (Mathf.Round(RiskLikelihood * 100f) / 100f) + " \n";
         label += "Goal: " + (Mathf.Round(GoalUtility * 100f) / 100f) + " \n";
-        label += "Occlusion: " + (Mathf.Round(OcclusionUtility * 100f) / 100f) + " \n";
+        // label += "Cost: " + (Mathf.Round(CostUtility * 100f) / 100f) + " \n";
+        // label += "Occlusion: " + (Mathf.Round(OcclusionUtility * 100f) / 100f) + " \n";
         // label += "CoverRatio: " + (Mathf.Round(CoverUtility * 100f) / 100f) + " \n";
         Handles.Label(Position, label);
 #endif
