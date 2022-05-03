@@ -290,7 +290,7 @@ public class SessionsSetup : MonoBehaviour
         foreach (var guardMethod in guardMethods)
         foreach (var pathType in pathTypes)
         {
-            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, color, 2, 1,
+            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, color, 5, 1,
                 new MapData("MgsDock", 2f), speechMethod, SurveyType.EndEpisode);
 
             // Add guards

@@ -106,6 +106,10 @@ public class HidingSpotsCtrlr
                 if (!isVisible) continue;
 
                 currentSpot.PairHidingSpots(possibleNeighbour);
+
+                if (!Equals(possibleNeighbour.reflexNeighbour, null))
+                    currentSpot.PairHidingSpots(possibleNeighbour.reflexNeighbour);
+
                 visibleSpotsCount++;
             }
 
@@ -272,6 +276,8 @@ public class HidingSpot
 
     public PossiblePosition ThreateningPosition;
 
+    public float lastFailedTimeStamp;
+
     /// <summary>
     /// Visible and neighbouring hiding spot
     /// </summary>
@@ -287,6 +293,7 @@ public class HidingSpot
         ThreateningPosition = null;
         _neighbouringSpots = new List<HidingSpot>();
         reflexNeighbour = null;
+        lastFailedTimeStamp = 0f;
     }
 
     public void PairHidingSpots(HidingSpot spot)

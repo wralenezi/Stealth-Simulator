@@ -9,7 +9,7 @@ public static class Properties
     public const int EpisodesCount = 1000;
 
     // The duration of an episode.
-    public const float EpisodeLength = 10f;
+    public const float EpisodeLength = 30f;
 
 
     //-------------------------------------------------------------------------//
