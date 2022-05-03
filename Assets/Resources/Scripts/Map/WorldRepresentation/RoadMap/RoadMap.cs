@@ -122,7 +122,7 @@ public class RoadMap
             wp.AddLines(_lines, false);
     }
 
-    public WayPoint GetClosestNodes(Vector2 point, bool isOriginal)
+    public WayPoint GetClosestNodes(Vector2 point, bool isOriginal, NodeType type)
     {
         List<WayPoint> nodes = isOriginal ? _wpsActual : _wayPoints;
 
@@ -131,6 +131,8 @@ public class RoadMap
 
         foreach (var node in nodes)
         {
+            if (!Equals(node.type, type)) continue;
+            
             float distance = Vector2.Distance(point, node.GetPosition());
 
             if (distance < minMagDistance)

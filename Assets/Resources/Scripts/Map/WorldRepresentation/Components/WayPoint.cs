@@ -1,7 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 using UnityEditor;
 using UnityEngine;
 
@@ -34,6 +32,8 @@ public class WayPoint
 
     // the ID of the wall this way point belong to. This is for the visibility graph
     public int WallId;
+    
+    public NodeType type;
 
     // The node original location on the grid. Used in the grid simplification to a graph.
     public int row;
@@ -54,6 +54,7 @@ public class WayPoint
         _originalLines = new List<RoadMapLine>();
         _probabilityGuardPassing = 0f;
         _passingGuard = null;
+        type = NodeType.RoadMap;
         Id = _id;
     }
 
@@ -68,6 +69,7 @@ public class WayPoint
         _mapLines = new List<RoadMapLine>();
         _originalLines = new List<RoadMapLine>();
         _passingGuard = null;
+        type = NodeType.RoadMap;
         Id = 0;
     }
 
@@ -209,4 +211,11 @@ public class WayPoint
 
         Handles.Label(GetPosition(), _probabilityGuardPassing.ToString());
     }
+}
+
+public enum NodeType
+{
+    RoadMap,
+    
+    Corner
 }

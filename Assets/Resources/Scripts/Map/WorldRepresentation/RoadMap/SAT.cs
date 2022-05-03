@@ -1310,6 +1310,8 @@ public class SAT : MonoBehaviour
                 {
                     WayPoint wp = new WayPoint(wall.GetPoint(j) - angleNormal * 0.3f, 0, 0, '*') {Id = 0};
 
+                    wp.type = NodeType.Corner;
+
                     WayPoint projectionWp = GetInterceptionPointOnRoadMap(wp.GetPosition());
 
                     wp.Connect(projectionWp, true, false);
