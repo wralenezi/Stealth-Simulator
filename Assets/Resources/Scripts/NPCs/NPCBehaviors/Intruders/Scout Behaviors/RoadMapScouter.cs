@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.U2D;
 using Vector2 = UnityEngine.Vector2;
 
@@ -18,18 +19,18 @@ public class RoadMapScouter : Scouter
     /// <summary>
     /// List of hiding spots available for the intruder to choose from.
     /// </summary>
-    public bool showAvailableHidingspots;
-
+    public bool showAvailableHidingSpots;
     private List<HidingSpot> _availableSpots;
-
 
     // A dictionary of the riskiest spots by each guard on the intruders current path
     public bool showRiskSpots;
     private Dictionary<string, PossiblePosition> _riskSpots;
 
+    // How risky is the intruder's current position is, 0 is safe and 1 is spotted.
+    [SerializeField] private float _currentRiskValue;
+
     // Variables for the coroutine for checking the risk of taking a current path. 
     private bool _isTrajectoryInterceptionCoRunning;
-    private float _TrajectoryInterceptionUpdateFreqPerSec = 0.5f;
 
     // Update frequency parameters
     private float _lastUpdateTimestamp;
@@ -44,7 +45,7 @@ public class RoadMapScouter : Scouter
     List<WayPoint> closedListRoadMap;
 
 
-    private float NPC_RADIUS = 0.05f;
+    private float NPC_RADIUS = 0.2f;
 
 
     public override void Initiate(MapManager mapManager)
@@ -65,9 +66,8 @@ public class RoadMapScouter : Scouter
         _tempPath = new List<Vector2>();
         openListRoadMap = new List<WayPoint>();
         closedListRoadMap = new List<WayPoint>();
-
-
-        showAvailableHidingspots = true;
+        
+        showAvailableHidingSpots = true;
         showRiskSpots = true;
         showProjectedTrajectories = true;
         showRoadmap = true;
@@ -106,6 +106,7 @@ public class RoadMapScouter : Scouter
     public override void Begin()
     {
         _lastUpdateTimestamp = StealthArea.GetElapsedTime();
+        _riskSpots.Clear();
     }
 
     public override void Refresh(GameType gameType)
@@ -114,6 +115,8 @@ public class RoadMapScouter : Scouter
         Intruder intruder = NpcsManager.Instance.GetIntruders()[0];
 
         SetGuardTrajectories(guards);
+        
+        UpdateCurrentRisk();
 
         // Get a new destination for the intruder
         if (!intruder.IsBusy() || IsUpdateDue())
@@ -132,7 +135,7 @@ public class RoadMapScouter : Scouter
 
             EvaluateSpots(intruder, goal);
 
-            HidingSpot bestHs = GetBestSpot();
+            HidingSpot bestHs = GetBestSpot(_currentRiskValue);
 
             if (Equals(bestHs, null))
             {
@@ -140,7 +143,8 @@ public class RoadMapScouter : Scouter
                 return;
             }
 
-            SetPathOnRoadmap(intruder, bestHs, false, 0.75f);
+            
+            SetPathOnRoadmap(intruder, bestHs, false, 0.9f);
         }
 
         // Abort the current path if it is too risky
@@ -160,6 +164,34 @@ public class RoadMapScouter : Scouter
             yield return new WaitForSeconds(UpdateIntervalInSeconds);
 
         _isTrajectoryInterceptionCoRunning = false;
+    }
+
+    private void UpdateCurrentRisk()
+    {
+        float RISK_RANGE = Properties.GetFovRadius(NpcType.Guard);
+
+        Intruder intruder = NpcsManager.Instance.GetIntruders()[0];
+        Vector2 intruderPosition = intruder.GetTransform().position;
+
+        float minSqrMag = Mathf.Infinity;
+        float risk = 0f;
+        
+        List<WayPoint> possiblePositions = _roadMap.GetPossibleGuardPositions();
+
+        foreach (var p in possiblePositions)
+        {
+            Vector2 offset = p.GetPosition() - intruderPosition;
+            float sqrMag = offset.sqrMagnitude;
+            bool isVisible = GeometryHelper.IsCirclesVisible(intruderPosition, p.GetPosition(), NPC_RADIUS, "Wall");
+
+            if (minSqrMag > sqrMag && isVisible && sqrMag <= RISK_RANGE * RISK_RANGE)
+            {
+                minSqrMag = sqrMag;
+                risk = p.GetProbability();
+            }
+        }
+
+        _currentRiskValue = risk;
     }
 
     private bool IsPathRisky(Intruder intruder, List<Guard> guards, float maxRisk)
@@ -219,9 +251,10 @@ public class RoadMapScouter : Scouter
 
         if (!isRisky) return false;
 
-        float distanceFromRisk = Vector2.Distance(riskiestSpot.GetPosition().Value, intruder.GetTransform().position);
+        // float distanceFromRisk = Vector2.Distance(riskiestSpot.GetPosition().Value, intruder.GetTransform().position);
+        // return distanceFromRisk > IGNORE_RISK_RANGE;
 
-        return distanceFromRisk > IGNORE_RISK_RANGE;
+        return _currentRiskValue < highestRisk;
     }
 
 
@@ -318,7 +351,7 @@ public class RoadMapScouter : Scouter
         }
 
         _tempPath.Reverse();
-        
+
         path.Clear();
 
         path.Add(start);
@@ -326,8 +359,6 @@ public class RoadMapScouter : Scouter
             path.Add(node);
 
         SimplifyPath(ref path);
-        
-        // path.RemoveAt(0);
     }
 
 
@@ -359,8 +390,8 @@ public class RoadMapScouter : Scouter
         {
             Vector2 first = path[i];
             Vector2 second = path[i + 2];
-            
-            float margine = 0.05f;
+
+            float margine = 0.2f;
             float distance = Vector2.Distance(first, second);
             bool isMutuallyVisible = GeometryHelper.IsCirclesVisible(first, second, margine, "Wall");
 
@@ -468,13 +499,16 @@ public class RoadMapScouter : Scouter
         }
     }
 
-    private HidingSpot GetBestSpot()
+    private HidingSpot GetBestSpot(float currentRisk)
     {
+        if(currentRisk < 0.3f)
         // return GetClosestToGoalSafeSpot(0.5f);
         return GetClosestToGoalSafeSpotNew(0.5f);
         // return GetClosestCheapestToGoalSafeSpot(0.5f);
         // return GetSafestToGoalSpot();
         // return GetBestSpot_Simple();
+
+        return GetSafestSpot();
     }
 
 
@@ -520,7 +554,7 @@ public class RoadMapScouter : Scouter
         return bestHs;
     }
 
-    
+
     private HidingSpot GetClosestToGoalSafeSpotNew(float maxAcceptedRisk)
     {
         HidingSpot bestHs = null;
@@ -528,10 +562,13 @@ public class RoadMapScouter : Scouter
 
         foreach (var hs in _availableSpots)
         {
-            
             if (hs.RiskLikelihood >= maxAcceptedRisk) continue;
             if (maxFitness >= hs.GoalUtility) continue;
-            if(StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 2f) continue; 
+            if (StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 0.5f)
+            {
+                Debug.Log("Not ready");
+                continue;
+            }
 
             bestHs = hs;
             maxFitness = hs.GoalUtility;
@@ -561,6 +598,28 @@ public class RoadMapScouter : Scouter
         }
 
         return bestHs;
+    }
+
+    private HidingSpot GetSafestSpot()
+    {
+        // Sorted in Asc order
+        _availableSpots.Sort((x, y) => x.RiskLikelihood.CompareTo(y.RiskLikelihood));
+
+        float minCost = Mathf.Infinity;
+        HidingSpot bestSpot = null;
+        
+        foreach (var hs in _availableSpots)
+        {
+            if (StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 0.5f) continue;
+
+            if (minCost > hs.CostUtility)
+            {
+                bestSpot = hs;
+                minCost = hs.CostUtility;
+            }
+        }
+
+        return bestSpot;
     }
 
     private HidingSpot GetSafestToGoalSpot()
@@ -771,7 +830,7 @@ public class RoadMapScouter : Scouter
                 psbTrac.Draw();
 
         Gizmos.color = Color.blue;
-        if (showAvailableHidingspots && !Equals(_availableSpots, null))
+        if (showAvailableHidingSpots && !Equals(_availableSpots, null))
             foreach (var s in _availableSpots)
             {
                 s.Draw();
