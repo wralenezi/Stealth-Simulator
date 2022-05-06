@@ -171,7 +171,9 @@ public class GameManager : MonoBehaviour
         // var sessions = SessionsSetup.SearchTacticEvaluation();
         // List<Session> sessions = SessionsSetup.StealthStudy();
         // List<Session> sessions = SessionsSetup.StealthStudy002();
-        List<Session> sessions = SessionsSetup.StealthStudyProcedural();
+        // List<Session> sessions = SessionsSetup.StealthStudyProcedural();
+        List<Session> sessions = SessionsSetup.StealthStudyProcedural01();
+        
         
 
         // Each line represents a session

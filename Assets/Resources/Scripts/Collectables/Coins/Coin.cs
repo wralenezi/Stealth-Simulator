@@ -25,29 +25,9 @@ public class Coin : MonoBehaviour
         Vector2? chosenPos = null;
 
         if (!isRandom)
-        {
-            chosenPos = GetGoalPosition(mapData);
-        }
+            chosenPos = GetGoalPosition(startPosition, navMesh, mapData);
         else
-        {
-            bool positionFound = false;
-            int numberRemainingAttempts = 100;
-            while (numberRemainingAttempts > 0 && !positionFound)
-            {
-                int random = Random.Range(0, navMesh.Count);
-                Vector2 pos = navMesh[random].GetRandomPosition();
-
-                float distance = PathFinding.Instance.GetShortestPathDistance(startPosition, pos);
-
-                if (distance > PathFinding.Instance.longestShortestPath * 0.4f)
-                {
-                    positionFound = true;
-                    chosenPos = pos;
-                }
-
-                numberRemainingAttempts--;
-            }
-        }
+            chosenPos = GetRandomPosition(startPosition, navMesh);
 
 
         transform.position = Equals(chosenPos, null) ? transform.position : (Vector3) chosenPos.Value;
@@ -55,22 +35,49 @@ public class Coin : MonoBehaviour
         gameObject.SetActive(true);
     }
 
-    public Vector2 GetGoalPosition(MapData mapData)
+    private Vector2 GetRandomPosition(Vector2 startPos, List<MeshPolygon> navMesh)
+    {
+        Vector2? chosenPos = null;
+
+        bool positionFound = false;
+        int numberRemainingAttempts = 100;
+        while (numberRemainingAttempts > 0 && !positionFound)
+        {
+            int random = Random.Range(0, navMesh.Count);
+            Vector2 pos = navMesh[random].GetRandomPosition();
+
+            float distance = PathFinding.Instance.GetShortestPathDistance(startPos, pos);
+
+            if (distance > PathFinding.Instance.longestShortestPath * 0.4f)
+            {
+                positionFound = true;
+                chosenPos = pos;
+            }
+
+            numberRemainingAttempts--;
+        }
+
+        return chosenPos.Value;
+    }
+
+
+    public Vector2 GetGoalPosition(Vector2 startPosition, List<MeshPolygon> navMesh, MapData mapData)
     {
         try
         {
             Dictionary<string, Vector2> goals = new Dictionary<string, Vector2>();
 
             goals.Add("MgsDock", new Vector2(13.87f, -0.28f));
-            
+
             goals.Add("Hall", new Vector2(13.87f, -0.28f));
 
             return goals[mapData.name];
         }
         catch (Exception e)
         {
-            Debug.LogError("Goal location is missing for the map "+mapData.name+".");
-            throw;
+            // Debug.LogError("Goal location is missing for the map " + mapData.name + ".");
+            return GetRandomPosition(startPosition, navMesh);
+            // throw;
         }
     }
 

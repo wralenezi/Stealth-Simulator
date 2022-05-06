@@ -64,7 +64,7 @@ public static class Properties
     public const float NpcRotationSpeed = 300f * SpeedMultiplyer;
 
     // The multiplier of the intruder's speed
-    public const float IntruderSpeedMulti = 2f;
+    public const float IntruderSpeedMulti = 1.5f;
     public const float IntruderRotationSpeedMulti = 4f;
 
     public static Color32 GetFovColor(NpcType npcType)
