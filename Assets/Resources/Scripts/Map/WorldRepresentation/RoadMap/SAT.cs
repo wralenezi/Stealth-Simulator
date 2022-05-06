@@ -99,6 +99,12 @@ public class SAT : MonoBehaviour
 
             _roadMap = m_SatRoadMap;
         }
+
+
+        foreach (var wp in _roadMap)
+        {
+            wp.SafeCons();
+        }
     }
 
 
@@ -113,7 +119,7 @@ public class SAT : MonoBehaviour
 
             wp.Id = i + 1;
 
-            data += wp.GetPosition().x + "," + wp.GetPosition().y + "\n";
+            data += wp.GetPosition().x + "," + wp.GetPosition().y + "," + wp.type + "\n";
         }
 
         data += "-,-\n";
@@ -171,6 +177,7 @@ public class SAT : MonoBehaviour
                     position = transform.TransformPoint(position);
 
                     WayPoint newPoint = new WayPoint(position, lineIndex);
+                    newPoint.type = (NodeType) Enum.Parse(typeof(NodeType), data[2]);
                     _roadMap.Add(newPoint);
                     m_roadMapDivided.Add(newPoint);
                 }

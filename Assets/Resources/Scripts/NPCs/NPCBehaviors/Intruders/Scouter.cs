@@ -14,7 +14,13 @@ public abstract class Scouter : MonoBehaviour
         _HsC = new HidingSpotsCtrlr(mapManager.GetWalls(), mapManager.mapRenderer.GetMapBoundingBox(), 10, 10);
     }
 
-    public abstract void Begin();
+    public virtual void Begin()
+    {
+        foreach (var hs in _HsC.GetHidingSpots())
+        {
+            hs.lastFailedTimeStamp = 0;
+        }
+    }
 
 
     public abstract void Refresh(GameType gameType);

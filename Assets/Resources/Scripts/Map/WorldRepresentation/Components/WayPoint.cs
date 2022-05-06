@@ -17,9 +17,11 @@ public class WayPoint
     // Original connections of the way points before dividing the edges into segments. 
     private readonly List<WayPoint> _originalCons;
 
+    private readonly List<WayPoint> _fixedCons;
+
     // The original lines connected to this way point
     private List<RoadMapLine> _originalLines;
-    
+
     // probability that a guard is going to pass through here; when it is zero
     private float _probabilityGuardPassing;
     private NPC _passingGuard;
@@ -32,7 +34,7 @@ public class WayPoint
 
     // the ID of the wall this way point belong to. This is for the visibility graph
     public int WallId;
-    
+
     public NodeType type;
 
     // The node original location on the grid. Used in the grid simplification to a graph.
@@ -49,6 +51,7 @@ public class WayPoint
     {
         this._position = _position;
         _originalCons = new List<WayPoint>();
+        _fixedCons = new List<WayPoint>();
         _connections = new List<WayPoint>();
         _mapLines = new List<RoadMapLine>();
         _originalLines = new List<RoadMapLine>();
@@ -65,12 +68,31 @@ public class WayPoint
         col = _col;
         code = _code;
         _originalCons = new List<WayPoint>();
+        _fixedCons = new List<WayPoint>();
         _connections = new List<WayPoint>();
         _mapLines = new List<RoadMapLine>();
         _originalLines = new List<RoadMapLine>();
         _passingGuard = null;
         type = NodeType.RoadMap;
         Id = 0;
+    }
+
+    public void SafeCons()
+    {
+        _fixedCons.Clear();
+        foreach (var con in _originalCons)
+        {
+            _fixedCons.Add(con);
+        }
+    }
+
+    public void LoadCons()
+    {
+        _originalCons.Clear();
+        foreach (var con in _fixedCons)
+        {
+            _originalCons.Add(con);
+        }
     }
 
 
@@ -203,19 +225,19 @@ public class WayPoint
 
     public void Draw()
     {
-        // string distances = "";
-        // foreach (var distance in m_Distances)
-        // {
-        //     distances += distance + "\n";
-        // }
+        string label = "";
 
-        Handles.Label(GetPosition(), _probabilityGuardPassing.ToString());
+        label += type + "\n";
+
+        Handles.Label(GetPosition(), label);
+
+        Gizmos.DrawSphere(GetPosition(), 0.3f);
     }
 }
 
 public enum NodeType
 {
     RoadMap,
-    
+
     Corner
 }

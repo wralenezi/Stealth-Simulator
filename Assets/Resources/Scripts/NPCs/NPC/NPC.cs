@@ -499,15 +499,16 @@ public abstract class NPC : MonoBehaviour
 
     public void OnDrawGizmos()
     {
+        List<Vector2> path = GetFullPath();
         if (ShowPath && _pathToTake != null & _pathToTake.Count > 0)
         {
-            for (int i = 0; i < _pathToTake.Count - 1; i++)
+            for (int i = 0; i < path.Count - 1; i++)
             {
-                Gizmos.DrawLine(_pathToTake[i], _pathToTake[i + 1]);
-                Gizmos.DrawSphere(_pathToTake[i], 0.025f);
+                Gizmos.DrawLine(path[i], path[i + 1]);
+                Gizmos.DrawSphere(path[i], 0.025f);
             }
 
-            Gizmos.DrawSphere(_pathToTake[_pathToTake.Count - 1], 0.025f);
+            Gizmos.DrawSphere(path[path.Count - 1], 0.025f);
         }
     }
 }

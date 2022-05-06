@@ -146,6 +146,11 @@ public class HidingSpotsCtrlr
             hidingSpots.Add(n);
     }
 
+    public List<HidingSpot> GetHidingSpots()
+    {
+        return m_HidingSpots;
+    }
+
     private HidingSpot PlaceHidingSpot(Vector2 position, List<Polygon> interiorWalls)
     {
         // Make sure the position is inside the walls
@@ -321,8 +326,9 @@ public class HidingSpot
 #if UNITY_EDITOR
         string label = "";
         label += "Risk: " + (Mathf.Round(RiskLikelihood * 100f) / 100f) + " \n";
-        label += "Goal: " + (Mathf.Round(GoalUtility * 100f) / 100f) + " \n";
-        label += "Cost: " + (Mathf.Round(CostUtility * 100f) / 100f) + " \n";
+        // label += "Goal: " + (Mathf.Round(GoalUtility * 100f) / 100f) + " \n";
+        // label += "Cost: " + (Mathf.Round(CostUtility * 100f) / 100f) + " \n";
+        // label += "LastFail: " + (StealthArea.GetElapsedTime() - lastFailedTimeStamp) + " \n";
         // label += "Occlusion: " + (Mathf.Round(OcclusionUtility * 100f) / 100f) + " \n";
         // label += "CoverRatio: " + (Mathf.Round(CoverUtility * 100f) / 100f) + " \n";
         Handles.Label(Position, label);

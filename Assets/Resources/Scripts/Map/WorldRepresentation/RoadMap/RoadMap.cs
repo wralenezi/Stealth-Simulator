@@ -122,7 +122,7 @@ public class RoadMap
             wp.AddLines(_lines, false);
     }
 
-    public WayPoint GetClosestNodes(Vector2 point, bool isOriginal, NodeType type)
+    public WayPoint GetClosestNodes(Vector2 point, bool isOriginal, NodeType type, float radius)
     {
         List<WayPoint> nodes = isOriginal ? _wpsActual : _wayPoints;
 
@@ -132,8 +132,11 @@ public class RoadMap
         foreach (var node in nodes)
         {
             if (!Equals(node.type, type)) continue;
+            if(!GeometryHelper.IsCirclesVisible(point, node.GetPosition(), radius, "Wall")) continue;
+
+            Vector2 offset = point - node.GetPosition();
             
-            float distance = Vector2.Distance(point, node.GetPosition());
+            float distance = offset.sqrMagnitude;
 
             if (distance < minMagDistance)
             {
@@ -571,32 +574,36 @@ public class RoadMap
     {
         try
         {
+            _tempWpsActual.Clear();
             foreach (var wp in _wpsActual)
-                wp.SetProbability(null,0f);
-
-
-            while (_tempWpsActual.Count > 0)
             {
-                WayPoint wpToRemove = _tempWpsActual[0];
-
-                while (wpToRemove.GetConnections(true).Count > 0)
-                {
-                    WayPoint originalWp = wpToRemove.GetConnections(true)[0];
-
-                    while (originalWp.GetConnections(true).Count > 0)
-                        originalWp.RemoveConnection(originalWp.GetConnections(true)[0], true);
-
-                    foreach (var line in originalWp.GetLines(true))
-                    {
-                        if (Equals(line.wp1, originalWp))
-                            originalWp.Connect(line.wp2, true, false);
-                        else
-                            originalWp.Connect(line.wp1, true, false);
-                    }
-                }
-
-                _tempWpsActual.RemoveAt(0);
+                wp.SetProbability(null, 0f);
+                wp.LoadCons();
             }
+
+
+            // while (_tempWpsActual.Count > 0)
+            // {
+            //     WayPoint wpToRemove = _tempWpsActual[0];
+            //
+            //     while (wpToRemove.GetConnections(true).Count > 0)
+            //     {
+            //         WayPoint originalWp = wpToRemove.GetConnections(true)[0];
+            //
+            //         while (originalWp.GetConnections(true).Count > 0)
+            //             originalWp.RemoveConnection(originalWp.GetConnections(true)[0], true);
+            //
+            //         foreach (var line in originalWp.GetLines(true))
+            //         {
+            //             if (Equals(line.wp1, originalWp))
+            //                 originalWp.Connect(line.wp2, true, false);
+            //             else
+            //                 originalWp.Connect(line.wp1, true, false);
+            //         }
+            //     }
+            //
+            //     _tempWpsActual.RemoveAt(0);
+            // }
         }
         catch (Exception e)
         {
@@ -615,7 +622,7 @@ public class RoadMap
         newWp.Connect(secWp, true, true);
     }
 
-    public WayPoint GetGuardRoadMapNode(Vector2 position, NPC passingGuard,  float probability)
+    public WayPoint GetGuardRoadMapNode(Vector2 position, NPC passingGuard, float probability)
     {
         WayPoint newWp = new WayPoint(position);
 
@@ -629,6 +636,8 @@ public class RoadMap
     // Get the probability to give for the intermediate points
     public static float GetProbabilityValue(float distance, float fov, float maxDistance)
     {
+        if (distance == 0f) return 0.1f;
+
         float value = Mathf.Max(distance - fov, 0f);
 
         if (fov >= maxDistance) return 1f;
@@ -653,7 +662,7 @@ public class RoadMap
         // Add a temporary way point to mark the guard's position on the road map
         float fov = Properties.GetFovRadius(NpcType.Guard);
 
-        WayPoint sourceWp = GetGuardRoadMapNode(source,npc, GetProbabilityValue(0, fov, totalDistance));
+        WayPoint sourceWp = GetGuardRoadMapNode(source, npc, GetProbabilityValue(0, fov, totalDistance));
         InsertWpInLine(wp1, wp2, sourceWp);
         _tempWpsActual.Add(sourceWp);
 
@@ -691,7 +700,8 @@ public class RoadMap
                 pt.source = newPosition;
 
                 // Add a temporary way point to mark the guard possibly passing to
-                WayPoint newWp = GetGuardRoadMapNode(newPosition,npc, GetProbabilityValue(pt.distance, fov, totalDistance));
+                WayPoint newWp = GetGuardRoadMapNode(newPosition, npc,
+                    GetProbabilityValue(pt.distance, fov, totalDistance));
                 InsertWpInLine(pt.sourceWp, pt.targetWp, newWp);
                 pt.sourceWp = newWp;
                 _tempWpsActual.Add(newWp);
@@ -1048,7 +1058,7 @@ public class RoadMap
         {
             Gizmos.DrawSphere(t.GetPosition(), 0.025f);
             float prob = Mathf.Round(t.GetProbability() * 100f) * 0.01f;
-            Handles.Label(t.GetPosition(), prob.ToString());
+            Handles.Label(t.GetPosition(), t.type.ToString());
 
 
             foreach (var wp in t.GetConnections(true))
