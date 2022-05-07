@@ -59,13 +59,14 @@ public static class Properties
 
     //------------------------------------------------------------------------------------------------------
     // NPC Properties
+    public const float NpcRadius = 0.15f;
     public const float SpeedMultiplyer = 0.6f;
     public const float NpcSpeed = 4f * SpeedMultiplyer;
     public const float NpcRotationSpeed = 300f * SpeedMultiplyer;
 
     // The multiplier of the intruder's speed
     public const float IntruderSpeedMulti = 1.5f;
-    public const float IntruderRotationSpeedMulti = 4f;
+    public const float IntruderRotationSpeedMulti = 6f;
 
     public static Color32 GetFovColor(NpcType npcType)
     {

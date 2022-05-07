@@ -20,7 +20,6 @@ public class RoadMapScouter : Scouter
     /// List of hiding spots available for the intruder to choose from.
     /// </summary>
     public bool showAvailableHidingSpots;
-
     private List<HidingSpot> _availableSpots;
 
     // A dictionary of the riskiest spots by each guard on the intruders current path
@@ -33,9 +32,6 @@ public class RoadMapScouter : Scouter
 
     // List of curves to determine how utilities are mapped.
     [SerializeField] private AnimationCurve _SafetyCurve;
-
-    private float NPC_RADIUS = 0.25f;
-
 
     public override void Initiate(MapManager mapManager)
     {
@@ -54,10 +50,10 @@ public class RoadMapScouter : Scouter
         _pathFinder = new RMPScoutPathFinder();
         _decisionMaker = new RMSDecisionMaker();
         
-        showAvailableHidingSpots = true;
-        showRiskSpots = true;
-        showProjectedTrajectories = true;
-        showRoadmap = true;
+        // showAvailableHidingSpots = true;
+        // showRiskSpots = true;
+        // showProjectedTrajectories = true;
+        // showRoadmap = true;
     }
 
     private void SetCurves()
@@ -92,7 +88,7 @@ public class RoadMapScouter : Scouter
 
         SetGuardTrajectories(guards);
 
-        _riskEvaluator.UpdateCurrentRisk(_roadMap, NPC_RADIUS);
+        _riskEvaluator.UpdateCurrentRisk(_roadMap);
 
         CalculateThresholds(out float pathFindingRiskThreshold, out float abortPathRiskThreshold);
 
@@ -123,11 +119,11 @@ public class RoadMapScouter : Scouter
             }
 
 
-            _pathFinder.SetPathOnRoadmap(_roadMap, intruder, bestHs, false, pathFindingRiskThreshold, NPC_RADIUS);
+            _pathFinder.SetPathOnRoadmap(_roadMap, intruder, bestHs, false, pathFindingRiskThreshold);
         }
 
         // Abort the current path if it is too risky
-        _riskEvaluator.CheckPathRisk(_roadMap, intruder, guards, abortPathRiskThreshold, NPC_RADIUS);
+        _riskEvaluator.CheckPathRisk(_roadMap, intruder, guards, abortPathRiskThreshold);
     }
 
     private void CalculateThresholds(out float pathFindingRiskThreshold, out float abortPathRiskThreshold)
@@ -412,7 +408,7 @@ public class RoadMapScouter : Scouter
         foreach (var trajectory in _possibleTrajectories)
         {
             Vector2? pointOnTrajectory =
-                GeometryHelper.GetClosetPointOnPath(trajectory.GetPath(), hs.Position, NPC_RADIUS);
+                GeometryHelper.GetClosetPointOnPath(trajectory.GetPath(), hs.Position, Properties.NpcRadius);
 
             float distance;
             Vector2? closestPoint;

@@ -10,7 +10,7 @@ public abstract class SearchEvader : MonoBehaviour
 
     public virtual void Initiate(MapManager mapManager)
     {
-        m_HsC = new HidingSpotsCtrlr(mapManager.GetWalls(), mapManager.mapRenderer.GetMapBoundingBox(),10,10);
+        m_HsC = new HidingSpotsCtrlr(mapManager, mapManager.mapRenderer.GetMapBoundingBox(),10,10);
     }
 
     public abstract void Begin();

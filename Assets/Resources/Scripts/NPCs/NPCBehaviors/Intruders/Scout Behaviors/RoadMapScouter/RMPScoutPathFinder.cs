@@ -14,32 +14,33 @@ public class RMPScoutPathFinder
         openListRoadMap = new List<WayPoint>();
         closedListRoadMap = new List<WayPoint>();
     }
-    
-    
-    public void SetPathOnRoadmap(RoadMap roadMap,Intruder intruder, HidingSpot goal, bool isForced, float highestRiskThreshold, float npcRadius)
+
+
+    public void SetPathOnRoadmap(RoadMap roadMap, Intruder intruder, HidingSpot goal, bool isForced,
+        float highestRiskThreshold)
     {
         if (isForced || !intruder.IsBusy())
         {
             List<Vector2> pathToTake = intruder.GetPath();
-            GetShortestPath(roadMap, intruder.GetTransform().position, goal, ref pathToTake, highestRiskThreshold, npcRadius);
+            GetShortestPath(roadMap, intruder.GetTransform().position, goal, ref pathToTake, highestRiskThreshold);
         }
     }
 
     // Get shortest path on the road map
     // The start node is a node on the road map and the goal is the position of the phantom 
     // for ease of implementation we start the search from the goal to the start node
-    private void GetShortestPath(RoadMap roadMap, Vector2 start, HidingSpot goalSpot, ref List<Vector2> path, 
-        float highestRiskThreshold, float npcRadius)
+    private void GetShortestPath(RoadMap roadMap, Vector2 start, HidingSpot goalSpot, ref List<Vector2> path,
+        float highestRiskThreshold)
     {
         bool isOriginal = true;
-        WayPoint startWp = roadMap.GetClosestNodes(start, isOriginal, NodeType.RoadMap, npcRadius);
+        WayPoint startWp = roadMap.GetClosestNodes(start, isOriginal, NodeType.RoadMap, Properties.NpcRadius);
 
-        WayPoint goalWp = roadMap.GetClosestNodes(goalSpot.Position, isOriginal, NodeType.RoadMap, npcRadius);
+        WayPoint goalWp = roadMap.GetClosestNodes(goalSpot.Position, isOriginal, NodeType.RoadMap, Properties.NpcRadius);
 
         openListRoadMap.Clear();
         closedListRoadMap.Clear();
 
-        if (Equals(startWp, null)) return;
+        if (Equals(startWp, null) || Equals(goalWp, null)) return;
 
         foreach (WayPoint p in roadMap.GetNode(true))
         {
@@ -120,7 +121,7 @@ public class RMPScoutPathFinder
         foreach (var node in _tempPath)
             path.Add(node);
 
-        SimplifyPath(ref path, npcRadius);
+        SimplifyPath(ref path);
 
         path.RemoveAt(0);
 
@@ -150,7 +151,7 @@ public class RMPScoutPathFinder
         return costValue;
     }
 
-    private void SimplifyPath(ref List<Vector2> path, float npcRadius)
+    private void SimplifyPath(ref List<Vector2> path)
     {
         for (int i = 0; i < path.Count - 2; i++)
         {
@@ -158,7 +159,7 @@ public class RMPScoutPathFinder
             Vector2 second = path[i + 2];
 
             float distance = Vector2.Distance(first, second);
-            bool isMutuallyVisible = GeometryHelper.IsCirclesVisible(first, second, npcRadius, "Wall");
+            bool isMutuallyVisible = GeometryHelper.IsCirclesVisible(first, second, Properties.NpcRadius, "Wall");
 
             if (distance < 0.1f || isMutuallyVisible)
             {

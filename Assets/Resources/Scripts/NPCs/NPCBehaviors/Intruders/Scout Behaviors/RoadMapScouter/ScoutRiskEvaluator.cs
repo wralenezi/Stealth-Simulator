@@ -33,7 +33,7 @@ public class ScoutRiskEvaluator : MonoBehaviour
         return _currentRiskValue;
     }
 
-    public void UpdateCurrentRisk(RoadMap roadMap, float npcRadius)
+    public void UpdateCurrentRisk(RoadMap roadMap)
     {
         float RISK_RANGE = Properties.GetFovRadius(NpcType.Guard);
 
@@ -49,7 +49,7 @@ public class ScoutRiskEvaluator : MonoBehaviour
         {
             Vector2 offset = p.GetPosition() - intruderPosition;
             float sqrMag = offset.sqrMagnitude;
-            bool isVisible = GeometryHelper.IsCirclesVisible(intruderPosition, p.GetPosition(), npcRadius, "Wall");
+            bool isVisible = GeometryHelper.IsCirclesVisible(intruderPosition, p.GetPosition(), Properties.NpcRadius, "Wall");
 
             if (minSqrMag > sqrMag && isVisible && sqrMag <= RISK_RANGE * RISK_RANGE)
             {
@@ -61,7 +61,7 @@ public class ScoutRiskEvaluator : MonoBehaviour
         _currentRiskValue = risk;
     }
 
-    private bool IsPathRisky(RoadMap roadMap, Intruder intruder, List<Guard> guards, float maxRisk, float npcRadius)
+    private bool IsPathRisky(RoadMap roadMap, Intruder intruder, List<Guard> guards, float maxRisk)
     {
         float IGNORE_RISK_RANGE = 1f;
         float RISK_RANGE = Properties.GetFovRadius(NpcType.Guard);
@@ -82,7 +82,7 @@ public class ScoutRiskEvaluator : MonoBehaviour
         foreach (var p in possiblePositions)
         {
             Vector2? pointOnPath =
-                GeometryHelper.GetClosetPointOnPath(intruder.GetFullPath(), p.GetPosition(), npcRadius);
+                GeometryHelper.GetClosetPointOnPath(intruder.GetFullPath(), p.GetPosition(), Properties.NpcRadius);
 
             if (Equals(pointOnPath, null)) continue;
 
@@ -124,19 +124,18 @@ public class ScoutRiskEvaluator : MonoBehaviour
         return _currentRiskValue < highestRisk;
     }
 
-    public void CheckPathRisk(RoadMap roadMap, Intruder intruder, List<Guard> guards, float maxAcceptedRisk,
-        float npcRadius)
+    public void CheckPathRisk(RoadMap roadMap, Intruder intruder, List<Guard> guards, float maxAcceptedRisk)
     {
         if (_isTrajectoryInterceptionCoRunning && !intruder.IsBusy()) return;
-        StartCoroutine(TrajectoryInterceptionCO(roadMap, intruder, guards, maxAcceptedRisk, npcRadius));
+        StartCoroutine(TrajectoryInterceptionCO(roadMap, intruder, guards, maxAcceptedRisk));
     }
 
 
     private IEnumerator TrajectoryInterceptionCO(RoadMap roadMap, Intruder intruder, List<Guard> guards,
-        float maxAcceptedRisk, float npcRadius)
+        float maxAcceptedRisk)
     {
         _isTrajectoryInterceptionCoRunning = true;
-        if (IsPathRisky(roadMap, intruder, guards, maxAcceptedRisk, npcRadius))
+        if (IsPathRisky(roadMap, intruder, guards, maxAcceptedRisk))
         {
             intruder.ClearGoal();
             // Debug.Log("Cancel Plan");

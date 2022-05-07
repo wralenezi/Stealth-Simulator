@@ -6,20 +6,18 @@ using UnityEngine;
 public class HidingSpotsCtrlr
 {
     // the hiding spots
-    private List<HidingSpot> m_HidingSpots;
+    private List<HidingSpot> _allSpots;
+    private PartitionGrid<HidingSpot> _partitionedSpots;
 
-    private PartitionGrid<HidingSpot> m_spots;
+    public static float DistanceMultiplier { get; } = 2f;
 
-    private float NPC_RADIUS = 0.05f;
-
-    public HidingSpotsCtrlr(List<Polygon> walls, Bounds bounds, int colCount, int rowCount)
+    public HidingSpotsCtrlr(MapManager mapManager, Bounds bounds, int colCount, int rowCount)
     {
-        m_HidingSpots = new List<HidingSpot>();
+        _allSpots = new List<HidingSpot>();
+        _partitionedSpots = new PartitionGrid<HidingSpot>(bounds, colCount, rowCount);
 
-        m_spots = new PartitionGrid<HidingSpot>(bounds, colCount, rowCount);
 
-        CreateHidingSpots(walls);
-
+        CreateHidingSpots(false, mapManager.GetWalls());
         PairHidingSpots();
     }
 
@@ -28,7 +26,7 @@ public class HidingSpotsCtrlr
     /// Place the spots on the map
     /// </summary>
     /// <param name="walls"></param>
-    private void CreateHidingSpots(List<Polygon> walls)
+    private void CreateHidingSpots(bool includeConvexAngels, List<Polygon> walls)
     {
         foreach (var wall in walls)
         {
@@ -38,22 +36,24 @@ public class HidingSpotsCtrlr
                     GeometryHelper.GetNormal(wall.GetPoint(j - 1), wall.GetPoint(j), wall.GetPoint(j + 1));
 
                 // How long is the normal
-                angleNormal *= 0.8f;
+                angleNormal *= Properties.NpcRadius * DistanceMultiplier;
 
                 // Inverse the sign for the inner polygons which are obstacles 
-                if (GeometryHelper.IsReflex(wall.GetPoint(j - 1), wall.GetPoint(j), wall.GetPoint(j + 1)))
+                bool isConvex = GeometryHelper.IsReflex(wall.GetPoint(j - 1), wall.GetPoint(j), wall.GetPoint(j + 1));
+
+                if (isConvex)
                 {
-                    // // Place one spot in the corner
+                    // Place one spot in the corner
                     Vector2 spotPosition = wall.GetPoint(j) - angleNormal;
                     PlaceHidingSpot(spotPosition, walls);
                 }
                 else
                 {
                     // How long is the distance from the reflex edge
-                    float distanceFromCorner = 1f;
+                    float distanceFromCorner = Properties.NpcRadius * DistanceMultiplier * 2.5f;
 
                     // Minimum edge length to place a hiding spot
-                    float minEdge = 0.5f;
+                    float minEdge = distanceFromCorner;
 
                     HidingSpot leftSpot = null;
                     HidingSpot rightSpot = null;
@@ -90,17 +90,18 @@ public class HidingSpotsCtrlr
 
     private void PairHidingSpots()
     {
-        for (int i = 0; i < m_HidingSpots.Count; i++)
+        for (int i = 0; i < _allSpots.Count; i++)
         {
-            HidingSpot currentSpot = m_HidingSpots[i];
+            HidingSpot currentSpot = _allSpots[i];
             int visibleSpotsCount = 0;
 
-            for (int j = i + 1; j < m_HidingSpots.Count; j++)
+            for (int j = i + 1; j < _allSpots.Count; j++)
             {
-                HidingSpot possibleNeighbour = m_HidingSpots[j];
+                HidingSpot possibleNeighbour = _allSpots[j];
 
                 bool isVisible =
-                    GeometryHelper.IsCirclesVisible(currentSpot.Position, possibleNeighbour.Position, NPC_RADIUS,
+                    GeometryHelper.IsCirclesVisible(currentSpot.Position, possibleNeighbour.Position,
+                        Properties.NpcRadius,
                         "Wall");
 
                 if (!isVisible) continue;
@@ -117,8 +118,8 @@ public class HidingSpotsCtrlr
         }
 
 
-        foreach (var currentSpot in m_HidingSpots)
-            currentSpot.OcclusionUtility = 1f - currentSpot.VisibleSpotsCount / m_HidingSpots.Count;
+        foreach (var currentSpot in _allSpots)
+            currentSpot.OcclusionUtility = 1f - currentSpot.VisibleSpotsCount / _allSpots.Count;
     }
 
     public void GetSpotsOfInterest(Vector2 intruderPosition, ref List<HidingSpot> hidingSpots)
@@ -127,8 +128,11 @@ public class HidingSpotsCtrlr
 
         float shortestSqrDistance = Mathf.Infinity;
         HidingSpot closestSpot = null;
-        foreach (var spot in m_HidingSpots)
+        foreach (var spot in _allSpots)
         {
+            if (!GeometryHelper.IsCirclesVisible(intruderPosition, spot.Position, Properties.NpcRadius, "Wall")
+            ) continue;
+
             Vector2 offset = intruderPosition - spot.Position;
             float sqrDistance = offset.SqrMagnitude();
             if (shortestSqrDistance > sqrDistance)
@@ -148,7 +152,7 @@ public class HidingSpotsCtrlr
 
     public List<HidingSpot> GetHidingSpots()
     {
-        return m_HidingSpots;
+        return _allSpots;
     }
 
     private HidingSpot PlaceHidingSpot(Vector2 position, List<Polygon> interiorWalls)
@@ -158,8 +162,8 @@ public class HidingSpotsCtrlr
 
         HidingSpot hSr = new HidingSpot(position, Isovists.Instance.GetCoverRatio(position));
 
-        m_HidingSpots.Add(hSr);
-        m_spots.Add(hSr, hSr.Position);
+        _allSpots.Add(hSr);
+        _partitionedSpots.Add(hSr, hSr.Position);
 
         return hSr;
     }
@@ -192,7 +196,7 @@ public class HidingSpotsCtrlr
     // Assign the fitness value of each hiding spot based on the guards distance to them
     public void AssignHidingSpotsFitness(List<Guard> guards)
     {
-        foreach (var hidingSpot in m_HidingSpots)
+        foreach (var hidingSpot in _allSpots)
         {
             hidingSpot.Fitness = 0f;
             foreach (var g in guards)
@@ -203,7 +207,7 @@ public class HidingSpotsCtrlr
 
     public List<HidingSpot> GetHidingSpots(Vector3 position, int range)
     {
-        return m_spots.GetPartitionsContent(position, range);
+        return _partitionedSpots.GetPartitionsContent(position, range);
     }
 
 
@@ -212,7 +216,7 @@ public class HidingSpotsCtrlr
     {
         HidingSpot bestHidingSpot = null;
         float maxFitness = Mathf.NegativeInfinity;
-        foreach (var hs in m_HidingSpots)
+        foreach (var hs in _allSpots)
         {
             if (hs.Fitness > maxFitness)
             {
@@ -227,11 +231,11 @@ public class HidingSpotsCtrlr
 
     public void DrawHidingSpots()
     {
-        foreach (var spot in m_HidingSpots)
+        foreach (var spot in _allSpots)
             spot.Draw();
 
 
-        m_spots.Draw();
+        // _partitionedSpots.Draw();
     }
 }
 
@@ -321,7 +325,7 @@ public class HidingSpot
 
     public void Draw()
     {
-        Gizmos.DrawSphere(Position + Vector2.down * 0.2f, 0.1f);
+        Gizmos.DrawSphere(Position, Properties.NpcRadius);
 
 #if UNITY_EDITOR
         string label = "";

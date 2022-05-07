@@ -52,7 +52,7 @@ public class IntrudersManager : Agent
         spriteRenderer.sprite = npcSprite;
         spriteRenderer.sortingOrder = 5;
 
-        float myScale = 0.6f;
+        float myScale = 1f; //0.6f;
         npcGameObject.transform.localScale = new Vector3(myScale, myScale, myScale);
 
         // Add the RigidBody
@@ -64,7 +64,8 @@ public class IntrudersManager : Agent
 
         // Add Collider to the NPC
         CircleCollider2D cd = npcGameObject.AddComponent<CircleCollider2D>();
-        cd.radius = npcSprite.rect.width * 0.003f;
+        // cd.radius = npcSprite.rect.width * 0.003f;
+        cd.radius = Properties.NpcRadius;
 
         npcGameObject.name = "Intruder" + (npcData.id).ToString().PadLeft(2, '0');
         NPC npc = npcGameObject.AddComponent<Intruder>();
@@ -85,7 +86,7 @@ public class IntrudersManager : Agent
         return m_iCtrl;
     }
 
-    public void CreateIntruders(Session session, List<Guard> guards , List<MeshPolygon> navMesh)
+    public void CreateIntruders(Session session, List<Guard> guards, List<MeshPolygon> navMesh)
     {
         foreach (var npcData in session.GetIntrudersData())
             CreateIntruder(npcData, navMesh, guards, session);

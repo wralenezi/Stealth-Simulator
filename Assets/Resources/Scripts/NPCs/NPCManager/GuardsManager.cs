@@ -145,7 +145,7 @@ public class GuardsManager : Agent
         spriteRenderer.sprite = npcSprite;
         spriteRenderer.sortingOrder = 5;
 
-        float myScale = 0.6f;
+        float myScale = 1f; // 0.6f;
         npcGameObject.transform.localScale = new Vector3(myScale, myScale, myScale);
 
         // Add the RigidBody
@@ -156,7 +156,9 @@ public class GuardsManager : Agent
 
         // Add Collider to the NPC
         CircleCollider2D cd = npcGameObject.AddComponent<CircleCollider2D>();
-        cd.radius = npcSprite.rect.width * 0.003f;
+        // cd.radius = npcSprite.rect.width * 0.003f;
+        cd.radius = Properties.NpcRadius;
+        
 
         NPC npc;
         // Add the appropriate script according to the NPC type

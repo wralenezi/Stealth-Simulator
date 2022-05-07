@@ -214,13 +214,20 @@ public static class GeometryHelper
     /// <returns></returns>
     public static bool IsCirclesVisible(Vector2 first, Vector2 second, float radius, string layer)
     {
-        Vector2 dir = (second - first).normalized;
-        float distance = Vector2.Distance(first, second);
-
-        Vector2 left = Vector2.Perpendicular(dir);
-
-        RaycastHit2D hitLeft = Physics2D.Raycast(first + left * radius, dir, distance, LayerMask.GetMask(layer));
-        RaycastHit2D hitRight = Physics2D.Raycast(first - left * radius, dir, distance, LayerMask.GetMask(layer));
+        // Vector2 dir = (second - first).normalized;
+        // float distance = Vector2.Distance(first, second);
+        // Vector2 left = Vector2.Perpendicular(dir);
+        // RaycastHit2D hitLeft = Physics2D.Raycast(first + left * radius, dir, distance, LayerMask.GetMask(layer));
+        // RaycastHit2D hitRight = Physics2D.Raycast(first - left * radius, dir, distance, LayerMask.GetMask(layer));
+        
+        // // Avoiding using the distance to spare some CPU
+        Vector2 offset = (second - first);
+        Vector2 left = Vector2.Perpendicular(offset.normalized);
+        Vector2 leftStart = first + left * radius;
+        RaycastHit2D hitLeft = Physics2D.Linecast(leftStart, offset + leftStart, LayerMask.GetMask(layer));
+        Vector2 rightStart = first - left * radius;
+        RaycastHit2D hitRight = Physics2D.Linecast(rightStart, offset + rightStart, LayerMask.GetMask(layer));
+        
 
         return Equals(hitLeft.collider, null) && Equals(hitRight.collider, null);
     }
@@ -238,7 +245,7 @@ public static class GeometryHelper
 
             Vector2 diff = point - pOnSegment;
             float sqrMag = diff.sqrMagnitude;
-            
+
             if (minSqrMag > sqrMag && isVisible)
             {
                 minSqrMag = sqrMag;
@@ -246,7 +253,7 @@ public static class GeometryHelper
             }
         }
 
-        return  projection;
+        return projection;
     }
 
 
