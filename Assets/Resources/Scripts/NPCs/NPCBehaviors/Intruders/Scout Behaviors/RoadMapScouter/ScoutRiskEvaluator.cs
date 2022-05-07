@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 public class ScoutRiskEvaluator : MonoBehaviour
@@ -7,7 +8,7 @@ public class ScoutRiskEvaluator : MonoBehaviour
     // How risky is the intruder's current position is, 0 is safe and 1 is spotted.
     private float _currentRiskValue;
     private Dictionary<string, PossiblePosition> _riskSpots;
-    
+
     // Variables for the coroutine for checking the risk of taking a current path. 
     private bool _isTrajectoryInterceptionCoRunning;
 
@@ -123,15 +124,16 @@ public class ScoutRiskEvaluator : MonoBehaviour
         return _currentRiskValue < highestRisk;
     }
 
-    public void CheckPathRisk(RoadMap roadMap, Intruder intruder, List<Guard> guards, float maxAcceptedRisk, float npcRadius)
+    public void CheckPathRisk(RoadMap roadMap, Intruder intruder, List<Guard> guards, float maxAcceptedRisk,
+        float npcRadius)
     {
         if (_isTrajectoryInterceptionCoRunning && !intruder.IsBusy()) return;
         StartCoroutine(TrajectoryInterceptionCO(roadMap, intruder, guards, maxAcceptedRisk, npcRadius));
     }
 
 
-
-    private IEnumerator TrajectoryInterceptionCO(RoadMap roadMap, Intruder intruder, List<Guard> guards, float maxAcceptedRisk, float npcRadius)
+    private IEnumerator TrajectoryInterceptionCO(RoadMap roadMap, Intruder intruder, List<Guard> guards,
+        float maxAcceptedRisk, float npcRadius)
     {
         _isTrajectoryInterceptionCoRunning = true;
         if (IsPathRisky(roadMap, intruder, guards, maxAcceptedRisk, npcRadius))
@@ -145,8 +147,10 @@ public class ScoutRiskEvaluator : MonoBehaviour
         _isTrajectoryInterceptionCoRunning = false;
     }
 
-    public void Draw()
+    public void Draw(Vector2 intruderPos)
     {
+        Handles.Label(intruderPos, _currentRiskValue.ToString());
+
         foreach (var spot in _riskSpots)
         {
             float value = Mathf.Round(spot.Value.risk * 100f) * 0.01f;

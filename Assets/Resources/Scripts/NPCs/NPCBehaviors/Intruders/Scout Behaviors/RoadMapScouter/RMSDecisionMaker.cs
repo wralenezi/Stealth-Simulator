@@ -72,7 +72,7 @@ public class RMSDecisionMaker //: MonoBehaviour
             if (maxFitness > hs.GoalUtility) continue;
             if (StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 0.05f)
             {
-                Debug.Log("Not ready");
+                // Debug.Log("Not ready");
                 continue;
             }
 

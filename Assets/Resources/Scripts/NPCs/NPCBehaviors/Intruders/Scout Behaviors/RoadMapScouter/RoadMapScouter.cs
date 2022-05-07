@@ -6,6 +6,8 @@ using Vector2 = UnityEngine.Vector2;
 
 public class RoadMapScouter : Scouter
 {
+    private Intruder _intruder;
+    
     // Road map of the level
     public bool showRoadmap;
     private RoadMap _roadMap;
@@ -29,7 +31,6 @@ public class RoadMapScouter : Scouter
 
     private RMSDecisionMaker _decisionMaker;
 
-
     // List of curves to determine how utilities are mapped.
     [SerializeField] private AnimationCurve _SafetyCurve;
 
@@ -52,7 +53,7 @@ public class RoadMapScouter : Scouter
         _riskEvaluator.Initiate();
         _pathFinder = new RMPScoutPathFinder();
         _decisionMaker = new RMSDecisionMaker();
-
+        
         showAvailableHidingSpots = true;
         showRiskSpots = true;
         showProjectedTrajectories = true;
@@ -81,6 +82,7 @@ public class RoadMapScouter : Scouter
     {
         base.Begin();
         _riskEvaluator.Clear();
+        _intruder = NpcsManager.Instance.GetIntruders()[0];
     }
 
     public override void Refresh(GameType gameType)
@@ -570,7 +572,7 @@ public class RoadMapScouter : Scouter
             _roadMap.DrawWalkableRoadmap();
 
         if (showRiskSpots)
-            _riskEvaluator.Draw();
+            _riskEvaluator.Draw(_intruder.GetTransform().position);
 
         if (showProjectedTrajectories)
             foreach (var psbTrac in _possibleTrajectories)
