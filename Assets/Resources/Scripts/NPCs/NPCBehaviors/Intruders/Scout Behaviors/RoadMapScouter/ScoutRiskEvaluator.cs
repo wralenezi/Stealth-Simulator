@@ -15,11 +15,13 @@ public class ScoutRiskEvaluator : MonoBehaviour
     // Update frequency parameters
     private const float UpdateIntervalInSeconds = 0.1f;
 
+    public static ScoutRiskEvaluator Instance;
 
     // Start is called before the first frame update
     public void Initiate()
     {
         _riskSpots = new Dictionary<string, PossiblePosition>();
+        Instance = this;
     }
 
     // Update is called once per frame
@@ -40,8 +42,7 @@ public class ScoutRiskEvaluator : MonoBehaviour
         Intruder intruder = NpcsManager.Instance.GetIntruders()[0];
         Vector2 intruderPosition = intruder.GetTransform().position;
 
-        float minSqrMag = Mathf.Infinity;
-        float risk = 0f;
+        float highestRisk = 0f;
 
         List<WayPoint> possiblePositions = roadMap.GetPossibleGuardPositions();
 
@@ -49,21 +50,21 @@ public class ScoutRiskEvaluator : MonoBehaviour
         {
             Vector2 offset = p.GetPosition() - intruderPosition;
             float sqrMag = offset.sqrMagnitude;
-            bool isVisible = GeometryHelper.IsCirclesVisible(intruderPosition, p.GetPosition(), Properties.NpcRadius, "Wall");
 
-            if (minSqrMag > sqrMag && isVisible && sqrMag <= RISK_RANGE * RISK_RANGE)
-            {
-                minSqrMag = sqrMag;
-                risk = p.GetProbability();
-            }
+            if (sqrMag > RISK_RANGE * RISK_RANGE) continue;
+
+            bool isVisible =
+                GeometryHelper.IsCirclesVisible(intruderPosition, p.GetPosition(), Properties.NpcRadius, "Wall");
+
+            if (highestRisk < p.GetProbability() && isVisible)
+                highestRisk = p.GetProbability();
         }
 
-        _currentRiskValue = risk;
+        _currentRiskValue = Mathf.Round(highestRisk * 100f) * 0.01f;
     }
 
     private bool IsPathRisky(RoadMap roadMap, Intruder intruder, List<Guard> guards, float maxRisk)
     {
-        float IGNORE_RISK_RANGE = 1f;
         float RISK_RANGE = Properties.GetFovRadius(NpcType.Guard);
 
         _riskSpots.Clear();
@@ -112,16 +113,11 @@ public class ScoutRiskEvaluator : MonoBehaviour
             }
         }
 
-        if (Equals(highestRisk, Mathf.NegativeInfinity)) return false;
+        if (Equals(riskiestSpot, null)) return false;
 
         bool isRisky = highestRisk >= maxRisk;
 
-        if (!isRisky) return false;
-
-        // float distanceFromRisk = Vector2.Distance(riskiestSpot.GetPosition().Value, intruder.GetTransform().position);
-        // return distanceFromRisk > IGNORE_RISK_RANGE;
-
-        return _currentRiskValue < highestRisk;
+        return isRisky;
     }
 
     public void CheckPathRisk(RoadMap roadMap, Intruder intruder, List<Guard> guards, float maxAcceptedRisk)
@@ -135,25 +131,28 @@ public class ScoutRiskEvaluator : MonoBehaviour
         float maxAcceptedRisk)
     {
         _isTrajectoryInterceptionCoRunning = true;
-        if (IsPathRisky(roadMap, intruder, guards, maxAcceptedRisk))
+        if (_currentRiskValue <= 0.5f)
         {
-            intruder.ClearGoal();
-            // Debug.Log("Cancel Plan");
+            if (IsPathRisky(roadMap, intruder, guards, maxAcceptedRisk))
+            {
+                intruder.ClearGoal();
+                // Debug.Log("Cancel Plan");
+            }
+            else
+                yield return new WaitForSeconds(UpdateIntervalInSeconds);
         }
-        else
-            yield return new WaitForSeconds(UpdateIntervalInSeconds);
 
         _isTrajectoryInterceptionCoRunning = false;
     }
 
     public void Draw(Vector2 intruderPos)
     {
-        Handles.Label(intruderPos, _currentRiskValue.ToString());
+        Handles.Label(intruderPos + Vector2.down * 0.5f, _currentRiskValue.ToString());
 
         foreach (var spot in _riskSpots)
         {
             float value = Mathf.Round(spot.Value.risk * 100f) * 0.01f;
-            spot.Value.Draw(value.ToString(), Color.green);
+            spot.Value.Draw(value.ToString(), Color.red);
         }
     }
 }

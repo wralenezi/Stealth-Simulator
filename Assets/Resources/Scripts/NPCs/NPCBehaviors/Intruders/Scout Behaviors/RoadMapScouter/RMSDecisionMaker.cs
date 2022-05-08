@@ -70,7 +70,7 @@ public class RMSDecisionMaker //: MonoBehaviour
         {
             if (hs.RiskLikelihood >= maxAcceptedRisk) continue;
             if (maxFitness > hs.GoalUtility) continue;
-            if (StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 0.05f)
+            if (StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 1f)
             {
                 // Debug.Log("Not ready");
                 continue;
@@ -106,21 +106,27 @@ public class RMSDecisionMaker //: MonoBehaviour
         return bestHs;
     }
 
-    private HidingSpot GetSafeSpot(List<HidingSpot> spot)
+    private HidingSpot GetSafeSpot(List<HidingSpot> spots)
     {
-        float minCost = Mathf.Infinity;
+        Intruder intruder = NpcsManager.Instance.GetIntruders()[0];
+        float MaxDistance = PathFinding.Instance.longestShortestPath * 0.4f;
+        
+        spots.Sort((x,y)=>x.RiskLikelihood.CompareTo(y.RiskLikelihood));
+        
         HidingSpot bestSpot = null;
-
-        foreach (var hs in spot)
+        
+        foreach (var hs in spots)
         {
-            if (hs.RiskLikelihood < 1f) continue;
-            if (StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 0.05f) continue;
+            if (StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 1f) continue;
+            
+            if(hs.RiskLikelihood > ScoutRiskEvaluator.Instance.GetRisk()) continue;
+            
+            float distance =
+                PathFinding.Instance.GetShortestPathDistance(intruder.GetTransform().position, hs.Position);
+            
+            if(distance > MaxDistance) continue;
 
-            if (minCost > hs.CostUtility)
-            {
-                bestSpot = hs;
-                minCost = hs.CostUtility;
-            }
+            bestSpot = hs;
         }
 
         return bestSpot;
@@ -172,6 +178,4 @@ public class RMSDecisionMaker //: MonoBehaviour
 
         return bestHs;
     }
-
-
 }

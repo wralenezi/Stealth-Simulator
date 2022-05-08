@@ -11,7 +11,7 @@ public abstract class Scouter : MonoBehaviour
 
     public virtual void Initiate(MapManager mapManager)
     {
-        ShowHidingSpots = true;
+        // ShowHidingSpots = true;
         _HsC = new HidingSpotsCtrlr(mapManager, mapManager.mapRenderer.GetMapBoundingBox(), 10, 10);
     }
 

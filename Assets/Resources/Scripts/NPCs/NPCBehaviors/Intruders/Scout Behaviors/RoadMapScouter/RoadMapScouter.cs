@@ -51,9 +51,9 @@ public class RoadMapScouter : Scouter
         _decisionMaker = new RMSDecisionMaker();
         
         // showAvailableHidingSpots = true;
-        // showRiskSpots = true;
+        showRiskSpots = true;
         // showProjectedTrajectories = true;
-        // showRoadmap = true;
+        showRoadmap = true;
     }
 
     private void SetCurves()
@@ -91,37 +91,37 @@ public class RoadMapScouter : Scouter
         _riskEvaluator.UpdateCurrentRisk(_roadMap);
 
         CalculateThresholds(out float pathFindingRiskThreshold, out float abortPathRiskThreshold);
-
+        
         // Get a new destination for the intruder
         if (!intruder.IsBusy())
         {
             Vector2? goal = null;
-
+        
             switch (gameType)
             {
                 case GameType.CoinCollection:
                     goal = CollectablesManager.Instance.GetGoalPosition(gameType);
                     break;
-
+        
                 case GameType.StealthPath:
                     break;
             }
-
+        
             EvaluateSpots(intruder, goal);
-
+        
             HidingSpot bestHs =
                 _decisionMaker.GetBestSpot(_availableSpots, _HsC.GetHidingSpots(), _riskEvaluator.GetRisk());
-
+        
             if (Equals(bestHs, null))
             {
                 // Debug.Log("No Goal");
                 return;
             }
-
-
+        
+        
             _pathFinder.SetPathOnRoadmap(_roadMap, intruder, bestHs, false, pathFindingRiskThreshold);
         }
-
+        
         // Abort the current path if it is too risky
         _riskEvaluator.CheckPathRisk(_roadMap, intruder, guards, abortPathRiskThreshold);
     }
@@ -181,16 +181,19 @@ public class RoadMapScouter : Scouter
         // Consider the goal as a potential hiding spot
         if (!Equals(goal, null))
         {
-            float distanceToHs =
-                PathFinding.Instance.GetShortestPathDistance(goal.Value, intruder.GetTransform().position);
-            float radius = PathFinding.Instance.longestShortestPath * 0.3f;
-
-            // if (GeometryHelper.IsCirclesVisible(intruder.GetTransform().position, goal.Value, NPC_RADIUS, "Wall"))
-            if (distanceToHs <= radius)
-            {
-                HidingSpot goalSpot = new HidingSpot(goal.Value, 1f);
-                _availableSpots.Add(goalSpot);
-            }
+            // float distanceToHs =
+            //     PathFinding.Instance.GetShortestPathDistance(goal.Value, intruder.GetTransform().position);
+            // float radius = PathFinding.Instance.longestShortestPath * 0.3f;
+            //
+            // // if (GeometryHelper.IsCirclesVisible(intruder.GetTransform().position, goal.Value, NPC_RADIUS, "Wall"))
+            // if (distanceToHs <= radius)
+            // {
+            //     HidingSpot goalSpot = new HidingSpot(goal.Value, 1f);
+            //     _availableSpots.Add(goalSpot);
+            // }
+            
+            HidingSpot goalSpot = new HidingSpot(goal.Value, 1f);
+            _availableSpots.Add(goalSpot);
         }
 
         // Remove spots that are too far away
@@ -227,177 +230,7 @@ public class RoadMapScouter : Scouter
             i++;
         }
     }
-    //
-    // private HidingSpot GetBestSpot(float currentRisk)
-    // {
-    //     if (currentRisk < 0.5f)
-    //         // return GetClosestToGoalSafeSpot(0.5f);
-    //         return GetClosestToGoalSafeSpotNew(0.5f);
-    //     // return GetClosestCheapestToGoalSafeSpot(0.5f);
-    //     // return GetSafestToGoalSpot();
-    //     // return GetBestSpot_Simple();
-    //
-    //     // return GetSafestSpot();
-    //     return GetSafeSpot();
-    // }
-    //
-    //
-    // private HidingSpot GetBestSpot_Simple()
-    // {
-    //     HidingSpot bestHs = null;
-    //     float maxFitness = Mathf.NegativeInfinity;
-    //     foreach (var hs in _availableSpots)
-    //     {
-    //         hs.Fitness = hs.RiskLikelihood;
-    //
-    //         hs.Fitness = Mathf.Round(hs.Fitness * 10000f) * 0.0001f;
-    //
-    //         if (!(maxFitness < hs.Fitness)) continue;
-    //
-    //         bestHs = hs;
-    //         maxFitness = hs.Fitness;
-    //     }
-    //
-    //     return bestHs;
-    // }
-    //
-    //
-    // /// <summary>
-    // /// Get the best hiding spots by filtering them through each utility sequentially
-    // /// </summary>
-    // /// <returns>The best hiding spot</returns>
-    // private HidingSpot GetClosestToGoalSafeSpot(float maxAcceptedRisk)
-    // {
-    //     HidingSpot bestHs = null;
-    //     float maxFitness = Mathf.NegativeInfinity;
-    //
-    //     foreach (var hs in _availableSpots)
-    //     {
-    //         if (hs.RiskLikelihood >= maxAcceptedRisk) continue;
-    //
-    //         if (maxFitness >= hs.GoalUtility) continue;
-    //
-    //         bestHs = hs;
-    //         maxFitness = hs.GoalUtility;
-    //     }
-    //
-    //     return bestHs;
-    // }
-    //
-    //
-    // private HidingSpot GetClosestToGoalSafeSpotNew(float maxAcceptedRisk)
-    // {
-    //     HidingSpot bestHs = null;
-    //     float maxFitness = Mathf.NegativeInfinity;
-    //
-    //     foreach (var hs in _availableSpots)
-    //     {
-    //         if (hs.RiskLikelihood >= maxAcceptedRisk) continue;
-    //         if (maxFitness > hs.GoalUtility) continue;
-    //         if (StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 0.05f)
-    //         {
-    //             Debug.Log("Not ready");
-    //             continue;
-    //         }
-    //
-    //         bestHs = hs;
-    //         maxFitness = hs.GoalUtility;
-    //     }
-    //
-    //     return bestHs;
-    // }
-    //
-    //
-    // private HidingSpot GetClosestCheapestToGoalSafeSpot(float maxAcceptedRisk)
-    // {
-    //     HidingSpot bestHs = null;
-    //     float maxFitness = Mathf.NegativeInfinity;
-    //
-    //     _availableSpots.Sort((x, y) => y.CoverUtility.CompareTo(x.CoverUtility));
-    //
-    //     foreach (var hs in _availableSpots)
-    //     {
-    //         if (hs.RiskLikelihood >= maxAcceptedRisk) continue;
-    //
-    //         float fitness = hs.GoalUtility;
-    //
-    //         if (maxFitness >= fitness) continue;
-    //
-    //         bestHs = hs;
-    //         maxFitness = fitness;
-    //     }
-    //
-    //     return bestHs;
-    // }
-    //
-    // private HidingSpot GetSafeSpot()
-    // {
-    //     float minCost = Mathf.Infinity;
-    //     HidingSpot bestSpot = null;
-    //
-    //     foreach (var hs in _HsC.GetHidingSpots())
-    //     {
-    //         if (hs.RiskLikelihood < 1f) continue;
-    //         if (StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 0.05f) continue;
-    //
-    //         if (minCost > hs.CostUtility)
-    //         {
-    //             bestSpot = hs;
-    //             minCost = hs.CostUtility;
-    //         }
-    //     }
-    //
-    //     return bestSpot;
-    // }
-    //
-    //
-    // private HidingSpot GetSafestSpot()
-    // {
-    //     // Sorted in Asc order
-    //     _availableSpots.Sort((x, y) => x.RiskLikelihood.CompareTo(y.RiskLikelihood));
-    //
-    //     float minCost = Mathf.Infinity;
-    //     HidingSpot bestSpot = null;
-    //
-    //     foreach (var hs in _availableSpots)
-    //     {
-    //         if (StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 0.05f) continue;
-    //
-    //         if (minCost > hs.CostUtility)
-    //         {
-    //             bestSpot = hs;
-    //             minCost = hs.CostUtility;
-    //         }
-    //     }
-    //
-    //     return bestSpot;
-    // }
-    //
-    // private HidingSpot GetSafestToGoalSpot()
-    // {
-    //     // Sorted in Asc order
-    //     _availableSpots.Sort((x, y) => x.RiskLikelihood.CompareTo(y.RiskLikelihood));
-    //
-    //     int firstQuarter = Mathf.FloorToInt(_availableSpots.Count * 0.5f);
-    //
-    //     HidingSpot bestHs = null;
-    //     float maxFitness = Mathf.NegativeInfinity;
-    //     for (int i = 0; i <= firstQuarter; i++)
-    //     {
-    //         HidingSpot hs = _availableSpots[i];
-    //
-    //         float fitness = hs.GoalUtility;
-    //
-    //         if (maxFitness >= fitness) continue;
-    //
-    //         bestHs = hs;
-    //         maxFitness = fitness;
-    //     }
-    //
-    //     return bestHs;
-    // }
-    //
-
+ 
     private void SetRiskValue(HidingSpot hs)
     {
         float guardFovRadius = Properties.GetFovRadius(NpcType.Guard);

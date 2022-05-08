@@ -35,7 +35,8 @@ public class RMPScoutPathFinder
         bool isOriginal = true;
         WayPoint startWp = roadMap.GetClosestNodes(start, isOriginal, NodeType.RoadMap, Properties.NpcRadius);
 
-        WayPoint goalWp = roadMap.GetClosestNodes(goalSpot.Position, isOriginal, NodeType.RoadMap, Properties.NpcRadius);
+        WayPoint goalWp =
+            roadMap.GetClosestNodes(goalSpot.Position, isOriginal, NodeType.RoadMap, Properties.NpcRadius);
 
         openListRoadMap.Clear();
         closedListRoadMap.Clear();
@@ -125,8 +126,11 @@ public class RMPScoutPathFinder
 
         path.RemoveAt(0);
 
-        // if (path.Count > 2)
-        //     EditorApplication.isPaused = true;
+        if (path.Count == 2)
+        {
+            Vector2 tempEnd = path[1];
+            PathFinding.Instance.GetShortestPath(start, tempEnd, ref path);
+        }
     }
 
     // Get heuristic value for way points road map

@@ -1058,7 +1058,7 @@ public class RoadMap
         {
             Gizmos.DrawSphere(t.GetPosition(), 0.025f);
             float prob = Mathf.Round(t.GetProbability() * 100f) * 0.01f;
-            Handles.Label(t.GetPosition(), t.type.ToString());
+            Handles.Label(t.GetPosition(), prob.ToString());
 
 
             foreach (var wp in t.GetConnections(true))
