@@ -46,9 +46,11 @@ public class Coin : MonoBehaviour
             int random = Random.Range(0, navMesh.Count);
             Vector2 pos = navMesh[random].GetRandomPosition();
 
+            if(!navMesh[random].IsCircleInPolygon(pos, 0.2f)) continue;
+
             float distance = PathFinding.Instance.GetShortestPathDistance(startPos, pos);
 
-            if (distance > PathFinding.Instance.longestShortestPath * 0.4f)
+            if (distance > PathFinding.Instance.longestShortestPath * 0.5f)
             {
                 positionFound = true;
                 chosenPos = pos;

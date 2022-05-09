@@ -6,7 +6,7 @@ using UnityEngine;
 public class ScoutRiskEvaluator : MonoBehaviour
 {
     // How risky is the intruder's current position is, 0 is safe and 1 is spotted.
-    private float _currentRiskValue;
+    [SerializeField] private float _currentRiskValue;
     private Dictionary<string, PossiblePosition> _riskSpots;
 
     // Variables for the coroutine for checking the risk of taking a current path. 
@@ -42,7 +42,8 @@ public class ScoutRiskEvaluator : MonoBehaviour
         Intruder intruder = NpcsManager.Instance.GetIntruders()[0];
         Vector2 intruderPosition = intruder.GetTransform().position;
 
-        float highestRisk = 0f;
+        float closestRisk = 0f;
+        float closestSqrMag = Mathf.Infinity;
 
         List<WayPoint> possiblePositions = roadMap.GetPossibleGuardPositions();
 
@@ -51,16 +52,18 @@ public class ScoutRiskEvaluator : MonoBehaviour
             Vector2 offset = p.GetPosition() - intruderPosition;
             float sqrMag = offset.sqrMagnitude;
 
+            if (sqrMag > closestSqrMag) continue;
             if (sqrMag > RISK_RANGE * RISK_RANGE) continue;
 
-            bool isVisible =
-                GeometryHelper.IsCirclesVisible(intruderPosition, p.GetPosition(), Properties.NpcRadius, "Wall");
+            RaycastHit2D hit = Physics2D.Linecast(intruderPosition, p.GetPosition(), LayerMask.GetMask("Wall"));
+            bool isVisible = Equals(hit.collider, null);
+            if (!isVisible) continue;
 
-            if (highestRisk < p.GetProbability() && isVisible)
-                highestRisk = p.GetProbability();
+            closestRisk = p.GetProbability();
+            closestSqrMag = sqrMag;
         }
 
-        _currentRiskValue = Mathf.Round(highestRisk * 100f) * 0.01f;
+        _currentRiskValue = Mathf.Round(closestRisk * 100f) * 0.01f;
     }
 
     private bool IsPathRisky(RoadMap roadMap, Intruder intruder, List<Guard> guards, float maxRisk)
@@ -120,6 +123,64 @@ public class ScoutRiskEvaluator : MonoBehaviour
         return isRisky;
     }
 
+    /// <summary>
+    /// Check if it is possible for the intruder to run into the sights of any of the guards.
+    /// </summary>
+    /// <returns></returns>
+    private bool IsRiskyMeetUp(RoadMap roadMap, Intruder intruder, List<Guard> guards, float riskTolerance)
+    {
+        _riskSpots.Clear();
+
+        // Insert a risk spot for each guard
+        foreach (var g in guards)
+        {
+            PossiblePosition riskSpot = new PossiblePosition(null, g);
+            riskSpot.risk = Mathf.NegativeInfinity;
+            riskSpot.sqrDistance = Mathf.Infinity;
+            _riskSpots[g.name] = riskSpot;
+        }
+
+        List<WayPoint> possiblePositions = roadMap.GetPossibleGuardPositions();
+
+        foreach (var p in possiblePositions)
+        {
+            Vector2? pointOnPath =
+                GeometryHelper.GetClosetPointOnPath(intruder.GetFullPath(), p.GetPosition(), Properties.NpcRadius);
+
+            if (Equals(pointOnPath, null)) continue;
+
+            Vector2 offset = pointOnPath.Value - p.GetPosition();
+            PossiblePosition riskSpot = _riskSpots[p.GetPassingGuard().name];
+
+            if (riskSpot.sqrDistance > offset.sqrMagnitude)
+            {
+                riskSpot.SetPosition(pointOnPath);
+                riskSpot.npc = p.GetPassingGuard();
+                riskSpot.risk = p.GetProbability();
+                riskSpot.sqrDistance = offset.sqrMagnitude;
+            }
+        }
+        
+        // loop through the risky spots for each guard to see if the intruder might be spotted in them
+        foreach (var spot in _riskSpots)
+        {
+            if(spot.Value.risk <= riskTolerance) continue; 
+            
+            float intruderPathDistanceToSpot = PathFinding.Instance.GetShortestPathDistance(intruder.GetTransform().position,
+                spot.Value.GetPosition().Value);
+            
+            float guardPathDistanceToSpot = PathFinding.Instance.GetShortestPathDistance(spot.Value.npc.GetTransform().position,
+                spot.Value.GetPosition().Value);
+            guardPathDistanceToSpot -= Properties.GetFovRadius(NpcType.Guard);
+            guardPathDistanceToSpot = Mathf.Clamp(guardPathDistanceToSpot, 0f, guardPathDistanceToSpot);
+
+            if (guardPathDistanceToSpot < intruderPathDistanceToSpot)
+                return true;
+        }
+
+        return false;
+    }
+
     public void CheckPathRisk(RoadMap roadMap, Intruder intruder, List<Guard> guards, float maxAcceptedRisk)
     {
         if (_isTrajectoryInterceptionCoRunning && !intruder.IsBusy()) return;
@@ -131,16 +192,14 @@ public class ScoutRiskEvaluator : MonoBehaviour
         float maxAcceptedRisk)
     {
         _isTrajectoryInterceptionCoRunning = true;
-        if (_currentRiskValue <= 0.5f)
+        // if (IsPathRisky(roadMap, intruder, guards, maxAcceptedRisk))
+        if (IsRiskyMeetUp(roadMap, intruder, guards, maxAcceptedRisk))
         {
-            if (IsPathRisky(roadMap, intruder, guards, maxAcceptedRisk))
-            {
-                intruder.ClearGoal();
-                // Debug.Log("Cancel Plan");
-            }
-            else
-                yield return new WaitForSeconds(UpdateIntervalInSeconds);
+            intruder.ClearGoal();
+            // Debug.Log("Cancel Plan");
         }
+        else
+            yield return new WaitForSeconds(UpdateIntervalInSeconds);
 
         _isTrajectoryInterceptionCoRunning = false;
     }

@@ -1,10 +1,13 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
 // The controller for the hiding spots the intruders can use
 public class HidingSpotsCtrlr
 {
+    private List<HidingSpot> _tempSpots;
+
     // the hiding spots
     private List<HidingSpot> _allSpots;
     private PartitionGrid<HidingSpot> _partitionedSpots;
@@ -13,6 +16,7 @@ public class HidingSpotsCtrlr
 
     public HidingSpotsCtrlr(MapManager mapManager, Bounds bounds, int colCount, int rowCount)
     {
+        _tempSpots = new List<HidingSpot>();
         _allSpots = new List<HidingSpot>();
         _partitionedSpots = new PartitionGrid<HidingSpot>(bounds, colCount, rowCount);
 
@@ -122,7 +126,7 @@ public class HidingSpotsCtrlr
             currentSpot.OcclusionUtility = 1f - currentSpot.VisibleSpotsCount / _allSpots.Count;
     }
 
-    public void GetSpotsOfInterest(Vector2 intruderPosition, ref List<HidingSpot> hidingSpots)
+    public void GetSpotsOfInterest(Vector2 intruderPosition, ref List<HidingSpot> hidingSpots, int depth)
     {
         hidingSpots.Clear();
 
@@ -145,9 +149,25 @@ public class HidingSpotsCtrlr
         if (Equals(closestSpot, null)) return;
 
         hidingSpots.Add(closestSpot);
-        List<HidingSpot> neighbours = closestSpot.GetNeighbours();
-        foreach (var n in neighbours)
-            hidingSpots.Add(n);
+
+        while (depth > 0)
+        {
+            _tempSpots.Clear();
+            foreach (var spot in hidingSpots)
+            {
+                List<HidingSpot> neighbours = spot.GetNeighbours();
+                foreach (var n in neighbours)
+                    _tempSpots.Add(n);
+            }
+
+            depth--;
+
+            foreach (var spot in _tempSpots)
+            {
+                if(!hidingSpots.Contains(spot))
+                    hidingSpots.Add(spot);
+            }
+        }
     }
 
     public List<HidingSpot> GetHidingSpots()
@@ -330,11 +350,11 @@ public class HidingSpot
 #if UNITY_EDITOR
         string label = "";
         label += "Risk: " + (Mathf.Round(RiskLikelihood * 100f) / 100f) + " \n";
-        // label += "Goal: " + (Mathf.Round(GoalUtility * 100f) / 100f) + " \n";
+        label += "Goal: " + (Mathf.Round(GoalUtility * 100f) / 100f) + " \n";
         // label += "Cost: " + (Mathf.Round(CostUtility * 100f) / 100f) + " \n";
         // label += "LastFail: " + (StealthArea.GetElapsedTime() - lastFailedTimeStamp) + " \n";
         // label += "Occlusion: " + (Mathf.Round(OcclusionUtility * 100f) / 100f) + " \n";
-        // label += "CoverRatio: " + (Mathf.Round(CoverUtility * 100f) / 100f) + " \n";
+        label += "CoverRatio: " + (Mathf.Round(CoverUtility * 100f) / 100f) + " \n";
         Handles.Label(Position, label);
 #endif
     }

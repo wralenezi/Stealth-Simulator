@@ -223,15 +223,10 @@ public class WayPoint
     }
 
 
-    public void Draw()
+    public void Draw(string label)
     {
-        string label = "";
-
-        label += type + "\n";
-
         Handles.Label(GetPosition(), label);
-
-        Gizmos.DrawSphere(GetPosition(), 0.3f);
+        Gizmos.DrawSphere(GetPosition(), 0.1f);
     }
 }
 

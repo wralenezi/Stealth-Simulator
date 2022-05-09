@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -6,9 +5,15 @@ public class RMSDecisionMaker //: MonoBehaviour
 {
     public HidingSpot GetBestSpot(List<HidingSpot> spots, List<HidingSpot> allSpots, float currentRisk)
     {
+        // if (currentRisk < 0.5f)
+        // return GetClosestToGoalSafeSpot(0.5f);
+        // return GetClosestToGoalSafeSpotNew(spots, 0.5f);
+
         if (currentRisk < 0.5f)
-            // return GetClosestToGoalSafeSpot(0.5f);
             return GetClosestToGoalSafeSpotNew(spots, 0.5f);
+        // return GreedyGoalSpot(spots);
+
+        return GreedySafeSpot(spots);
         // return GetClosestCheapestToGoalSafeSpot(0.5f);
         // return GetSafestToGoalSpot();
         // return GetBestSpot_Simple();
@@ -35,6 +40,48 @@ public class RMSDecisionMaker //: MonoBehaviour
         }
 
         return bestHs;
+    }
+
+
+    private HidingSpot GreedyGoalSpot(List<HidingSpot> spots)
+    {
+        spots.Sort((x, y) =>
+        {
+            int ret = y.GoalUtility.CompareTo(x.GoalUtility);
+            return ret != 0 ? ret : x.RiskLikelihood.CompareTo(y.RiskLikelihood);
+        });
+
+        foreach (var hs in spots)
+        {
+            if (StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 1f) continue;
+
+            // if (hs.RiskLikelihood > ScoutRiskEvaluator.Instance.GetRisk()) continue;
+
+            return hs;
+        }
+
+        return null;
+    }
+
+
+    private HidingSpot GreedySafeSpot(List<HidingSpot> spots)
+    {
+        spots.Sort((x, y) =>
+        {
+            int ret = x.RiskLikelihood.CompareTo(y.RiskLikelihood);
+            return ret != 0 ? ret : y.CoverUtility.CompareTo(x.CoverUtility);
+        });
+
+        foreach (var hs in spots)
+        {
+            if (StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 1f) continue;
+
+            // if (hs.RiskLikelihood > ScoutRiskEvaluator.Instance.GetRisk()) continue;
+
+            return hs;
+        }
+
+        return null;
     }
 
 
@@ -110,21 +157,21 @@ public class RMSDecisionMaker //: MonoBehaviour
     {
         Intruder intruder = NpcsManager.Instance.GetIntruders()[0];
         float MaxDistance = PathFinding.Instance.longestShortestPath * 0.4f;
-        
-        spots.Sort((x,y)=>x.RiskLikelihood.CompareTo(y.RiskLikelihood));
-        
+
+        spots.Sort((x, y) => x.RiskLikelihood.CompareTo(y.RiskLikelihood));
+
         HidingSpot bestSpot = null;
-        
+
         foreach (var hs in spots)
         {
             if (StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 1f) continue;
-            
-            if(hs.RiskLikelihood > ScoutRiskEvaluator.Instance.GetRisk()) continue;
-            
+
+            if (hs.RiskLikelihood > ScoutRiskEvaluator.Instance.GetRisk()) continue;
+
             float distance =
                 PathFinding.Instance.GetShortestPathDistance(intruder.GetTransform().position, hs.Position);
-            
-            if(distance > MaxDistance) continue;
+
+            if (distance > MaxDistance) continue;
 
             bestSpot = hs;
         }
