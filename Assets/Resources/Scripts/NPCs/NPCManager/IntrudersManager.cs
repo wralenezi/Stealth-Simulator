@@ -6,7 +6,7 @@ using UnityEngine;
 public class IntrudersManager : Agent
 {
     // List of Intruders
-    private List<Intruder> m_Intruders;
+    private List<Intruder> _intruders;
 
     private IntrudersBehaviorController m_iCtrl;
 
@@ -15,7 +15,7 @@ public class IntrudersManager : Agent
 
     public void Initiate(Session session, MapManager mapManager)
     {
-        m_Intruders = new List<Intruder>();
+        _intruders = new List<Intruder>();
 
         // Initiate the intruder behavior controller
         m_iCtrl = gameObject.AddComponent<IntrudersBehaviorController>();
@@ -30,7 +30,7 @@ public class IntrudersManager : Agent
     public void Reset(List<MeshPolygon> navMesh, List<Guard> guards, Session session)
     {
         // Reset Intruders
-        foreach (var intruder in m_Intruders)
+        foreach (var intruder in _intruders)
         {
             intruder.ResetLocation(navMesh, guards, session);
             intruder.ResetNpc();
@@ -71,7 +71,7 @@ public class IntrudersManager : Agent
         NPC npc = npcGameObject.AddComponent<Intruder>();
         spriteRenderer.color = Color.black;
 
-        m_Intruders.Add((Intruder) npc);
+        _intruders.Add((Intruder) npc);
 
         npc.Initiate(npcData, GameManager.Instance.GetVoice());
 
@@ -95,13 +95,13 @@ public class IntrudersManager : Agent
     // Let NPCs cast their vision
     public void CastVision()
     {
-        foreach (var intruder in m_Intruders)
+        foreach (var intruder in _intruders)
             intruder.CastVision();
     }
 
     public void Move(State state, float deltaTime)
     {
-        foreach (var intruder in m_Intruders)
+        foreach (var intruder in _intruders)
         {
             intruder.ExecutePlan(state, deltaTime);
             intruder.UpdateMetrics(state, deltaTime);
@@ -110,22 +110,22 @@ public class IntrudersManager : Agent
 
     public List<Intruder> GetIntruders()
     {
-        return m_Intruders;
+        return _intruders;
     }
 
     // Set the Camera to follow the intruder
     public void FollowIntruder()
     {
-        if (m_Intruders.Count > 0)
+        if (_intruders.Count > 0)
         {
-            Vector2 pos = m_Intruders[0].transform.position;
+            Vector2 pos = _intruders[0].transform.position;
             GameManager.MainCamera.transform.position = new Vector3(pos.x, pos.y, -1f);
         }
     }
 
     public void HideLabels()
     {
-        foreach (var intruder in m_Intruders)
+        foreach (var intruder in _intruders)
         {
             intruder.HideLabel();
         }

@@ -3,15 +3,15 @@ using UnityEngine;
 
 public class RMSDecisionMaker //: MonoBehaviour
 {
-    public HidingSpot GetBestSpot(List<HidingSpot> spots, List<HidingSpot> allSpots, float currentRisk)
+    public HidingSpot GetBestSpot(List<HidingSpot> spots, float currentRisk)
     {
         // if (currentRisk < 0.5f)
         // return GetClosestToGoalSafeSpot(0.5f);
         // return GetClosestToGoalSafeSpotNew(spots, 0.5f);
 
-        if (currentRisk < 0.5f)
-            return GetClosestToGoalSafeSpotNew(spots, 0.5f);
-        // return GreedyGoalSpot(spots);
+        // if (currentRisk < 0.5f)
+        //     // return GetClosestToGoalSafeSpotNew(spots, 0.5f);
+        //     return GreedyGoalSpot(spots);
 
         return GreedySafeSpot(spots);
         // return GetClosestCheapestToGoalSafeSpot(0.5f);
@@ -19,7 +19,6 @@ public class RMSDecisionMaker //: MonoBehaviour
         // return GetBestSpot_Simple();
 
         // return GetSafestSpot();
-        return GetSafeSpot(allSpots);
     }
 
 
@@ -53,8 +52,7 @@ public class RMSDecisionMaker //: MonoBehaviour
 
         foreach (var hs in spots)
         {
-            if (StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 1f) continue;
-
+            // if (StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 1f) continue;
             // if (hs.RiskLikelihood > ScoutRiskEvaluator.Instance.GetRisk()) continue;
 
             return hs;
@@ -69,13 +67,12 @@ public class RMSDecisionMaker //: MonoBehaviour
         spots.Sort((x, y) =>
         {
             int ret = x.RiskLikelihood.CompareTo(y.RiskLikelihood);
-            return ret != 0 ? ret : y.CoverUtility.CompareTo(x.CoverUtility);
+            return ret != 0 ? ret : x.CostUtility.CompareTo(y.CostUtility);
         });
 
         foreach (var hs in spots)
         {
-            if (StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 1f) continue;
-
+            // if (StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 1f) continue;
             // if (hs.RiskLikelihood > ScoutRiskEvaluator.Instance.GetRisk()) continue;
 
             return hs;
@@ -117,11 +114,11 @@ public class RMSDecisionMaker //: MonoBehaviour
         {
             if (hs.RiskLikelihood >= maxAcceptedRisk) continue;
             if (maxFitness > hs.GoalUtility) continue;
-            if (StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 1f)
-            {
-                // Debug.Log("Not ready");
-                continue;
-            }
+            // // if (StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 1f)
+            // {
+            //     // Debug.Log("Not ready");
+            //     continue;
+            // }
 
             bestHs = hs;
             maxFitness = hs.GoalUtility;

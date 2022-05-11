@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
 
@@ -12,7 +13,7 @@ public abstract class NPC : MonoBehaviour
     // NPC Rigid body for physics
     private Rigidbody2D m_NpcRb;
 
-    private Vector2 m_velocity;
+    private Vector2 _velocity;
 
     private Transform m_transform;
 
@@ -56,10 +57,10 @@ public abstract class NPC : MonoBehaviour
     //************** Logging data ***************//
     // Variables for the distance travelled by a character
     // The last position the NPC was logged until
-    private Vector2? m_LastPosition;
+    private Vector2? _lastPosition;
 
     // The total distance the guard travelled
-    [SerializeField] private float m_TotalDistanceTravelled;
+    [SerializeField] private float _totalDistanceTravelled;
 
     // Voice parameters for WebGL
     private VoiceParams m_voiceParam;
@@ -70,7 +71,7 @@ public abstract class NPC : MonoBehaviour
         m_voiceParam = _voice;
         _pathToTake = new List<Vector2>();
         _fullPath = new List<Vector2>();
-        
+
         LinesToPassThrough = new List<RoadMapLine>();
 
         m_transform = transform;
@@ -89,9 +90,9 @@ public abstract class NPC : MonoBehaviour
     public virtual void ResetNpc()
     {
         ClearGoal();
-        m_TotalDistanceTravelled = 0f;
+        _totalDistanceTravelled = 0f;
 
-        SetPosition();
+        // SetPosition();
         m_FovPolygon[0].Clear();
 
         Renderer = GetComponent<Renderer>();
@@ -111,12 +112,13 @@ public abstract class NPC : MonoBehaviour
 
 
     // Update the agent's last position
-    public void SetPosition()
+    private void SetPosition()
     {
-        m_velocity = Equals(m_LastPosition, null)
+        _velocity = Equals(_lastPosition, null)
             ? Vector2.zero
-            : (Vector2) GetTransform().position - m_LastPosition.Value;
-        m_LastPosition = GetTransform().position;
+            : (Vector2) GetTransform().position - _lastPosition.Value;
+
+        _lastPosition = GetTransform().position;
     }
 
     // Add a field of view component to the NPC
@@ -150,7 +152,7 @@ public abstract class NPC : MonoBehaviour
 
     public float GetCurrentSpeed()
     {
-        return m_velocity.magnitude;
+        return _velocity.magnitude;
     }
 
 
@@ -190,10 +192,10 @@ public abstract class NPC : MonoBehaviour
     public List<Vector2> GetFullPath()
     {
         _fullPath.Clear();
-        
+
         _fullPath.Add(GetTransform().position);
 
-        foreach (var p in GetPath()) 
+        foreach (var p in GetPath())
             _fullPath.Add(p);
 
         return _fullPath;
@@ -302,7 +304,7 @@ public abstract class NPC : MonoBehaviour
 
         // Get the shortest path to the goal
         PathFinding.Instance.GetShortestPath(GetTransform().position, _goal, ref _pathToTake);
-        
+
         _pathToTake.RemoveAt(0);
     }
 
@@ -336,7 +338,8 @@ public abstract class NPC : MonoBehaviour
     // Move the NPC through it's path
     public void ExecutePlan(State state, float deltaTime)
     {
-        SetPosition();
+        // Update the total distance traveled
+        UpdateDistance();
 
         if (CheckIfUserInput(state))
             MoveByInput(deltaTime);
@@ -348,9 +351,6 @@ public abstract class NPC : MonoBehaviour
                 // When the path is over clear the goal.
                 if (_pathToTake.Count == 0) ClearGoal();
             }
-
-        // Update the total distance traveled
-        if (m_LastPosition != null) UpdateDistance();
     }
 
     private bool CheckIfUserInput(State state)
@@ -373,10 +373,10 @@ public abstract class NPC : MonoBehaviour
     {
         Vector3 currentPosition = GetTransform().position;
         Quaternion currentRotation = GetTransform().rotation;
-        
+
         // Handle movement
         float distanceLeft = Vector2.Distance(currentPosition, target);
-        
+
         // Find the angle needed to rotate to face the desired direction
         Vector2 rotateDir;
 
@@ -395,7 +395,7 @@ public abstract class NPC : MonoBehaviour
         float rotationStep = Mathf.Min(Mathf.Abs(angleLeft), NpcRotationSpeed * deltaTime);
         GetTransform().rotation = Quaternion.RotateTowards(currentRotation, toRotation,
             rotationStep);
-        
+
         // Make sure no rotation is due before moving
         float angleDiffThreshold = 180f / Mathf.Abs(angleLeft);
 
@@ -476,14 +476,23 @@ public abstract class NPC : MonoBehaviour
     private void UpdateDistance()
     {
         var position = GetTransform().position;
-        var distanceTravelled = Vector2.Distance(position, m_LastPosition.Value);
-        m_TotalDistanceTravelled += distanceTravelled;
-        m_LastPosition = position;
+        
+        _velocity = Equals(_lastPosition, null)
+            ? Vector2.zero
+            : (Vector2) position - _lastPosition.Value;
+
+        if (!Equals(_lastPosition, null))
+        {
+            var distanceTravelled = Vector2.Distance(position, _lastPosition.Value);
+            _totalDistanceTravelled += distanceTravelled;
+        }
+        
+        _lastPosition = position;
     }
 
     public float GetTravelledDistance()
     {
-        return m_TotalDistanceTravelled;
+        return _totalDistanceTravelled;
     }
 
     public NpcData GetNpcData()

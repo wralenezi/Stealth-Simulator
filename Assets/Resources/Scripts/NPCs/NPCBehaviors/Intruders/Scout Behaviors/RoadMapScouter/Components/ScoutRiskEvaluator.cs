@@ -129,6 +129,8 @@ public class ScoutRiskEvaluator : MonoBehaviour
     /// <returns></returns>
     private bool IsRiskyMeetUp(RoadMap roadMap, Intruder intruder, List<Guard> guards, float riskTolerance)
     {
+        float RISK_RANGE = Properties.GetFovRadius(NpcType.Guard);
+
         _riskSpots.Clear();
 
         // Insert a risk spot for each guard
@@ -144,6 +146,7 @@ public class ScoutRiskEvaluator : MonoBehaviour
 
         foreach (var p in possiblePositions)
         {
+            
             Vector2? pointOnPath =
                 GeometryHelper.GetClosetPointOnPath(intruder.GetFullPath(), p.GetPosition(), Properties.NpcRadius);
 
@@ -165,6 +168,8 @@ public class ScoutRiskEvaluator : MonoBehaviour
         foreach (var spot in _riskSpots)
         {
             if(spot.Value.risk <= riskTolerance) continue; 
+            if (spot.Value.sqrDistance > RISK_RANGE * RISK_RANGE) continue;
+
             
             float intruderPathDistanceToSpot = PathFinding.Instance.GetShortestPathDistance(intruder.GetTransform().position,
                 spot.Value.GetPosition().Value);
@@ -196,11 +201,11 @@ public class ScoutRiskEvaluator : MonoBehaviour
         if (IsRiskyMeetUp(roadMap, intruder, guards, maxAcceptedRisk))
         {
             intruder.ClearGoal();
-            // Debug.Log("Cancel Plan");
+            Debug.Log("Cancel Plan");
         }
         else
             yield return new WaitForSeconds(UpdateIntervalInSeconds);
-
+        _riskSpots.Clear();
         _isTrajectoryInterceptionCoRunning = false;
     }
 

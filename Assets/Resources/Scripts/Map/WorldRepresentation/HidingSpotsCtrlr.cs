@@ -126,29 +126,11 @@ public class HidingSpotsCtrlr
             currentSpot.OcclusionUtility = 1f - currentSpot.VisibleSpotsCount / _allSpots.Count;
     }
 
-    public void GetSpotsOfInterest(Vector2 intruderPosition, ref List<HidingSpot> hidingSpots, int depth)
+    public void FillAvailableSpots(HidingSpot hidingSpot, int depth, ref List<HidingSpot> hidingSpots)
     {
         hidingSpots.Clear();
 
-        float shortestSqrDistance = Mathf.Infinity;
-        HidingSpot closestSpot = null;
-        foreach (var spot in _allSpots)
-        {
-            if (!GeometryHelper.IsCirclesVisible(intruderPosition, spot.Position, Properties.NpcRadius, "Wall")
-            ) continue;
-
-            Vector2 offset = intruderPosition - spot.Position;
-            float sqrDistance = offset.SqrMagnitude();
-            if (shortestSqrDistance > sqrDistance)
-            {
-                shortestSqrDistance = sqrDistance;
-                closestSpot = spot;
-            }
-        }
-
-        if (Equals(closestSpot, null)) return;
-
-        hidingSpots.Add(closestSpot);
+        hidingSpots.Add(hidingSpot);
 
         while (depth > 0)
         {
@@ -164,10 +146,31 @@ public class HidingSpotsCtrlr
 
             foreach (var spot in _tempSpots)
             {
-                if(!hidingSpots.Contains(spot))
+                if (!hidingSpots.Contains(spot))
                     hidingSpots.Add(spot);
             }
         }
+    }
+
+    public HidingSpot GetClosestHidingSpotToPosition(Vector2 position)
+    {
+        float shortestSqrDistance = Mathf.Infinity;
+        HidingSpot closestSpot = null;
+        foreach (var spot in _allSpots)
+        {
+            if (!GeometryHelper.IsCirclesVisible(position, spot.Position, Properties.NpcRadius, "Wall")
+            ) continue;
+
+            Vector2 offset = position - spot.Position;
+            float sqrDistance = offset.SqrMagnitude();
+            if (shortestSqrDistance > sqrDistance)
+            {
+                shortestSqrDistance = sqrDistance;
+                closestSpot = spot;
+            }
+        }
+
+        return closestSpot;
     }
 
     public List<HidingSpot> GetHidingSpots()
