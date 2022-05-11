@@ -126,10 +126,8 @@ public class HidingSpotsCtrlr
             currentSpot.OcclusionUtility = 1f - currentSpot.VisibleSpotsCount / _allSpots.Count;
     }
 
-    public void FillAvailableSpots(HidingSpot hidingSpot, int depth, ref List<HidingSpot> hidingSpots)
+    public void AddAvailableSpots(HidingSpot hidingSpot, int depth, ref List<HidingSpot> hidingSpots)
     {
-        hidingSpots.Clear();
-
         hidingSpots.Add(hidingSpot);
 
         while (depth > 0)
@@ -297,7 +295,7 @@ public class HidingSpot
     public float OcclusionUtility;
 
     /// <summary>
-    /// Utility of how far this spot is from guards' current positions.
+    /// Utility of how far this spot is from guards' current positions. Closer to zero means there is a guard that is very close to it, while closer to one is the furthest from all guards.
     /// </summary>
     public float GuardProximityUtility;
 
@@ -332,6 +330,17 @@ public class HidingSpot
     {
         AddNeighbour(spot);
         spot.AddNeighbour(this);
+    }
+
+    public float GetWeightedCostVsGuardDistance()
+    {
+        float costUtility = 1f - CostUtility;
+        float costWeight = 0.7f;
+        
+        float guardApproximateUtility = GuardProximityUtility;
+        float guardApproxWeight = 1f - costWeight;
+
+        return costUtility * costWeight + guardApproximateUtility * guardApproxWeight;
     }
 
     public void AddNeighbour(HidingSpot spot)

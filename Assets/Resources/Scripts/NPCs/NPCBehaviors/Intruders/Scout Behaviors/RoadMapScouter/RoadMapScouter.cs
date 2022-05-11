@@ -17,6 +17,10 @@ public class RoadMapScouter : Scouter
     public bool showProjectedTrajectories;
     private List<PossibleTrajectory> _possibleTrajectories;
 
+
+    // List of the closest way points to the destination
+    private List<WayPoint> _closestWpsToDestination;
+
     public bool showAvailableHidingSpots;
 
     // List of hiding spots available for the intruder to choose from.
@@ -31,8 +35,8 @@ public class RoadMapScouter : Scouter
     private RMSDecisionMaker _decisionMaker;
 
     // The number of attempts to find the next spot
-    // [SerializeField] private int _attemptCount = 0;
-    // int _maxAttempts = 10;
+    [SerializeField] private int _attemptCount = 0;
+    int _maxAttempts = 10;
 
     // The total distance the intruder crossed
     [SerializeField] private float _crossedDistance;
@@ -44,6 +48,7 @@ public class RoadMapScouter : Scouter
     {
         base.Initiate(mapManager);
 
+        _closestWpsToDestination = new List<WayPoint>();
         _availableSpots = new List<HidingSpot>();
 
         _possibleTrajectories = new List<PossibleTrajectory>();
@@ -98,46 +103,30 @@ public class RoadMapScouter : Scouter
 
         _riskEvaluator.UpdateCurrentRisk(_roadMap);
 
-        // if (didIntruderTravel()) _attemptCount = 0;
+        if (didIntruderTravel()) _attemptCount = 0;
 
         CalculateThresholds(0, _riskEvaluator.GetRisk(), out int searchDepth,
             out float pathFindingRiskThreshold, out float abortPathRiskThreshold);
 
-        Vector2? goal = null;
-
-        switch (gameType)
-        {
-            case GameType.CoinCollection:
-                goal = CollectablesManager.Instance.GetGoalPosition(gameType);
-                break;
-
-            case GameType.StealthPath:
-                break;
-        }
+        Vector2? goal = GetDestination(gameType);
 
         List<Vector2> path = intruder.GetPath();
 
-
-        Vector2? closestToGoal = null;
-
-        if (!Equals(goal, null) && !intruder.IsBusy() && _riskEvaluator.GetRisk() < 0.1f)
-            closestToGoal = _pathFinder.GetClosestPointToGoal(_roadMap, intruder.GetTransform().position,
-                goal.Value,
-                ref path, pathFindingRiskThreshold);
+        PathFindToDestination(goal.Value, pathFindingRiskThreshold);
 
         if (!intruder.IsBusy())
         {
-            Vector2 locationToCheck =
-                Equals(closestToGoal, null) ? (Vector2) intruder.GetTransform().position : closestToGoal.Value;
+            HidingSpot closestHidingSpot = _HsC.GetClosestHidingSpotToPosition(intruder.GetTransform().position);
 
-            HidingSpot closestHidingSpot = _HsC.GetClosestHidingSpotToPosition(locationToCheck);
-            _HsC.FillAvailableSpots(closestHidingSpot, searchDepth, ref _availableSpots);
+            _availableSpots.Clear();
+            _HsC.AddAvailableSpots(closestHidingSpot, searchDepth, ref _availableSpots);
 
             // int numberOfAdjacentCell = 12;
             // _availableSpots = _HsC.GetHidingSpots(intruder.GetTransform().position, numberOfAdjacentCell);
-
-            EvaluateSpots(intruder, goal);
         }
+
+        if (_availableSpots.Count > 0) EvaluateSpots(intruder, goal);
+
 
         // Get a new destination for the intruder
         while (!intruder.IsBusy() && _availableSpots.Count > 0)
@@ -169,6 +158,42 @@ public class RoadMapScouter : Scouter
         _riskEvaluator.CheckPathRisk(_roadMap, intruder, guards, abortPathRiskThreshold);
     }
 
+    private void PathFindToDestination(Vector2 destination, float pathFindingRiskThreshold)
+    {
+        if (_intruder.IsBusy()) return;
+        if (_riskEvaluator.GetRisk() > 0.2f) return;
+        List<Vector2> path = _intruder.GetPath();
+
+        _pathFinder.GetClosestPointToGoal(_roadMap, _intruder.GetTransform().position,
+            destination, 3, ref _closestWpsToDestination,
+            ref path, pathFindingRiskThreshold);
+
+        _availableSpots.Clear();
+        foreach (var wp in _closestWpsToDestination)
+        {
+            HidingSpot closestHidingSpot = _HsC.GetClosestHidingSpotToPosition(wp.GetPosition());
+            _HsC.AddAvailableSpots(closestHidingSpot, 1, ref _availableSpots);
+        }
+    }
+
+
+    private Vector2? GetDestination(GameType gameType)
+    {
+        Vector2? goal = null;
+
+        switch (gameType)
+        {
+            case GameType.CoinCollection:
+                goal = CollectablesManager.Instance.GetGoalPosition(gameType);
+                break;
+
+            case GameType.StealthPath:
+                break;
+        }
+
+        return goal;
+    }
+
 
     private void CalculateThresholds(int attemptNumber, float intruderRisk, out int searchDepth,
         out float pathFindingRiskThreshold,
@@ -186,10 +211,9 @@ public class RoadMapScouter : Scouter
         // float searchDepthLvl = Mathf.Clamp(intruderRisk, 0.1f, 1f);
         // searchDepth = Mathf.FloorToInt(searchDepthLvl * lineOfSighMaxDepth);
         searchDepth = 1;
-        pathFindingRiskThreshold = Mathf.Clamp(intruderRisk, 0.5f, 0.8f);
-        abortPathRiskThreshold = Mathf.Clamp(intruderRisk, 0.2f, 0.8f);
+        pathFindingRiskThreshold = Mathf.Clamp(_riskEvaluator.GetRisk(), 0.5f, 0.99f);
+        abortPathRiskThreshold = Mathf.Clamp(_riskEvaluator.GetRisk(), 0.3f, 0.99f);
     }
-
 
     /// <summary>
     /// Project the guards position on the road map.
@@ -245,7 +269,7 @@ public class RoadMapScouter : Scouter
             SetRiskValue(hs);
             SetGoalUtility(hs, goal);
             SetCostUtility(intruder, hs);
-            // SetGuardsProximityUtility(hs, NpcsManager.Instance.GetGuards());
+            SetGuardsProximityUtility(hs, NpcsManager.Instance.GetGuards());
             // SetOcclusionUtility(hs, NpcsManager.Instance.GetGuards());
 
             i++;
@@ -371,28 +395,25 @@ public class RoadMapScouter : Scouter
     }
 
 
-// // Get the utility for being away from guards
-// private void SetGuardsProximityUtility(HidingSpot hs, List<Guard> guards)
-// {
-//     float proximityUtility = 0f;
-//
-//     float denominator = PathFinding.Instance.longestShortestPath;
-//
-//     foreach (var guard in guards)
-//     {
-//         float distanceToHidingspot =
-//             PathFinding.Instance.GetShortestPathDistance(hs.Position, guard.GetTransform().position);
-//
-//         float normalizedDistance = distanceToHidingspot / denominator;
-//
-//         if (proximityUtility < normalizedDistance)
-//         {
-//             proximityUtility = normalizedDistance;
-//         }
-//     }
-//
-//     hs.GuardProximityUtility = proximityUtility;
-// }
+// Get the utility for being away from guards
+    private void SetGuardsProximityUtility(HidingSpot hs, List<Guard> guards)
+    {
+        float proximityUtility = 0f;
+        float denominator = PathFinding.Instance.longestShortestPath;
+
+        foreach (var guard in guards)
+        {
+            float distanceToHidingspot =
+                PathFinding.Instance.GetShortestPathDistance(hs.Position, guard.GetTransform().position);
+
+            float normalizedDistance = distanceToHidingspot / denominator;
+
+            if (proximityUtility < normalizedDistance)
+                proximityUtility = normalizedDistance;
+        }
+
+        hs.GuardProximityUtility = proximityUtility;
+    }
 
 // /// <summary>
 // /// Get the occlusion value of a hiding spot.

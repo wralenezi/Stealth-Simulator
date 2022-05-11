@@ -9,9 +9,9 @@ public class RMSDecisionMaker //: MonoBehaviour
         // return GetClosestToGoalSafeSpot(0.5f);
         // return GetClosestToGoalSafeSpotNew(spots, 0.5f);
 
-        // if (currentRisk < 0.5f)
-        //     // return GetClosestToGoalSafeSpotNew(spots, 0.5f);
-        //     return GreedyGoalSpot(spots);
+        if (currentRisk < 0.2f)
+            //     // return GetClosestToGoalSafeSpotNew(spots, 0.5f);
+            return GreedyGoalSpot(spots);
 
         return GreedySafeSpot(spots);
         // return GetClosestCheapestToGoalSafeSpot(0.5f);
@@ -67,7 +67,11 @@ public class RMSDecisionMaker //: MonoBehaviour
         spots.Sort((x, y) =>
         {
             int ret = x.RiskLikelihood.CompareTo(y.RiskLikelihood);
-            return ret != 0 ? ret : x.CostUtility.CompareTo(y.CostUtility);
+            if (ret != 0) return ret;
+            // ret = x.CostUtility.CompareTo(y.CostUtility);
+            // if (ret != 0) return ret;
+            ret = y.GetWeightedCostVsGuardDistance().CompareTo(x.GetWeightedCostVsGuardDistance());
+            return ret;
         });
 
         foreach (var hs in spots)

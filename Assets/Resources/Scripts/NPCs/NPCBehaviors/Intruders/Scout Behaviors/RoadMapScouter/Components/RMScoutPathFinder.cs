@@ -16,18 +16,20 @@ public class RMScoutPathFinder
     }
 
     // Get the path to the goal, if it is not reachable then return the closest reachable node
-    public Vector2? GetClosestPointToGoal(RoadMap roadMap, Vector2 start, Vector2 goal, ref List<Vector2> path,
+    public void GetClosestPointToGoal(RoadMap roadMap, Vector2 start, Vector2 goal, int numberOfWPs,
+        ref List<WayPoint> closestWps, ref List<Vector2> path,
         float highestRiskThreshold)
     {
         bool isOriginal = true;
         WayPoint startWp = roadMap.GetClosestNodes(start, isOriginal, NodeType.RoadMap, Properties.NpcRadius);
         WayPoint goalWp =
             roadMap.GetClosestNodes(goal, isOriginal, NodeType.RoadMap, Properties.NpcRadius);
-        
+
+        closestWps.Clear();
         openListRoadMap.Clear();
         closedListRoadMap.Clear();
-        
-        if (Equals(startWp, null) || Equals(goalWp, null)) return null;
+
+        if (Equals(startWp, null) || Equals(goalWp, null)) return;
 
         foreach (WayPoint p in roadMap.GetNode(true))
         {
@@ -79,23 +81,21 @@ public class RMScoutPathFinder
             // Stop the search if we reached the destination way point
             if (current.Equals(goalWp)) break;
         }
-        
+
         // goal is not reachable, find the closest reachable node and return it.
         if (Equals(goalWp.parent, null))
         {
-            float minHDistance = Mathf.Infinity;
-            WayPoint closestWp = null;
-            
-            foreach (var wp in closedListRoadMap)
-            {
-                if (minHDistance > wp.hDistance)
+            closedListRoadMap.Sort((x, y) =>
                 {
-                    minHDistance = wp.hDistance;
-                    closestWp = wp;
+                    int ret = x.hDistance.CompareTo(y.hDistance);
+                    return ret;
                 }
-            }
+            );
 
-            return closestWp.GetPosition();
+            for (int i = 0; i < numberOfWPs && i < closedListRoadMap.Count; i++)
+                if (!Equals(closedListRoadMap[i].hDistance, Mathf.Infinity))
+                    closestWps.Add(closedListRoadMap[i]);
+            return;
         }
 
 
@@ -131,9 +131,8 @@ public class RMScoutPathFinder
             PathFinding.Instance.GetShortestPath(start, tempEnd, ref path);
         }
 
-        return null;
+        return;
     }
-
 
 
     // Get shortest path on the road map
