@@ -130,8 +130,6 @@ public class RMScoutPathFinder
             Vector2 tempEnd = path[1];
             PathFinding.Instance.GetShortestPath(start, tempEnd, ref path);
         }
-
-        return;
     }
 
 

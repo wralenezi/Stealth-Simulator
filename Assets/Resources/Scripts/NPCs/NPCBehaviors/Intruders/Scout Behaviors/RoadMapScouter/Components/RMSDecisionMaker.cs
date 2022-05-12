@@ -3,13 +3,35 @@ using UnityEngine;
 
 public class RMSDecisionMaker //: MonoBehaviour
 {
+    // // List of curves to determine how utilities are mapped.
+    // [SerializeField] private AnimationCurve _SafetyCurve;
+
+    // private void SetCurves()
+    // {
+    //     SetSafetyCurve();
+    // }
+    //
+    // private void SetSafetyCurve()
+    // {
+    //     _SafetyCurve = new AnimationCurve();
+    //
+    //     for (float i = 0; i < 1; i += 0.1f)
+    //     {
+    //         float y = (i <= 0.5) ? i * 0.1f : i;
+    //         float x = i;
+    //         Keyframe keyframe = new Keyframe(x, y);
+    //         _SafetyCurve.AddKey(keyframe);
+    //     }
+    // }
+
+    
     public HidingSpot GetBestSpot(List<HidingSpot> spots, float currentRisk)
     {
         // if (currentRisk < 0.5f)
         // return GetClosestToGoalSafeSpot(0.5f);
         // return GetClosestToGoalSafeSpotNew(spots, 0.5f);
 
-        if (currentRisk < 0.2f)
+        if (currentRisk <= 0f)
             //     // return GetClosestToGoalSafeSpotNew(spots, 0.5f);
             return GreedyGoalSpot(spots);
 
@@ -167,7 +189,7 @@ public class RMSDecisionMaker //: MonoBehaviour
         {
             if (StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 1f) continue;
 
-            if (hs.RiskLikelihood > ScoutRiskEvaluator.Instance.GetRisk()) continue;
+            if (hs.RiskLikelihood > RMRiskEvaluator.Instance.GetRisk()) continue;
 
             float distance =
                 PathFinding.Instance.GetShortestPathDistance(intruder.GetTransform().position, hs.Position);

@@ -636,7 +636,7 @@ public class RoadMap
     // Get the probability to give for the intermediate points
     public static float GetProbabilityValue(float distance, float fov, float maxDistance)
     {
-        if (distance == 0f) return 0.6f;
+        if (distance == 0f) return 1f;
 
         float value = Mathf.Max(distance - fov, 0f);
 
