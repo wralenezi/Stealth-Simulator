@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -51,9 +50,10 @@ public class RMTrajectoryProjector
     private float GetGuardProjectionOffset(NPC npc)
     {
         float fov = Properties.GetFovRadius(NpcType.Guard);
+        float projectionMultiplier = 33f;
 
         float speed = Equals(npc, null) ? Properties.NpcSpeed : npc.GetCurrentSpeed();
-        return Mathf.Max(speed * fov * 30f, fov * 0.1f);
+        return Mathf.Max(speed * fov * projectionMultiplier, fov * 0.1f);
     }
 }
 

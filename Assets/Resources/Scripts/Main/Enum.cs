@@ -1,9 +1,6 @@
 // List of enums used in the game
 
 // Struct for the NPC planners
-
-using UnityEngine;
-
 public struct Behavior
 {
     public PatrolPlanner patrol;

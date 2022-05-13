@@ -172,8 +172,8 @@ public class GameManager : MonoBehaviour
         // List<Session> sessions = SessionsSetup.StealthStudy();
         // List<Session> sessions = SessionsSetup.StealthStudy002();
         // List<Session> sessions = SessionsSetup.StealthStudyProcedural();
-        List<Session> sessions = SessionsSetup.StealthStudyProcedural01();
-        
+        // List<Session> sessions = SessionsSetup.StealthStudyProcedural01();
+        List<Session> sessions = StealthStudySessions.GetSessions();
         
         // Each line represents a session
         foreach (var sc in sessions)
@@ -518,11 +518,13 @@ public class Session
     // Intruders Data
     public List<NpcData> intrudersList;
 
+    public IntruderBehavior intruderBehavior;
+    
     // the type of survey that will be showed after this session 
     public SurveyType surveyType;
 
     public Session(string _gameCode, GameType _gameType, Scenario pScenario, string _guardColor, int pGuardsCount,
-        int pIntruderCount,
+        int pIntruderCount, IntruderBehavior _intruderBehavior,
         MapData _map,
         SpeechType _speechType,
         SurveyType _surveyType = SurveyType.End)
@@ -535,6 +537,7 @@ public class Session
         map = _map;
         guardsList = new List<NpcData>();
         intrudersList = new List<NpcData>();
+        intruderBehavior = _intruderBehavior;
         gameType = _gameType;
         speechType = _speechType;
         surveyType = _surveyType;

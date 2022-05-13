@@ -232,12 +232,22 @@ public abstract class NPC : MonoBehaviour
             // if the npc is an intruder then place in front of one of the guards
             if (Data.npcType == NpcType.Intruder)
             {
-                // If the scenario is a chase then place the intruder somewhere a guard can see
-                if (sessionInfo.scenario == Scenario.Chase)
+                switch (sessionInfo.scenario)
                 {
-                    // GetTransform().position = PlaceInGuardFoV(guards, navMesh);
-                    GetTransform().position = GetPositionNearNpc(guards, MapManager.Instance.GetWalls());
-                    return;
+                    // If the scenario is a chase then place the intruder somewhere a guard can see
+                    case Scenario.Chase:
+                        GetTransform().position = GetPositionNearNpc(guards, MapManager.Instance.GetWalls());
+                        return;
+
+                    case Scenario.Stealth:
+                        Vector2? position = GetSafePosition(guards, MapManager.Instance.GetNavMesh());
+                        if (!Equals(position, null))
+                        {
+                            GetTransform().position = position.Value;
+                            return;
+                        }
+
+                        break;
                 }
             }
 
@@ -291,6 +301,48 @@ public abstract class NPC : MonoBehaviour
         }
 
         return transform.position;
+    }
+
+    private Vector2? GetSafePosition(List<Guard> guards, List<MeshPolygon> navMesh)
+    {
+        Vector2? position = null;
+
+        int attempts = 100;
+
+        while (Equals(position, null) && attempts > 0)
+        {
+            int polygonIndex = Random.Range(0, navMesh.Count);
+            Vector2 randomPosition = navMesh[polygonIndex].GetCentroidPosition();
+
+            bool inMap = false;
+            foreach (var p in navMesh)
+            {
+                inMap = p.IsCircleInPolygon(randomPosition, Properties.NpcRadius);
+
+                if (inMap)
+                    break;
+            }
+
+            if (!inMap)
+                break;
+
+            bool isSeen = true;
+            foreach (var g in guards)
+            {
+                isSeen = GeometryHelper.IsCirclesVisible(randomPosition, g.GetTransform().position,
+                    Properties.NpcSpeed, "Wall");
+
+                if (isSeen)
+                    break;
+            }
+
+            if (!isSeen)
+                position = randomPosition;
+
+            attempts--;
+        }
+
+        return position;
     }
 
 
@@ -476,7 +528,7 @@ public abstract class NPC : MonoBehaviour
     private void UpdateDistance()
     {
         var position = GetTransform().position;
-        
+
         _velocity = Equals(_lastPosition, null)
             ? Vector2.zero
             : (Vector2) position - _lastPosition.Value;
@@ -486,7 +538,7 @@ public abstract class NPC : MonoBehaviour
             var distanceTravelled = Vector2.Distance(position, _lastPosition.Value);
             _totalDistanceTravelled += distanceTravelled;
         }
-        
+
         _lastPosition = position;
     }
 

@@ -1,7 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEditor;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 public class RMRiskEvaluator : MonoBehaviour
 {
@@ -75,10 +77,9 @@ public class RMRiskEvaluator : MonoBehaviour
         _intruderRiskSpot.risk = Mathf.Round(closestRisk * 100f) * 0.01f;
     }
 
-    private bool IsPathRisky(RoadMap roadMap, Intruder intruder, List<Guard> guards, float maxPathRisk)
-    {
-        float RISK_RANGE = Properties.GetFovRadius(NpcType.Guard);
 
+    private void SetRiskyPositions(RoadMap roadMap, List<Guard> guards, Intruder intruder)
+    {
         _riskSpots.Clear();
 
         // Insert a risk spot for each guard
@@ -102,14 +103,25 @@ public class RMRiskEvaluator : MonoBehaviour
             Vector2 offset = pointOnPath.Value - p.GetPosition();
             RiskyPosition riskSpot = _riskSpots[p.GetPassingGuard().name];
 
-            if (riskSpot.sqrMag > offset.sqrMagnitude)
+            if (riskSpot.sqrMag >= offset.sqrMagnitude)
             {
-                riskSpot.position = pointOnPath.Value;
-                riskSpot.npc = p.GetPassingGuard();
-                riskSpot.risk = p.GetProbability();
-                riskSpot.sqrMag = offset.sqrMagnitude;
+                if (riskSpot.risk < p.GetProbability())
+                {
+                    riskSpot.position = pointOnPath.Value;
+                    riskSpot.npc = p.GetPassingGuard();
+                    riskSpot.risk = p.GetProbability();
+                    riskSpot.sqrMag = offset.sqrMagnitude;
+                }
             }
         }
+    }
+
+
+    private bool IsPathRisky(RoadMap roadMap, Intruder intruder, List<Guard> guards, float maxPathRisk)
+    {
+        SetRiskyPositions(roadMap, guards, intruder);
+
+        float RISK_RANGE = Properties.GetFovRadius(NpcType.Guard);
 
         float highestRisk = Mathf.NegativeInfinity;
         RiskyPosition riskiestSpot = null;
@@ -127,10 +139,11 @@ public class RMRiskEvaluator : MonoBehaviour
 
         if (Equals(riskiestSpot, null)) return false;
 
-        bool isRisky = highestRisk >= maxPathRisk;
+        bool isRisky = highestRisk > maxPathRisk;
 
         return isRisky;
     }
+
 
     /// <summary>
     /// Check if it is possible for the intruder to run into the sights of any of the guards.
@@ -138,39 +151,9 @@ public class RMRiskEvaluator : MonoBehaviour
     /// <returns></returns>
     private bool IsRiskyMeetUp(RoadMap roadMap, Intruder intruder, List<Guard> guards, float maxPathRisk)
     {
+        SetRiskyPositions(roadMap, guards, intruder);
+
         float RISK_RANGE = Properties.GetFovRadius(NpcType.Guard);
-
-        _riskSpots.Clear();
-
-        // Insert a risk spot for each guard
-        foreach (var g in guards)
-        {
-            RiskyPosition riskSpot = new RiskyPosition();
-            riskSpot.risk = 0f;
-            riskSpot.sqrMag = Mathf.Infinity;
-            _riskSpots[g.name] = riskSpot;
-        }
-
-        List<WayPoint> possiblePositions = roadMap.GetPossibleGuardPositions();
-
-        foreach (var p in possiblePositions)
-        {
-            Vector2? pointOnPath =
-                GeometryHelper.GetClosetPointOnPath(intruder.GetFullPath(), p.GetPosition(), Properties.NpcRadius);
-
-            if (Equals(pointOnPath, null)) continue;
-
-            Vector2 offset = pointOnPath.Value - p.GetPosition();
-            RiskyPosition riskSpot = _riskSpots[p.GetPassingGuard().name];
-
-            if (riskSpot.sqrMag > offset.sqrMagnitude)
-            {
-                riskSpot.position = pointOnPath.Value;
-                riskSpot.npc = p.GetPassingGuard();
-                riskSpot.risk = p.GetProbability();
-                riskSpot.sqrMag = offset.sqrMagnitude;
-            }
-        }
 
         // loop through the risky spots for each guard to see if the intruder might be spotted in them
         foreach (var spot in _riskSpots)
@@ -189,29 +172,44 @@ public class RMRiskEvaluator : MonoBehaviour
             guardPathDistanceToSpot -= Properties.GetFovRadius(NpcType.Guard);
             guardPathDistanceToSpot = Mathf.Clamp(guardPathDistanceToSpot, 0f, guardPathDistanceToSpot);
 
-            if (guardPathDistanceToSpot * 1.5f < intruderPathDistanceToSpot)
+            if (guardPathDistanceToSpot / Properties.NpcSpeed <
+                intruderPathDistanceToSpot / (Properties.IntruderSpeedMulti * Properties.NpcSpeed))
                 return true;
         }
 
         return false;
     }
 
-    public void CheckPathRisk(RoadMap roadMap, Intruder intruder, List<Guard> guards)
+    public void CheckPathRisk(PathCanceller pathCancelType, RoadMap roadMap, Intruder intruder, List<Guard> guards)
     {
         if (_isTrajectoryInterceptionCoRunning && !intruder.IsBusy()) return;
-        StartCoroutine(TrajectoryInterceptionCO(roadMap, intruder, guards));
+        StartCoroutine(TrajectoryInterceptionCO(pathCancelType, roadMap, intruder, guards));
     }
 
 
-    private IEnumerator TrajectoryInterceptionCO(RoadMap roadMap, Intruder intruder, List<Guard> guards)
+    private IEnumerator TrajectoryInterceptionCO(PathCanceller pathCancelType, RoadMap roadMap, Intruder intruder, List<Guard> guards)
     {
         _isTrajectoryInterceptionCoRunning = true;
         float maxPathRisk = RMThresholds.GetMaxPathRisk(RiskThresholdType.Danger);
-        if (IsPathRisky(roadMap, intruder, guards, maxPathRisk))
-        // if (IsRiskyMeetUp(roadMap, intruder, guards, maxPathRisk))
+
+        bool isPathRisky = false;
+        
+        switch(pathCancelType)
+        {
+            case PathCanceller.DistanceCalculation:
+                isPathRisky = IsRiskyMeetUp(roadMap, intruder, guards, maxPathRisk);
+                break;
+            
+            case PathCanceller.RiskComparison:
+                isPathRisky = IsPathRisky(roadMap, intruder, guards, maxPathRisk);
+                break;
+        }
+
+
+        if (isPathRisky)
         {
             intruder.ClearGoal();
-            // Debug.Log("Cancel Plan");
+            Debug.Log("Cancel Plan");
         }
         else
             yield return new WaitForSeconds(UpdateIntervalInSeconds);
@@ -224,11 +222,11 @@ public class RMRiskEvaluator : MonoBehaviour
     {
         Handles.Label(intruderPos + Vector2.down * 0.5f, _intruderRiskSpot.risk.ToString());
 
-        // foreach (var spot in _riskSpots)
-        // {
-        //     float value = Mathf.Round(spot.Value.risk * 100f) * 0.01f;
-        //     spot.Value.Draw(value.ToString(), Color.red);
-        // }
+        foreach (var spot in _riskSpots)
+        {
+            float value = Mathf.Round(spot.Value.risk * 100f) * 0.01f;
+            spot.Value.Draw(value.ToString(), Color.red);
+        }
     }
 }
 
