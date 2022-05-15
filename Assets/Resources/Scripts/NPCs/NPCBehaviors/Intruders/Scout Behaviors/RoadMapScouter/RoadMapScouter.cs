@@ -40,15 +40,15 @@ public class RoadMapScouter : Scouter
     [SerializeField] private float _crossedDistance;
 
 
-    public override void Initiate(MapManager mapManager)
+    public override void Initiate(MapManager mapManager, Session session)
     {
-        base.Initiate(mapManager);
+        base.Initiate(mapManager, session);
 
         _closestWpsToDestination = new List<WayPoint>();
         _availableSpots = new List<HidingSpot>();
 
         _trajectoryProjector = new RMTrajectoryProjector();
-        _trajectoryProjector.Initiate();
+        _trajectoryProjector.Initiate(session.intruderBehavior.trajectoryType);
 
         _roadMap = mapManager.GetRoadMap();
 

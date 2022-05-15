@@ -19,7 +19,7 @@ public class IntrudersManager : Agent
 
         // Initiate the intruder behavior controller
         m_iCtrl = gameObject.AddComponent<IntrudersBehaviorController>();
-        m_iCtrl.Initiate(session.GetIntrudersData()[0].behavior, mapManager);
+        m_iCtrl.Initiate(session, mapManager);
 
         // Ignore collision between NPCs
         m_npcLayer = LayerMask.NameToLayer("NPC");

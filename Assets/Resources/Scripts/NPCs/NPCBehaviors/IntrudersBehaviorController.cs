@@ -17,9 +17,9 @@ public class IntrudersBehaviorController : MonoBehaviour
 
     private SearchEvader m_SearchEvader;
 
-    public void Initiate(Behavior _behavior, MapManager mapManager)
+    public void Initiate(Session session, MapManager mapManager)
     {
-        m_behavior = _behavior;
+        m_behavior = session.GetIntrudersData()[0].behavior;
 
         switch (behavior.patrol)
         {
@@ -57,7 +57,7 @@ public class IntrudersBehaviorController : MonoBehaviour
         }
         
         
-        m_Scouter?.Initiate(mapManager);
+        m_Scouter?.Initiate(mapManager, session);
         m_ChaseEvader?.Initiate(mapManager);
         m_SearchEvader?.Initiate(mapManager);
     }

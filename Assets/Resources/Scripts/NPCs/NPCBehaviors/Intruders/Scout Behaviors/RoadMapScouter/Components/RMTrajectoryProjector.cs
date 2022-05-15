@@ -1,15 +1,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class RMTrajectoryProjector 
+public class RMTrajectoryProjector
 {
+    private TrajectoryType _trajectoryType;
+    
     private List<PossibleTrajectory> _possibleTrajectories;
-
-
-    public void Initiate()
+    
+    public void Initiate(TrajectoryType trajectoryType)
     {
         _possibleTrajectories = new List<PossibleTrajectory>();
-
+        _trajectoryType = trajectoryType;
     }
 
     public List<PossibleTrajectory> GetTrajectories()
@@ -110,4 +111,11 @@ public class PossibleTrajectory
             Gizmos.DrawLine(m_path[i], m_path[i + 1]);
         }
     }
+}
+
+public enum TrajectoryType
+{
+    Simple,
+    
+    AngleBased
 }

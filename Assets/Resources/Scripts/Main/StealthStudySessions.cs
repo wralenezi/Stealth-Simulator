@@ -32,14 +32,22 @@ public static class StealthStudySessions
             RiskThresholdType.Binary,
             // RiskThresholdType.Attempts
         };
+        
+        List<TrajectoryType> trajectoryTypes = new List<TrajectoryType>()
+        {
+            TrajectoryType.Simple,
+            // TrajectoryType.AngleBased
+        };
 
         foreach (var guardMethod in guardMethods)
         foreach (var pathCanceller in pathCancellers)
         foreach (var riskThresholdType in riskThresholdTypes)
+        foreach (var trajectoryType in trajectoryTypes)    
         {
             IntruderBehavior intruderBehavior = new IntruderBehavior();
             intruderBehavior.pathCancel = pathCanceller;
             intruderBehavior.thresholdType = riskThresholdType;
+            intruderBehavior.trajectoryType = trajectoryType;
 
             Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue", 4, 1,
                 intruderBehavior,

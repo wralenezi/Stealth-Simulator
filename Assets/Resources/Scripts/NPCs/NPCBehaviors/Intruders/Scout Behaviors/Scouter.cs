@@ -11,7 +11,7 @@ public abstract class Scouter : MonoBehaviour
     public bool ShowHidingSpots;
     protected HidingSpotsCtrlr _HsC;
 
-    public virtual void Initiate(MapManager mapManager)
+    public virtual void Initiate(MapManager mapManager, Session session)
     {
         // ShowHidingSpots = true;
         _HsC = new HidingSpotsCtrlr(mapManager, mapManager.mapRenderer.GetMapBoundingBox(), 10, 10);
@@ -45,6 +45,7 @@ public struct IntruderBehavior
 
     public RiskThresholdType thresholdType;
 
+    public TrajectoryType trajectoryType;
 }
 
 

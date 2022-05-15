@@ -132,10 +132,10 @@ public class RoadMap
         foreach (var node in nodes)
         {
             if (!Equals(node.type, type)) continue;
-            if(!GeometryHelper.IsCirclesVisible(point, node.GetPosition(), radius, "Wall")) continue;
+            if (!GeometryHelper.IsCirclesVisible(point, node.GetPosition(), radius, "Wall")) continue;
 
             Vector2 offset = point - node.GetPosition();
-            
+
             float distance = offset.sqrMagnitude;
 
             if (distance < minMagDistance)
@@ -759,6 +759,147 @@ public class RoadMap
     }
 
 
+    // Probogate trajectory based on the angle of the corners
+    public void ProjectPositionsByAngle(ref List<PossibleTrajectory> trajectory, Vector2 pointOnRoadMap,
+        WayPoint wp1, WayPoint wp2, float stepSize, float totalDistance, NPC npc)
+    {
+        _points.Clear();
+
+        // Get the next Way point 
+        WayPoint nextWayPoint = GetWayPointInDirection(pointOnRoadMap, npc.GetDirection(), wp1, wp2);
+        Vector2 source = pointOnRoadMap;
+
+        // Add a temporary way point to mark the guard's position on the road map
+        float fov = Properties.GetFovRadius(NpcType.Guard);
+
+        WayPoint sourceWp = GetGuardRoadMapNode(source, npc, GetProbabilityValue(0, fov, totalDistance));
+        InsertWpInLine(wp1, wp2, sourceWp);
+        _tempWpsActual.Add(sourceWp);
+
+        PointToProp ptp = new PointToProp(source, sourceWp, nextWayPoint, stepSize, stepSize, totalDistance, 0f, npc);
+        ptp.GetTrajectory().AddPoint(source);
+        ptp.type = PointType.Stright;
+
+        _points.Enqueue(ptp);
+
+        int limit = 100;
+        int counter = 0;
+
+        // Loop to insert the possible positions
+        while (_points.Count > 0 && counter < limit)
+        {
+            PointToProp pt = _points.Dequeue();
+            counter++;
+
+            float distance = Vector2.Distance(pt.source, pt.targetWp.GetPosition());
+            pt.nextStep = pt.nextStep <= 0f ? pt.stepSize : pt.nextStep;
+            pt.nextStep = Mathf.Min(pt.nextStep, pt.remainingDist);
+
+            // add a new point since it will not reach the next way point
+            if (pt.nextStep <= distance)
+            {
+                Vector2 displacement = (pt.targetWp.GetPosition() - pt.source).normalized * pt.nextStep;
+                Vector2 newPosition = pt.source + displacement;
+                pt.distance += pt.nextStep;
+
+                // Add the possible position
+                pt.GetTrajectory().AddPoint(newPosition);
+
+                // Update the point's data
+                pt.remainingDist -= pt.nextStep;
+                pt.nextStep = 0f;
+                pt.source = newPosition;
+
+                // Add a temporary way point to mark the guard possibly passing to
+                WayPoint newWp = GetGuardRoadMapNode(newPosition, npc,
+                    GetProbabilityValue(pt.distance, fov, totalDistance));
+                InsertWpInLine(pt.sourceWp, pt.targetWp, newWp);
+                pt.sourceWp = newWp;
+                _tempWpsActual.Add(newWp);
+
+                // If there are distance remaining then enqueue the point
+                if (pt.remainingDist > 0f)
+                    _points.Enqueue(pt);
+                else
+                    trajectory.Add(pt.GetTrajectory());
+            }
+            else
+            {
+                // Subtract the distance
+                pt.remainingDist -= distance;
+                pt.distance += distance;
+                pt.nextStep -= distance;
+
+                // Set the probability to non zero since a guard might pass through here
+                pt.targetWp.SetProbability(npc, GetProbabilityValue(pt.distance, fov, totalDistance));
+
+                // If it is a dead end then place a point at the end
+                if (pt.targetWp.GetConnections(true).Count == 1)
+                {
+                    pt.GetTrajectory().AddPoint(pt.targetWp.GetPosition());
+                    trajectory.Add(pt.GetTrajectory());
+
+                    // Add a temporary way point to mark the guard possibly passing to
+                    WayPoint newWp =
+                        GetGuardRoadMapNode(pt.targetWp.GetPosition(), npc,
+                            GetProbabilityValue(pt.distance, fov, totalDistance));
+                    InsertWpInLine(pt.sourceWp, pt.targetWp, newWp);
+                    pt.sourceWp = newWp;
+                    _tempWpsActual.Add(newWp);
+
+                    continue;
+                }
+
+                // Loop through the connections of next Way point to add the points to propagate.
+                foreach (var con in pt.targetWp.GetConnections(true))
+                {
+                    // Skip if the connection is the same
+                    if (Equals(con, pt.sourceWp)) continue;
+                    
+                    if(Equals(pt.type, PointType.Corner) && !isOnStraightLine(pt, con)) continue;
+
+                    pt.GetTrajectory().AddPoint(pt.targetWp.GetPosition());
+
+                    // Add the point to the list
+                    PointToProp newPt = new PointToProp(pt.targetWp.GetPosition(), pt.targetWp, con, pt.nextStep,
+                        pt.stepSize,
+                        pt.remainingDist, pt.distance, npc);
+
+                    SetupNewPoint(npc, pt, con, ref newPt);
+
+                    newPt.GetTrajectory().CopyTrajectory(pt.GetTrajectory());
+                    _points.Enqueue(newPt);
+                }
+            }
+        }
+    }
+
+    private bool isOnStraightLine(PointToProp pt, WayPoint con)
+    {
+        float minDotProductAsStraightLine = 0.9f;
+
+        Vector2 originalLine = pt.targetWp.GetPosition() - pt.sourceWp.GetPosition();
+        Vector2 nextLine = con.GetPosition() - pt.targetWp.GetPosition();
+
+        float dot = Vector2.Dot(originalLine, nextLine);
+
+        return dot < minDotProductAsStraightLine;
+    }
+
+    private void SetupNewPoint(NPC guard, PointToProp pt, WayPoint con, ref PointToProp newPt)
+    {
+        if (isOnStraightLine(pt, con))
+        {
+            newPt.remainingDist = guard.GetFovRadius();
+            newPt.type = PointType.Corner;
+            return;
+        }
+
+        newPt.remainingDist = pt.remainingDist;
+        newPt.type = PointType.Stright;
+    }
+
+
     private WayPoint GetWayPointInDirection(Vector2 source, Vector2 dir, RoadMapLine line)
     {
         Vector2 directionToEndLine = (line.wp1.GetPosition() - source).normalized;
@@ -1113,6 +1254,8 @@ class PointToProp
     // Road Map Edge the propagation is happening on
     public RoadMapLine line;
 
+    public PointType type;
+
     public float stepSize;
 
     // The length of the next step
@@ -1161,4 +1304,11 @@ class PointToProp
     {
         return m_trajectory;
     }
+}
+
+public enum PointType
+{
+    Stright,
+
+    Corner
 }
