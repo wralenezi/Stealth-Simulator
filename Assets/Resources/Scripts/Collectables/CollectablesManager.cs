@@ -10,7 +10,7 @@ public class CollectablesManager : MonoBehaviour
     public static CollectablesManager Instance; 
     public void Initialize(Session session)
     {
-        Instance ??= this;
+        Instance = this;
         
         m_coinManager = gameObject.AddComponent<CoinSpawner>();
         m_coinManager.Initiate(session, MapManager.Instance.GetNavMesh());

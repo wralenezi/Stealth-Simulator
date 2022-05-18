@@ -309,6 +309,8 @@ public abstract class NPC : MonoBehaviour
 
         int attempts = 100;
 
+        float safeDistance = PathFinding.Instance.longestShortestPath * 0.2f;
+
         while (Equals(position, null) && attempts > 0)
         {
             int polygonIndex = Random.Range(0, navMesh.Count);
@@ -326,13 +328,17 @@ public abstract class NPC : MonoBehaviour
             if (!inMap)
                 break;
 
+            
             bool isSeen = true;
             foreach (var g in guards)
             {
                 isSeen = GeometryHelper.IsCirclesVisible(randomPosition, g.GetTransform().position,
                     Properties.NpcSpeed, "Wall");
 
-                if (isSeen)
+                Vector2 offset = (Vector2) g.GetTransform().position - randomPosition;
+                float sqrMag = offset.sqrMagnitude;
+                
+                if (isSeen || sqrMag < safeDistance * safeDistance)
                     break;
             }
 

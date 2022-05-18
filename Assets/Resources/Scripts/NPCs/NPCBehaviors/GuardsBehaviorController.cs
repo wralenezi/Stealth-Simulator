@@ -34,6 +34,10 @@ public class GuardsBehaviorController : MonoBehaviour
                 patroler = gameObject.AddComponent<RoadMapPatroler>();
                 break;
             
+            case PatrolPlanner.gRandom:
+                patroler = gameObject.AddComponent<RandomPatroler>();
+                break;
+            
             case PatrolPlanner.gScripted:
                 patroler = gameObject.AddComponent<ScriptedPatroler>();
                 break;

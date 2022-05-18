@@ -79,9 +79,12 @@ public class RoadMapLine
     {
         float prob = GetSearchSegment().GetProbability();
 
-        float guardsPassingUtility = GetPassingGuardsCount() / (StealthArea.SessionInfo.guardsCount);
+        // float guardsPassingUtility = GetPassingGuardsCount() / (StealthArea.SessionInfo.guardsCount);
+        float guardsPassingUtility = GetPassingGuardsCount() > 0 ? 1f : 0f;
 
-        return prob - guardsPassingUtility;
+        float utility = Mathf.Clamp(prob - guardsPassingUtility, 0f, 1f);
+        
+        return utility;
     }
 
     // Add a possible line where the intruder might be in
@@ -109,7 +112,7 @@ public class RoadMapLine
     {
         SearchSegment sS = GetSearchSegment();
 
-        float ageThreshold = 0f; 
+        float ageThreshold = 0f;
 
         // If the segment is just seen wait before incrementing its probability
         if (sS.GetAge() < ageThreshold || !GetSearchSegment().isPropagated) return;

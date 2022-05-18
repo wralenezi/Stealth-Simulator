@@ -221,8 +221,10 @@ public class HidingSpotsCtrlr
         {
             hidingSpot.Fitness = 0f;
             foreach (var g in guards)
-                hidingSpot.Fitness +=
-                    PathFinding.Instance.GetShortestPathDistance(hidingSpot.Position, g.transform.position);
+            {
+                Vector2 offset = (Vector2) g.GetTransform().position - hidingSpot.Position;
+                hidingSpot.Fitness += offset.sqrMagnitude;
+            }
         }
     }
 
@@ -336,7 +338,7 @@ public class HidingSpot
     {
         float costUtility = 1f - CostUtility;
         float costWeight = 0.7f;
-        
+
         float guardApproximateUtility = GuardProximityUtility;
         float guardApproxWeight = 1f - costWeight;
 

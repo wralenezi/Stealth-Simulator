@@ -17,7 +17,7 @@ public class GameManager : MonoBehaviour
     private StealthArea m_ActiveArea;
 
     // List of scenarios to be executed
-    private List<Session> m_Sessions;
+    private List<Session> _sessions;
 
     // To determine which perspective the game is viewed from
     [Header("Game Mode")] [SerializeField] [Tooltip("What elements will be shown?")]
@@ -78,7 +78,7 @@ public class GameManager : MonoBehaviour
 
         // Initiate the references
         m_ActiveArea = null;
-        m_Sessions = new List<Session>();
+        _sessions = new List<Session>();
         Instance = this;
 
         // Define the hierarchy of the paths for the game
@@ -128,7 +128,7 @@ public class GameManager : MonoBehaviour
 
     public GameType GetGameType()
     {
-        return m_Sessions[0].gameType;
+        return _sessions[0].gameType;
     }
 
     private void FillVoices()
@@ -174,13 +174,13 @@ public class GameManager : MonoBehaviour
         // List<Session> sessions = SessionsSetup.StealthStudyProcedural();
         // List<Session> sessions = SessionsSetup.StealthStudyProcedural01();
         List<Session> sessions = StealthStudySessions.GetSessions();
-        
+
         // Each line represents a session
         foreach (var sc in sessions)
         {
             // Check if the required number of Episodes is logged already or skip if logging is not required.
             if (loggingMethod != Logging.Local || !PerformanceLogger.IsLogged(sc))
-                m_Sessions.Add(sc);
+                _sessions.Add(sc);
         }
     }
 
@@ -245,7 +245,7 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator LoadGamesWhenReady()
     {
-        while (m_Sessions.Count > 0)
+        while (_sessions.Count > 0)
         {
             // if there is an active area then skip
             if (IsAreaLoaded())
@@ -257,7 +257,7 @@ public class GameManager : MonoBehaviour
             LoadingScreen.Activate();
 
             // Get the first session
-            Session currentSession = m_Sessions[0];
+            Session currentSession = _sessions[0];
 
             // Load the map data
             currentMapData = "";
@@ -279,7 +279,7 @@ public class GameManager : MonoBehaviour
             CreateArea(currentSession);
 
             // Remove the session
-            m_Sessions.RemoveAt(0);
+            _sessions.RemoveAt(0);
         }
     }
 
@@ -304,7 +304,7 @@ public class GameManager : MonoBehaviour
 
     public IEnumerator StartGamePostSurvey()
     {
-        while (m_Sessions.Count > 0)
+        while (_sessions.Count > 0)
         {
             yield return new WaitForSecondsRealtime(0.5f);
 
@@ -519,7 +519,7 @@ public class Session
     public List<NpcData> intrudersList;
 
     public IntruderBehavior intruderBehavior;
-    
+
     // the type of survey that will be showed after this session 
     public SurveyType surveyType;
 
@@ -590,15 +590,8 @@ public class Session
 
         string sessionInfo = "";
 
-        // Id
-        sessionInfo += timeStamp;
-        sessionInfo += sep;
-
         // Game code
         // sessionInfo += gameCode + sep;
-
-        // Game type
-        // sessionInfo += gameType + sep;
 
         // Man name
         sessionInfo += map.name;
@@ -608,7 +601,18 @@ public class Session
         // sessionInfo += speechType + sep;
 
         // Guard planner 
-        sessionInfo += (GetGuardsData().Count > 0 ? GetGuardsData()[0].behavior.patrol.ToString() : "");
+        sessionInfo += GetGuardsData().Count > 0 ? GetGuardsData()[0].behavior.patrol.ToString() : "";
+        sessionInfo += sep;
+
+        // Guards count 
+        sessionInfo += guardsCount;
+        sessionInfo += sep;
+
+        // intruder planner
+        sessionInfo += GetIntrudersData().Count > 0 ? GetIntrudersData()[0].behavior.patrol.ToString() : "";
+        sessionInfo += sep;
+        sessionInfo += intruderBehavior.ToString();
+        // sessionInfo += sep;
 
         // Search format
         // sessionInfo +=
@@ -630,6 +634,10 @@ public class Session
         // Length of the episode
         // sessionInfo += Properties.EpisodeLength;
 
+        // timestamp
+        // sessionInfo += timeStamp;
+        // sessionInfo += sep;
+        
         return sessionInfo;
     }
 }

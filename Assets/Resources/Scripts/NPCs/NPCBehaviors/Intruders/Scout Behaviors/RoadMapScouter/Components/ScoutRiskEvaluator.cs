@@ -209,7 +209,7 @@ public class RMRiskEvaluator : MonoBehaviour
         if (isPathRisky)
         {
             intruder.ClearGoal();
-            Debug.Log("Cancel Plan");
+            // Debug.Log("Cancel Plan");
         }
         else
             yield return new WaitForSeconds(UpdateIntervalInSeconds);

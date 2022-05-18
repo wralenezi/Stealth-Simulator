@@ -31,7 +31,10 @@ public class IntrudersBehaviorController : MonoBehaviour
                 m_Scouter = gameObject.AddComponent<RoadMapScouter>();
                 break;
             
-        
+            case PatrolPlanner.iPathFinding:
+                m_Scouter = gameObject.AddComponent<GreedyToGoalScouter>();
+                break;
+            
             case PatrolPlanner.UserInput:
                 break;
         }

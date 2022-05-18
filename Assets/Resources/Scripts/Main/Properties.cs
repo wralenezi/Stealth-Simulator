@@ -6,12 +6,11 @@ public static class Properties
     // General game set up
     //----------------------------------------------------------
     // The number of episodes to record
-    public const int EpisodesCount = 1000;
+    public const int EpisodesCount = 100;
 
     // The duration of an episode.
-    public const float EpisodeLength = 30f;
-
-
+    public const float EpisodeLength = 100f;
+    
     //-------------------------------------------------------------------------//
     // Geometry Parameters
     // Winding order for outer polygons; inner polygon is opposite.
@@ -89,7 +88,6 @@ public static class Properties
     {
         maxWidth = _maxWidth;
     }
-
 
     public static float GuardsFovRadiusPercentage = 0.1f;
 

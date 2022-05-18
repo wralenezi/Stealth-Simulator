@@ -1,18 +1,18 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [Serializable]
 public class NpcsManager : MonoBehaviour
 {
     // Guards manager
-    private GuardsManager m_guardsManager;
+    private GuardsManager _guardsManager;
 
     // Intruder Manager
-    private IntrudersManager m_intrudersManager;
+    private IntrudersManager _intrudersManager;
 
-    [SerializeField]
-    public StateMachine m_state;
+    [SerializeField] public StateMachine _state;
 
     // Score 
     private float m_score;
@@ -21,29 +21,27 @@ public class NpcsManager : MonoBehaviour
 
     public void Initialize(Session session, MapManager mapManager)
     {
-        Instance ??= this;
-
         // Assign the Guard Manager
         GameObject guardsOG = new GameObject("Guards");
         guardsOG.transform.parent = transform;
-        m_guardsManager = guardsOG.AddComponent<GuardsManager>();
-        m_guardsManager.Initiate(session, mapManager);
+        _guardsManager = guardsOG.AddComponent<GuardsManager>();
+        _guardsManager.Initiate(session, mapManager);
 
         // Create the Guards
-        m_guardsManager.CreateGuards(session, mapManager.GetNavMesh());
-        
+        _guardsManager.CreateGuards(session, mapManager.GetNavMesh());
+
         // Add the Intruder manager
         GameObject intrudersOG = new GameObject("Intruders");
         intrudersOG.transform.parent = transform;
-        m_intrudersManager = intrudersOG.AddComponent<IntrudersManager>();
-        m_intrudersManager.Initiate(session, mapManager);
+        _intrudersManager = intrudersOG.AddComponent<IntrudersManager>();
+        _intrudersManager.Initiate(session, mapManager);
 
         // Create the intruders
-        m_intrudersManager.CreateIntruders(session, m_guardsManager.GetGuards(), mapManager.GetNavMesh());
+        _intrudersManager.CreateIntruders(session, _guardsManager.GetGuards(), mapManager.GetNavMesh());
 
-        m_state = new StateMachine();
+        _state = new StateMachine();
 
-        ResetState();
+        Reset(mapManager.GetNavMesh(), session);
     }
 
     public void ResetState()
@@ -54,57 +52,58 @@ public class NpcsManager : MonoBehaviour
 
     public void Reset(List<MeshPolygon> navMesh, Session session)
     {
+        Instance = this;
         m_score = 0f;
         AreaUIManager.Instance.UpdateScore(m_score, m_score);
-        m_guardsManager.Reset(navMesh, session);
-        m_intrudersManager.Reset(navMesh, GetGuards(), session);
+        _guardsManager.Reset(navMesh, session);
+        _intrudersManager.Reset(navMesh, GetGuards(), session);
         ChangeState<Patrol>();
     }
 
     public void Done()
     {
-        m_guardsManager.Done();
+        _guardsManager.Done();
     }
 
     public void Move(float timeDelta)
     {
-        m_guardsManager.Move(GetState(),timeDelta);
-        m_intrudersManager.Move(GetState(),timeDelta);
+        _guardsManager.Move(GetState(), timeDelta);
+        _intrudersManager.Move(GetState(), timeDelta);
     }
 
     public void CastVision()
     {
-        m_guardsManager.CastVision();
-        m_intrudersManager.CastVision();
+        _guardsManager.CastVision();
+        _intrudersManager.CastVision();
     }
 
     public void MakeDecisions(GameType gameType)
     {
-        m_state.UpdateState(gameType);
+        _state.UpdateState(gameType);
     }
 
     public List<Guard> GetGuards()
     {
-        return m_guardsManager.GetGuards();
+        return _guardsManager.GetGuards();
     }
 
     public List<Intruder> GetIntruders()
     {
-        return m_intrudersManager.GetIntruders();
+        return _intrudersManager.GetIntruders();
     }
 
     public void Speak(NPC speaker, string lineType, float prob)
     {
         if (speaker is Guard)
-            m_guardsManager.Speak(speaker, lineType, prob);
+            _guardsManager.Speak(speaker, lineType, prob);
     }
 
 
     public void ExecuteState(GameType gameType)
     {
-        m_state.UpdateState(gameType);
+        _state.UpdateState(gameType);
     }
-    
+
     public void CoinPicked()
     {
         if (!(GetState() is Chase))
@@ -122,7 +121,6 @@ public class NpcsManager : MonoBehaviour
     }
 
 
-
     /// <summary>
     /// Change the current guard state to a new one.
     /// </summary>
@@ -130,14 +128,14 @@ public class NpcsManager : MonoBehaviour
     public void ChangeState<T>() where T : State, new()
     {
         T state = new T();
-        state.MakeState(m_guardsManager.GetController(), m_intrudersManager.GetController());
-        m_state.ChangeState(state);
+        state.MakeState(_guardsManager.GetController(), _intrudersManager.GetController());
+        _state.ChangeState(state);
     }
 
     // Get current state
     public State GetState()
     {
-        return m_state.GetState();
+        return _state.GetState();
     }
 
     public void ProcessNpcsVision(Session session)

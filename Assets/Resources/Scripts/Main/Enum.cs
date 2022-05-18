@@ -24,8 +24,10 @@ public enum PatrolPlanner
     gStalest,
     gRoadMap,
     gScripted,
+    gRandom,
     iSimple,
     iRoadMap,
+    iPathFinding,
     Random,
     UserInput
 }

@@ -29,13 +29,11 @@ public class AreaUIManager : MonoBehaviour
 
     private Vector2 timeLabelPosition;
 
-    public static AreaUIManager Instance; 
+    public static AreaUIManager Instance;
 
 
     public void Initiate()
     {
-        Instance ??= this;
-        
         canvasRect = GetComponent<RectTransform>();
 
         guardsLabel = transform.Find("Guard state label").GetComponent<TextMeshProUGUI>();
@@ -48,12 +46,15 @@ public class AreaUIManager : MonoBehaviour
 
         announcementLabel = transform.Find("Announcement").GetComponent<TextMeshProUGUI>();
         announcementLabel.text = "";
-        
+
+        Reset();
     }
 
 
     public void Reset()
     {
+        Instance = this;
+
         scoreLabel.color = Color.white;
         scoreShaking = null;
 
@@ -123,7 +124,7 @@ public class AreaUIManager : MonoBehaviour
 
     private IEnumerator Blinking()
     {
-        timeGo.GetComponent<AudioSource>().Play();
+        // timeGo.GetComponent<AudioSource>().Play();
 
         while (true)
         {
@@ -140,9 +141,8 @@ public class AreaUIManager : MonoBehaviour
             scoreLabel.text = "Score: " + score + " %";
 
         ShakeScore(score - oldScore);
-        
-        ScoreController.Instance.UpdateScore(score);
 
+        ScoreController.Instance.UpdateScore(score);
     }
 
 
@@ -174,21 +174,5 @@ public class AreaUIManager : MonoBehaviour
         textMeshPro.transform.position = originalPosition;
         scoreShaking = null;
     }
-
-    // Show countdown to start the episode
-    // private IEnumerator Countdown()
-    // {
-    //     // AreaUiManager.DisplayLabel("3");
-    //     // yield return new WaitForSecondsRealtime(1f);
-    //     // AreaUiManager.DisplayLabel("2");
-    //     // yield return new WaitForSecondsRealtime(1f);
-    //     // AreaUiManager.DisplayLabel("1");
-    //     // yield return new WaitForSecondsRealtime(1f);
-    //     // AreaUiManager.DisplayLabel("Go");
-    //     // yield return new WaitForSecondsRealtime(0.2f);
-    //     // AreaUiManager.DisplayLabel("");
-    //     // Time.timeScale = 1f;
-    //     // yield return new WaitForSecondsRealtime(6f);
-    //     // intrdrManager.HideLabels();
-    // }
+    
 }

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using UnityEngine;
-using Object = System.Object;
+﻿using UnityEngine;
 
 
 public class StealthArea : MonoBehaviour
@@ -32,6 +29,12 @@ public class StealthArea : MonoBehaviour
         SessionInfo = session;
         SessionInfo.SetTimestamp();
 
+        scoreController = UnityHelper.AddChildComponent<ScoreController>(transform, "Scores");
+        scoreController.Reset();
+
+        AreaUiManager = transform.Find("Canvas").gameObject.GetComponent<AreaUIManager>();
+        AreaUiManager.Initiate();
+
         // Get the map object 
         Map = UnityHelper.AddChildComponent<MapManager>(transform, "Map");
         Map.Initiate(GetSessionInfo().GetMap());
@@ -41,19 +44,13 @@ public class StealthArea : MonoBehaviour
 
         CollectManager = UnityHelper.AddChildComponent<CollectablesManager>(transform, "Collectables");
         CollectManager.Initialize(GetSessionInfo());
-
-        scoreController = UnityHelper.AddChildComponent<ScoreController>(transform, "Scores");
-        scoreController.Initialize();
-
+        
         // Reference for recording the performance
         performanceMonitor = gameObject.AddComponent<PerformanceLogger>();
         performanceMonitor.SetArea(GetSessionInfo());
         performanceMonitor.Initialize();
         performanceMonitor.ResetResults();
-
-        AreaUiManager = transform.Find("Canvas").gameObject.GetComponent<AreaUIManager>();
-        AreaUiManager.Initiate();
-
+        
         // World state variables
         WorldState.Reset();
 
@@ -67,9 +64,9 @@ public class StealthArea : MonoBehaviour
         WorldState.Set("episodeTime", _episodeStartTime.ToString());
         WorldState.Set("guardsCount", SessionInfo.guardsCount.ToString());
 
-        performanceMonitor.ResetResults();
-
         NpcManager.Reset(Map.GetNavMesh(), SessionInfo);
+        
+        performanceMonitor.ResetResults();
 
         Bounds bounds = Map.mapRenderer.GetMapBoundingBox();
         GameManager.MainCamera.transform.position = new Vector3((bounds.min.x + bounds.max.x) * 0.5f,

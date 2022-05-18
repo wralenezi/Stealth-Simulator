@@ -6,12 +6,13 @@ public class ScoreController : MonoBehaviour
 
     public static ScoreController Instance; 
 
-    public void Initialize()
+    public void Reset()
     {
-        Instance ??= this;
+        Instance = this;
         
         score = 0f;
     }
+    
     
     public void UpdateScore(float _score)
     {

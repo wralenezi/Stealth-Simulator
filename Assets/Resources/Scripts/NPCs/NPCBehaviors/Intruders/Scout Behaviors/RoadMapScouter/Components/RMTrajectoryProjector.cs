@@ -4,9 +4,9 @@ using UnityEngine;
 public class RMTrajectoryProjector
 {
     private TrajectoryType _trajectoryType;
-    
+
     private List<PossibleTrajectory> _possibleTrajectories;
-    
+
     public void Initiate(TrajectoryType trajectoryType)
     {
         _possibleTrajectories = new List<PossibleTrajectory>();
@@ -37,8 +37,20 @@ public class RMTrajectoryProjector
             if (!point.HasValue) return;
 
             float projectionDistance = GetGuardProjectionDistance(guard);
-            roadMap.ProjectPositionsInDirection(ref _possibleTrajectories, point.Value, wp1, wp2, fov * 0.25f,
-                projectionDistance, guard);
+            float stepSize = 2f; //fov * 0.25f
+            
+            switch (_trajectoryType)
+            {
+                case TrajectoryType.Simple:
+                    roadMap.ProjectPositionsInDirection(ref _possibleTrajectories, point.Value, wp1, wp2, stepSize,
+                        projectionDistance, guard);
+                    break;
+
+                case TrajectoryType.AngleBased:
+                    roadMap.ProjectPositionsByAngle(ref _possibleTrajectories, point.Value, wp1, wp2, stepSize,
+                        projectionDistance, guard);
+                    break;
+            }
         }
     }
 
@@ -116,6 +128,8 @@ public class PossibleTrajectory
 public enum TrajectoryType
 {
     Simple,
+
+    AngleBased,
     
-    AngleBased
+    None
 }

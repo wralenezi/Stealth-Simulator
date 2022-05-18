@@ -1,6 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public abstract class Scouter : MonoBehaviour
@@ -34,6 +31,23 @@ public abstract class Scouter : MonoBehaviour
         if (ShowHidingSpots)
             _HsC?.DrawHidingSpots();
     }
+    
+    protected Vector2? GetDestination(GameType gameType)
+    {
+        Vector2? goal = null;
+
+        switch (gameType)
+        {
+            case GameType.CoinCollection:
+                goal = CollectablesManager.Instance.GetGoalPosition(gameType);
+                break;
+
+            case GameType.StealthPath:
+                break;
+        }
+
+        return goal;
+    }
 }
 
 public struct IntruderBehavior
@@ -46,6 +60,22 @@ public struct IntruderBehavior
     public RiskThresholdType thresholdType;
 
     public TrajectoryType trajectoryType;
+
+    public override string ToString()
+    {
+        string output = "";
+        string sep = "_";
+
+        output += pathCancel;
+        output += sep;
+        
+        output += thresholdType;
+        output += sep;
+        
+        output += trajectoryType;
+
+        return output;
+    }
 }
 
 
@@ -54,5 +84,7 @@ public enum PathCanceller
 {
     DistanceCalculation,
     
-    RiskComparison
+    RiskComparison,
+    
+    None
 }

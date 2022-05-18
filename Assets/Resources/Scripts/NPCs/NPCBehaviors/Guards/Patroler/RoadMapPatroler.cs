@@ -256,27 +256,47 @@ public class RoadMapPatroler : Patroler
         path.RemoveAt(0);
 
 
-        SimplifyPath(path);
+        SimplifyPath(ref path);
     }
 
-    private void SimplifyPath(List<Vector2> path)
+    
+    // private void SimplifyPath(List<Vector2> path)
+    // {
+    //     for (int i = 0; i < path.Count - 2; i++)
+    //     {
+    //         Vector2 first = path[i];
+    //         Vector2 second = path[i + 2];
+    //
+    //         Vector2 dir = (second - first).normalized;
+    //         float distance = Vector2.Distance(first, second);
+    //
+    //         Vector2 left = Vector2.Perpendicular(dir);
+    //
+    //         float margine = 0.1f;
+    //         RaycastHit2D hitLeft = Physics2D.Raycast(first + left * margine, dir, distance, LayerMask.GetMask("Wall"));
+    //         RaycastHit2D hitRight = Physics2D.Raycast(first - left * margine, dir, distance, LayerMask.GetMask("Wall"));
+    //
+    //
+    //         if (Equals(hitLeft.collider, null) && Equals(hitRight.collider, null))
+    //         {
+    //             path.RemoveAt(i + 1);
+    //             i--;
+    //         }
+    //     }
+    // }
+    
+    
+    private void SimplifyPath(ref List<Vector2> path)
     {
         for (int i = 0; i < path.Count - 2; i++)
         {
             Vector2 first = path[i];
             Vector2 second = path[i + 2];
 
-            Vector2 dir = (second - first).normalized;
             float distance = Vector2.Distance(first, second);
+            bool isMutuallyVisible = GeometryHelper.IsCirclesVisible(first, second, Properties.NpcRadius, "Wall");
 
-            Vector2 left = Vector2.Perpendicular(dir);
-
-            float margine = 0.1f;
-            RaycastHit2D hitLeft = Physics2D.Raycast(first + left * margine, dir, distance, LayerMask.GetMask("Wall"));
-            RaycastHit2D hitRight = Physics2D.Raycast(first - left * margine, dir, distance, LayerMask.GetMask("Wall"));
-
-
-            if (Equals(hitLeft.collider, null) && Equals(hitRight.collider, null))
+            if (distance < 0.1f || isMutuallyVisible)
             {
                 path.RemoveAt(i + 1);
                 i--;

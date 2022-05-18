@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -32,8 +31,6 @@ public class Intruder : NPC
 
     public override void Initiate(NpcData data, VoiceParams _voice)
     {
-        // isGhost = true;
-
         base.Initiate(data, _voice);
 
         // Multiply the intruder's speed
@@ -46,8 +43,8 @@ public class Intruder : NPC
         m_PlayerLabel = gameLabelGo.GetComponent<PlayerLabelController>();
         m_PlayerLabel.Initiate(GetTransform());
 
-        isGhost = true;
-        ShowPath = true;
+        // isGhost = true;
+        // ShowPath = true;
     }
 
     public override void ResetNpc()

@@ -4,18 +4,71 @@ using UnityEngine;
 
 public static class RMThresholds
 {
+    private static int _currentAttemptsCount;
     private static int maxAttempts = 10;
 
+    private static int _maxDepth = 5;
+    
     private static float _minSearchRisk = 0.5f;
-    private static float _maxSearchRisk = 099f;
+    private static float _maxSearchRisk = 0.99f;
 
     private static float _minPathRisk = 0.1f;
     private static float _maxPathRisk = 0.99f;
 
+
+    public static void ResetAttempts()
+    {
+        _currentAttemptsCount = 0;
+    }
+
+    public static void IncrementAttempts()
+    {
+        _currentAttemptsCount = Mathf.Min(_currentAttemptsCount + 1, maxAttempts);
+    }
+    
+    
     public static int GetMaxAttempts()
     {
         return maxAttempts;
     }
+    
+    
+    public static int GetSearchDepth(RiskThresholdType type)
+    {
+        switch (type)
+        {
+            case RiskThresholdType.Danger:
+                return GetSearchDepth(RMRiskEvaluator.Instance.GetRisk());
+
+            case RiskThresholdType.Attempts:
+                return GetSearchDepth(_currentAttemptsCount);
+
+            case RiskThresholdType.Binary:
+                if (RMRiskEvaluator.Instance.GetRisk() > 0f)
+                    return 2;
+                else
+                    return 1;
+
+            case RiskThresholdType.Fixed:
+                return 1;
+        }
+
+        return 1;
+    }
+
+    private static int GetSearchDepth(float risk)
+    {
+        int depth = Mathf.CeilToInt(_maxDepth * risk);
+        return depth;
+    }
+
+    private static int GetSearchDepth(int attempts)
+    {
+        int depth = Mathf.CeilToInt(attempts / maxAttempts);
+        return depth;
+    }
+
+
 
     public static float GetMaxSearchRisk(RiskThresholdType type)
     {
@@ -25,8 +78,8 @@ public static class RMThresholds
                 return GetMaxSearchRisk(RMRiskEvaluator.Instance.GetRisk());
 
             case RiskThresholdType.Attempts:
-                return GetMaxSearchRisk(RoadMapScouter.GetAttemptsCount());
-            
+                return GetMaxSearchRisk(_currentAttemptsCount);
+
             case RiskThresholdType.Binary:
                 if (RMRiskEvaluator.Instance.GetRisk() > 0f)
                     return _maxSearchRisk;
@@ -48,14 +101,14 @@ public static class RMThresholds
                 return GetMaxPathRisk(RMRiskEvaluator.Instance.GetRisk());
 
             case RiskThresholdType.Attempts:
-                return GetMaxPathRisk(RoadMapScouter.GetAttemptsCount());
+                return GetMaxPathRisk(_currentAttemptsCount);
 
             case RiskThresholdType.Binary:
                 if (RMRiskEvaluator.Instance.GetRisk() > 0f)
                     return _maxPathRisk;
                 else
                     return _minPathRisk;
-            
+
             case RiskThresholdType.Fixed:
                 return 0.5f;
         }
@@ -96,5 +149,7 @@ public enum RiskThresholdType
 
     Attempts,
 
-    Binary
+    Binary,
+    
+    None
 }

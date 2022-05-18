@@ -40,17 +40,19 @@ public class Coin : MonoBehaviour
         Vector2? chosenPos = null;
 
         bool positionFound = false;
-        int numberRemainingAttempts = 100;
+        int numberRemainingAttempts = 1000;
+        float minDistance = PathFinding.Instance.longestShortestPath * 0.4f; 
         while (numberRemainingAttempts > 0 && !positionFound)
         {
             int random = Random.Range(0, navMesh.Count);
             Vector2 pos = navMesh[random].GetRandomPosition();
 
-            if(!navMesh[random].IsCircleInPolygon(pos, 0.2f)) continue;
+            if(!navMesh[random].IsCircleInPolygon(pos, 0.3f)) continue;
 
-            float distance = PathFinding.Instance.GetShortestPathDistance(startPos, pos);
+            Vector2 offset = startPos - pos;
+            float sqrMag = offset.sqrMagnitude;
 
-            if (distance > PathFinding.Instance.longestShortestPath * 0.5f)
+            if (sqrMag > minDistance * minDistance)
             {
                 positionFound = true;
                 chosenPos = pos;
@@ -111,7 +113,7 @@ public class Coin : MonoBehaviour
     {
         if (other.gameObject.name.Contains("Intruder"))
         {
-            audioSource.Play();
+            // audioSource.Play();
             ModifyScore();
             Spawn(gameObject.transform.position, MapManager.Instance.GetNavMesh(), MapManager.Instance.mapData, false);
             other.gameObject.GetComponent<Intruder>().AddCoin();

@@ -33,9 +33,6 @@ public class RoadMapScouter : Scouter
 
     private RMSDecisionMaker _decisionMaker;
 
-    // The number of attempts to find the next spot
-    private static int _attemptCount = 0;
-
     // The total distance the intruder crossed
     [SerializeField] private float _crossedDistance;
 
@@ -81,18 +78,18 @@ public class RoadMapScouter : Scouter
 
         _riskEvaluator.UpdateCurrentRisk(_roadMap);
 
-        if (didIntruderTravel()) _attemptCount = 0;
+        if (didIntruderTravel()) RMThresholds.ResetAttempts();
 
         Vector2? goal = GetDestination(gameType);
 
-        PathFindToDestination(goal, 0f);
+        PathFindToDestination(goal,RMThresholds.GetSearchDepth(intruderBehavior.thresholdType), 0f);
 
         if (!intruder.IsBusy())
         {
             HidingSpot closestHidingSpot = _HsC.GetClosestHidingSpotToPosition(intruder.GetTransform().position);
 
             _availableSpots.Clear();
-            _HsC.AddAvailableSpots(closestHidingSpot, 1, ref _availableSpots);
+            _HsC.AddAvailableSpots(closestHidingSpot, RMThresholds.GetSearchDepth(intruderBehavior.thresholdType), ref _availableSpots);
 
             // int numberOfAdjacentCell = 12;
             // _availableSpots = _HsC.GetHidingSpots(intruder.GetTransform().position, numberOfAdjacentCell);
@@ -118,9 +115,8 @@ public class RoadMapScouter : Scouter
 
         if (!intruder.IsBusy())
         {
-            _attemptCount++;
-            _attemptCount = Mathf.Min(_attemptCount, RMThresholds.GetMaxAttempts());
-            Debug.Log("Failed to find hiding spot");
+            RMThresholds.IncrementAttempts();
+            // Debug.Log("Failed to find hiding spot");
             return;
         }
 
@@ -128,16 +124,11 @@ public class RoadMapScouter : Scouter
         _riskEvaluator.CheckPathRisk(intruderBehavior.pathCancel, _roadMap, intruder, guards);
     }
 
-    public static int GetAttemptsCount()
-    {
-        return _attemptCount;
-    }
-
     /// <summary>
     /// Try to find a path to the destination, if that fails then provide possible hiding spots that are closer to the destination
     /// </summary>
     /// <param name="destination"></param>
-    private void PathFindToDestination(Vector2? destination, float maxRisk)
+    private void PathFindToDestination(Vector2? destination, int depth, float maxRisk)
     {
         if (Equals(destination, null)) return;
         if (_intruder.IsBusy()) return;
@@ -154,27 +145,10 @@ public class RoadMapScouter : Scouter
         foreach (var wp in _closestWpsToDestination)
         {
             HidingSpot closestHidingSpot = _HsC.GetClosestHidingSpotToPosition(wp.GetPosition());
-            _HsC.AddAvailableSpots(closestHidingSpot, 1, ref _availableSpots);
+            _HsC.AddAvailableSpots(closestHidingSpot, depth, ref _availableSpots);
         }
     }
 
-
-    private Vector2? GetDestination(GameType gameType)
-    {
-        Vector2? goal = null;
-
-        switch (gameType)
-        {
-            case GameType.CoinCollection:
-                goal = CollectablesManager.Instance.GetGoalPosition(gameType);
-                break;
-
-            case GameType.StealthPath:
-                break;
-        }
-
-        return goal;
-    }
     
     private void EvaluateSpots(Intruder intruder, Vector2? goal)
     {

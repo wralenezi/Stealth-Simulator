@@ -11,7 +11,7 @@ using UnityEngine.UI;
 public class GuardsManager : Agent
 {
     // List of Guards
-    private List<Guard> m_Guards;
+    private List<Guard> _guards;
 
     // Guards behavior controller
     private GuardsBehaviorController m_gCtrl;
@@ -38,14 +38,14 @@ public class GuardsManager : Agent
     // Start the NPC manager
     public void Initiate(Session session, MapManager mapManager)
     {
-        m_Guards = new List<Guard>();
+        _guards = new List<Guard>();
 
         // Initiate the guard behavior controller
         m_gCtrl = gameObject.AddComponent<GuardsBehaviorController>();
         m_gCtrl.Initiate(session, mapManager);
 
         m_script = gameObject.AddComponent<Scriptor>();
-        m_script.Initialize(m_Guards, session.speechType);
+        m_script.Initialize(_guards, session.speechType);
 
         // m_StealthArea.AreaUiManager.UpdateGuardLabel(GetState());
 
@@ -145,7 +145,7 @@ public class GuardsManager : Agent
         spriteRenderer.sprite = npcSprite;
         spriteRenderer.sortingOrder = 5;
 
-        float myScale = 1f; // 0.6f;
+        float myScale = 1f;
         npcGameObject.transform.localScale = new Vector3(myScale, myScale, myScale);
 
         // Add the RigidBody
@@ -156,10 +156,8 @@ public class GuardsManager : Agent
 
         // Add Collider to the NPC
         CircleCollider2D cd = npcGameObject.AddComponent<CircleCollider2D>();
-        // cd.radius = npcSprite.rect.width * 0.003f;
         cd.radius = Properties.NpcRadius;
         
-
         NPC npc;
         // Add the appropriate script according to the NPC type
         switch (npcData.npcType)
@@ -173,7 +171,7 @@ public class GuardsManager : Agent
                 spriteRenderer.color = color;
 
                 // m_SA.AreaUiManager.UpdateGuardLabel(session.guardColor, spriteRenderer.color);
-                m_Guards.Add((Guard) npc);
+                _guards.Add((Guard) npc);
                 break;
 
             default:
@@ -185,7 +183,7 @@ public class GuardsManager : Agent
         npc.Initiate(npcData, GameManager.Instance.GetVoice());
 
         // Allocate the NPC based on the specified scenario
-        npc.ResetLocation(navMesh, m_Guards, session);
+        npc.ResetLocation(navMesh, _guards, session);
 
         npcGameObject.layer = m_npcLayer;
     }
@@ -206,9 +204,9 @@ public class GuardsManager : Agent
         GuardsOverlapTime = 0f;
 
         // Reset guards
-        foreach (var guard in m_Guards)
+        foreach (var guard in _guards)
         {
-            guard.ResetLocation(navMesh, m_Guards, session);
+            guard.ResetLocation(navMesh, _guards, session);
             guard.ResetNpc();
         }
     }
@@ -311,7 +309,7 @@ public class GuardsManager : Agent
     // Let NPCs cast their vision
     public void CastVision()
     {
-        foreach (var guard in m_Guards)
+        foreach (var guard in _guards)
             guard.CastVision();
     }
 
@@ -326,7 +324,7 @@ public class GuardsManager : Agent
     // Execute NPCs plans
     public void Move(State state, float deltaTime)
     {
-        foreach (var guard in m_Guards)
+        foreach (var guard in _guards)
             guard.ExecutePlan(state, deltaTime);
     }
 
@@ -341,10 +339,10 @@ public class GuardsManager : Agent
 
     public bool IsGuardsOverlapping()
     {
-        for (int i = 0; i < m_Guards.Count; i++)
-        for (int j = i + 1; j < m_Guards.Count; j++)
+        for (int i = 0; i < _guards.Count; i++)
+        for (int j = i + 1; j < _guards.Count; j++)
         {
-            if (Vector2.Distance(m_Guards[i].GetTransform().position, m_Guards[j].GetTransform().position) < 0.4f)
+            if (Vector2.Distance(_guards[i].GetTransform().position, _guards[j].GetTransform().position) < 0.4f)
                 return true;
         }
 
@@ -403,7 +401,7 @@ public class GuardsManager : Agent
 
     public void ResetGuardSeenArea(float resetThreshold)
     {
-        foreach (var guard in m_Guards)
+        foreach (var guard in _guards)
         {
             guard.RestrictSeenArea(resetThreshold);
         }
@@ -411,7 +409,7 @@ public class GuardsManager : Agent
 
     public List<Guard> GetGuards()
     {
-        return m_Guards;
+        return _guards;
     }
 }
 
