@@ -219,6 +219,28 @@ public class Polygon
     }
 
 
+    // Check if a circle colliding with the polygon or inside it
+    public bool IsCircleContainedInPolygon(Vector2 center, float radius)
+    {
+        bool isCenterIn = IsPointInPolygon(center, false);
+        
+        if (!isCenterIn) return false;
+
+        for (int i = 0; i < GetVerticesCount(); i++)
+        {
+            Vector2 projection = GeometryHelper.ClosestProjectionOnSegment(GetPoint(i), GetPoint(i + 1), center);
+            float distance = Vector2.Distance(center, projection);
+
+            if (distance <= radius) return false;
+        }
+
+        return true;
+    }
+    
+    
+    
+    
+
     // Get a random position inside the polygon
     public Vector2 GetRandomPosition()
     {

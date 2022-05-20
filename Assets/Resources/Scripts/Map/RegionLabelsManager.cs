@@ -13,6 +13,7 @@ public class RegionLabelsManager : MonoBehaviour
     public void Initiate(MapData mapData)
     {
         m_Regions = new List<Region>();
+        
         // ShowRegionAreas = true;
         SetRegions(mapData);
     }

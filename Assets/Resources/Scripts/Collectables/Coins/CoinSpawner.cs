@@ -20,18 +20,21 @@ public class CoinSpawner : MonoBehaviour
         m_coins = new List<Coin>();
         m_coinPrefab = (GameObject) Resources.Load("Prefabs/Coin");
 
+        _isRandom = !Equals(session.GetGuardsData()[0].behavior.patrol, PatrolPlanner.gScripted);
+
+        Reset(session, navMesh);
+    }
+
+    public void Reset(Session session, List<MeshPolygon> navMesh)
+    {
+        DestroyCoins();
         if (session.gameType == GameType.CoinCollection)
         {
             CreateCoins();
-            Reset(navMesh);
+            SpawnCoins(navMesh);
         }
         else if (session.gameType == GameType.Stealth)
             DisableCoins();
-    }
-
-    public void Reset(List<MeshPolygon> navMesh)
-    {
-        SpawnCoins(navMesh);
     }
 
     public void CreateCoins()
@@ -60,7 +63,19 @@ public class CoinSpawner : MonoBehaviour
         {
             int randIndex = Random.Range(0, navMesh.Count);
             Vector2 coinPos = navMesh[randIndex].GetRandomPosition();
-            coin.Spawn(coinPos, navMesh, MapManager.Instance.mapData,_isRandom);
+            
+            // Vector2 coinPos = NpcsManager.Instance.GetIntruders()[0].GetTransform().position;
+            coin.Spawn(coinPos, navMesh, MapManager.Instance.mapData, _isRandom);
+        }
+    }
+
+    public void DestroyCoins()
+    {
+        while (m_coins.Count > 0)
+        {
+            Coin coin = m_coins[0];
+            Destroy(coin.gameObject);
+            m_coins.RemoveAt(0);
         }
     }
 

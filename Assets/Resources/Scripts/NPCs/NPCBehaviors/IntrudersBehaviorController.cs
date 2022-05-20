@@ -17,8 +17,14 @@ public class IntrudersBehaviorController : MonoBehaviour
 
     private SearchEvader m_SearchEvader;
 
+    private bool noIntruders = true;
+    
     public void Initiate(Session session, MapManager mapManager)
     {
+        noIntruders = session.GetIntrudersData().Count == 0;
+        
+        if(noIntruders) return;
+        
         m_behavior = session.GetIntrudersData()[0].behavior;
 
         switch (behavior.patrol)
@@ -68,21 +74,21 @@ public class IntrudersBehaviorController : MonoBehaviour
 
     public void StartScouter()
     {
-        if (Equals(behavior.patrol, PatrolPlanner.UserInput)) return;
+        if (Equals(behavior.patrol, PatrolPlanner.UserInput) || noIntruders) return;
 
         m_Scouter.Begin();
     }
 
     public void StayIncognito(GameType gameType)
     {
-        if (Equals(behavior.search, SearchPlanner.UserInput)) return;
+        if (Equals(behavior.search, SearchPlanner.UserInput) || noIntruders) return;
 
         m_Scouter?.Refresh(gameType);
     }
 
     public void StartChaseEvader()
     {
-        if (Equals(behavior.alert, AlertPlanner.UserInput)) return;
+        if (Equals(behavior.alert, AlertPlanner.UserInput) || noIntruders) return;
 
         m_ChaseEvader.Begin();
     }
@@ -90,7 +96,7 @@ public class IntrudersBehaviorController : MonoBehaviour
     // Intruder behavior when being chased
     public void KeepRunning()
     {
-        if (Equals(behavior.alert, AlertPlanner.UserInput)) return;
+        if (Equals(behavior.alert, AlertPlanner.UserInput) || noIntruders) return;
 
         m_ChaseEvader.Refresh();
     }
@@ -98,7 +104,7 @@ public class IntrudersBehaviorController : MonoBehaviour
 
     public void StartHiding()
     {
-        if (Equals(behavior.search, SearchPlanner.UserInput)) return;
+        if (Equals(behavior.search, SearchPlanner.UserInput) || noIntruders) return;
 
         m_SearchEvader.Begin();
     }
@@ -107,7 +113,7 @@ public class IntrudersBehaviorController : MonoBehaviour
     // Intruder behavior after escaping guards
     public void KeepHiding()
     {
-        if (Equals(behavior.search, SearchPlanner.UserInput)) return;
+        if (Equals(behavior.search, SearchPlanner.UserInput) || noIntruders) return;
 
         m_SearchEvader.Refresh();
     }

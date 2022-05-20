@@ -94,12 +94,14 @@ public class PerformanceLogger : MonoBehaviour
     // Update the Episode count if there are any before
     private void GetEpisodesCountInLogs()
     {
-        _episodeCount = CsvController.ReadFileStartWith(FileType.Performance, Sa);
+        // _episodeCount = CsvController.ReadFileStartWith(FileType.Performance, Sa);
+        _episodeCount = CsvController.GetFileLength(CsvController.GetPath(Sa, FileType.Performance, null));
     }
 
     public static bool IsLogged(Session sa)
     {
-        int episodeCount = CsvController.ReadFileStartWith(FileType.Performance, sa);
+        // int episodeCount = CsvController.ReadFileStartWith(FileType.Performance, sa);
+        int episodeCount = CsvController.GetFileLength(CsvController.GetPath(sa, FileType.Performance, null));
         return episodeCount >= Properties.EpisodesCount;
     }
 
@@ -144,8 +146,12 @@ public class PerformanceLogger : MonoBehaviour
         if (_snapshots.Count > 0)
         {
             CsvController.WriteString(
-                CsvController.GetPath(Sa, FileType.Performance, _episodeCount),
-                GetEpisodeResults(), true);
+                CsvController.GetPath(Sa, FileType.Performance, null),
+                GetLastResult(CsvController.IsFileExist(Sa, FileType.Performance, null)), true);
+
+            // CsvController.WriteString(
+            //     CsvController.GetPath(Sa, FileType.Performance, _episodeCount),
+            //     GetEpisodeResults(), true);
 
             // CsvController.WriteString(
             //     CsvController.GetPath(Sa, FileType.Npcs, _episodeCount),
@@ -159,7 +165,7 @@ public class PerformanceLogger : MonoBehaviour
     // Upload the results to the server
     private void UploadEpisodeData()
     {
-        StartCoroutine(FileUploader.UploadData(Sa, FileType.Performance, "text/csv", GetEpisodeResults()));
+        StartCoroutine(FileUploader.UploadData(Sa, FileType.Performance, "text/csv", GetEpisodeResults(false)));
         StartCoroutine(FileUploader.UploadData(Sa, FileType.Npcs, "text/csv", GetNpcDataJson()));
     }
 
@@ -176,18 +182,38 @@ public class PerformanceLogger : MonoBehaviour
     }
 
     // return the data of the episode's result into a string
-    public string GetEpisodeResults()
+    private string GetEpisodeResults(bool isFileExist)
     {
         if (_snapshots != null)
         {
             // Write the exploration results for this episode
             string data = "";
 
-            data += LogSnapshot.Headers + "\n";
+            if (!isFileExist)
+                data += LogSnapshot.Headers + "\n";
 
             foreach (var snapshot in _snapshots)
                 data += snapshot + "\n";
-            
+
+            return data;
+        }
+
+        return "";
+    }
+
+
+    private string GetLastResult(bool isFileExist)
+    {
+        if (_snapshots != null)
+        {
+            // Write the exploration results for this episode
+            string data = "";
+
+            if (!isFileExist)
+                data += "episodeId," + LogSnapshot.Headers + "\n";
+
+            data += _episodeCount + "," + _snapshots[_snapshots.Count - 1] + "\n";
+
             return data;
         }
 
@@ -269,8 +295,8 @@ public struct LogSnapshot
             // "," + GuardsOverlapTime +
             // "," + FoundHidingSpots +
             // "," + StalenessAverage +
-            "," + CollectedCoin; 
-            // + "," + Score;
+            "," + CollectedCoin;
+        // + "," + Score;
 
         return output;
     }

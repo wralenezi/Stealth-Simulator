@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using UnityEngine;
 
 public static class StealthStudySessions
 {
@@ -13,28 +12,28 @@ public static class StealthStudySessions
         mapData = new MapData("Boxes", 1f);
         AddDynamicSession(ref sessions, mapData);
         
-        mapData = new MapData("MgsDock", 2f);
-        AddDynamicSession(ref sessions, mapData);
+        // mapData = new MapData("MgsDock", 2f);
+        // AddDynamicSession(ref sessions, mapData);
         
-        mapData = new MapData("Alien_isolation_mod", 0.75f);
-        AddDynamicSession(ref sessions, mapData);
+        // mapData = new MapData("Alien_isolation_mod", 0.75f);
+        // AddDynamicSession(ref sessions, mapData);
         
-        mapData = new MapData("CoD_relative", 0.1f);
-        AddDynamicSession(ref sessions, mapData);
-
-        mapData = new MapData("valorant_ascent", 1.5f);
-        AddDynamicSession(ref sessions, mapData);
-
-        // Add Scripted scenarios
-        NpcLocation? intruderLocation = new NpcLocation(new Vector2(-13.25f, 4.4f), 0f);
-        List<NpcLocation> guardLocations = new List<NpcLocation>
-        {
-            new NpcLocation(new Vector2(0.48f, 4.8f), 0f),
-            new NpcLocation(new Vector2(-5.4f, -3.63f), 0f)
-        };
-
-        mapData = new MapData("MgsDock", 2f);
-        AddScriptedSession(ref sessions, mapData, intruderLocation, guardLocations);
+        // mapData = new MapData("CoD_relative", 0.15f);
+        // AddDynamicSession(ref sessions, mapData);
+        //
+        // mapData = new MapData("valorant_ascent", 1.5f);
+        // AddDynamicSession(ref sessions, mapData);
+        //
+        // // Add Scripted scenarios
+        // NpcLocation? intruderLocation = new NpcLocation(new Vector2(-13.25f, 4.4f), 0f);
+        // List<NpcLocation> guardLocations = new List<NpcLocation>
+        // {
+        //     new NpcLocation(new Vector2(0.48f, 4.8f), 0f),
+        //     new NpcLocation(new Vector2(-5.4f, -3.63f), 0f)
+        // };
+        //
+        // mapData = new MapData("MgsDock", 2f);
+        // AddScriptedSession(ref sessions, mapData, intruderLocation, guardLocations);
         
         
         return sessions;
@@ -44,27 +43,27 @@ public static class StealthStudySessions
     {
         List<PatrolPlanner> intruderMethods = new List<PatrolPlanner>()
         {
-            PatrolPlanner.iSimple,
+            // PatrolPlanner.iSimple,
             PatrolPlanner.iPathFinding
         };
 
         List<PatrolPlanner> guardMethods = new List<PatrolPlanner>()
         {
-            PatrolPlanner.gRoadMap,
+            // PatrolPlanner.gRoadMap,
             PatrolPlanner.gRandom
         };
 
         List<PathCanceller> pathCancellers = new List<PathCanceller>()
         {
             PathCanceller.DistanceCalculation,
-            PathCanceller.RiskComparison
+            // PathCanceller.RiskComparison
         };
 
         List<RiskThresholdType> riskThresholdTypes = new List<RiskThresholdType>()
         {
             RiskThresholdType.Danger,
-            RiskThresholdType.Binary,
-            RiskThresholdType.Attempts
+            // RiskThresholdType.Binary,
+            // RiskThresholdType.Attempts
         };
 
         List<TrajectoryType> trajectoryTypes = new List<TrajectoryType>()
@@ -72,15 +71,23 @@ public static class StealthStudySessions
             TrajectoryType.Simple,
             // TrajectoryType.AngleBased
         };
+        
+        List<GuardSpawnType> guardSpawnTypes = new List<GuardSpawnType>()
+        {
+            GuardSpawnType.Random,
+            GuardSpawnType.Separate,
+            GuardSpawnType.Goal
+        };
 
         List<int> guardTeams = new List<int>()
         {
-            6, 5, 4, 3, 2, 1
+            6, 5, 4, 3
         };
 
         foreach (var guardMethod in guardMethods)
         foreach (var guardTeam in guardTeams)
         foreach (var intruderMethod in intruderMethods)
+        foreach (var guardSpawnType in guardSpawnTypes)
         {
             IntruderBehavior intruderBehavior = new IntruderBehavior
             {
@@ -89,7 +96,7 @@ public static class StealthStudySessions
                 trajectoryType = TrajectoryType.None
             };
 
-            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue", guardTeam, 1,
+            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue", guardSpawnType,guardTeam, 1,
                 intruderBehavior,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
@@ -113,7 +120,7 @@ public static class StealthStudySessions
                     PathFollowing.SimpleFunnel, null);
             }
 
-            sessions.Add(session);
+            // sessions.Add(session);
         }
 
         foreach (var guardMethod in guardMethods)
@@ -121,13 +128,14 @@ public static class StealthStudySessions
         foreach (var riskThresholdType in riskThresholdTypes)
         foreach (var trajectoryType in trajectoryTypes)
         foreach (var guardTeam in guardTeams)
+        foreach (var guardSpawnType in guardSpawnTypes)
         {
             IntruderBehavior intruderBehavior = new IntruderBehavior
             {
                 pathCancel = pathCanceller, thresholdType = riskThresholdType, trajectoryType = trajectoryType
             };
 
-            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue", guardTeam, 1,
+            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue",guardSpawnType, guardTeam, 1,
                 intruderBehavior,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
@@ -199,7 +207,7 @@ public static class StealthStudySessions
                 trajectoryType = TrajectoryType.None
             };
 
-            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue", guardLocations.Count, 1,
+            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue", GuardSpawnType.Scripted, guardLocations.Count, 1,
                 intruderBehavior,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
@@ -236,7 +244,7 @@ public static class StealthStudySessions
                 pathCancel = pathCanceller, thresholdType = riskThresholdType, trajectoryType = trajectoryType
             };
 
-            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue", guardLocations.Count, 1,
+            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue", GuardSpawnType.Scripted,guardLocations.Count, 1,
                 intruderBehavior,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 

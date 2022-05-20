@@ -6,11 +6,42 @@ using UnityEngine;
 // CSV Handler 
 public static class CsvController
 {
-    public static string GetPath(Session sa, FileType fileType, int episodesCount)
+
+    public static bool IsFileExist(Session sa, FileType fileType, int? episodesCount)
     {
-        return GameManager.LogsPath + GetFileName(fileType, sa) + "_" + episodesCount + ".csv";
+        return File.Exists(GetPath(sa, fileType, episodesCount));
     }
 
+    public static string GetPath(Session sa, FileType fileType, int? episodesCount)
+    {
+        string episodeNum = Equals(episodesCount, null) ? "" : "_" + episodesCount;
+        return GameManager.LogsPath + GetFileName(fileType, sa) + episodeNum + ".csv";
+    }
+
+    // Get the length of the file 
+    public static int GetFileLength(string path)
+    {
+        int episodesCount = 0;
+
+        if (File.Exists(path))
+        {
+            //Read the text from directly from the test.txt file
+            StreamReader reader = new StreamReader(path);
+
+            string data = reader.ReadToEnd();
+            
+            int count = data.Split('\n').Length;
+            
+            episodesCount = count - 2;
+
+            reader.Close();
+        }
+        
+        return episodesCount;
+    }
+
+    
+    
     // Get the number of files that starts with a certain string
     public static int ReadFileStartWith(FileType fileType, Session sa)
     {
@@ -106,10 +137,10 @@ public static class CsvController
 
 
     // Write the data on a csv file
-    public static void WriteString(string path, string data, bool isOverwrite)
+    public static void WriteString(string path, string data, bool isAppend)
     {
         //Write some text to the file
-        StreamWriter writer = new StreamWriter(path, isOverwrite);
+        StreamWriter writer = new StreamWriter(path, isAppend);
         writer.Write(data);
         writer.Close();
     }

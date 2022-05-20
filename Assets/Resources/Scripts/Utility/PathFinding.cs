@@ -36,7 +36,7 @@ public class PathFinding : MonoBehaviour
     // Initiate containers; to improve garbage collection
     public void Initiate()
     {
-        Instance ??= this;
+        Instance = this;
 
         openListMesh = new List<MeshPolygon>();
         closedListMesh = new List<MeshPolygon>();

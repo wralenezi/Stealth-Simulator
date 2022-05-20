@@ -37,13 +37,12 @@ public class Intruder : NPC
         NpcSpeed *= Properties.IntruderSpeedMulti;
         NpcRotationSpeed *= Properties.IntruderRotationSpeedMulti;
 
-        GameObject gameLabel = Resources.Load<GameObject>("Prefabs/PlayerLabel");
-        GameObject gameLabelGo = Instantiate(gameLabel, transform);
+        // GameObject gameLabel = Resources.Load<GameObject>("Prefabs/PlayerLabel");
+        // GameObject gameLabelGo = Instantiate(gameLabel, transform);
+        // m_PlayerLabel = gameLabelGo.GetComponent<PlayerLabelController>();
+        // m_PlayerLabel.Initiate(GetTransform());
 
-        m_PlayerLabel = gameLabelGo.GetComponent<PlayerLabelController>();
-        m_PlayerLabel.Initiate(GetTransform());
-
-        // isGhost = true;
+        isGhost = true;
         // ShowPath = true;
     }
 

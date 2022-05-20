@@ -14,7 +14,7 @@ public class GameManager : MonoBehaviour
     private const string StealthArea = "Prefabs/StealthArea";
 
     // Active area
-    private StealthArea m_ActiveArea;
+    private StealthArea _activeArea;
 
     // List of scenarios to be executed
     private List<Session> _sessions;
@@ -77,7 +77,7 @@ public class GameManager : MonoBehaviour
         _timeStamp = GetDateTimestamp();
 
         // Initiate the references
-        m_ActiveArea = null;
+        _activeArea = null;
         _sessions = new List<Session>();
         Instance = this;
 
@@ -174,6 +174,7 @@ public class GameManager : MonoBehaviour
         // List<Session> sessions = SessionsSetup.StealthStudyProcedural();
         // List<Session> sessions = SessionsSetup.StealthStudyProcedural01();
         List<Session> sessions = StealthStudySessions.GetSessions();
+        // List<Session> sessions = PatrolSessions.GetSessions();
 
         // Each line represents a session
         foreach (var sc in sessions)
@@ -186,7 +187,7 @@ public class GameManager : MonoBehaviour
 
     private bool IsAreaLoaded()
     {
-        return !Equals(m_ActiveArea, null);
+        return !Equals(_activeArea, null);
     }
 
     /// <summary>
@@ -234,13 +235,13 @@ public class GameManager : MonoBehaviour
         GameObject activeArea = Instantiate(areaPrefab, transform, true);
 
         // Get the script
-        m_ActiveArea = activeArea.GetComponent<StealthArea>();
+        _activeArea = activeArea.GetComponent<StealthArea>();
 
         // Initiate the session
-        m_ActiveArea.InitiateArea(scenario);
+        _activeArea.InitiateArea(scenario);
 
         // Hide the area 
-        if (showSurvey) m_ActiveArea.gameObject.SetActive(false);
+        if (showSurvey) _activeArea.gameObject.SetActive(false);
     }
 
     private IEnumerator LoadGamesWhenReady()
@@ -291,8 +292,8 @@ public class GameManager : MonoBehaviour
     {
         if (IsAreaLoaded())
         {
-            m_ActiveArea.StartArea();
-            SurveyManager.SetSession(m_ActiveArea.GetSessionInfo());
+            _activeArea.StartArea();
+            SurveyManager.SetSession(_activeArea.GetSessionInfo());
         }
         else
         {
@@ -313,8 +314,8 @@ public class GameManager : MonoBehaviour
 
         if (IsAreaLoaded())
         {
-            m_ActiveArea.StartArea();
-            SurveyManager.SetSession(m_ActiveArea.GetSessionInfo());
+            _activeArea.StartArea();
+            SurveyManager.SetSession(_activeArea.GetSessionInfo());
             yield break;
         }
 
@@ -326,30 +327,30 @@ public class GameManager : MonoBehaviour
 
     public StealthArea GetActiveArea()
     {
-        if (m_ActiveArea != null)
-            return m_ActiveArea;
+        if (_activeArea != null)
+            return _activeArea;
 
         return null;
     }
 
     public void SetGameActive(bool state)
     {
-        if (m_ActiveArea != null)
-            m_ActiveArea.gameObject.SetActive(state);
+        if (_activeArea != null)
+            _activeArea.gameObject.SetActive(state);
     }
 
 
     public void EndCurrentGame()
     {
-        if (m_ActiveArea != null)
+        if (_activeArea != null)
         {
-            RemoveArea(m_ActiveArea.gameObject);
+            RemoveArea(_activeArea.gameObject);
         }
     }
 
     public void EndNonTutorialGame()
     {
-        if (m_ActiveArea != null && !Equals(m_ActiveArea.GetSessionInfo().gameCode, "tutorial"))
+        if (_activeArea != null && !Equals(_activeArea.GetSessionInfo().gameCode, "tutorial"))
         {
             EndCurrentGame();
         }
@@ -359,7 +360,7 @@ public class GameManager : MonoBehaviour
     // Remove the current area and load the next scenario
     public void RemoveArea(GameObject area)
     {
-        m_ActiveArea = null;
+        _activeArea = null;
         Destroy(area);
     }
 }
@@ -501,6 +502,8 @@ public class Session
 
     public string guardColor;
 
+    public GuardSpawnType guardSpawnMethod;
+    
     // Number of guards
     public int guardsCount;
 
@@ -523,7 +526,7 @@ public class Session
     // the type of survey that will be showed after this session 
     public SurveyType surveyType;
 
-    public Session(string _gameCode, GameType _gameType, Scenario pScenario, string _guardColor, int pGuardsCount,
+    public Session(string _gameCode, GameType _gameType, Scenario pScenario, string _guardColor, GuardSpawnType _guardSpawnType, int pGuardsCount,
         int pIntruderCount, IntruderBehavior _intruderBehavior,
         MapData _map,
         SpeechType _speechType,
@@ -532,6 +535,7 @@ public class Session
         gameCode = _gameCode;
         scenario = pScenario;
         guardColor = _guardColor;
+        guardSpawnMethod = _guardSpawnType;
         guardsCount = pGuardsCount;
         intruderCount = pIntruderCount;
         map = _map;
@@ -590,15 +594,9 @@ public class Session
 
         string sessionInfo = "";
 
-        // Game code
-        // sessionInfo += gameCode + sep;
-
         // Man name
         sessionInfo += map.name;
         sessionInfo += sep;
-
-        // Speech type
-        // sessionInfo += speechType + sep;
 
         // Guard planner 
         sessionInfo += GetGuardsData().Count > 0 ? GetGuardsData()[0].behavior.patrol.ToString() : "";
@@ -611,32 +609,13 @@ public class Session
         // intruder planner
         sessionInfo += GetIntrudersData().Count > 0 ? GetIntrudersData()[0].behavior.patrol.ToString() : "";
         sessionInfo += sep;
+        
         sessionInfo += intruderBehavior.ToString();
+        sessionInfo += sep;
+        
+        sessionInfo += guardSpawnMethod;
         // sessionInfo += sep;
-
-        // Search format
-        // sessionInfo +=
-        // (GetGuardsData().Count > 0 ? GetGuardsData()[0].behavior.searchFormat.ToString() : "") + sep;
-
-        // Guard FoV percentage of the longest path in the map
-        // sessionInfo += Properties.GuardsFovRadiusPercentage + sep;
-
-        // Number of guards
-        // sessionInfo += guardsCount + sep;
-
-        // Intruder planner 
-        // sessionInfo += (GetIntrudersData().Count > 0 ? GetIntrudersData()[0].intruderPlanner.Value.ToString() : "") +
-        //                sep;
-
-        // Intruder's speed percentage to guards
-        // sessionInfo += Properties.IntruderSpeedMulti + sep;
-
-        // Length of the episode
-        // sessionInfo += Properties.EpisodeLength;
-
-        // timestamp
-        // sessionInfo += timeStamp;
-        // sessionInfo += sep;
+        
         
         return sessionInfo;
     }

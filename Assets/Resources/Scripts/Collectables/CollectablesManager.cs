@@ -5,8 +5,6 @@ public class CollectablesManager : MonoBehaviour
 {
     private CoinSpawner m_coinManager;
     
-    
-    
     public static CollectablesManager Instance; 
     public void Initialize(Session session)
     {
@@ -16,9 +14,9 @@ public class CollectablesManager : MonoBehaviour
         m_coinManager.Initiate(session, MapManager.Instance.GetNavMesh());
     }
     
-    public void Reset()
+    public void Reset(Session session)
     {
-        m_coinManager.Reset(MapManager.Instance.GetNavMesh());
+        m_coinManager.Reset(session, MapManager.Instance.GetNavMesh());
     }
 
     public Vector2? GetGoalPosition(GameType gameType)

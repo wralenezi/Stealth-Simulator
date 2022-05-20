@@ -27,7 +27,7 @@ public class Coin : MonoBehaviour
         if (!isRandom)
             chosenPos = GetGoalPosition(startPosition, navMesh, mapData);
         else
-            chosenPos = GetRandomPosition(startPosition, navMesh);
+            chosenPos = GetFurthestRandomPosition(startPosition, navMesh);
 
 
         transform.position = Equals(chosenPos, null) ? transform.position : (Vector3) chosenPos.Value;
@@ -35,19 +35,80 @@ public class Coin : MonoBehaviour
         gameObject.SetActive(true);
     }
 
+
+    private Vector2 GetFurthestRandomPosition(Vector2 startPos, List<MeshPolygon> navMesh)
+    {
+        MeshPolygon furthestPolygon = null;
+        float maxSqrMag = Mathf.NegativeInfinity;
+
+        foreach (var p in navMesh)
+        {
+            Vector2 centroid = p.GetCentroidPosition();
+
+            Vector2 offset = centroid - startPos;
+            float sqrMag = offset.sqrMagnitude;
+
+            if (sqrMag > maxSqrMag)
+            {
+                furthestPolygon = p;
+                maxSqrMag = sqrMag;
+            }
+        }
+
+
+        int innerAttempts = 100;
+        maxSqrMag = Mathf.NegativeInfinity;
+        Vector2? furthestPoint = null;
+
+        while (innerAttempts > 0)
+        {
+            innerAttempts--;
+            Vector2 pos = furthestPolygon.GetRandomPosition();
+            bool inPoly = furthestPolygon.IsCircleContainedInPolygon(pos, 0.3f);
+            
+            if(!inPoly) continue;
+
+            Vector2 offset = pos - startPos;
+            float sqrMag = offset.sqrMagnitude;
+
+            if (sqrMag > maxSqrMag)
+            {
+                maxSqrMag = sqrMag;
+                furthestPoint = pos;
+            }
+        }
+
+        return Equals(furthestPoint, null) ? furthestPolygon.GetCentroidPosition() : furthestPoint.Value;
+    }
+
+
     private Vector2 GetRandomPosition(Vector2 startPos, List<MeshPolygon> navMesh)
     {
         Vector2? chosenPos = null;
 
         bool positionFound = false;
         int numberRemainingAttempts = 1000;
-        float minDistance = PathFinding.Instance.longestShortestPath * 0.4f; 
+        float minDistance = PathFinding.Instance.longestShortestPath * 0.5f;
+
         while (numberRemainingAttempts > 0 && !positionFound)
         {
             int random = Random.Range(0, navMesh.Count);
             Vector2 pos = navMesh[random].GetRandomPosition();
 
-            if(!navMesh[random].IsCircleInPolygon(pos, 0.3f)) continue;
+            int innerAttempts = 1000;
+            bool inPoly = false;
+            while (!inPoly && innerAttempts > 0)
+            {
+                innerAttempts--;
+
+                if (innerAttempts < 10)
+                    pos = navMesh[random].GetCentroidPosition();
+                else
+                    pos = navMesh[random].GetRandomPosition();
+
+                inPoly = navMesh[random].IsCircleContainedInPolygon(pos, 0.3f);
+            }
+
 
             Vector2 offset = startPos - pos;
             float sqrMag = offset.sqrMagnitude;
@@ -80,7 +141,7 @@ public class Coin : MonoBehaviour
         catch (Exception e)
         {
             // Debug.LogError("Goal location is missing for the map " + mapData.name + ".");
-            return GetRandomPosition(startPosition, navMesh);
+            return GetFurthestRandomPosition(startPosition, navMesh);
             // throw;
         }
     }

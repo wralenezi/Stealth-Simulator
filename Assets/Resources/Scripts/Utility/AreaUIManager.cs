@@ -37,12 +37,14 @@ public class AreaUIManager : MonoBehaviour
         canvasRect = GetComponent<RectTransform>();
 
         guardsLabel = transform.Find("Guard state label").GetComponent<TextMeshProUGUI>();
+        guardsLabel.text = "";
 
         timeGo = transform.Find("Time");
         timeLabelPosition = timeGo.transform.position;
         timeLabel = timeGo.Find("label").GetComponent<TextMeshProUGUI>();
 
         scoreLabel = transform.Find("Score").GetComponent<TextMeshProUGUI>();
+        scoreLabel.text = "";
 
         announcementLabel = transform.Find("Announcement").GetComponent<TextMeshProUGUI>();
         announcementLabel.text = "";
@@ -53,12 +55,12 @@ public class AreaUIManager : MonoBehaviour
 
     public void Reset()
     {
-        Instance = this;
-
         scoreLabel.color = Color.white;
         scoreShaking = null;
 
         timeLabel.gameObject.SetActive(true);
+        
+        Instance = this;
     }
 
 
@@ -135,12 +137,12 @@ public class AreaUIManager : MonoBehaviour
 
     public void UpdateScore(float score, float oldScore)
     {
-        if (GameManager.Instance.GetActiveArea().GetSessionInfo().gameType == GameType.CoinCollection)
-            scoreLabel.text = "Score: " + score;
-        else
-            scoreLabel.text = "Score: " + score + " %";
-
-        ShakeScore(score - oldScore);
+        // if (GameManager.Instance.GetActiveArea().GetSessionInfo().gameType == GameType.CoinCollection)
+        //     scoreLabel.text = "Score: " + score;
+        // else
+        //     scoreLabel.text = "Score: " + score + " %";
+        //
+        // ShakeScore(score - oldScore);
 
         ScoreController.Instance.UpdateScore(score);
     }

@@ -187,19 +187,20 @@ public class RMRiskEvaluator : MonoBehaviour
     }
 
 
-    private IEnumerator TrajectoryInterceptionCO(PathCanceller pathCancelType, RoadMap roadMap, Intruder intruder, List<Guard> guards)
+    private IEnumerator TrajectoryInterceptionCO(PathCanceller pathCancelType, RoadMap roadMap, Intruder intruder,
+        List<Guard> guards)
     {
         _isTrajectoryInterceptionCoRunning = true;
         float maxPathRisk = RMThresholds.GetMaxPathRisk(RiskThresholdType.Danger);
 
         bool isPathRisky = false;
-        
-        switch(pathCancelType)
+
+        switch (pathCancelType)
         {
             case PathCanceller.DistanceCalculation:
                 isPathRisky = IsRiskyMeetUp(roadMap, intruder, guards, maxPathRisk);
                 break;
-            
+
             case PathCanceller.RiskComparison:
                 isPathRisky = IsPathRisky(roadMap, intruder, guards, maxPathRisk);
                 break;
@@ -220,7 +221,8 @@ public class RMRiskEvaluator : MonoBehaviour
 
     public void Draw(Vector2 intruderPos)
     {
-        Handles.Label(intruderPos + Vector2.down * 0.5f, _intruderRiskSpot.risk.ToString());
+        if (!Equals(_intruderRiskSpot, null))
+            Handles.Label(intruderPos + Vector2.down * 0.5f, _intruderRiskSpot.risk.ToString());
 
         foreach (var spot in _riskSpots)
         {

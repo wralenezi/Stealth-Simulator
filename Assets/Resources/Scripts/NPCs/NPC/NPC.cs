@@ -250,10 +250,28 @@ public abstract class NPC : MonoBehaviour
                         break;
                 }
             }
-
-            // Randomly place the NPC on the map
-            int polygonIndex = Random.Range(0, navMesh.Count);
-            GetTransform().position = navMesh[polygonIndex].GetCentroidPosition();
+            else if (Data.npcType == NpcType.Guard)
+            {
+                switch (sessionInfo.guardSpawnMethod)
+                {
+                    case GuardSpawnType.Random:
+                    // Randomly place the NPC on the map
+                    int polygonIndex = Random.Range(0, navMesh.Count);
+                    GetTransform().position = navMesh[polygonIndex].GetCentroidPosition();
+                    break;
+                    
+                    case GuardSpawnType.Separate:
+                    // Randomly place the guards away from each other
+                    GetTransform().position =
+                    GetPositionFarFromGuards(GetNpcData().id - 1, guards, MapManager.Instance.GetNavMesh());
+                    break;
+                    
+                    case GuardSpawnType.Goal:
+                        //Place the guard on the goal's position
+                        GetTransform().position = CollectablesManager.Instance.GetGoalPosition(GameType.CoinCollection).Value;
+                        break;
+                }
+            }
         }
         else
         {
@@ -261,6 +279,46 @@ public abstract class NPC : MonoBehaviour
             GetTransform().position = (Vector2) Data.location.Value.position;
             GetTransform().rotation = Quaternion.AngleAxis(Data.location.Value.rotation, Vector3.forward);
         }
+    }
+
+    private Vector2 GetPositionFarFromGuards(int index, List<Guard> guards, List<MeshPolygon> navMesh)
+    {
+        int attempts = 250;
+
+        float maxSqrMag = Mathf.NegativeInfinity;
+        Vector2? furthestPoint = null;
+
+        while (attempts > 0)
+        {
+            attempts--;
+
+            int polygonIndex = Random.Range(0, navMesh.Count);
+            Vector2 pos = navMesh[polygonIndex].GetRandomPosition();
+
+            bool inPoly = navMesh[polygonIndex].IsCircleContainedInPolygon(pos, Properties.NpcRadius);
+
+            if (!inPoly) continue;
+
+            float sqrMag = 0f;
+            for (int i = 0; i <= index; i++)
+            {
+                Vector2 offset = pos - (Vector2) guards[i].GetTransform().position;
+                sqrMag += offset.sqrMagnitude;
+            }
+
+            if (maxSqrMag <= sqrMag)
+            {
+                maxSqrMag = sqrMag;
+                furthestPoint = pos;
+            }
+        }
+
+
+        if (!Equals(furthestPoint, null)) return furthestPoint.Value;
+
+
+        int pIndex = Random.Range(0, navMesh.Count);
+        return navMesh[pIndex].GetCentroidPosition();
     }
 
     private Vector2 PlaceInGuardFoV(List<Guard> guards, List<MeshPolygon> navMesh)
@@ -309,7 +367,7 @@ public abstract class NPC : MonoBehaviour
 
         int attempts = 100;
 
-        float safeDistance = PathFinding.Instance.longestShortestPath * 0.2f;
+        float safeDistance = PathFinding.Instance.longestShortestPath * 0.4f;
 
         while (Equals(position, null) && attempts > 0)
         {
@@ -319,7 +377,7 @@ public abstract class NPC : MonoBehaviour
             bool inMap = false;
             foreach (var p in navMesh)
             {
-                inMap = p.IsCircleInPolygon(randomPosition, Properties.NpcRadius);
+                inMap = p.IsCircleContainedInPolygon(randomPosition, Properties.NpcRadius);
 
                 if (inMap)
                     break;
@@ -328,7 +386,7 @@ public abstract class NPC : MonoBehaviour
             if (!inMap)
                 break;
 
-            
+
             bool isSeen = true;
             foreach (var g in guards)
             {
@@ -337,7 +395,7 @@ public abstract class NPC : MonoBehaviour
 
                 Vector2 offset = (Vector2) g.GetTransform().position - randomPosition;
                 float sqrMag = offset.sqrMagnitude;
-                
+
                 if (isSeen || sqrMag < safeDistance * safeDistance)
                     break;
             }
@@ -593,4 +651,16 @@ public struct VoiceParams
         VoiceIndex = _voiceIndex;
         Pitch = _pitch;
     }
+}
+
+
+public enum GuardSpawnType
+{
+    Random,
+    
+    Goal,
+    
+    Separate,
+    
+    Scripted
 }

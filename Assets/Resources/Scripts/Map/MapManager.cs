@@ -37,7 +37,7 @@ public class MapManager : MonoBehaviour
 
     public void Initiate(MapData _mapData)
     {
-        Instance ??= this;
+        Instance = this;
 
         mapData = _mapData;
 
@@ -51,9 +51,7 @@ public class MapManager : MonoBehaviour
 
         pathFinder = gameObject.AddComponent<PathFinding>();
         pathFinder.Initiate();
-
-        // CalculateLongestPathLength(mapRenderer.GetInteriorWalls());
-
+        
         // Isovists map initiate
         isovists = gameObject.AddComponent<Isovists>();
         isovists.Initiate(GetNavMesh());
@@ -86,6 +84,12 @@ public class MapManager : MonoBehaviour
     {
         return mapRenderer.GetInteriorWalls();
     }
+
+    public List<Polygon> GetExWalls()
+    {
+        return mapRenderer.GetWalls();
+    }
+    
 
     public RoadMap GetRoadMap()
     {

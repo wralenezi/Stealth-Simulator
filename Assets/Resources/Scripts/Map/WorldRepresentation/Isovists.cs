@@ -15,7 +15,7 @@ public class Isovists : MonoBehaviour
 
     public void Initiate(List<MeshPolygon> navMesh)
     {
-        Instance ??= this;
+        Instance = this;
         
         m_Isovists = new List<Polygon>();
         

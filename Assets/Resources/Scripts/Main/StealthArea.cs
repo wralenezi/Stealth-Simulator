@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using UnityEditor;
+using UnityEngine;
 
 
 public class StealthArea : MonoBehaviour
@@ -17,6 +18,8 @@ public class StealthArea : MonoBehaviour
 
     // Logging manager
     public PerformanceLogger performanceMonitor { get; set; }
+    
+    public HeatMap heatMap { set; get; }
 
     public ScoreController scoreController { get; set; }
 
@@ -39,17 +42,20 @@ public class StealthArea : MonoBehaviour
         Map = UnityHelper.AddChildComponent<MapManager>(transform, "Map");
         Map.Initiate(GetSessionInfo().GetMap());
 
+        CollectManager = UnityHelper.AddChildComponent<CollectablesManager>(transform, "Collectibles");
+        CollectManager.Initialize(GetSessionInfo());
+
         NpcManager = UnityHelper.AddChildComponent<NpcsManager>(transform, "NPCs");
         NpcManager.Initialize(GetSessionInfo(), Map);
-
-        CollectManager = UnityHelper.AddChildComponent<CollectablesManager>(transform, "Collectables");
-        CollectManager.Initialize(GetSessionInfo());
         
         // Reference for recording the performance
         performanceMonitor = gameObject.AddComponent<PerformanceLogger>();
         performanceMonitor.SetArea(GetSessionInfo());
         performanceMonitor.Initialize();
         performanceMonitor.ResetResults();
+
+        heatMap = UnityHelper.AddChildComponent<HeatMap>(transform,"HeatMap");
+        heatMap.Initiate(Map.mapRenderer.GetMapBoundingBox());
         
         // World state variables
         WorldState.Reset();
@@ -63,6 +69,10 @@ public class StealthArea : MonoBehaviour
         _episodeStartTime = Time.time;
         WorldState.Set("episodeTime", _episodeStartTime.ToString());
         WorldState.Set("guardsCount", SessionInfo.guardsCount.ToString());
+
+        // heatMap.Clear();
+        
+        CollectManager.Reset(SessionInfo);
 
         NpcManager.Reset(Map.GetNavMesh(), SessionInfo);
         
@@ -81,7 +91,7 @@ public class StealthArea : MonoBehaviour
         GameManager.MainCamera.backgroundColor = parsedColor - new Color(0.5f, 0.5f, 0.5f, 0.1f);
 
         AreaUiManager.Reset();
-        AreaUiManager.UpdateGuardLabel(SessionInfo.guardColor, parsedColor);
+        // AreaUiManager.UpdateGuardLabel(SessionInfo.guardColor, parsedColor);
 
         if (GameManager.Instance.showSurvey) Time.timeScale = 0f;
     }
@@ -102,8 +112,7 @@ public class StealthArea : MonoBehaviour
     {
         NpcManager.Done();
     }
-
-
+    
     private void Update()
     {
         // Update the time label
@@ -126,6 +135,8 @@ public class StealthArea : MonoBehaviour
 
         // Update the guards vision and apply the vision affects (seeing intruders,etc) 
         NpcManager.ProcessNpcsVision(SessionInfo);
+        
+        heatMap.IncrementHeatMapVisibility(NpcManager.GetGuards(), Time.deltaTime);
 
         // Idle NPCs make decisions
         NpcManager.MakeDecisions(GetSessionInfo().gameType);
@@ -149,10 +160,13 @@ public class StealthArea : MonoBehaviour
 
         if (!finished) return;
 
+        heatMap.CalculateHeatValues();
+        heatMap.RenderPixels();
+        // EditorApplication.isPaused = true;
+        
         FinishArea();
     }
-
-
+    
     public void FinishArea()
     {
         // End the episode
