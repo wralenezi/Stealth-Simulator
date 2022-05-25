@@ -63,11 +63,11 @@ public class RoadMapScouter : Scouter
         _decisionMaker = new RMSDecisionMaker();
         _decisionMaker.Initiate(session.intruderBehavior.goalPriority, session.intruderBehavior.safetyPriority);
 
-        showAvailableHidingSpots = true;
-        showRiskSpots = true;
-        showProjectedTrajectories = true;
-        showRoadMapEndNodes = true;
-        showRoadMap = true;
+        // showAvailableHidingSpots = true;
+        // showRiskSpots = true;
+        // showProjectedTrajectories = true;
+        // showRoadMapEndNodes = true;
+        // showRoadMap = true;
     }
 
 
