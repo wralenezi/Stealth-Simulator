@@ -8,22 +8,27 @@ public static class StealthStudySessions
 
         MapData mapData = new MapData("amongUs", 0.5f);
         AddDynamicSession(ref sessions, mapData);
-
-        // mapData = new MapData("Boxes", 1f);
-        // AddDynamicSession(ref sessions, mapData);
-        //
+        
+        mapData = new MapData("Boxes", 1f);
+        AddDynamicSession(ref sessions, mapData);
+        
         // mapData = new MapData("MgsDock", 2f);
         // AddDynamicSession(ref sessions, mapData);
-        //
+        
         // mapData = new MapData("AlienIsolationMod", 0.75f);
         // AddDynamicSession(ref sessions, mapData);
-        //
-        // mapData = new MapData("valorantAscent", 1.5f);
-        // AddDynamicSession(ref sessions, mapData);
+        
+        mapData = new MapData("valorantAscent", 1.5f);
+        AddDynamicSession(ref sessions, mapData);
 
         // mapData = new MapData("CoD_relative", 0.15f);
         // AddDynamicSession(ref sessions, mapData);
-        //
+        
+        // mapData = new MapData("dragon_age_brc202d", 1f);
+        // AddDynamicSession(ref sessions, mapData);
+        
+        mapData = new MapData("dragon_age2", 1f);
+        AddDynamicSession(ref sessions, mapData);
 
 
         // // Add Scripted scenarios
