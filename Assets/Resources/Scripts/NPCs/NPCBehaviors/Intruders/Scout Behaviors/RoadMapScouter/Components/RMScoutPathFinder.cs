@@ -5,25 +5,24 @@ public class RMScoutPathFinder
 {
     // path finding on the road map
     private List<Vector2> _tempPath;
-    List<WayPoint> openListRoadMap;
-    List<WayPoint> closedListRoadMap;
+    List<RoadMapNode> openListRoadMap;
+    List<RoadMapNode> closedListRoadMap;
 
     public RMScoutPathFinder()
     {
         _tempPath = new List<Vector2>();
-        openListRoadMap = new List<WayPoint>();
-        closedListRoadMap = new List<WayPoint>();
+        openListRoadMap = new List<RoadMapNode>();
+        closedListRoadMap = new List<RoadMapNode>();
     }
 
     // Get the path to the goal, if it is not reachable then return the closest reachable node
     public void GetClosestPointToGoal(RoadMap roadMap, Vector2 start, Vector2 goal, int numberOfWPs,
-        ref List<WayPoint> closestWps, ref List<Vector2> path,
-        float highestRiskThreshold)
+        ref List<RoadMapNode> closestWps, ref List<Vector2> path,
+        float highestRiskThreshold, bool isSafe)
     {
-        bool isOriginal = true;
-        WayPoint startWp = roadMap.GetClosestNodes(start, isOriginal, NodeType.RoadMap, Properties.NpcRadius);
-        WayPoint goalWp =
-            roadMap.GetClosestNodes(goal, isOriginal, NodeType.RoadMap, Properties.NpcRadius);
+        // bool isOriginal = true;
+        RoadMapNode startWp = roadMap.GetClosestNodes(start, true, NodeType.RoadMap, Properties.NpcRadius);
+        RoadMapNode goalWp = roadMap.GetClosestNodes(goal, true, NodeType.RoadMap, Properties.NpcRadius);
 
         closestWps.Clear();
         openListRoadMap.Clear();
@@ -31,7 +30,7 @@ public class RMScoutPathFinder
 
         if (Equals(startWp, null) || Equals(goalWp, null)) return;
 
-        foreach (WayPoint p in roadMap.GetNode(true))
+        foreach (RoadMapNode p in roadMap.GetNode(true))
         {
             p.gDistance = Mathf.Infinity;
             p.hDistance = Mathf.Infinity;
@@ -47,22 +46,22 @@ public class RMScoutPathFinder
 
         // Set Cost of starting node
         startWp.gDistance = 0f;
-        startWp.hDistance = GetHeuristicValue(startWp, goalWp);
+        startWp.hDistance = GetHeuristicValue(startWp, goalWp, isSafe);
 
         openListRoadMap.Add(startWp);
 
         while (openListRoadMap.Count > 0)
         {
-            WayPoint current = openListRoadMap[0];
+            RoadMapNode current = openListRoadMap[0];
             openListRoadMap.RemoveAt(0);
 
-            if (highestRiskThreshold >= current.GetProbability())
-                foreach (WayPoint p in current.GetConnections(isOriginal))
+            if (0.99f >= current.GetProbability()) //if (highestRiskThreshold >= current.GetProbability())
+                foreach (RoadMapNode p in current.GetConnections(true))
                 {
                     if (closedListRoadMap.Contains(p) || Equals(p.type, NodeType.Corner)) continue;
 
                     float gDistance = GetCostValue(current, p);
-                    float hDistance = GetHeuristicValue(current, goalWp);
+                    float hDistance = GetHeuristicValue(current, goalWp, isSafe);
 
                     if (p.gDistance + p.hDistance > gDistance + hDistance)
                     {
@@ -88,21 +87,35 @@ public class RMScoutPathFinder
             closedListRoadMap.Sort((x, y) =>
                 {
                     int ret = x.hDistance.CompareTo(y.hDistance);
+                    if (ret != 0) return ret;
+                    ret = x.GetProbability().CompareTo(y.GetProbability());
                     return ret;
                 }
             );
 
-            for (int i = 0; i < numberOfWPs && i < closedListRoadMap.Count; i++)
-                if (!Equals(closedListRoadMap[i].hDistance, Mathf.Infinity))
-                    closestWps.Add(closedListRoadMap[i]);
+
+            int addedNodes = 0;
+            int i = -1;
+            while (addedNodes < numberOfWPs && i < closedListRoadMap.Count - 1)
+            {
+                i++;
+
+                if (Equals(closedListRoadMap[i].hDistance, Mathf.Infinity)) continue;
+
+                RoadMapNode node = GetAncestor(closedListRoadMap[i], 20f); //closedListRoadMap[i];
+                if (IsSpotTooCloseRestSpots(node, closestWps, 5f)) continue;
+
+                closestWps.Add(node);
+                addedNodes++;
+            }
+
             return;
         }
-
 
         // Get the path from the goal way point to the start way point.
         _tempPath.Clear();
         _tempPath.Add(goal);
-        WayPoint currentWayPoint = goalWp;
+        RoadMapNode currentWayPoint = goalWp;
         while (currentWayPoint.parent != null)
         {
             _tempPath.Add(currentWayPoint.GetPosition());
@@ -132,6 +145,38 @@ public class RMScoutPathFinder
         }
     }
 
+    private bool IsSpotTooCloseRestSpots(RoadMapNode newNode, List<RoadMapNode> existingNodes, float leastDistance)
+    {
+        foreach (var existingNode in existingNodes)
+        {
+            Vector2 offset = newNode.GetPosition() - existingNode.GetPosition();
+            float sqrMag = offset.sqrMagnitude;
+
+            if (sqrMag < leastDistance * leastDistance) return true;
+
+            bool isVisible = GeometryHelper.IsCirclesVisible(newNode.GetPosition(), existingNode.GetPosition(),
+                Properties.NpcRadius, "Wall");
+            if (isVisible) return true;
+        }
+
+        return false;
+    }
+
+
+    private RoadMapNode GetAncestor(RoadMapNode node, float rangeLimit)
+    {
+        RoadMapNode output = node;
+        float currentDistanceFromStart = node.gDistance;
+
+        while (currentDistanceFromStart >= rangeLimit && !Equals(output.parent, null))
+        {
+            output = output.parent;
+            currentDistanceFromStart = output.gDistance;
+        }
+
+
+        return output;
+    }
 
     // Get shortest path on the road map
     // The start node is a node on the road map and the goal is the position of the phantom 
@@ -140,9 +185,9 @@ public class RMScoutPathFinder
         float highestRiskThreshold)
     {
         bool isOriginal = true;
-        WayPoint startWp = roadMap.GetClosestNodes(start, isOriginal, NodeType.RoadMap, Properties.NpcRadius);
+        RoadMapNode startWp = roadMap.GetClosestNodes(start, isOriginal, NodeType.RoadMap, Properties.NpcRadius);
 
-        WayPoint goalWp =
+        RoadMapNode goalWp =
             roadMap.GetClosestNodes(goalSpot.Position, isOriginal, NodeType.RoadMap, Properties.NpcRadius);
 
         openListRoadMap.Clear();
@@ -150,7 +195,7 @@ public class RMScoutPathFinder
 
         if (Equals(startWp, null) || Equals(goalWp, null)) return;
 
-        foreach (WayPoint p in roadMap.GetNode(true))
+        foreach (RoadMapNode p in roadMap.GetNode(true))
         {
             p.gDistance = Mathf.Infinity;
             p.hDistance = Mathf.Infinity;
@@ -166,22 +211,22 @@ public class RMScoutPathFinder
 
         // Set Cost of starting node
         startWp.gDistance = 0f;
-        startWp.hDistance = GetHeuristicValue(startWp, goalWp);
+        startWp.hDistance = GetHeuristicValue(startWp, goalWp, true);
 
         openListRoadMap.Add(startWp);
 
         while (openListRoadMap.Count > 0)
         {
-            WayPoint current = openListRoadMap[0];
+            RoadMapNode current = openListRoadMap[0];
             openListRoadMap.RemoveAt(0);
 
             if (highestRiskThreshold >= current.GetProbability())
-                foreach (WayPoint p in current.GetConnections(isOriginal))
+                foreach (RoadMapNode p in current.GetConnections(isOriginal))
                 {
                     if (closedListRoadMap.Contains(p) || Equals(p.type, NodeType.Corner)) continue;
 
                     float gDistance = GetCostValue(current, p);
-                    float hDistance = GetHeuristicValue(current, goalWp);
+                    float hDistance = GetHeuristicValue(current, goalWp, true);
 
                     if (p.gDistance + p.hDistance > gDistance + hDistance)
                     {
@@ -204,14 +249,15 @@ public class RMScoutPathFinder
         // goal is not reachable
         if (Equals(goalWp.parent, null))
         {
-            goalSpot.lastFailedTimeStamp = StealthArea.GetElapsedTime();
+            // goalSpot.lastFailedTimeStamp = StealthArea.GetElapsedTime();
+            goalSpot.MarkAsChecked();
             return;
         }
 
         // Get the path from the goal way point to the start way point.
         _tempPath.Clear();
         _tempPath.Add(goalSpot.Position);
-        WayPoint currentWayPoint = goalWp;
+        RoadMapNode currentWayPoint = goalWp;
         while (currentWayPoint.parent != null)
         {
             _tempPath.Add(currentWayPoint.GetPosition());
@@ -242,16 +288,21 @@ public class RMScoutPathFinder
     }
 
     // Get heuristic value for way points road map
-    static float GetHeuristicValue(WayPoint currentWayPoint, WayPoint goal)
+    static float GetHeuristicValue(RoadMapNode currentWayPoint, RoadMapNode goal, bool isSafe)
     {
-        float heuristicValue =
-            Vector2.Distance(currentWayPoint.GetPosition(), goal.GetPosition());
+        // float heuristicValue =
+        //     Vector2.Distance(currentWayPoint.GetPosition(), goal.GetPosition());
 
-        return heuristicValue;
+        if (!isSafe) return 0f;
+
+        Vector2 offset = currentWayPoint.GetPosition() - goal.GetPosition();
+        float sqrMag = offset.sqrMagnitude;
+
+        return sqrMag;
     }
 
     // Get the Cost Value (G) for the Waypoints roadmap
-    static float GetCostValue(WayPoint previousWayPoint, WayPoint currentWayPoint)
+    static float GetCostValue(RoadMapNode previousWayPoint, RoadMapNode currentWayPoint)
     {
         float costValue = previousWayPoint.gDistance;
 

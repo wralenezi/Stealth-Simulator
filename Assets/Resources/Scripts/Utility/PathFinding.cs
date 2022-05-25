@@ -27,8 +27,8 @@ public class PathFinding : MonoBehaviour
     private List<Vector2> rightVertices;
 
     // For road map path finding
-    private List<WayPoint> openListRoadMap;
-    private List<WayPoint> closedListRoadMap;
+    private List<RoadMapNode> openListRoadMap;
+    private List<RoadMapNode> closedListRoadMap;
     private List<Vector2> pathRoadMap;
 
     public static PathFinding Instance;
@@ -47,8 +47,8 @@ public class PathFinding : MonoBehaviour
         leftVertices = new List<Vector2>();
         rightVertices = new List<Vector2>();
 
-        openListRoadMap = new List<WayPoint>();
-        closedListRoadMap = new List<WayPoint>();
+        openListRoadMap = new List<RoadMapNode>();
+        closedListRoadMap = new List<RoadMapNode>();
         pathRoadMap = new List<Vector2>();
 
         CalculateLongestPathLength(MapManager.Instance.mapRenderer.GetInteriorWalls());

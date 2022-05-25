@@ -35,7 +35,7 @@ public abstract class Searcher : MonoBehaviour
     {
         m_Intruder = intruder;
 
-        m_SearchstartTimestamp = StealthArea.GetElapsedTime();
+        m_SearchstartTimestamp = StealthArea.GetElapsedTimeInSeconds();
         
         WorldStateController.LostTrackOfIntruder(intruder);
         

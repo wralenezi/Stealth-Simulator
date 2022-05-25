@@ -1,46 +1,168 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class RMSDecisionMaker //: MonoBehaviour
+public class RMSDecisionMaker
 {
-    // // List of curves to determine how utilities are mapped.
-    // [SerializeField] private AnimationCurve _SafetyCurve;
+    private GoalPriority _goalPriority;
+    private SafetyPriority _safetyPriority;
 
-    // private void SetCurves()
-    // {
-    //     SetSafetyCurve();
-    // }
-    //
-    // private void SetSafetyCurve()
-    // {
-    //     _SafetyCurve = new AnimationCurve();
-    //
-    //     for (float i = 0; i < 1; i += 0.1f)
-    //     {
-    //         float y = (i <= 0.5) ? i * 0.1f : i;
-    //         float x = i;
-    //         Keyframe keyframe = new Keyframe(x, y);
-    //         _SafetyCurve.AddKey(keyframe);
-    //     }
-    // }
-
-    
-    public HidingSpot GetBestSpot(List<HidingSpot> spots, float currentRisk)
+    public void Initiate(GoalPriority goalPriority, SafetyPriority safetyPriority)
     {
-        // if (currentRisk < 0.5f)
-        // return GetClosestToGoalSafeSpot(0.5f);
-        // return GetClosestToGoalSafeSpotNew(spots, 0.5f);
+        _goalPriority = goalPriority;
+        _safetyPriority = safetyPriority;
+    }
 
-        if (currentRisk <= 0f)
-            //     // return GetClosestToGoalSafeSpotNew(spots, 0.5f);
-            return GreedyGoalSpot(spots);
 
-        return GreedySafeSpot(spots);
-        // return GetClosestCheapestToGoalSafeSpot(0.5f);
-        // return GetSafestToGoalSpot();
-        // return GetBestSpot_Simple();
+    public HidingSpot GetBestSpot(List<HidingSpot> spots, float currentRisk, float maxSafeRisk)
+    {
+        if (currentRisk <= maxSafeRisk)
+            switch (_goalPriority)
+            {
+                case GoalPriority.Safety:
+                    SortGreedyGoalSpot(ref spots);
+                    break;
+            }
+        else
+            switch (_safetyPriority)
+            {
+                case SafetyPriority.GetWeightedCostVsGuardDistance:
+                    GreedySafeSpot(ref spots);
+                    break;
+                
 
-        // return GetSafestSpot();
+                case SafetyPriority.Occlusion:
+                    GreedySafeOccludedSpot(ref spots);
+                    break;
+
+                case SafetyPriority.GuardProximity:
+                    GreedySafeDistantSpot(ref spots);
+                    break;
+
+                case SafetyPriority.Random:
+                    GetRandomSafetyMethod(ref spots);
+                    break;
+            }
+
+        foreach (var spot in spots)
+        {
+            if(spot.IsAlreadyChecked()) continue;
+
+            return spot;
+        }
+        
+        // if(spots.Count > 0) Debug.Log("No new goals");
+
+        return null;
+    }
+
+
+    private void GetRandomSafetyMethod(ref List<HidingSpot> spots)
+    {
+        int totalMethods = 3;
+        float randomValue = Random.Range(1, totalMethods);
+
+        switch (randomValue)
+        {
+            case 1:
+                GreedySafeSpot(ref spots);
+                break;
+
+            case 2:
+                GreedySafeOccludedSpot(ref spots);
+                break;
+
+            case 3:
+                GreedySafeDistantSpot(ref spots);
+                break;
+        }
+    }
+
+
+    // Goal oriented methods
+
+    private void SortGreedyGoalSpot(ref List<HidingSpot> spots)
+    {
+        // Sort by closeness to 
+        spots.Sort((x, y) =>
+        {
+            int ret = y.GoalUtility.CompareTo(x.GoalUtility);
+            return ret != 0 ? ret : x.Risk.CompareTo(y.Risk);
+        });
+
+        // return spots.Count > 0 ? spots[0] : null;
+    }
+
+
+    // Safety oriented methods
+
+    private void GreedySafeSpot(ref List<HidingSpot> spots)
+    {
+        float costWeight = 0.6f;
+        spots.Sort((x, y) =>
+        {
+            int ret = x.Risk.CompareTo(y.Risk);
+            if (ret != 0) return ret;
+            ret = y.DeadEndProximity.CompareTo(x.DeadEndProximity);
+            if (ret != 0) return ret;
+            // ret = x.CostUtility.CompareTo(y.CostUtility);
+            // if (ret != 0) return ret;
+            ret = y.GetWeightedCostVsGuardDistance(costWeight).CompareTo(x.GetWeightedCostVsGuardDistance(costWeight));
+            return ret;
+        });
+
+        // return spots.Count > 0 ? spots[0] : null;
+    }
+
+
+    private void GreedySafeOccludedSpot(ref List<HidingSpot> spots)
+    {
+        spots.Sort((x, y) =>
+        {
+            int ret = x.Risk.CompareTo(y.Risk);
+            if (ret != 0) return ret;
+            ret = y.DeadEndProximity.CompareTo(x.DeadEndProximity);
+            if (ret != 0) return ret;
+            ret = y.OcclusionUtility.CompareTo(x.OcclusionUtility);
+            return ret;
+        });
+
+        // return spots.Count > 0 ? spots[0] : null;
+    }
+
+    private void GreedySafeDistantSpot(ref List<HidingSpot> spots)
+    {
+        spots.Sort((x, y) =>
+        {
+            int ret = x.Risk.CompareTo(y.Risk);
+            if (ret != 0) return ret;
+            ret = y.DeadEndProximity.CompareTo(x.DeadEndProximity);
+            if (ret != 0) return ret;
+            ret = y.GuardProximityUtility.CompareTo(x.GuardProximityUtility);
+            return ret;
+        });
+
+        // return spots.Count > 0 ? spots[0] : null;
+    }
+
+
+    private HidingSpot GetSafestSpot(List<HidingSpot> spots)
+    {
+        // Sorted in Asc order
+        spots.Sort((x, y) => x.Risk.CompareTo(y.Risk));
+
+        float minCost = Mathf.Infinity;
+        HidingSpot bestSpot = null;
+
+        foreach (var hs in spots)
+        {
+            if (minCost > hs.CostUtility)
+            {
+                bestSpot = hs;
+                minCost = hs.CostUtility;
+            }
+        }
+
+        return bestSpot;
     }
 
 
@@ -50,9 +172,9 @@ public class RMSDecisionMaker //: MonoBehaviour
         float maxFitness = Mathf.NegativeInfinity;
         foreach (var hs in spots)
         {
-            hs.Fitness = hs.RiskLikelihood;
+            hs.Fitness = hs.Risk;
 
-            hs.Fitness = Mathf.Round(hs.Fitness * 10000f) * 0.0001f;
+            hs.Fitness = Mathf.Round(hs.Fitness * 10f) * 0.01f;
 
             if (!(maxFitness < hs.Fitness)) continue;
 
@@ -61,50 +183,6 @@ public class RMSDecisionMaker //: MonoBehaviour
         }
 
         return bestHs;
-    }
-
-
-    private HidingSpot GreedyGoalSpot(List<HidingSpot> spots)
-    {
-        spots.Sort((x, y) =>
-        {
-            int ret = y.GoalUtility.CompareTo(x.GoalUtility);
-            return ret != 0 ? ret : x.RiskLikelihood.CompareTo(y.RiskLikelihood);
-        });
-
-        foreach (var hs in spots)
-        {
-            // if (StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 1f) continue;
-            // if (hs.RiskLikelihood > ScoutRiskEvaluator.Instance.GetRisk()) continue;
-
-            return hs;
-        }
-
-        return null;
-    }
-
-
-    private HidingSpot GreedySafeSpot(List<HidingSpot> spots)
-    {
-        spots.Sort((x, y) =>
-        {
-            int ret = x.RiskLikelihood.CompareTo(y.RiskLikelihood);
-            if (ret != 0) return ret;
-            // ret = x.CostUtility.CompareTo(y.CostUtility);
-            // if (ret != 0) return ret;
-            ret = y.GetWeightedCostVsGuardDistance().CompareTo(x.GetWeightedCostVsGuardDistance());
-            return ret;
-        });
-
-        foreach (var hs in spots)
-        {
-            // if (StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 1f) continue;
-            // if (hs.RiskLikelihood > ScoutRiskEvaluator.Instance.GetRisk()) continue;
-
-            return hs;
-        }
-
-        return null;
     }
 
 
@@ -119,7 +197,7 @@ public class RMSDecisionMaker //: MonoBehaviour
 
         foreach (var hs in spots)
         {
-            if (hs.RiskLikelihood >= maxAcceptedRisk) continue;
+            if (hs.Risk >= maxAcceptedRisk) continue;
 
             if (maxFitness >= hs.GoalUtility) continue;
 
@@ -138,7 +216,7 @@ public class RMSDecisionMaker //: MonoBehaviour
 
         foreach (var hs in spots)
         {
-            if (hs.RiskLikelihood >= maxAcceptedRisk) continue;
+            if (hs.Risk >= maxAcceptedRisk) continue;
             if (maxFitness > hs.GoalUtility) continue;
             // // if (StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 1f)
             // {
@@ -163,7 +241,7 @@ public class RMSDecisionMaker //: MonoBehaviour
 
         foreach (var hs in spots)
         {
-            if (hs.RiskLikelihood >= maxAcceptedRisk) continue;
+            if (hs.Risk >= maxAcceptedRisk) continue;
 
             float fitness = hs.GoalUtility;
 
@@ -181,15 +259,15 @@ public class RMSDecisionMaker //: MonoBehaviour
         Intruder intruder = NpcsManager.Instance.GetIntruders()[0];
         float MaxDistance = PathFinding.Instance.longestShortestPath * 0.4f;
 
-        spots.Sort((x, y) => x.RiskLikelihood.CompareTo(y.RiskLikelihood));
+        spots.Sort((x, y) => x.Risk.CompareTo(y.Risk));
 
         HidingSpot bestSpot = null;
 
         foreach (var hs in spots)
         {
-            if (StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 1f) continue;
+            // if (StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 1f) continue;
 
-            if (hs.RiskLikelihood > RMRiskEvaluator.Instance.GetRisk()) continue;
+            if (hs.Risk > RMRiskEvaluator.Instance.GetRisk()) continue;
 
             float distance =
                 PathFinding.Instance.GetShortestPathDistance(intruder.GetTransform().position, hs.Position);
@@ -203,32 +281,10 @@ public class RMSDecisionMaker //: MonoBehaviour
     }
 
 
-    private HidingSpot GetSafestSpot(List<HidingSpot> spots)
-    {
-        // Sorted in Asc order
-        spots.Sort((x, y) => x.RiskLikelihood.CompareTo(y.RiskLikelihood));
-
-        float minCost = Mathf.Infinity;
-        HidingSpot bestSpot = null;
-
-        foreach (var hs in spots)
-        {
-            if (StealthArea.GetElapsedTime() - hs.lastFailedTimeStamp < 0.05f) continue;
-
-            if (minCost > hs.CostUtility)
-            {
-                bestSpot = hs;
-                minCost = hs.CostUtility;
-            }
-        }
-
-        return bestSpot;
-    }
-
     private HidingSpot GetSafestToGoalSpot(List<HidingSpot> spots)
     {
         // Sorted in Asc order
-        spots.Sort((x, y) => x.RiskLikelihood.CompareTo(y.RiskLikelihood));
+        spots.Sort((x, y) => x.Risk.CompareTo(y.Risk));
 
         int firstQuarter = Mathf.FloorToInt(spots.Count * 0.5f);
 
@@ -248,4 +304,41 @@ public class RMSDecisionMaker //: MonoBehaviour
 
         return bestHs;
     }
+
+    // // List of curves to determine how utilities are mapped.
+    // [SerializeField] private AnimationCurve _SafetyCurve;
+
+    // private void SetCurves()
+    // {
+    //     SetSafetyCurve();
+    // }
+    //
+    // private void SetSafetyCurve()
+    // {
+    //     _SafetyCurve = new AnimationCurve();
+    //
+    //     for (float i = 0; i < 1; i += 0.1f)
+    //     {
+    //         float y = (i <= 0.5) ? i * 0.1f : i;
+    //         float x = i;
+    //         Keyframe keyframe = new Keyframe(x, y);
+    //         _SafetyCurve.AddKey(keyframe);
+    //     }
+    // }
+}
+
+public enum GoalPriority
+{
+    Safety,
+    None
+}
+
+
+public enum SafetyPriority
+{
+    Occlusion,
+    GuardProximity,
+    GetWeightedCostVsGuardDistance,
+    Random,
+    None
 }

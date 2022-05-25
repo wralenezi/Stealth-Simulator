@@ -84,7 +84,7 @@ public class RoadMapPatroler : Patroler
     {
         foreach (var line in m_RoadMap.GetLines(false))
         {
-            line.PropagateToSegment(line.GetMid(), 1f, StealthArea.GetElapsedTime());
+            line.PropagateToSegment(line.GetMid(), 1f, StealthArea.GetElapsedTimeInSeconds());
         }
     }
     
@@ -95,7 +95,7 @@ public class RoadMapPatroler : Patroler
         closed.Clear();
 
         // Get the closest Way point
-        WayPoint closestWp = m_RoadMap.GetClosestWp(guard.GetTransform().position, guard.GetDirection());
+        RoadMapNode closestWp = m_RoadMap.GetClosestWp(guard.GetTransform().position, guard.GetDirection());
 
         RoadMapLine startLine = null;
         float maxProb = Mathf.NegativeInfinity;

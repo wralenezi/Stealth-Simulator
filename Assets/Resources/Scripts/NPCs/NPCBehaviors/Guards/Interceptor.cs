@@ -274,12 +274,12 @@ public class InterceptionPoint
     // - End - Heuristics *****
 
     // Destination of the phantom node (the next node on the road map)
-    public WayPoint destination;
+    public RoadMapNode destination;
 
     // The direction the phantom is coming from; to prevent the propagation from going backwards
-    public WayPoint source;
+    public RoadMapNode source;
 
-    public InterceptionPoint(Vector2 _position, WayPoint dest, WayPoint src, int _generationIndex)
+    public InterceptionPoint(Vector2 _position, RoadMapNode dest, RoadMapNode src, int _generationIndex)
     {
         position = _position;
         direction = (dest.GetPosition() - src.GetPosition()).normalized;

@@ -49,9 +49,9 @@ public class PerformanceLogger : MonoBehaviour
 
     private bool IsTimeToLog()
     {
-        if (StealthArea.GetElapsedTime() - _lastLoggedTime >= 0.5f)
+        if (StealthArea.GetElapsedTimeInSeconds() - _lastLoggedTime >= 0.5f)
         {
-            _lastLoggedTime = StealthArea.GetElapsedTime();
+            _lastLoggedTime = StealthArea.GetElapsedTimeInSeconds();
             return true;
         }
 
@@ -113,7 +113,7 @@ public class PerformanceLogger : MonoBehaviour
 
     private void UpdateProgress()
     {
-        float timeElapsed = StealthArea.GetElapsedTime();
+        float timeElapsed = StealthArea.GetElapsedTimeInSeconds();
 
         // foreach (var guard in NpcsManager.Instance.GetGuards())
         // {

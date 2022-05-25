@@ -248,7 +248,7 @@ public class WorldState
         worldStStartValue = Equals(worldStStartValue, EMPTY_VALUE) ? "0" : worldStStartValue;
 
         float weldStEndValue = Get(wrldStatHeader + "End") == EMPTY_VALUE
-            ? StealthArea.GetElapsedTime()
+            ? StealthArea.GetElapsedTimeInSeconds()
             : float.Parse(Get(wrldStatHeader + "End"));
 
         float timeInterval = weldStEndValue - float.Parse(worldStStartValue);

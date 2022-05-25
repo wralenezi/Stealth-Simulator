@@ -10,7 +10,7 @@ public class VisibilityGraph : MonoBehaviour
     private MapRenderer m_mapRenderer;
 
     // RoadMap of the World
-    private List<WayPoint> m_graphNodes;
+    private List<RoadMapNode> m_graphNodes;
 
 
     // The radius the determine the neighborhood of a node
@@ -23,7 +23,7 @@ public class VisibilityGraph : MonoBehaviour
     public void Initiate(MapRenderer mapRenderer)
     {
         m_mapRenderer = mapRenderer;
-        m_graphNodes = new List<WayPoint>();
+        m_graphNodes = new List<RoadMapNode>();
 
         // IsRenderVisibilityGraph = true;
 
@@ -65,7 +65,7 @@ public class VisibilityGraph : MonoBehaviour
             else
                 position += angleNormal;
 
-            WayPoint wp = new WayPoint(position) {WallId = i};
+            RoadMapNode wp = new RoadMapNode(position) {WallId = i};
 
             m_graphNodes.Add(wp);
         }
@@ -84,7 +84,7 @@ public class VisibilityGraph : MonoBehaviour
                 m_graphNodes.RemoveAt(i);
                 m_graphNodes.RemoveAt(j - 1);
 
-                m_graphNodes.Add(new WayPoint(midPoint));
+                m_graphNodes.Add(new RoadMapNode(midPoint));
                 i = 0;
                 j = 1;
             }
@@ -101,8 +101,8 @@ public class VisibilityGraph : MonoBehaviour
             float extension = 1f;
 
             // Extend the length of the line check by both sides
-            WayPoint firstWp = m_graphNodes[i];
-            WayPoint secWp = m_graphNodes[j];
+            RoadMapNode firstWp = m_graphNodes[i];
+            RoadMapNode secWp = m_graphNodes[j];
 
             // Get the direction
             Vector2 direction = (firstWp.GetPosition() - secWp.GetPosition()).normalized;
@@ -224,7 +224,7 @@ public class VisibilityGraph : MonoBehaviour
     }
 
 
-    public List<WayPoint> GetRoadMap()
+    public List<RoadMapNode> GetRoadMap()
     {
         return m_graphNodes;
     }

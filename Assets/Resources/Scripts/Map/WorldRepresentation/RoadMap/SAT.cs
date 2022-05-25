@@ -27,13 +27,13 @@ public class SAT : MonoBehaviour
     CyclicalList<int> nC = new CyclicalList<int> {-1, 0, 1, 1, 1, 0, -1, -1};
 
     // RoadMap of the World
-    private List<WayPoint> _roadMap;
+    private List<RoadMapNode> _roadMap;
 
     // Road map after dividing the edges
-    private List<WayPoint> m_roadMapDivided;
+    private List<RoadMapNode> m_roadMapDivided;
 
     // the road map created from the map skeleton.
-    private List<WayPoint> m_SatRoadMap;
+    private List<RoadMapNode> m_SatRoadMap;
 
     // Establish the road map
     public void Initiate(MapRenderer mapRenderer, MapData mapData)
@@ -73,8 +73,8 @@ public class SAT : MonoBehaviour
 
     private void ImportRoadMap(MapRenderer mapRenderer, MapData mapData)
     {
-        _roadMap = new List<WayPoint>();
-        m_roadMapDivided = new List<WayPoint>();
+        _roadMap = new List<RoadMapNode>();
+        m_roadMapDivided = new List<RoadMapNode>();
 
         string mapString;
 
@@ -115,7 +115,7 @@ public class SAT : MonoBehaviour
 
         for (int i = 0; i < m_SatRoadMap.Count; i++)
         {
-            WayPoint wp = m_SatRoadMap[i];
+            RoadMapNode wp = m_SatRoadMap[i];
 
             wp.Id = i + 1;
 
@@ -176,7 +176,7 @@ public class SAT : MonoBehaviour
                     var position = new Vector2(float.Parse(data[0]), float.Parse(data[1]));
                     position = transform.TransformPoint(position);
 
-                    WayPoint newPoint = new WayPoint(position, lineIndex);
+                    RoadMapNode newPoint = new RoadMapNode(position, lineIndex);
                     newPoint.type = (NodeType) Enum.Parse(typeof(NodeType), data[2]);
                     _roadMap.Add(newPoint);
                     m_roadMapDivided.Add(newPoint);
@@ -197,22 +197,22 @@ public class SAT : MonoBehaviour
     // Divide the long edges into smaller edges
     private void DivideRoadMap()
     {
-        List<WayPoint> newWayPoints = new List<WayPoint>();
+        List<RoadMapNode> newWayPoints = new List<RoadMapNode>();
 
         for (int w = 0; w < m_roadMapDivided.Count; w++)
         {
-            WayPoint wp = m_roadMapDivided[w];
+            RoadMapNode wp = m_roadMapDivided[w];
 
             for (int i = 0; i < wp.GetConnections(false).Count; i++)
             {
-                WayPoint connection = wp.GetConnections(false)[i];
+                RoadMapNode connection = wp.GetConnections(false)[i];
 
                 // Divide the edge if it is longer than the max length
                 float totalDistance = Vector2.Distance(wp.GetPosition(), connection.GetPosition());
 
                 if (totalDistance > Properties.GetMaxEdgeLength())
                 {
-                    WayPoint prevWayPoint = null;
+                    RoadMapNode prevWayPoint = null;
 
                     // Remove the two way connection
                     // wp.RemoveEdge(connection);
@@ -232,7 +232,7 @@ public class SAT : MonoBehaviour
                     {
                         // Place the way point
                         Vector2 wayPointPos = wp.GetPosition() + dir * (j * length);
-                        WayPoint wayPoint = new WayPoint(wayPointPos);
+                        RoadMapNode wayPoint = new RoadMapNode(wayPointPos);
 
                         // Connect the first way point to the source way point and the rest with the previous
                         if (j == 1)
@@ -800,7 +800,7 @@ public class SAT : MonoBehaviour
     // Create the graph from the grid.
     public void CreateGridGraph()
     {
-        m_SatRoadMap = new List<WayPoint>();
+        m_SatRoadMap = new List<RoadMapNode>();
 
         int id = 0;
         for (int row = 0; row < gridSizeRow; row++)
@@ -813,7 +813,7 @@ public class SAT : MonoBehaviour
                 continue;
 
             // Create into a way point and add it to the graph.
-            WayPoint wp = new WayPoint(n.worldPosition, n.row, n.col, n.code) {Id = ++id};
+            RoadMapNode wp = new RoadMapNode(n.worldPosition, n.row, n.col, n.code) {Id = ++id};
             m_SatRoadMap.Add(wp);
 
             // Create a reference from the grid node to the way point node
@@ -824,7 +824,7 @@ public class SAT : MonoBehaviour
                 if (hump.wp != null)
                     continue;
 
-                WayPoint hmpWp = new WayPoint(hump.worldPosition, hump.row, hump.col, 'H');
+                RoadMapNode hmpWp = new RoadMapNode(hump.worldPosition, hump.row, hump.col, 'H');
                 m_SatRoadMap.Add(hmpWp);
                 hump.wp = hmpWp;
                 hump.code = 'H';
@@ -946,25 +946,25 @@ public class SAT : MonoBehaviour
     // Merge the corresponding way points and remove the reference from the originals
     private void MergeNodes(DtNode first, DtNode second)
     {
-        WayPoint firstWp = first.wp;
+        RoadMapNode firstWp = first.wp;
         first.wp = null;
-        WayPoint secWp = second.wp;
+        RoadMapNode secWp = second.wp;
         second.wp = null;
 
-        WayPoint newWp = new WayPoint((firstWp.GetPosition() + secWp.GetPosition()) / 2f)
+        RoadMapNode newWp = new RoadMapNode((firstWp.GetPosition() + secWp.GetPosition()) / 2f)
             {code = first.code, row = 0, col = 0};
 
         // Take the reconnect the connections from the old way point to the new one
         while (firstWp.GetConnections(true).Count > 0)
         {
-            WayPoint con = firstWp.GetConnections(true)[0];
+            RoadMapNode con = firstWp.GetConnections(true)[0];
             newWp.Connect(con, true, false);
             firstWp.RemoveConnection(con, true);
         }
 
         while (secWp.GetConnections(true).Count > 0)
         {
-            WayPoint con = secWp.GetConnections(true)[0];
+            RoadMapNode con = secWp.GetConnections(true)[0];
             newWp.Connect(con, true, false);
             secWp.RemoveConnection(con, true);
         }
@@ -989,9 +989,9 @@ public class SAT : MonoBehaviour
     }
 
     // 
-    private void ExpandTerritory(WayPoint startWp)
+    private void ExpandTerritory(RoadMapNode startWp)
     {
-        Queue<WayPoint> open = new Queue<WayPoint>();
+        Queue<RoadMapNode> open = new Queue<RoadMapNode>();
 
         int blockId = startWp.BlockId;
 
@@ -999,7 +999,7 @@ public class SAT : MonoBehaviour
 
         while (open.Count > 0)
         {
-            WayPoint curWp = open.Dequeue();
+            RoadMapNode curWp = open.Dequeue();
 
             foreach (var con in curWp.GetConnections(true))
             {
@@ -1016,9 +1016,9 @@ public class SAT : MonoBehaviour
     {
         for (int i = 0; i < m_SatRoadMap.Count; i++)
         {
-            WayPoint curWp = m_SatRoadMap[i];
+            RoadMapNode curWp = m_SatRoadMap[i];
 
-            List<WayPoint> conns = curWp.GetConnections(true);
+            List<RoadMapNode> conns = curWp.GetConnections(true);
 
             if (conns.Count == 0)
             {
@@ -1039,11 +1039,11 @@ public class SAT : MonoBehaviour
                 if (isRemoved)
                     break;
 
-                WayPoint firstCon = conns[j];
+                RoadMapNode firstCon = conns[j];
 
                 for (int k = j + 1; k < conns.Count; k++)
                 {
-                    WayPoint secCon = conns[k];
+                    RoadMapNode secCon = conns[k];
 
                     if (firstCon.code != secCon.code)
                         continue;
@@ -1079,9 +1079,9 @@ public class SAT : MonoBehaviour
     {
         for (int i = 0; i < m_SatRoadMap.Count; i++)
         {
-            WayPoint curWp = m_SatRoadMap[i];
+            RoadMapNode curWp = m_SatRoadMap[i];
 
-            List<WayPoint> conns = curWp.GetConnections(true);
+            List<RoadMapNode> conns = curWp.GetConnections(true);
 
             bool isMerged = false;
             for (int j = 0; j < conns.Count; j++)
@@ -1089,11 +1089,11 @@ public class SAT : MonoBehaviour
                 if (isMerged)
                     break;
 
-                WayPoint firstCon = conns[j];
+                RoadMapNode firstCon = conns[j];
 
                 for (int k = j + 1; k < conns.Count; k++)
                 {
-                    WayPoint secCon = conns[k];
+                    RoadMapNode secCon = conns[k];
 
                     if (firstCon.code != secCon.code)
                         continue;
@@ -1126,7 +1126,7 @@ public class SAT : MonoBehaviour
                         curWp.RemoveConnection(firstCon, true);
                         curWp.RemoveConnection(secCon, true);
 
-                        WayPoint newWp = new WayPoint(newPosition, 0, 0, firstCon.code)
+                        RoadMapNode newWp = new RoadMapNode(newPosition, 0, 0, firstCon.code)
                         {
                             BlockId = firstCon.BlockId
                         };
@@ -1134,7 +1134,7 @@ public class SAT : MonoBehaviour
                         // Move the connections to the new way point
                         while (firstCon.GetConnections(true).Count > 0)
                         {
-                            WayPoint fCon = firstCon.GetConnections(true)[0];
+                            RoadMapNode fCon = firstCon.GetConnections(true)[0];
 
                             // Don't add the connection to the other neighbor.
                             if (fCon != secCon)
@@ -1147,7 +1147,7 @@ public class SAT : MonoBehaviour
 
                         while (secCon.GetConnections(true).Count > 0)
                         {
-                            WayPoint seCon = secCon.GetConnections(true)[0];
+                            RoadMapNode seCon = secCon.GetConnections(true)[0];
                             if (seCon != firstCon)
                             {
                                 newWp.Connect(seCon, true, false);
@@ -1175,17 +1175,17 @@ public class SAT : MonoBehaviour
     {
         for (int i = 0; i < m_SatRoadMap.Count; i++)
         {
-            WayPoint curWp = m_SatRoadMap[i];
+            RoadMapNode curWp = m_SatRoadMap[i];
 
-            List<WayPoint> conns = curWp.GetConnections(true);
+            List<RoadMapNode> conns = curWp.GetConnections(true);
 
             for (int j = 0; j < conns.Count; j++)
             {
-                WayPoint firstCon = conns[j];
+                RoadMapNode firstCon = conns[j];
 
                 for (int k = j + 1; k < conns.Count; k++)
                 {
-                    WayPoint secCon = conns[k];
+                    RoadMapNode secCon = conns[k];
 
                     if (!firstCon.IsConnected(secCon, true))
                         continue;
@@ -1194,8 +1194,8 @@ public class SAT : MonoBehaviour
                     float firstToCurDistance = Vector2.Distance(firstCon.GetPosition(), curWp.GetPosition());
                     float curToSecDistance = Vector2.Distance(curWp.GetPosition(), secCon.GetPosition());
 
-                    WayPoint firstWp = null;
-                    WayPoint secWp = null;
+                    RoadMapNode firstWp = null;
+                    RoadMapNode secWp = null;
 
                     if (firstToSecDistance > firstToCurDistance)
                     {
@@ -1228,12 +1228,12 @@ public class SAT : MonoBehaviour
     // Connect the Islands of the local maximums
     public void ConnectLocalMaxIslands(MapRenderer mapRenderer)
     {
-        List<WayPoint> nodesToRemove = new List<WayPoint>();
+        List<RoadMapNode> nodesToRemove = new List<RoadMapNode>();
 
-        List<WayPoint> goals = new List<WayPoint>();
+        List<RoadMapNode> goals = new List<RoadMapNode>();
         // Open and close lists
-        Queue<WayPoint> open = new Queue<WayPoint>();
-        List<WayPoint> close = new List<WayPoint>();
+        Queue<RoadMapNode> open = new Queue<RoadMapNode>();
+        List<RoadMapNode> close = new List<RoadMapNode>();
 
         foreach (var point in m_SatRoadMap)
         {
@@ -1256,7 +1256,7 @@ public class SAT : MonoBehaviour
             // Get the list of goals 
             while (open.Count > 0)
             {
-                WayPoint curWp = open.Dequeue();
+                RoadMapNode curWp = open.Dequeue();
 
                 foreach (var con in curWp.GetConnections(true))
                 {
@@ -1315,11 +1315,11 @@ public class SAT : MonoBehaviour
 
                 if (GeometryHelper.IsReflex(wall.GetPoint(j - 1), wall.GetPoint(j), wall.GetPoint(j + 1)))
                 {
-                    WayPoint wp = new WayPoint(wall.GetPoint(j) - angleNormal * 0.3f, 0, 0, '*') {Id = 0};
+                    RoadMapNode wp = new RoadMapNode(wall.GetPoint(j) - angleNormal * 0.3f, 0, 0, '*') {Id = 0};
 
                     wp.type = NodeType.Corner;
 
-                    WayPoint projectionWp = GetInterceptionPointOnRoadMap(wp.GetPosition());
+                    RoadMapNode projectionWp = GetInterceptionPointOnRoadMap(wp.GetPosition());
 
                     wp.Connect(projectionWp, true, false);
 
@@ -1332,14 +1332,14 @@ public class SAT : MonoBehaviour
 
     // Find the projection point on the road map
     // Find the closest projection point 
-    public WayPoint GetInterceptionPointOnRoadMap(Vector2 position)
+    public RoadMapNode GetInterceptionPointOnRoadMap(Vector2 position)
     {
         float minDistance = Mathf.Infinity;
         Vector2? projectionOnRoadMap = null;
-        WayPoint projectionWp = null;
+        RoadMapNode projectionWp = null;
 
-        WayPoint firstWp = null;
-        WayPoint secWp = null;
+        RoadMapNode firstWp = null;
+        RoadMapNode secWp = null;
 
         foreach (var wp in m_SatRoadMap)
         foreach (var con in wp.GetConnections(true))
@@ -1373,7 +1373,7 @@ public class SAT : MonoBehaviour
 
         if (Equals(projectionOnRoadMap, null)) Debug.Log("There is no way point on the road map " + position);
 
-        WayPoint newWp = new WayPoint(projectionOnRoadMap.Value);
+        RoadMapNode newWp = new RoadMapNode(projectionOnRoadMap.Value);
         firstWp.RemoveConnection(secWp, true);
 
         firstWp.Connect(newWp, true, false);
@@ -1384,12 +1384,12 @@ public class SAT : MonoBehaviour
         return newWp;
     }
 
-    public List<WayPoint> GetOriginalRoadMap()
+    public List<RoadMapNode> GetOriginalRoadMap()
     {
         return _roadMap;
     }
 
-    public List<WayPoint> GetDividedRoadMap()
+    public List<RoadMapNode> GetDividedRoadMap()
     {
         return m_roadMapDivided;
     }
@@ -1511,7 +1511,7 @@ public class DtNode
     public bool isChecked;
 
     // The reference to the corresponding way point
-    public WayPoint wp;
+    public RoadMapNode wp;
 
     public DtNode(int _row, int _col, Vector2 position, float distance)
     {

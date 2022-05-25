@@ -3,7 +3,7 @@ using UnityEngine;
 public abstract class Scouter : MonoBehaviour
 {
     public IntruderBehavior intruderBehavior;
-    
+
     // Hiding spots manager
     public bool ShowHidingSpots;
     protected HidingSpotsCtrlr _HsC;
@@ -11,15 +11,19 @@ public abstract class Scouter : MonoBehaviour
     public virtual void Initiate(MapManager mapManager, Session session)
     {
         // ShowHidingSpots = true;
-        _HsC = new HidingSpotsCtrlr(mapManager, mapManager.mapRenderer.GetMapBoundingBox(), 10, 10);
+        float mapArea = mapManager.mapDecomposer.GetNavMeshArea();
+        int rowCount = Mathf.RoundToInt(mapArea * 0.01f);
+        int colCount = Mathf.RoundToInt(mapArea * 0.01f);
+        _HsC = new HidingSpotsCtrlr(mapManager, mapManager.mapRenderer.GetMapBoundingBox(), colCount, rowCount);
     }
 
     public virtual void Begin()
     {
-        foreach (var hs in _HsC.GetHidingSpots())
-            hs.lastFailedTimeStamp = 0;
-
         intruderBehavior = GameManager.Instance.GetActiveArea().GetSessionInfo().intruderBehavior;
+
+        foreach (var hs in _HsC.GetHidingSpots())
+            hs.ResetCheck();
+        
     }
 
 
@@ -31,7 +35,7 @@ public abstract class Scouter : MonoBehaviour
         if (ShowHidingSpots)
             _HsC?.DrawHidingSpots();
     }
-    
+
     protected Vector2? GetDestination(GameType gameType)
     {
         Vector2? goal = null;
@@ -52,6 +56,8 @@ public abstract class Scouter : MonoBehaviour
 
 public struct IntruderBehavior
 {
+    public SpotsNeighbourhoods spotsNeighbourhood;
+
     /// <summary>
     /// Path Cancelling method
     /// </summary>
@@ -61,30 +67,48 @@ public struct IntruderBehavior
 
     public TrajectoryType trajectoryType;
 
+    public GoalPriority goalPriority;
+
+    public SafetyPriority safetyPriority;
+
+    public float fovProjectionMultiplier;
+
     public override string ToString()
     {
         string output = "";
         string sep = "_";
 
+        output += spotsNeighbourhood;
+        output += sep;
+
         output += pathCancel;
         output += sep;
-        
+
         output += thresholdType;
         output += sep;
         
+        output += fovProjectionMultiplier;
+        output += sep;            
+            
         output += trajectoryType;
+        output += sep;
+
+        output += goalPriority;
+        output += sep;
+
+        output += safetyPriority;
+        // output += sep;
 
         return output;
     }
 }
 
 
-
 public enum PathCanceller
 {
     DistanceCalculation,
-    
+
     RiskComparison,
-    
+
     None
 }

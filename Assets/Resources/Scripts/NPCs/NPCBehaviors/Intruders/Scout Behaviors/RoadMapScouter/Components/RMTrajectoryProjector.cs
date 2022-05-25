@@ -3,14 +3,15 @@ using UnityEngine;
 
 public class RMTrajectoryProjector
 {
+    private float _fovMultiplier;
     private TrajectoryType _trajectoryType;
-
     private List<PossibleTrajectory> _possibleTrajectories;
 
-    public void Initiate(TrajectoryType trajectoryType)
+    public void Initiate(TrajectoryType trajectoryType, float fovMultiplier)
     {
         _possibleTrajectories = new List<PossibleTrajectory>();
         _trajectoryType = trajectoryType;
+        _fovMultiplier = fovMultiplier;
     }
 
     public List<PossibleTrajectory> GetTrajectories()
@@ -31,7 +32,7 @@ public class RMTrajectoryProjector
         {
             // Get the closest point on the road map to the guard
             Vector2? point = roadMap.GetClosetWpPairToPoint(guard.GetTransform().position, guard.GetDirection(), true,
-                out WayPoint wp1, out WayPoint wp2);
+                out RoadMapNode wp1, out RoadMapNode wp2);
 
             // if there is no intersection then abort
             if (!point.HasValue) return;
@@ -66,7 +67,7 @@ public class RMTrajectoryProjector
         float projectionMultiplier = 33f;
 
         float speed = Equals(npc, null) ? Properties.NpcSpeed : npc.GetCurrentSpeed();
-        return Mathf.Max(speed * fov * projectionMultiplier, fov * 0.1f);
+        return Mathf.Max(speed * fov * projectionMultiplier * _fovMultiplier, fov * 0.2f);
     }
 }
 

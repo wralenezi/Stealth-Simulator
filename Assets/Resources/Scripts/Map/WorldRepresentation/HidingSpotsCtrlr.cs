@@ -21,8 +21,13 @@ public class HidingSpotsCtrlr
         _partitionedSpots = new PartitionGrid<HidingSpot>(bounds, colCount, rowCount);
 
 
-        CreateHidingSpots(false, mapManager.GetWalls());
+        CreateHidingSpots(false, mapManager);
         PairHidingSpots();
+
+        foreach (var spot in _allSpots)
+        {
+            SetDeadEndProximity(spot, mapManager.GetRoadMap(), mapManager.mapRenderer);
+        }
     }
 
 
@@ -30,9 +35,10 @@ public class HidingSpotsCtrlr
     /// Place the spots on the map
     /// </summary>
     /// <param name="walls"></param>
-    private void CreateHidingSpots(bool includeConvexAngels, List<Polygon> walls)
+    private void
+        CreateHidingSpots(bool includeConvexAngels, MapManager mapManager) // List<Polygon> walls)
     {
-        foreach (var wall in walls)
+        foreach (var wall in mapManager.GetWalls())
         {
             for (int j = 0; j < wall.GetVerticesCount(); j++)
             {
@@ -49,12 +55,12 @@ public class HidingSpotsCtrlr
                 {
                     // Place one spot in the corner
                     Vector2 spotPosition = wall.GetPoint(j) - angleNormal;
-                    PlaceHidingSpot(spotPosition, walls);
+                    PlaceHidingSpot(spotPosition, mapManager.GetRoadMap(), mapManager);
                 }
                 else
                 {
                     // How long is the distance from the reflex edge
-                    float distanceFromCorner = Properties.NpcRadius * DistanceMultiplier * 2.5f;
+                    float distanceFromCorner = Properties.NpcRadius * DistanceMultiplier * 3f;
 
                     // Minimum edge length to place a hiding spot
                     float minEdge = distanceFromCorner;
@@ -68,7 +74,7 @@ public class HidingSpotsCtrlr
                         // Place a spot on the right side of the corner
                         Vector2 rightSide = (wall.GetPoint(j) - wall.GetPoint(j - 1)).normalized * distanceFromCorner;
                         Vector2 rightSpotPosition = wall.GetPoint(j) + angleNormal - rightSide;
-                        leftSpot = PlaceHidingSpot(rightSpotPosition, walls);
+                        leftSpot = PlaceHidingSpot(rightSpotPosition, mapManager.GetRoadMap(), mapManager);
                     }
 
                     float leftEdgeLength = Vector2.Distance(wall.GetPoint(j + 1), wall.GetPoint(j));
@@ -77,7 +83,7 @@ public class HidingSpotsCtrlr
                         // Place a spot on the left side of the corner
                         Vector2 leftSide = (wall.GetPoint(j + 1) - wall.GetPoint(j)).normalized * distanceFromCorner;
                         Vector2 leftSpotPosition = wall.GetPoint(j) + angleNormal + leftSide;
-                        rightSpot = PlaceHidingSpot(leftSpotPosition, walls);
+                        rightSpot = PlaceHidingSpot(leftSpotPosition, mapManager.GetRoadMap(), mapManager);
                     }
 
                     if (!Equals(leftSpot, null) && !Equals(rightSpot, null))
@@ -176,18 +182,51 @@ public class HidingSpotsCtrlr
         return _allSpots;
     }
 
-    private HidingSpot PlaceHidingSpot(Vector2 position, List<Polygon> interiorWalls)
+    private HidingSpot
+        PlaceHidingSpot(Vector2 position, RoadMap roadMap, MapManager mapManager) // List<Polygon> interiorWalls)
     {
         // Make sure the position is inside the walls
-        if (!PolygonHelper.IsPointInPolygons(interiorWalls, position)) return null;
+        if (!PolygonHelper.IsPointInPolygons(mapManager.mapRenderer.GetWalls(), position)) return null;
 
         HidingSpot hSr = new HidingSpot(position, Isovists.Instance.GetCoverRatio(position));
+
+        // SetDeadEndProximity(hSr, roadMap, mapManager.mapRenderer);
 
         _allSpots.Add(hSr);
         _partitionedSpots.Add(hSr, hSr.Position);
 
         return hSr;
     }
+
+
+    private void SetDeadEndProximity(HidingSpot hs, RoadMap roadMap, MapRenderer mapRenderer)
+    {
+        float minSqrMag = Mathf.Infinity;
+        RoadMapNode closestNode = null;
+
+        foreach (var node in roadMap.GetNode(true).Where(x => !Equals(x.type, NodeType.Corner)))
+        {
+            Vector2 offset = hs.Position - node.GetPosition();
+            float sqrMag = offset.sqrMagnitude;
+
+            // float distance = PathFinding.Instance.GetShortestPathDistance(hs.Position, node.GetPosition()); 
+
+            if (sqrMag < minSqrMag)
+            {
+                bool isVisible =
+                    GeometryHelper.IsCirclesVisible(hs.Position, node.GetPosition(), Properties.NpcRadius, "Wall");
+                if (!isVisible) continue;
+
+                minSqrMag = sqrMag;
+                closestNode = node;
+            }
+        }
+
+        bool isDeadEnd = closestNode.GetConnections(true).Where(x => !Equals(x.type, NodeType.Corner)).Count() == 1;
+
+        hs.DeadEndProximity = isDeadEnd ? 0f : 1f;
+    }
+
 
     private float GetAverageDistancesToHidingSpots(HidingSpot hidingSpot, List<PossiblePosition> possiblePositions)
     {
@@ -228,9 +267,9 @@ public class HidingSpotsCtrlr
         }
     }
 
-    public List<HidingSpot> GetHidingSpots(Vector3 position, int range)
+    public void AddHidingSpots(ref List<HidingSpot> spots, Vector3 position, int range)
     {
-        return _partitionedSpots.GetPartitionsContent(position, range);
+        spots.AddRange(_partitionedSpots.GetPartitionsContent(position, range));
     }
 
 
@@ -269,7 +308,7 @@ public class HidingSpot
     /// <summary>
     /// Utility of how risky this spot from potential guard movements
     /// </summary>
-    public float RiskLikelihood;
+    public float Risk;
 
     /// <summary>
     /// How close this spot to the goal
@@ -301,14 +340,25 @@ public class HidingSpot
     /// </summary>
     public float GuardProximityUtility;
 
+
+    /// <summary>
+    /// How close this point is to a dead end node on the road map. 1 is the furthest from a dead end, and 0 is the closest
+    /// </summary>
+    public float DeadEndProximity;
+
     /// <summary>
     /// Indicator of how good a hiding spot is; it is between 0 and 1.
     /// </summary>
     public float Fitness;
 
+    private const float CoolDownInSeconds = 0.2f;
+    private float lastCheckTimestamp;
+
     public PossiblePosition ThreateningPosition;
 
-    public float lastFailedTimeStamp;
+    // public float lastFailedTimeStamp;
+
+    public RoadMapNode ClosestRMGuardNode;
 
     /// <summary>
     /// Visible and neighbouring hiding spot
@@ -325,7 +375,24 @@ public class HidingSpot
         ThreateningPosition = null;
         _neighbouringSpots = new List<HidingSpot>();
         reflexNeighbour = null;
-        lastFailedTimeStamp = 0f;
+        lastCheckTimestamp = 0f;
+    }
+
+    public void ResetCheck()
+    {
+        lastCheckTimestamp = 0f;
+    }
+
+    public void MarkAsChecked()
+    {
+        lastCheckTimestamp = StealthArea.GetElapsedTimeInSeconds();
+    }
+
+    public bool IsAlreadyChecked()
+    {
+        float timeDiff = StealthArea.GetElapsedTimeInSeconds() - lastCheckTimestamp;
+
+        return timeDiff < CoolDownInSeconds;
     }
 
     public void PairHidingSpots(HidingSpot spot)
@@ -334,10 +401,9 @@ public class HidingSpot
         spot.AddNeighbour(this);
     }
 
-    public float GetWeightedCostVsGuardDistance()
+    public float GetWeightedCostVsGuardDistance(float costWeight)
     {
         float costUtility = 1f - CostUtility;
-        float costWeight = 0.7f;
 
         float guardApproximateUtility = GuardProximityUtility;
         float guardApproxWeight = 1f - costWeight;
@@ -363,12 +429,12 @@ public class HidingSpot
 
 #if UNITY_EDITOR
         string label = "";
-        label += "Risk: " + (Mathf.Round(RiskLikelihood * 100f) / 100f) + " \n";
+        label += "Risk: " + (Mathf.Round(Risk * 100f) / 100f) + " \n";
         label += "Goal: " + (Mathf.Round(GoalUtility * 100f) / 100f) + " \n";
-        // label += "Cost: " + (Mathf.Round(CostUtility * 100f) / 100f) + " \n";
-        // label += "LastFail: " + (StealthArea.GetElapsedTime() - lastFailedTimeStamp) + " \n";
-        // label += "Occlusion: " + (Mathf.Round(OcclusionUtility * 100f) / 100f) + " \n";
+        label += "Cost: " + (Mathf.Round(CostUtility * 100f) / 100f) + " \n";
+        label += "Occlusion: " + (Mathf.Round(OcclusionUtility * 100f) / 100f) + " \n";
         label += "CoverRatio: " + (Mathf.Round(CoverUtility * 100f) / 100f) + " \n";
+        label += "DeadEndProximity: " + (Mathf.Round(DeadEndProximity * 100f) / 100f) + " \n";
         Handles.Label(Position, label);
 #endif
     }

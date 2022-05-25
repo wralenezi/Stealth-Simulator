@@ -7,9 +7,9 @@ public static class RMThresholds
     private static int _currentAttemptsCount;
     private static int maxAttempts = 10;
 
-    private static int _maxDepth = 5;
+    private static int _maxDepth = 1;
     
-    private static float _minSearchRisk = 0.5f;
+    private static float _minSearchRisk = 0.7f;
     private static float _maxSearchRisk = 0.99f;
 
     private static float _minPathRisk = 0.1f;

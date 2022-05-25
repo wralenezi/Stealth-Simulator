@@ -6,10 +6,10 @@ using UnityEngine;
 public class RoadMapLine
 {
     // First point
-    public WayPoint wp1;
+    public RoadMapNode wp1;
 
     // Second point
-    public WayPoint wp2;
+    public RoadMapNode wp2;
 
     // The segment that lies in this line
     private SearchSegment m_SearchSegment;
@@ -24,7 +24,7 @@ public class RoadMapLine
     public float distance;
     public RoadMapLine pathParent;
 
-    public RoadMapLine(WayPoint _wp1, WayPoint _wp2)
+    public RoadMapLine(RoadMapNode _wp1, RoadMapNode _wp2)
     {
         wp1 = _wp1;
         wp2 = _wp2;
@@ -37,7 +37,7 @@ public class RoadMapLine
     }
 
     // Check if a way point is on this line
-    public bool IsPointPartOfLine(WayPoint wp)
+    public bool IsPointPartOfLine(RoadMapNode wp)
     {
         return (wp == wp1 || wp == wp2);
     }

@@ -3,27 +3,28 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-public class WayPoint
+public class RoadMapNode
 {
     // Position
     private readonly Vector2 _position;
 
     // Current connections to the way point (including the intermediate way points introduced by dividing the edges into segments.
-    private readonly List<WayPoint> _connections;
+    private readonly List<RoadMapNode> _connections;
 
     // The divided line segments connected to this way point. 
     private readonly List<RoadMapLine> _mapLines;
 
     // Original connections of the way points before dividing the edges into segments. 
-    private readonly List<WayPoint> _originalCons;
+    private readonly List<RoadMapNode> _originalCons;
 
-    private readonly List<WayPoint> _fixedCons;
+    private readonly List<RoadMapNode> _fixedCons;
 
     // The original lines connected to this way point
     private List<RoadMapLine> _originalLines;
 
     // probability that a guard is going to pass through here; when it is zero
     private float _probabilityGuardPassing;
+    public float distanceFromGuard;
     private NPC _passingGuard;
 
     // The ID of the way point
@@ -45,14 +46,14 @@ public class WayPoint
     // the variables for A*
     public float hDistance;
     public float gDistance;
-    public WayPoint parent;
+    public RoadMapNode parent;
 
-    public WayPoint(Vector2 _position, int _id = 0)
+    public RoadMapNode(Vector2 _position, int _id = 0)
     {
         this._position = _position;
-        _originalCons = new List<WayPoint>();
-        _fixedCons = new List<WayPoint>();
-        _connections = new List<WayPoint>();
+        _originalCons = new List<RoadMapNode>();
+        _fixedCons = new List<RoadMapNode>();
+        _connections = new List<RoadMapNode>();
         _mapLines = new List<RoadMapLine>();
         _originalLines = new List<RoadMapLine>();
         _probabilityGuardPassing = 0f;
@@ -61,15 +62,15 @@ public class WayPoint
         Id = _id;
     }
 
-    public WayPoint(Vector2 _position, int _row, int _col, char _code)
+    public RoadMapNode(Vector2 _position, int _row, int _col, char _code)
     {
         this._position = _position;
         row = _row;
         col = _col;
         code = _code;
-        _originalCons = new List<WayPoint>();
-        _fixedCons = new List<WayPoint>();
-        _connections = new List<WayPoint>();
+        _originalCons = new List<RoadMapNode>();
+        _fixedCons = new List<RoadMapNode>();
+        _connections = new List<RoadMapNode>();
         _mapLines = new List<RoadMapLine>();
         _originalLines = new List<RoadMapLine>();
         _passingGuard = null;
@@ -97,7 +98,7 @@ public class WayPoint
 
 
     // Add the way points to each others list of connects.
-    public void Connect(WayPoint wp, bool isOriginal, bool isOverwrite)
+    public void Connect(RoadMapNode wp, bool isOriginal, bool isOverwrite)
     {
         bool sameNode = Equals(wp.GetPosition(), GetPosition());
 
@@ -107,14 +108,14 @@ public class WayPoint
         wp.AddEdge(this, isOriginal);
     }
 
-    public void RemoveConnection(WayPoint wp, bool isOriginal)
+    public void RemoveConnection(RoadMapNode wp, bool isOriginal)
     {
         RemoveEdge(wp, isOriginal);
         wp.RemoveEdge(this, isOriginal);
     }
 
 
-    private void AddEdge(WayPoint wp, bool isOriginal)
+    private void AddEdge(RoadMapNode wp, bool isOriginal)
     {
         if (isOriginal)
             _originalCons.Add(wp);
@@ -122,7 +123,7 @@ public class WayPoint
             _connections.Add(wp);
     }
 
-    public void RemoveEdge(WayPoint wp, bool isOriginal)
+    public void RemoveEdge(RoadMapNode wp, bool isOriginal)
     {
         if (isOriginal)
             _originalCons.Remove(wp);
@@ -130,7 +131,7 @@ public class WayPoint
             _connections.Remove(wp);
     }
 
-    public bool IsConnected(WayPoint wp, bool isOriginal)
+    public bool IsConnected(RoadMapNode wp, bool isOriginal)
     {
         bool alreadyExists = GetConnections(isOriginal).Any(x => x.GetPosition() == wp.GetPosition());
 
@@ -183,7 +184,7 @@ public class WayPoint
         return isOriginal ? _originalLines : _mapLines;
     }
 
-    public RoadMapLine GetLineWithWp(WayPoint wp, bool isOriginal)
+    public RoadMapLine GetLineWithWp(RoadMapNode wp, bool isOriginal)
     {
         List<RoadMapLine> lines = isOriginal ? _originalLines : _mapLines;
 
@@ -217,7 +218,7 @@ public class WayPoint
         return _passingGuard;
     }
 
-    public List<WayPoint> GetConnections(bool isOriginal)
+    public List<RoadMapNode> GetConnections(bool isOriginal)
     {
         return isOriginal ? _originalCons : _connections;
     }

@@ -16,7 +16,7 @@ public class SearchSegment
     public float timestamp;
 
     // The first destination of the line segment 
-    private WayPoint m_destination1;
+    private RoadMapNode m_destination1;
 
     public Vector2 position1;
 
@@ -24,7 +24,7 @@ public class SearchSegment
     public bool reached1;
 
     // The second destination of the line segment
-    private WayPoint m_destination2;
+    private RoadMapNode m_destination2;
 
     public Vector2 position2;
 
@@ -33,7 +33,7 @@ public class SearchSegment
 
     public bool IsObserved;
 
-    public SearchSegment(WayPoint dst1, Vector2 startingPos1, WayPoint dst2, Vector2 startingPos2)
+    public SearchSegment(RoadMapNode dst1, Vector2 startingPos1, RoadMapNode dst2, Vector2 startingPos2)
     {
         m_destination1 = dst1;
         position1 = startingPos1;
@@ -53,7 +53,7 @@ public class SearchSegment
     public void Reset()
     {
         SetDefaultProb();
-        SetTimestamp(StealthArea.GetElapsedTime());
+        SetTimestamp(StealthArea.GetElapsedTimeInSeconds());
         isPropagated = false;
     }
 
@@ -86,7 +86,7 @@ public class SearchSegment
     // Get the age of the search segment
     public float GetAge()
     {
-        float age = StealthArea.GetElapsedTime() - timestamp;
+        float age = StealthArea.GetElapsedTimeInSeconds() - timestamp;
         return age;
     }
 
@@ -100,7 +100,7 @@ public class SearchSegment
     public void Seen()
     {
         IsObserved = true;
-        SetTimestamp(StealthArea.GetElapsedTime());
+        SetTimestamp(StealthArea.GetElapsedTimeInSeconds());
         SetProb(MinProbability);
         reached1 = false;
         reached2 = false;
@@ -108,7 +108,7 @@ public class SearchSegment
 
     public void notSeen()
     {
-        if (IsObserved) SetTimestamp(StealthArea.GetElapsedTime());
+        if (IsObserved) SetTimestamp(StealthArea.GetElapsedTimeInSeconds());
         IsObserved = false;
     }
 
@@ -185,7 +185,7 @@ public class SearchSegment
     // param: source is the source of the movement, destination is the point the movement reached and to be propagated from 
     public void PropagateDestination(int index)
     {
-        WayPoint wayPoint = index == 1 ? m_destination1 : m_destination2;
+        RoadMapNode wayPoint = index == 1 ? m_destination1 : m_destination2;
 
         // Don't propagate if the segment is zero
         if (Math.Abs(GetProbability() - MinProbability) < 0.00001f) return;
@@ -207,7 +207,7 @@ public class SearchSegment
             if (line.GetSearchSegment().GetProbability() > GetProbability()) break;
 
             // Create the new search segment 
-            line.PropagateToSegment(wayPoint.GetPosition(), newProb, StealthArea.GetElapsedTime());
+            line.PropagateToSegment(wayPoint.GetPosition(), newProb, StealthArea.GetElapsedTimeInSeconds());
         }
     }
 

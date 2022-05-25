@@ -33,7 +33,7 @@ public class GameManager : MonoBehaviour
     [Header("Logging")] [Tooltip("Specify the logging method")]
     public Logging loggingMethod;
 
-    [Header("Time")] [Tooltip("Simulation speed")] [Range(1, 20)]
+    [Header("Time")] [Tooltip("Simulation speed")] [Range(1, 100)]
     public int SimulationSpeed;
 
     // Rendering colors and certain meshes

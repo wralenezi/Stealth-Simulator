@@ -213,7 +213,7 @@ public class Guard : NPC
 
     public override LogSnapshot LogNpcProgress()
     {
-        return new LogSnapshot(GetTravelledDistance(), StealthArea.GetElapsedTime(), Data, "", 0, 0f, 0f, 0f,
+        return new LogSnapshot(GetTravelledDistance(), StealthArea.GetElapsedTimeInSeconds(), Data, "", 0, 0f, 0f, 0f,
             m_FoundHidingSpots, 0f, 0);
     }
 

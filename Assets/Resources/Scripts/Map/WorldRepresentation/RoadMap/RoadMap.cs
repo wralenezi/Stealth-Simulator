@@ -8,22 +8,22 @@ using UnityEngine;
 public class RoadMap
 {
     // Way Points of the road map (including way points introduced by dividing the edges)
-    private List<WayPoint> _wayPoints;
+    private List<RoadMapNode> _wayPoints;
 
     // Line Segments of the road map ( the divided segments)
     private List<RoadMapLine> _lines;
 
     // Way points that are dead ends
-    private List<WayPoint> _endPoints;
+    private List<RoadMapNode> _endPoints;
 
     // Actual nodes in the road map (since m_Waypoints contain all waypoints of the divided segments)
-    private List<WayPoint> _wpsActual;
+    private List<RoadMapNode> _wpsActual;
 
     // The original lines of the road map before dividing the edges.
     private List<RoadMapLine> _linesActual;
 
     // Temporary nodes on the road map, contains those nodes added when some segments of the road map is removed.
-    private List<WayPoint> _tempWpsActual;
+    private List<RoadMapNode> _tempWpsActual;
 
     private SAT _sat;
 
@@ -33,7 +33,7 @@ public class RoadMap
     private Queue<PointToProp> _points;
 
     // AdHoc way point placed on the map when the intruder is seen in a place far from the road map.
-    private WayPoint _adHocWp;
+    private RoadMapNode _adHocWp;
     private RoadMapLine _adHocRmLine;
 
     private MapRenderer _mapRenderer;
@@ -43,7 +43,7 @@ public class RoadMap
         _sat = sat;
         _wayPoints = _sat.GetDividedRoadMap();
         _wpsActual = _sat.GetOriginalRoadMap();
-        _tempWpsActual = new List<WayPoint>();
+        _tempWpsActual = new List<RoadMapNode>();
         _mapRenderer = mapRenderer;
 
         _intersectionsWithRoadmap = new List<Vector2>();
@@ -58,7 +58,7 @@ public class RoadMap
     // Populate the end nodes on the road map
     private void PopulateEndNodes()
     {
-        _endPoints = new List<WayPoint>();
+        _endPoints = new List<RoadMapNode>();
 
         foreach (var wp in _wayPoints.Where(wp => wp.GetConnections(true).Count == 1))
             _endPoints.Add(wp);
@@ -122,16 +122,18 @@ public class RoadMap
             wp.AddLines(_lines, false);
     }
 
-    public WayPoint GetClosestNodes(Vector2 point, bool isOriginal, NodeType type, float radius)
+    public RoadMapNode GetClosestNodes(Vector2 point, bool isOriginal, NodeType type, float radius)
     {
-        List<WayPoint> nodes = isOriginal ? _wpsActual : _wayPoints;
+        List<RoadMapNode> nodes = isOriginal ? _wpsActual : _wayPoints;
 
         float minMagDistance = Mathf.Infinity;
-        WayPoint closestWp = null;
+        RoadMapNode closestWp = null;
 
         foreach (var node in nodes)
         {
             if (!Equals(node.type, type)) continue;
+            if(node.GetProbability() >= 0.99f) continue;
+            
             if (!GeometryHelper.IsCirclesVisible(point, node.GetPosition(), radius, "Wall")) continue;
 
             Vector2 offset = point - node.GetPosition();
@@ -185,7 +187,7 @@ public class RoadMap
             lines.Add(line);
     }
 
-    public void RemoveLine(WayPoint wp1, WayPoint wp2, bool isOriginal)
+    public void RemoveLine(RoadMapNode wp1, RoadMapNode wp2, bool isOriginal)
     {
         List<RoadMapLine> lines = isOriginal ? _linesActual : _lines;
 
@@ -207,12 +209,12 @@ public class RoadMap
         lines.Remove(line);
     }
 
-    public List<WayPoint> GetNode(bool isOriginal)
+    public List<RoadMapNode> GetNode(bool isOriginal)
     {
         return isOriginal ? _wpsActual : _wayPoints;
     }
 
-    public List<WayPoint> GetTempNodes()
+    public List<RoadMapNode> GetTempNodes()
     {
         return _tempWpsActual;
     }
@@ -220,7 +222,7 @@ public class RoadMap
     // Get the reference of actual way points
     private void PopulateWayPoints()
     {
-        _wpsActual = new List<WayPoint>();
+        _wpsActual = new List<RoadMapNode>();
 
         foreach (var wp in _wayPoints.Where(wp => wp.Id != 0))
             _wpsActual.Add(wp);
@@ -248,7 +250,7 @@ public class RoadMap
 
     // Get the closest projection point to a position@param on the road map.
     // The closest two points will be considered, and the tie breaker will be the how the road map line is aligned with dir@param 
-    public WayPoint GetClosestWp(Vector2 position, Vector2 dir)
+    public RoadMapNode GetClosestWp(Vector2 position, Vector2 dir)
     {
         // List of distances and direction differences of the parameters.
         distances.Clear();
@@ -322,10 +324,10 @@ public class RoadMap
     // Start the flow of probability from the closest way point aligned with the direction. 
     public void CommenceProbabilityFlow(Vector2 position, Vector2 dir)
     {
-        WayPoint closestWp = GetClosestWp(position, dir);
+        RoadMapNode closestWp = GetClosestWp(position, dir);
 
         foreach (var line in closestWp.GetLines(false))
-            line.PropagateToSegment(closestWp.GetPosition(), 1f, StealthArea.GetElapsedTime());
+            line.PropagateToSegment(closestWp.GetPosition(), 1f, StealthArea.GetElapsedTimeInSeconds());
     }
 
     // Create a search segment that doesn't belong to the road map. The line starts from position@param and connects to the closest roadMap node
@@ -398,10 +400,10 @@ public class RoadMap
         //     1f,StealthArea.episodeTime);
 
 
-        WayPoint wp1 = _wayPoints[closestWpIndex];
+        RoadMapNode wp1 = _wayPoints[closestWpIndex];
         foreach (var line in wp1.GetLines(false))
         {
-            line.SetSearchSegment(wp1.GetPosition(), wp1.GetPosition(), 1f, StealthArea.GetElapsedTime());
+            line.SetSearchSegment(wp1.GetPosition(), wp1.GetPosition(), 1f, StealthArea.GetElapsedTimeInSeconds());
         }
     }
 
@@ -450,8 +452,8 @@ public class RoadMap
     }
 
 
-    public Vector2? GetClosetWpPairToPoint(Vector2 position, Vector2? direction, bool isOriginal, out WayPoint wp1,
-        out WayPoint wp2)
+    public Vector2? GetClosetWpPairToPoint(Vector2 position, Vector2? direction, bool isOriginal, out RoadMapNode wp1,
+        out RoadMapNode wp2)
     {
         // Output way points
         wp1 = null;
@@ -500,7 +502,7 @@ public class RoadMap
         _points.Clear();
 
         // Get the next Way point 
-        WayPoint nextWayPoint = GetWayPointInDirection(pointOnRoadMap, npc.GetDirection(), line);
+        RoadMapNode nextWayPoint = GetWayPointInDirection(pointOnRoadMap, npc.GetDirection(), line);
         Vector2 source = pointOnRoadMap;
 
         float maxStep = totalDistance / pointCount;
@@ -559,7 +561,7 @@ public class RoadMap
                     if (Equals(newConn, pt.line)) continue;
 
                     // set the new target
-                    WayPoint nextWp = Equals(newConn.wp1, pt.targetWp) ? newConn.wp2 : newConn.wp1;
+                    RoadMapNode nextWp = Equals(newConn.wp1, pt.targetWp) ? newConn.wp2 : newConn.wp1;
 
                     // Add the point to the list
                     _points.Enqueue(new PointToProp(pt.targetWp.GetPosition(), nextWp, newConn, pt.nextStep,
@@ -612,7 +614,7 @@ public class RoadMap
     }
 
     // insert a new waypoint between two that currently connected 
-    public void InsertWpInLine(WayPoint firstWp, WayPoint secWp, WayPoint newWp)
+    public void InsertWpInLine(RoadMapNode firstWp, RoadMapNode secWp, RoadMapNode newWp)
     {
         // Disconnect the connected waypoints
         firstWp.RemoveConnection(secWp, true);
@@ -622,9 +624,9 @@ public class RoadMap
         newWp.Connect(secWp, true, true);
     }
 
-    public WayPoint GetGuardRoadMapNode(Vector2 position, NPC passingGuard, float probability)
+    public RoadMapNode GetGuardRoadMapNode(Vector2 position, NPC passingGuard, float probability)
     {
-        WayPoint newWp = new WayPoint(position);
+        RoadMapNode newWp = new RoadMapNode(position);
 
         newWp.SetProbability(passingGuard, probability);
 
@@ -637,50 +639,45 @@ public class RoadMap
     public static float GetProbabilityValue(NPC guard, Vector2 position, PointToProp pt, float distance, float fov,
         float maxDistance)
     {
-        if (distance == 0f) return 0f;
-
+        // Spot is seen
         if (guard.GetFovPolygon().IsPointInPolygon(position, true)) return 1f;
 
         if (Equals(pt, null) || Equals(pt.type, PointType.Stright))
         {
             float value = Mathf.Max(distance - fov, 0f);
 
-            if (fov >= maxDistance)
-            {
-                return 0.4f;
-                // return 1f;
-            }
-
-            return Mathf.Max(1f - value / (maxDistance - fov), 0f);
+            if (fov >= maxDistance) return 0.99f; // return 1f;
+            
+            return Mathf.Round(Mathf.Max(0.99f - value / (maxDistance - fov), 0f) * 100f) * 0.01f;
         }
 
-        if (Equals(pt.type, PointType.Corner))
-            return pt.fixedRiskValue.Value;
+        if (Equals(pt.type, PointType.Corner)) return pt.fixedRiskValue.Value;
 
         return 0f;
     }
 
-    public List<WayPoint> GetPossibleGuardPositions()
+    public List<RoadMapNode> GetPossibleGuardPositions()
     {
         return _tempWpsActual;
     }
 
     public void ProjectPositionsInDirection(ref List<PossibleTrajectory> trajectory, Vector2 pointOnRoadMap,
-        WayPoint wp1, WayPoint wp2, float stepSize, float totalDistance, NPC npc)
+        RoadMapNode wp1, RoadMapNode wp2, float stepSize, float totalDistance, NPC npc)
     {
         _points.Clear();
 
         // Get the next Way point 
-        WayPoint nextWayPoint = GetWayPointInDirection(pointOnRoadMap, npc.GetDirection(), wp1, wp2);
+        RoadMapNode nextWayPoint = GetWayPointInDirection(pointOnRoadMap, npc.GetDirection(), wp1, wp2);
         Vector2 source = pointOnRoadMap;
 
         // Add a temporary way point to mark the guard's position on the road map
         float fov = Properties.GetFovRadius(NpcType.Guard);
 
-        WayPoint sourceWp =
+        RoadMapNode sourceWp =
             GetGuardRoadMapNode(source, npc,
                 GetProbabilityValue(npc, source, null, 0, fov, totalDistance));
         InsertWpInLine(wp1, wp2, sourceWp);
+        sourceWp.distanceFromGuard = 0f;
         _tempWpsActual.Add(sourceWp);
 
         PointToProp ptp = new PointToProp(source, sourceWp, nextWayPoint, stepSize, stepSize, totalDistance, 0f, npc);
@@ -717,10 +714,11 @@ public class RoadMap
                 pt.source = newPosition;
 
                 // Add a temporary way point to mark the guard possibly passing to
-                WayPoint newWp = GetGuardRoadMapNode(newPosition, npc,
+                RoadMapNode newWp = GetGuardRoadMapNode(newPosition, npc,
                     GetProbabilityValue(npc, pt.source, pt, pt.distance, fov, totalDistance));
                 InsertWpInLine(pt.sourceWp, pt.targetWp, newWp);
                 pt.sourceWp = newWp;
+                newWp.distanceFromGuard = pt.distance;
                 _tempWpsActual.Add(newWp);
 
                 // If there are distance remaining then enqueue the point
@@ -748,12 +746,13 @@ public class RoadMap
                     trajectory.Add(pt.GetTrajectory());
 
                     // Add a temporary way point to mark the guard possibly passing to
-                    WayPoint newWp =
+                    RoadMapNode newWp =
                         GetGuardRoadMapNode(pt.targetWp.GetPosition(), npc,
                             GetProbabilityValue(npc, pt.targetWp.GetPosition(), pt, pt.distance, fov,
                                 totalDistance));
                     InsertWpInLine(pt.sourceWp, pt.targetWp, newWp);
                     pt.sourceWp = newWp;
+                    newWp.distanceFromGuard = pt.distance;
                     _tempWpsActual.Add(newWp);
 
                     continue;
@@ -781,21 +780,22 @@ public class RoadMap
 
     // Probogate trajectory based on the angle of the corners
     public void ProjectPositionsByAngle(ref List<PossibleTrajectory> trajectory, Vector2 pointOnRoadMap,
-        WayPoint wp1, WayPoint wp2, float stepSize, float totalDistance, NPC npc)
+        RoadMapNode wp1, RoadMapNode wp2, float stepSize, float totalDistance, NPC npc)
     {
         _points.Clear();
 
         // Get the next Way point 
-        WayPoint nextWayPoint = GetWayPointInDirection(pointOnRoadMap, npc.GetDirection(), wp1, wp2);
+        RoadMapNode nextWayPoint = GetWayPointInDirection(pointOnRoadMap, npc.GetDirection(), wp1, wp2);
         Vector2 source = pointOnRoadMap;
 
         // Add a temporary way point to mark the guard's position on the road map
         float fov = Properties.GetFovRadius(NpcType.Guard);
 
-        WayPoint sourceWp =
+        RoadMapNode sourceWp =
             GetGuardRoadMapNode(source, npc,
                 GetProbabilityValue(npc, source, null, 0, fov, totalDistance));
         InsertWpInLine(wp1, wp2, sourceWp);
+        sourceWp.distanceFromGuard = 0f;
         _tempWpsActual.Add(sourceWp);
 
         PointToProp ptp = new PointToProp(source, sourceWp, nextWayPoint, stepSize, stepSize, totalDistance, 0f, npc);
@@ -833,10 +833,11 @@ public class RoadMap
                 pt.source = newPosition;
 
                 // Add a temporary way point to mark the guard possibly passing to
-                WayPoint newWp = GetGuardRoadMapNode(newPosition, npc,
+                RoadMapNode newWp = GetGuardRoadMapNode(newPosition, npc,
                     GetProbabilityValue(npc, pt.source, pt, pt.distance, fov, totalDistance));
                 InsertWpInLine(pt.sourceWp, pt.targetWp, newWp);
                 pt.sourceWp = newWp;
+                newWp.distanceFromGuard = pt.distance;
                 _tempWpsActual.Add(newWp);
 
                 // If there are distance remaining then enqueue the point
@@ -863,12 +864,13 @@ public class RoadMap
                     trajectory.Add(pt.GetTrajectory());
 
                     // Add a temporary way point to mark the guard possibly passing to
-                    WayPoint newWp =
+                    RoadMapNode newWp =
                         GetGuardRoadMapNode(pt.targetWp.GetPosition(), npc,
                             GetProbabilityValue(npc, pt.targetWp.GetPosition(), pt, pt.distance, fov,
                                 totalDistance));
                     InsertWpInLine(pt.sourceWp, pt.targetWp, newWp);
                     pt.sourceWp = newWp;
+                    newWp.distanceFromGuard = pt.distance;
                     _tempWpsActual.Add(newWp);
 
                     continue;
@@ -900,7 +902,7 @@ public class RoadMap
     }
 
 
-    private bool isOnStraightLine(PointToProp pt, WayPoint con)
+    private bool isOnStraightLine(PointToProp pt, RoadMapNode con)
     {
         float minDotProductAsStraightLine = 0.9f;
 
@@ -912,12 +914,12 @@ public class RoadMap
         return dot >= minDotProductAsStraightLine;
     }
 
-    private void SetupNewPoint(NPC guard, PointToProp pt, WayPoint con, ref PointToProp newPt)
+    private void SetupNewPoint(NPC guard, PointToProp pt, RoadMapNode con, ref PointToProp newPt)
     {
         if (Equals(pt.type, PointType.Corner)) return;
 
         int connectionsCount = pt.targetWp.GetConnections(true).Count - 1;
-        
+
         if (!isOnStraightLine(pt, con) && connectionsCount > 1 && Equals(newPt.fixedRiskValue, null))
         {
             newPt.remainingDist = guard.GetFovRadius();
@@ -925,11 +927,10 @@ public class RoadMap
         }
 
         newPt.fixedRiskValue = pt.targetWp.GetProbability() / connectionsCount;
-
     }
 
 
-    private WayPoint GetWayPointInDirection(Vector2 source, Vector2 dir, RoadMapLine line)
+    private RoadMapNode GetWayPointInDirection(Vector2 source, Vector2 dir, RoadMapLine line)
     {
         Vector2 directionToEndLine = (line.wp1.GetPosition() - source).normalized;
         float dirSimilarityWp1 = Vector2.Dot(directionToEndLine, dir);
@@ -938,7 +939,7 @@ public class RoadMap
         return dirSimilarityWp1 > 0f ? line.wp1 : line.wp2;
     }
 
-    private WayPoint GetWayPointInDirection(Vector2 source, Vector2 dir, WayPoint wp1, WayPoint wp2)
+    private RoadMapNode GetWayPointInDirection(Vector2 source, Vector2 dir, RoadMapNode wp1, RoadMapNode wp2)
     {
         Vector2 directionToEndLine = (wp1.GetPosition() - source).normalized;
         float dirSimilarityWp1 = Vector2.Dot(directionToEndLine, dir);
@@ -1275,10 +1276,10 @@ public class PointToProp
     // source position of the point
     public Vector2 source;
 
-    public WayPoint sourceWp;
+    public RoadMapNode sourceWp;
 
     // target way point of the propagation
-    public WayPoint targetWp;
+    public RoadMapNode targetWp;
 
     // Road Map Edge the propagation is happening on
     public RoadMapLine line;
@@ -1300,7 +1301,7 @@ public class PointToProp
 
     private PossibleTrajectory m_trajectory;
 
-    public PointToProp(Vector2 _source, WayPoint _sourceWp, WayPoint _targetWp, float _nextStep, float _stepSize,
+    public PointToProp(Vector2 _source, RoadMapNode _sourceWp, RoadMapNode _targetWp, float _nextStep, float _stepSize,
         float _remainingDist,
         float _distance, NPC npc)
     {
@@ -1315,7 +1316,7 @@ public class PointToProp
         fixedRiskValue = null;
     }
 
-    public PointToProp(Vector2 _source, WayPoint _targetWp, RoadMapLine _line, float _nextStep, float _remainingDist,
+    public PointToProp(Vector2 _source, RoadMapNode _targetWp, RoadMapLine _line, float _nextStep, float _remainingDist,
         float _distance, NPC npc)
     {
         source = _source;

@@ -15,7 +15,7 @@ public class RMRiskEvaluator : MonoBehaviour
     private bool _isTrajectoryInterceptionCoRunning;
 
     // Update frequency parameters
-    private const float UpdateIntervalInSeconds = 0.1f;
+    private const float UpdateIntervalInSeconds = 0.05f;
 
     public static RMRiskEvaluator Instance;
 
@@ -26,10 +26,6 @@ public class RMRiskEvaluator : MonoBehaviour
         Instance = this;
     }
 
-    public void SetRiskPosition(Intruder intruder)
-    {
-        _intruderRiskSpot = new RiskyPosition(intruder.GetTransform().position, 0f);
-    }
 
     // Update is called once per frame
     public void Clear()
@@ -50,12 +46,12 @@ public class RMRiskEvaluator : MonoBehaviour
         Vector2 intruderPosition = intruder.GetTransform().position;
 
         if (Equals(_intruderRiskSpot, null))
-            SetRiskPosition(intruder);
+            _intruderRiskSpot = new RiskyPosition(intruder.GetTransform().position, 0f);
 
         float closestRisk = 0f;
         float closestSqrMag = Mathf.Infinity;
 
-        List<WayPoint> possiblePositions = roadMap.GetPossibleGuardPositions();
+        List<RoadMapNode> possiblePositions = roadMap.GetPossibleGuardPositions();
 
         foreach (var p in possiblePositions)
         {
@@ -65,8 +61,11 @@ public class RMRiskEvaluator : MonoBehaviour
             if (sqrMag > closestSqrMag) continue;
             if (sqrMag > RISK_RANGE * RISK_RANGE) continue;
 
-            RaycastHit2D hit = Physics2D.Linecast(intruderPosition, p.GetPosition(), LayerMask.GetMask("Wall"));
-            bool isVisible = Equals(hit.collider, null);
+            // RaycastHit2D hit = Physics2D.Linecast(intruderPosition, p.GetPosition(), LayerMask.GetMask("Wall"));
+            // bool isVisible = Equals(hit.collider, null);
+
+            bool isVisible =
+                GeometryHelper.IsCirclesVisible(intruderPosition, p.GetPosition(), Properties.NpcRadius, "Wall");
             if (!isVisible) continue;
 
             closestRisk = p.GetProbability();
@@ -78,8 +77,47 @@ public class RMRiskEvaluator : MonoBehaviour
     }
 
 
+    // private void SetRiskyPositions(RoadMap roadMap, List<Guard> guards, Intruder intruder)
+    // {
+    //     _riskSpots.Clear();
+    //
+    //     // Insert a risk spot for each guard
+    //     foreach (var g in guards)
+    //     {
+    //         RiskyPosition riskSpot = new RiskyPosition();
+    //         riskSpot.risk = Mathf.NegativeInfinity;
+    //         riskSpot.sqrMag = Mathf.Infinity;
+    //         _riskSpots[g.name] = riskSpot;
+    //     }
+    //
+    //     List<RoadMapNode> possiblePositions = roadMap.GetPossibleGuardPositions();
+    //
+    //     foreach (var p in possiblePositions)
+    //     {
+    //         Vector2? pointOnPath =
+    //             GeometryHelper.GetClosetPointOnPath(intruder.GetFullPath(), p.GetPosition(), Properties.NpcRadius);
+    //
+    //         if (Equals(pointOnPath, null)) continue;
+    //
+    //         Vector2 offset = pointOnPath.Value - p.GetPosition();
+    //         RiskyPosition riskSpot = _riskSpots[p.GetPassingGuard().name];
+    //
+    //         if (riskSpot.sqrMag >= offset.sqrMagnitude)
+    //         {
+    //             // if (riskSpot.risk < p.GetProbability())
+    //             // {
+    //             riskSpot.position = pointOnPath.Value;
+    //             riskSpot.npc = p.GetPassingGuard();
+    //             riskSpot.risk = p.GetProbability();
+    //             riskSpot.sqrMag = offset.sqrMagnitude;
+    //             // }
+    //         }
+    //     }
+    // }
+
     private void SetRiskyPositions(RoadMap roadMap, List<Guard> guards, Intruder intruder)
     {
+        float fov = Properties.GetFovRadius(NpcType.Guard);
         _riskSpots.Clear();
 
         // Insert a risk spot for each guard
@@ -91,7 +129,7 @@ public class RMRiskEvaluator : MonoBehaviour
             _riskSpots[g.name] = riskSpot;
         }
 
-        List<WayPoint> possiblePositions = roadMap.GetPossibleGuardPositions();
+        List<RoadMapNode> possiblePositions = roadMap.GetPossibleGuardPositions();
 
         foreach (var p in possiblePositions)
         {
@@ -102,6 +140,18 @@ public class RMRiskEvaluator : MonoBehaviour
 
             Vector2 offset = pointOnPath.Value - p.GetPosition();
             RiskyPosition riskSpot = _riskSpots[p.GetPassingGuard().name];
+            float sqrMag = offset.sqrMagnitude;
+
+            // if(sqrMag > fov * fov) continue;
+            //
+            // if (riskSpot.risk < p.GetProbability())
+            // {
+            //     riskSpot.position = pointOnPath.Value;
+            //     riskSpot.npc = p.GetPassingGuard();
+            //     riskSpot.risk = p.GetProbability();
+            //     riskSpot.sqrMag = offset.sqrMagnitude;
+            // }
+
 
             if (riskSpot.sqrMag >= offset.sqrMagnitude)
             {
@@ -114,6 +164,61 @@ public class RMRiskEvaluator : MonoBehaviour
                 }
             }
         }
+    }
+
+    // private void SetRiskyPosition(RoadMap roadMap, List<Guard> guards, Intruder intruder)
+    // {
+    //     _riskSpots.Clear();
+    //
+    //     // Insert a risk spot for each guard
+    //     foreach (var g in guards)
+    //     {
+    //         RiskyPosition riskSpot = new RiskyPosition();
+    //         riskSpot.risk = Mathf.NegativeInfinity;
+    //         riskSpot.sqrMag = Mathf.Infinity;
+    //         _riskSpots[g.name] = riskSpot;
+    //     }
+    //
+    //     foreach (var riskyPosition in _riskSpots)
+    //     {
+    //         Vector2? pointOnPath =
+    //             GeometryHelper.GetClosetPointOnPath(intruder.GetFullPath(), p.GetPosition(), Properties.NpcRadius);
+    //
+    //         riskyPosition.Value.position = 
+    //         SetRisk(riskyPosition.Value, roadMap);
+    //     }
+    // }
+
+
+    private void SetRisk(RiskyPosition riskyPosition, RoadMap roadMap, Intruder intruder)
+    {
+        float RISK_RANGE = Properties.GetFovRadius(NpcType.Guard);
+
+        float closestRisk = 0f;
+        float closestSqrMag = Mathf.Infinity;
+
+        List<RoadMapNode> possiblePositions = roadMap.GetPossibleGuardPositions();
+
+        foreach (var p in possiblePositions)
+        {
+            Vector2? pointOnPath =
+                GeometryHelper.GetClosetPointOnPath(intruder.GetFullPath(), p.GetPosition(), Properties.NpcRadius);
+
+            Vector2 offset = p.GetPosition() - riskyPosition.position;
+            float sqrMag = offset.sqrMagnitude;
+
+            if (sqrMag > closestSqrMag) continue;
+            if (sqrMag > RISK_RANGE * RISK_RANGE) continue;
+
+            bool isVisible =
+                GeometryHelper.IsCirclesVisible(riskyPosition.position, p.GetPosition(), Properties.NpcRadius, "Wall");
+            if (!isVisible) continue;
+
+            closestRisk = p.GetProbability();
+            closestSqrMag = sqrMag;
+        }
+
+        riskyPosition.risk = Mathf.Round(closestRisk * 100f) * 0.01f;
     }
 
 
@@ -172,9 +277,15 @@ public class RMRiskEvaluator : MonoBehaviour
             guardPathDistanceToSpot -= Properties.GetFovRadius(NpcType.Guard);
             guardPathDistanceToSpot = Mathf.Clamp(guardPathDistanceToSpot, 0f, guardPathDistanceToSpot);
 
-            if (guardPathDistanceToSpot / Properties.NpcSpeed <
-                intruderPathDistanceToSpot / (Properties.IntruderSpeedMulti * Properties.NpcSpeed))
-                return true;
+
+            float arrivalTimeIntruder =
+                intruderPathDistanceToSpot / (Properties.IntruderSpeedMulti * Properties.NpcSpeed);
+            float arrivalTimeGuard = guardPathDistanceToSpot / Properties.NpcSpeed;
+
+            if (arrivalTimeGuard < arrivalTimeIntruder) return true;
+
+            // float timedDiff = Mathf.Abs(arrivalTimeGuard - arrivalTimeIntruder);
+            // if (timedDiff < 2f) return true;
         }
 
         return false;
