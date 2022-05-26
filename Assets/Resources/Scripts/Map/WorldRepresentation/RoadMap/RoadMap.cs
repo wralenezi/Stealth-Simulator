@@ -132,8 +132,8 @@ public class RoadMap
         foreach (var node in nodes)
         {
             if (!Equals(node.type, type)) continue;
-            if(node.GetProbability() >= 0.99f) continue;
-            
+            if (node.GetProbability() >= 0.99f) continue;
+
             if (!GeometryHelper.IsCirclesVisible(point, node.GetPosition(), radius, "Wall")) continue;
 
             Vector2 offset = point - node.GetPosition();
@@ -647,7 +647,7 @@ public class RoadMap
             float value = Mathf.Max(distance - fov, 0f);
 
             if (fov >= maxDistance) return 0.99f; // return 1f;
-            
+
             return Mathf.Round(Mathf.Max(0.99f - value / (maxDistance - fov), 0f) * 100f) * 0.01f;
         }
 
@@ -1223,10 +1223,12 @@ public class RoadMap
     }
 
 
-    public void DrawWalkableRoadmap()
+    public void DrawWalkableRoadmap(bool noCorners)
     {
         foreach (var t in _wpsActual)
         {
+            if (noCorners && Equals(t.type, NodeType.Corner)) continue;
+
             Gizmos.DrawSphere(t.GetPosition(), 0.025f);
             float prob = Mathf.Round(t.GetProbability() * 100f) * 0.01f;
             Handles.Label(t.GetPosition(), prob.ToString());
@@ -1234,6 +1236,8 @@ public class RoadMap
 
             foreach (var wp in t.GetConnections(true))
             {
+                if (noCorners && Equals(wp.type, NodeType.Corner)) continue;
+
                 if (t.GetProbability() != 0f && wp.GetProbability() != 0f)
                     Gizmos.color = Color.red;
                 else
@@ -1248,12 +1252,14 @@ public class RoadMap
         Gizmos.color = Color.red;
         foreach (var t in _tempWpsActual)
         {
+            if (noCorners && Equals(t.type, NodeType.Corner)) continue;
             Gizmos.DrawSphere(t.GetPosition(), 0.025f);
             float prob = Mathf.Round(t.GetProbability() * 100f) * 0.01f;
             Handles.Label(t.GetPosition(), prob.ToString());
 
             foreach (var wp in t.GetConnections(true))
             {
+                if (noCorners && Equals(wp.type, NodeType.Corner)) continue;
                 if (_tempWpsActual.Contains(wp))
                     Gizmos.DrawLine(t.GetPosition(), wp.GetPosition());
             }

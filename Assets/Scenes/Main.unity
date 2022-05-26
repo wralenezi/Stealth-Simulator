@@ -732,8 +732,8 @@ MonoBehaviour:
   gameView: 0
   showSurvey: 0
   IsOnlineBuild: 0
-  loggingMethod: 2
-  SimulationSpeed: 1
+  loggingMethod: 0
+  SimulationSpeed: 100
   Render: 0
 --- !u!4 &1776927360
 Transform:

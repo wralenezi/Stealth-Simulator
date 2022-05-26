@@ -102,8 +102,8 @@ public class RMScoutPathFinder
 
                 if (Equals(closedListRoadMap[i].hDistance, Mathf.Infinity)) continue;
 
-                RoadMapNode node = GetAncestor(closedListRoadMap[i], 20f); //closedListRoadMap[i];
-                if (IsSpotTooCloseRestSpots(node, closestWps, 5f)) continue;
+                RoadMapNode node = GetAncestor(closedListRoadMap[i], 15f); //closedListRoadMap[i];
+                if (IsSpotTooCloseRestSpots(node, closestWps, 1f)) continue;
 
                 closestWps.Add(node);
                 addedNodes++;

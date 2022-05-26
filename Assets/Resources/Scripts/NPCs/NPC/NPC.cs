@@ -240,12 +240,16 @@ public abstract class NPC : MonoBehaviour
                         return;
 
                     case Scenario.Stealth:
-                        Vector2? position = GetSafePosition(guards, MapManager.Instance.GetNavMesh());
-                        if (!Equals(position, null))
-                        {
-                            GetTransform().position = position.Value;
-                            return;
-                        }
+                        GetTransform().position = PathFinding.Instance.GetCornerFurthestFromPoint(
+                            CollectablesManager.Instance.GetGoalPosition(GameType.CoinCollection).Value,
+                            Properties.NpcRadius * 2f);
+
+                        // Vector2? position = GetSafePosition(guards, MapManager.Instance.GetNavMesh());
+                        // if (!Equals(position, null))
+                        // {
+                        //     GetTransform().position = position.Value;
+                        //     return;
+                        // }
 
                         break;
                 }
@@ -255,20 +259,21 @@ public abstract class NPC : MonoBehaviour
                 switch (sessionInfo.guardSpawnMethod)
                 {
                     case GuardSpawnType.Random:
-                    // Randomly place the NPC on the map
-                    int polygonIndex = Random.Range(0, navMesh.Count);
-                    GetTransform().position = navMesh[polygonIndex].GetCentroidPosition();
-                    break;
-                    
+                        // Randomly place the NPC on the map
+                        int polygonIndex = Random.Range(0, navMesh.Count);
+                        GetTransform().position = navMesh[polygonIndex].GetCentroidPosition();
+                        break;
+
                     case GuardSpawnType.Separate:
-                    // Randomly place the guards away from each other
-                    GetTransform().position =
-                    GetPositionFarFromGuards(GetNpcData().id - 1, guards, MapManager.Instance.GetNavMesh());
-                    break;
-                    
+                        // Randomly place the guards away from each other
+                        GetTransform().position =
+                            GetPositionFarFromGuards(GetNpcData().id - 1, guards, MapManager.Instance.GetNavMesh());
+                        break;
+
                     case GuardSpawnType.Goal:
                         //Place the guard on the goal's position
-                        GetTransform().position = CollectablesManager.Instance.GetGoalPosition(GameType.CoinCollection).Value;
+                        GetTransform().position =
+                            CollectablesManager.Instance.GetGoalPosition(GameType.CoinCollection).Value;
                         break;
                 }
             }
@@ -657,10 +662,10 @@ public struct VoiceParams
 public enum GuardSpawnType
 {
     Random,
-    
+
     Goal,
-    
+
     Separate,
-    
+
     Scripted
 }

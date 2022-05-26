@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using Random = UnityEngine.Random;
 
 public class PathFinding : MonoBehaviour
 {
@@ -73,6 +74,41 @@ public class PathFinding : MonoBehaviour
 
         m_longestPathInMap = maxDistance;
     }
+
+
+    public Vector2 GetPointFromCorner(float radius)
+    {
+        Polygon wall = MapManager.Instance.mapRenderer.GetInteriorWalls()[0];
+
+        int index = Random.Range(0, wall.GetVerticesCount());
+
+        return -wall.GetAngelNormal(index) * radius + wall.GetPoint(index);
+    }
+
+
+    public Vector2 GetCornerFurthestFromPoint(Vector2 point, float radius)
+    {
+        Polygon wall = MapManager.Instance.mapRenderer.GetInteriorWalls()[0];
+
+        float maxDistance = Mathf.NegativeInfinity;
+        Vector2? corner = null;
+        
+        for (int i = 0; i < wall.GetVerticesCount(); i++)
+        {
+            Vector2 cornerWall = -wall.GetAngelNormal(i) * radius + wall.GetPoint(i);
+            float distance = GetShortestPathDistance(point, cornerWall);
+
+            if (distance > maxDistance)
+            {
+                maxDistance = distance;
+                corner = cornerWall;
+            }
+
+        }
+
+        return corner.Value;
+    }
+
 
 
     // Return the shortest path as a sequence of points

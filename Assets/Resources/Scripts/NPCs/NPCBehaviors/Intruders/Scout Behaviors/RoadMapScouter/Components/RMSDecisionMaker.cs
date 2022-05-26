@@ -28,7 +28,7 @@ public class RMSDecisionMaker
                 case SafetyPriority.GetWeightedCostVsGuardDistance:
                     GreedySafeSpot(ref spots);
                     break;
-                
+
 
                 case SafetyPriority.Occlusion:
                     GreedySafeOccludedSpot(ref spots);
@@ -45,11 +45,11 @@ public class RMSDecisionMaker
 
         foreach (var spot in spots)
         {
-            if(spot.IsAlreadyChecked()) continue;
+            if (spot.IsAlreadyChecked()) continue;
 
             return spot;
         }
-        
+
         // if(spots.Count > 0) Debug.Log("No new goals");
 
         return null;
@@ -88,8 +88,6 @@ public class RMSDecisionMaker
             int ret = y.GoalUtility.CompareTo(x.GoalUtility);
             return ret != 0 ? ret : x.Risk.CompareTo(y.Risk);
         });
-
-        // return spots.Count > 0 ? spots[0] : null;
     }
 
 
@@ -104,13 +102,9 @@ public class RMSDecisionMaker
             if (ret != 0) return ret;
             ret = y.DeadEndProximity.CompareTo(x.DeadEndProximity);
             if (ret != 0) return ret;
-            // ret = x.CostUtility.CompareTo(y.CostUtility);
-            // if (ret != 0) return ret;
             ret = y.GetWeightedCostVsGuardDistance(costWeight).CompareTo(x.GetWeightedCostVsGuardDistance(costWeight));
             return ret;
         });
-
-        // return spots.Count > 0 ? spots[0] : null;
     }
 
 
@@ -120,13 +114,9 @@ public class RMSDecisionMaker
         {
             int ret = x.Risk.CompareTo(y.Risk);
             if (ret != 0) return ret;
-            ret = y.DeadEndProximity.CompareTo(x.DeadEndProximity);
-            if (ret != 0) return ret;
             ret = y.OcclusionUtility.CompareTo(x.OcclusionUtility);
             return ret;
         });
-
-        // return spots.Count > 0 ? spots[0] : null;
     }
 
     private void GreedySafeDistantSpot(ref List<HidingSpot> spots)
@@ -135,13 +125,9 @@ public class RMSDecisionMaker
         {
             int ret = x.Risk.CompareTo(y.Risk);
             if (ret != 0) return ret;
-            ret = y.DeadEndProximity.CompareTo(x.DeadEndProximity);
-            if (ret != 0) return ret;
             ret = y.GuardProximityUtility.CompareTo(x.GuardProximityUtility);
             return ret;
         });
-
-        // return spots.Count > 0 ? spots[0] : null;
     }
 
 

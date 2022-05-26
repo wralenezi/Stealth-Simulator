@@ -6,7 +6,7 @@ public static class Properties
     // General game set up
     //----------------------------------------------------------
     // The number of episodes to record
-    public const int EpisodesCount = 150;
+    public const int EpisodesCount = 200;
 
     // The duration of an episode.
     public const float EpisodeLength = 100f;
@@ -122,6 +122,9 @@ public static class Properties
         {
             case "Hall":
                 return 0.3f;
+            
+            case "Corridor":
+                return 0.15f;
             
             default:
                 return 0.1f;

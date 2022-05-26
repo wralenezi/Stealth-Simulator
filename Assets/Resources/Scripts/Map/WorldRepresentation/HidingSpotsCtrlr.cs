@@ -26,7 +26,7 @@ public class HidingSpotsCtrlr
 
         foreach (var spot in _allSpots)
         {
-            SetDeadEndProximity(spot, mapManager.GetRoadMap(), mapManager.mapRenderer);
+            // SetDeadEndProximity(spot, mapManager.GetRoadMap(), mapManager.mapRenderer);
         }
     }
 
@@ -132,27 +132,30 @@ public class HidingSpotsCtrlr
             currentSpot.OcclusionUtility = 1f - currentSpot.VisibleSpotsCount / _allSpots.Count;
     }
 
-    public void AddAvailableSpots(HidingSpot hidingSpot, int depth, ref List<HidingSpot> hidingSpots)
+    public void AddAvailableSpots(HidingSpot hidingSpot, ref List<HidingSpot> hidingSpots)
     {
         hidingSpots.Add(hidingSpot);
 
-        while (depth > 0)
+        List<HidingSpot> neighbours = hidingSpot.GetNeighbours();
+        foreach (var n in neighbours)
+            if (!hidingSpots.Contains(n))
+                hidingSpots.Add(n);
+    }
+
+    public void AddRandomSpots(HidingSpot hidingSpot, ref List<HidingSpot> hidingSpots)
+    {
+        int hidingSpotsCount = 10;
+        List<HidingSpot> neighbours = hidingSpot.GetNeighbours();
+
+        hidingSpots.Add(hidingSpot);
+
+        int counter = hidingSpotsCount;
+        while (counter > 0)
         {
-            _tempSpots.Clear();
-            foreach (var spot in hidingSpots)
-            {
-                List<HidingSpot> neighbours = spot.GetNeighbours();
-                foreach (var n in neighbours)
-                    _tempSpots.Add(n);
-            }
-
-            depth--;
-
-            foreach (var spot in _tempSpots)
-            {
-                if (!hidingSpots.Contains(spot))
-                    hidingSpots.Add(spot);
-            }
+            int index = Random.Range(0, neighbours.Count);
+            if (!hidingSpots.Contains(neighbours[index]))
+                hidingSpots.Add(neighbours[index]);
+            counter--;
         }
     }
 
@@ -199,33 +202,33 @@ public class HidingSpotsCtrlr
     }
 
 
-    private void SetDeadEndProximity(HidingSpot hs, RoadMap roadMap, MapRenderer mapRenderer)
-    {
-        float minSqrMag = Mathf.Infinity;
-        RoadMapNode closestNode = null;
-
-        foreach (var node in roadMap.GetNode(true).Where(x => !Equals(x.type, NodeType.Corner)))
-        {
-            Vector2 offset = hs.Position - node.GetPosition();
-            float sqrMag = offset.sqrMagnitude;
-
-            // float distance = PathFinding.Instance.GetShortestPathDistance(hs.Position, node.GetPosition()); 
-
-            if (sqrMag < minSqrMag)
-            {
-                bool isVisible =
-                    GeometryHelper.IsCirclesVisible(hs.Position, node.GetPosition(), Properties.NpcRadius, "Wall");
-                if (!isVisible) continue;
-
-                minSqrMag = sqrMag;
-                closestNode = node;
-            }
-        }
-
-        bool isDeadEnd = closestNode.GetConnections(true).Where(x => !Equals(x.type, NodeType.Corner)).Count() == 1;
-
-        hs.DeadEndProximity = isDeadEnd ? 0f : 1f;
-    }
+    // private void SetDeadEndProximity(HidingSpot hs, RoadMap roadMap, MapRenderer mapRenderer)
+    // {
+    //     float minSqrMag = Mathf.Infinity;
+    //     RoadMapNode closestNode = null;
+    //
+    //     foreach (var node in roadMap.GetNode(true).Where(x => !Equals(x.type, NodeType.Corner)))
+    //     {
+    //         Vector2 offset = hs.Position - node.GetPosition();
+    //         float sqrMag = offset.sqrMagnitude;
+    //
+    //         // float distance = PathFinding.Instance.GetShortestPathDistance(hs.Position, node.GetPosition()); 
+    //
+    //         if (sqrMag < minSqrMag)
+    //         {
+    //             bool isVisible =
+    //                 GeometryHelper.IsCirclesVisible(hs.Position, node.GetPosition(), Properties.NpcRadius, "Wall");
+    //             if (!isVisible) continue;
+    //
+    //             minSqrMag = sqrMag;
+    //             closestNode = node;
+    //         }
+    //     }
+    //
+    //     bool isDeadEnd = closestNode.GetConnections(true).Where(x => !Equals(x.type, NodeType.Corner)).Count() == 1;
+    //
+    //     hs.DeadEndProximity = isDeadEnd ? 0f : 1f;
+    // }
 
 
     private float GetAverageDistancesToHidingSpots(HidingSpot hidingSpot, List<PossiblePosition> possiblePositions)
@@ -351,7 +354,7 @@ public class HidingSpot
     /// </summary>
     public float Fitness;
 
-    private const float CoolDownInSeconds = 0.2f;
+    private const float CoolDownInSeconds = 0.5f;
     private float lastCheckTimestamp;
 
     public PossiblePosition ThreateningPosition;
@@ -430,11 +433,12 @@ public class HidingSpot
 #if UNITY_EDITOR
         string label = "";
         label += "Risk: " + (Mathf.Round(Risk * 100f) / 100f) + " \n";
-        label += "Goal: " + (Mathf.Round(GoalUtility * 100f) / 100f) + " \n";
-        label += "Cost: " + (Mathf.Round(CostUtility * 100f) / 100f) + " \n";
-        label += "Occlusion: " + (Mathf.Round(OcclusionUtility * 100f) / 100f) + " \n";
-        label += "CoverRatio: " + (Mathf.Round(CoverUtility * 100f) / 100f) + " \n";
-        label += "DeadEndProximity: " + (Mathf.Round(DeadEndProximity * 100f) / 100f) + " \n";
+        label += IsAlreadyChecked() ? "Checked" : "Ready";
+        // label += "Goal: " + (Mathf.Round(GoalUtility * 100f) / 100f) + " \n";
+        // label += "Cost: " + (Mathf.Round(CostUtility * 100f) / 100f) + " \n";
+        // label += "Occlusion: " + (Mathf.Round(OcclusionUtility * 100f) / 100f) + " \n";
+        // label += "CoverRatio: " + (Mathf.Round(CoverUtility * 100f) / 100f) + " \n";
+        // label += "DeadEndProximity: " + (Mathf.Round(DeadEndProximity * 100f) / 100f) + " \n";
         Handles.Label(Position, label);
 #endif
     }

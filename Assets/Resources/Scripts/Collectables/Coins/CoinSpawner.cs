@@ -61,10 +61,12 @@ public class CoinSpawner : MonoBehaviour
     {
         foreach (var coin in m_coins)
         {
-            int randIndex = Random.Range(0, navMesh.Count);
-            Vector2 coinPos = navMesh[randIndex].GetRandomPosition();
+            // int randIndex = Random.Range(0, navMesh.Count);
+            // Vector2 coinPos = navMesh[randIndex].GetRandomPosition();
             
             // Vector2 coinPos = NpcsManager.Instance.GetIntruders()[0].GetTransform().position;
+
+            Vector2 coinPos = PathFinding.Instance.GetPointFromCorner(Properties.NpcRadius * 2f);
             coin.Spawn(coinPos, navMesh, MapManager.Instance.mapData, _isRandom);
         }
     }

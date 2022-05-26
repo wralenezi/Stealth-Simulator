@@ -27,7 +27,7 @@ public class RMTrajectoryProjector
         _possibleTrajectories.Clear();
         roadMap.ClearTempWayPoints();
 
-        float fov = Properties.GetFovRadius(NpcType.Guard);
+        // float fov = Properties.GetFovRadius(NpcType.Guard);
         foreach (var guard in guards)
         {
             // Get the closest point on the road map to the guard
@@ -38,7 +38,7 @@ public class RMTrajectoryProjector
             if (!point.HasValue) return;
 
             float projectionDistance = GetGuardProjectionDistance(guard);
-            float stepSize = 2f; //fov * 0.25f
+            float stepSize = 2f;
             
             switch (_trajectoryType)
             {

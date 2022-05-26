@@ -32,6 +32,8 @@ public class MapDrawer : MonoBehaviour
 
     public Button SaveBtn;
 
+    public Button LoadBtn;
+
     // Location of the data for the game
     public static string DataPath;
     public static string MapsDataPath = "MapsData/";
@@ -56,7 +58,11 @@ public class MapDrawer : MonoBehaviour
 
         RemoveLastWallBtn.onClick.AddListener(RemoveLastWall);
 
-        SaveBtn.onClick.AddListener(SaveMap);
+        // SaveBtn.onClick.AddListener(SaveMap);
+        SaveBtn.onClick.AddListener(SaveCurrentLineRenders);
+
+        LoadBtn.onClick.AddListener(LoadMap);
+
 
         // Define the paths for the game
         // Main path
@@ -70,6 +76,84 @@ public class MapDrawer : MonoBehaviour
     {
         // Gets the path to the "Assets" folder 
         return MapsPath + mapName + ".csv";
+    }
+
+    private void SaveCurrentLineRenders()
+    {
+        m_walls.Clear();
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            Transform gameObject = transform.GetChild(i);
+
+            gameObject.TryGetComponent(out LineRenderer lineRenderer);
+
+            if (Equals(lineRenderer, null)) continue;
+
+            List<Vector2> wall = new List<Vector2>();
+
+            for (int j = 0; j < lineRenderer.positionCount; j++)
+            {
+                wall.Add(lineRenderer.transform.TransformPoint(lineRenderer.GetPosition(j)));
+            }
+
+            m_walls.Add(wall);
+        }
+
+        SaveMap();
+    }
+
+    private void LoadMap()
+    {
+        if (Equals(MapName.text, "")) return;
+
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            Transform childTransform = transform.GetChild(i);
+
+            if (Equals(childTransform.gameObject.name, "UI")) continue;
+            Destroy(childTransform.gameObject);
+        }
+
+        string mapData = CsvController.ReadString(GetPath(MapName.text));
+        ParseMapString(mapData);
+    }
+
+
+    // Parse the map data where the map is stored in absolute coordinates 
+    private void ParseMapString(string mapData)
+    {
+        // Split data by lines
+        var lines = mapData.Split('\n');
+
+        // Each line represents a polygon
+        for (var lineIndex = 0; lineIndex < lines.Length; lineIndex++)
+            if (lines[lineIndex].Length > 0)
+            {
+                GameObject gameObject = new GameObject();
+                gameObject.transform.parent = transform;
+
+                LineRenderer lineRenderer = gameObject.AddComponent<LineRenderer>();
+                // lineRenderer.useWorldSpace = true;
+
+                // Split the line to coordinates
+                var data = lines[lineIndex].Split(',');
+
+                lineRenderer.positionCount = Mathf.CeilToInt(data.Length * 0.5f) + 1;
+                int index = 0;
+
+                // Add the vertices to the wall
+                for (var i = 0; i < data.Length; i += 2)
+                {
+                    // Vertex position
+                    var position = new Vector2(float.Parse(data[i]), float.Parse(data[i + 1]));
+                    position = transform.TransformPoint(position);
+
+                    // Add the point to the current wall
+                    lineRenderer.SetPosition(index++, position);
+                }
+
+                lineRenderer.SetPosition(index++, lineRenderer.GetPosition(0));
+            }
     }
 
     void StartNewWall()
