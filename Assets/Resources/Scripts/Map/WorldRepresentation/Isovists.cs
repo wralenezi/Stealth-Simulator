@@ -10,17 +10,19 @@ public class Isovists : MonoBehaviour
 
     private GameObject m_FovGameObject;
     private FieldOfView m_Fov;
+    private Polygon _fovPolygon;
 
     public static Isovists Instance;
 
     public void Initiate(List<MeshPolygon> navMesh)
     {
         Instance = this;
-        
+
         m_Isovists = new List<Polygon>();
-        
+
         // Create the Isovists
         CreateIsovists(navMesh);
+        _fovPolygon = new Polygon();
     }
 
     private void CreateIsovists(List<MeshPolygon> navMesh)
@@ -52,16 +54,29 @@ public class Isovists : MonoBehaviour
     /// </summary>
     /// <param name="position"></param>
     /// <returns></returns>
+    // public float GetCoverRatio(Vector2 position)
+    // {
+    //     float visibilityRatio = 0f;
+    //
+    //     foreach (var v in m_Isovists)
+    //         visibilityRatio += v.IsCircleInPolygon(position, 0.2f) ? 1f : 0f;
+    //
+    //     return 1f - visibilityRatio / m_Isovists.Count;
+    // }
     public float GetCoverRatio(Vector2 position)
     {
-        float visibilityRatio = 0f;
+        m_Fov.transform.position = position;
+        m_Fov.CastFieldOfView();
 
-        foreach (var v in m_Isovists)
-            visibilityRatio += v.IsCircleInPolygon(position, 0.2f) ? 1f : 0f;
+        _fovPolygon.Clear();
+        foreach (var vertex in m_Fov.GetFovVertices())
+            _fovPolygon.AddPoint(vertex);
 
-        return 1f - visibilityRatio / m_Isovists.Count;
+        float area = _fovPolygon.GetArea();
+        float totalArea = MapManager.Instance.mapDecomposer.GetNavMeshArea();
+
+        return 1f - area / totalArea;
     }
-
 
     private void AddVisibilityPolygon(Transform parent)
     {

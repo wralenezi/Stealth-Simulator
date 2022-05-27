@@ -142,19 +142,17 @@ public class HidingSpotsCtrlr
                 hidingSpots.Add(n);
     }
 
-    public void AddRandomSpots(HidingSpot hidingSpot, ref List<HidingSpot> hidingSpots)
+    public void AddRandomSpots(HidingSpot hidingSpot, ref List<HidingSpot> hidingSpots, int numOfSpots)
     {
-        int hidingSpotsCount = 10;
         List<HidingSpot> neighbours = hidingSpot.GetNeighbours();
 
         hidingSpots.Add(hidingSpot);
 
-        int counter = hidingSpotsCount;
+        int counter = numOfSpots;
         while (counter > 0)
         {
             int index = Random.Range(0, neighbours.Count);
-            if (!hidingSpots.Contains(neighbours[index]))
-                hidingSpots.Add(neighbours[index]);
+            if (!hidingSpots.Contains(neighbours[index])) hidingSpots.Add(neighbours[index]);
             counter--;
         }
     }
@@ -354,7 +352,7 @@ public class HidingSpot
     /// </summary>
     public float Fitness;
 
-    private const float CoolDownInSeconds = 0.5f;
+    private const float CoolDownInSeconds = 1f;
     private float lastCheckTimestamp;
 
     public PossiblePosition ThreateningPosition;
@@ -404,14 +402,22 @@ public class HidingSpot
         spot.AddNeighbour(this);
     }
 
-    public float GetWeightedCostVsGuardDistance(float costWeight)
+    public float WeightedFitness()
     {
-        float costUtility = 1f - CostUtility;
+        float occlusionWeight = 0.3f;
+        float guardApproxWeight = 0.3f;
+        float coverWeight = 1f - (occlusionWeight + guardApproxWeight);
 
-        float guardApproximateUtility = GuardProximityUtility;
-        float guardApproxWeight = 1f - costWeight;
+        return OcclusionUtility * occlusionWeight + GuardProximityUtility * guardApproxWeight +
+               CoverUtility * coverWeight;
+    }
 
-        return costUtility * costWeight + guardApproximateUtility * guardApproxWeight;
+    public float WeightedOcclusion()
+    {
+        float occlusionWeight = 0.4f;
+        float coverWeight = 1f - occlusionWeight;
+
+        return OcclusionUtility * occlusionWeight + CoverUtility * coverWeight;
     }
 
     public void AddNeighbour(HidingSpot spot)
@@ -433,12 +439,12 @@ public class HidingSpot
 #if UNITY_EDITOR
         string label = "";
         label += "Risk: " + (Mathf.Round(Risk * 100f) / 100f) + " \n";
-        label += IsAlreadyChecked() ? "Checked" : "Ready";
         // label += "Goal: " + (Mathf.Round(GoalUtility * 100f) / 100f) + " \n";
         // label += "Cost: " + (Mathf.Round(CostUtility * 100f) / 100f) + " \n";
         // label += "Occlusion: " + (Mathf.Round(OcclusionUtility * 100f) / 100f) + " \n";
         // label += "CoverRatio: " + (Mathf.Round(CoverUtility * 100f) / 100f) + " \n";
         // label += "DeadEndProximity: " + (Mathf.Round(DeadEndProximity * 100f) / 100f) + " \n";
+        label += IsAlreadyChecked() ? "Checked" : "Ready";
         Handles.Label(Position, label);
 #endif
     }

@@ -636,7 +636,7 @@ public class RoadMap
     }
 
     // Get the probability to give for the intermediate points
-    public static float GetProbabilityValue(NPC guard, Vector2 position, PointToProp pt, float distance, float fov,
+    private static float GetProbabilityValue(NPC guard, Vector2 position, PointToProp pt, float distance, float fov,
         float maxDistance)
     {
         // Spot is seen
@@ -646,9 +646,9 @@ public class RoadMap
         {
             float value = Mathf.Max(distance - fov, 0f);
 
-            if (fov >= maxDistance) return 0.99f; // return 1f;
+            if (fov >= maxDistance) return 0.9f;
 
-            return Mathf.Round(Mathf.Max(0.99f - value / (maxDistance - fov), 0f) * 100f) * 0.01f;
+            return Mathf.Round(Mathf.Max(0.9f - value / (maxDistance - fov), 0f) * 10f) * 0.1f;
         }
 
         if (Equals(pt.type, PointType.Corner)) return pt.fixedRiskValue.Value;

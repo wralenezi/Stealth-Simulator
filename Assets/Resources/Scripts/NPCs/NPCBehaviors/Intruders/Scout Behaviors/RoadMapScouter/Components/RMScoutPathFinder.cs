@@ -18,7 +18,7 @@ public class RMScoutPathFinder
     // Get the path to the goal, if it is not reachable then return the closest reachable node
     public void GetClosestPointToGoal(RoadMap roadMap, Vector2 start, Vector2 goal, int numberOfWPs,
         ref List<RoadMapNode> closestWps, ref List<Vector2> path,
-        float highestRiskThreshold, bool isSafe)
+        float highestRiskThreshold, bool isSafe, float maxDistance)
     {
         // bool isOriginal = true;
         RoadMapNode startWp = roadMap.GetClosestNodes(start, true, NodeType.RoadMap, Properties.NpcRadius);
@@ -55,7 +55,8 @@ public class RMScoutPathFinder
             RoadMapNode current = openListRoadMap[0];
             openListRoadMap.RemoveAt(0);
 
-            if (0.99f >= current.GetProbability()) //if (highestRiskThreshold >= current.GetProbability())
+            //if (highestRiskThreshold >= current.GetProbability())
+            if (RMThresholds.GetMaxRisk() >= current.GetProbability())
                 foreach (RoadMapNode p in current.GetConnections(true))
                 {
                     if (closedListRoadMap.Contains(p) || Equals(p.type, NodeType.Corner)) continue;
@@ -71,8 +72,10 @@ public class RMScoutPathFinder
                         p.parent = current;
                     }
 
-                    openListRoadMap.InsertIntoSortedList(p,
-                        (x, y) => x.GetFvalue().CompareTo(y.GetFvalue()), Order.Asc);
+                    // Place a limit on the search
+                    if (current.gDistance < maxDistance)
+                        openListRoadMap.InsertIntoSortedList(p,
+                            (x, y) => x.GetFvalue().CompareTo(y.GetFvalue()), Order.Asc);
                 }
 
             closedListRoadMap.Add(current);
@@ -86,9 +89,11 @@ public class RMScoutPathFinder
         {
             closedListRoadMap.Sort((x, y) =>
                 {
-                    int ret = x.hDistance.CompareTo(y.hDistance);
+                    int ret = x.GetProbability().CompareTo(y.GetProbability());
                     if (ret != 0) return ret;
-                    ret = x.GetProbability().CompareTo(y.GetProbability());
+                    ret = x.hDistance.CompareTo(y.hDistance);
+                    if (ret != 0) return ret;
+                    ret = y.gDistance.CompareTo(x.gDistance);
                     return ret;
                 }
             );
@@ -102,7 +107,7 @@ public class RMScoutPathFinder
 
                 if (Equals(closedListRoadMap[i].hDistance, Mathf.Infinity)) continue;
 
-                RoadMapNode node = GetAncestor(closedListRoadMap[i], 15f); //closedListRoadMap[i];
+                RoadMapNode node = closedListRoadMap[i]; // GetAncestor(closedListRoadMap[i], 20f);
                 if (IsSpotTooCloseRestSpots(node, closestWps, 1f)) continue;
 
                 closestWps.Add(node);
@@ -136,13 +141,37 @@ public class RMScoutPathFinder
 
         SimplifyPath(ref path);
 
-        path.RemoveAt(0);
-
-        if (path.Count == 2)
+        // Option 1 -- More efficient path
+        if (path.Count == 3)
         {
+            path.RemoveAt(0);
             Vector2 tempEnd = path[1];
             PathFinding.Instance.GetShortestPath(start, tempEnd, ref path);
         }
+        else
+        {
+            int pointer = 0;
+            while (pointer < path.Count - 2)
+            {
+                path.RemoveAt(pointer + 1);
+                PathFinding.Instance.GetShortestPath(path[pointer], path[pointer + 1], ref _tempPath);
+                for (int i = 0; i < _tempPath.Count - 1; i++)
+                {
+                    path.Insert(++pointer, _tempPath[i]);
+                }
+            }
+
+            path.RemoveAt(0);
+        }
+
+        // Option 2 -- Less efficient path
+        // path.RemoveAt(0);
+        //
+        // if (path.Count == 2)
+        // {
+        //     Vector2 tempEnd = path[1];
+        //     PathFinding.Instance.GetShortestPath(start, tempEnd, ref path);
+        // }
     }
 
     private bool IsSpotTooCloseRestSpots(RoadMapNode newNode, List<RoadMapNode> existingNodes, float leastDistance)
@@ -184,11 +213,9 @@ public class RMScoutPathFinder
     public void GetShortestPath(RoadMap roadMap, Vector2 start, HidingSpot goalSpot, ref List<Vector2> path,
         float highestRiskThreshold)
     {
-        bool isOriginal = true;
-        RoadMapNode startWp = roadMap.GetClosestNodes(start, isOriginal, NodeType.RoadMap, Properties.NpcRadius);
-
+        RoadMapNode startWp = roadMap.GetClosestNodes(start, true, NodeType.RoadMap, Properties.NpcRadius);
         RoadMapNode goalWp =
-            roadMap.GetClosestNodes(goalSpot.Position, isOriginal, NodeType.RoadMap, Properties.NpcRadius);
+            roadMap.GetClosestNodes(goalSpot.Position, true, NodeType.RoadMap, Properties.NpcRadius);
 
         openListRoadMap.Clear();
         closedListRoadMap.Clear();
@@ -220,8 +247,9 @@ public class RMScoutPathFinder
             RoadMapNode current = openListRoadMap[0];
             openListRoadMap.RemoveAt(0);
 
-            if (highestRiskThreshold >= current.GetProbability())
-                foreach (RoadMapNode p in current.GetConnections(isOriginal))
+            // if (highestRiskThreshold >= current.GetProbability())
+            if (RMThresholds.GetMaxRisk() >= current.GetProbability())
+                foreach (RoadMapNode p in current.GetConnections(true))
                 {
                     if (closedListRoadMap.Contains(p) || Equals(p.type, NodeType.Corner)) continue;
 
@@ -249,7 +277,6 @@ public class RMScoutPathFinder
         // goal is not reachable
         if (Equals(goalWp.parent, null))
         {
-            // goalSpot.lastFailedTimeStamp = StealthArea.GetElapsedTime();
             goalSpot.MarkAsChecked();
             return;
         }
@@ -278,13 +305,38 @@ public class RMScoutPathFinder
 
         SimplifyPath(ref path);
 
-        path.RemoveAt(0);
-
-        if (path.Count == 2)
+        // Option 1 -- More efficient path
+        if (path.Count == 3)
         {
+            path.RemoveAt(0);
             Vector2 tempEnd = path[1];
             PathFinding.Instance.GetShortestPath(start, tempEnd, ref path);
         }
+        else
+        {
+            int pointer = 0;
+            while (pointer < path.Count - 2)
+            {
+                path.RemoveAt(pointer + 1);
+                PathFinding.Instance.GetShortestPath(path[pointer], path[pointer + 1], ref _tempPath);
+                for (int i = 0; i < _tempPath.Count - 1; i++)
+                {
+                    path.Insert(++pointer, _tempPath[i]);
+                }
+            }
+
+            path.RemoveAt(0);
+        }
+
+
+        // Option 2 -- Less Efficient path
+        // path.RemoveAt(0);
+        //
+        // if (path.Count == 2)
+        // {
+        //     Vector2 tempEnd = path[1];
+        //     PathFinding.Instance.GetShortestPath(start, tempEnd, ref path);
+        // }
     }
 
     // Get heuristic value for way points road map

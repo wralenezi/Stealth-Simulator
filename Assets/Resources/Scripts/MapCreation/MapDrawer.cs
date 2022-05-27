@@ -83,9 +83,11 @@ public class MapDrawer : MonoBehaviour
         m_walls.Clear();
         for (int i = 0; i < transform.childCount; i++)
         {
-            Transform gameObject = transform.GetChild(i);
+            Transform childT = transform.GetChild(i);
+            
+            if (Equals(childT.gameObject.name, "UI")) continue;
 
-            gameObject.TryGetComponent(out LineRenderer lineRenderer);
+            childT.gameObject.TryGetComponent(out LineRenderer lineRenderer);
 
             if (Equals(lineRenderer, null)) continue;
 
@@ -134,11 +136,12 @@ public class MapDrawer : MonoBehaviour
 
                 LineRenderer lineRenderer = gameObject.AddComponent<LineRenderer>();
                 // lineRenderer.useWorldSpace = true;
+                lineRenderer.loop = true;
 
                 // Split the line to coordinates
                 var data = lines[lineIndex].Split(',');
 
-                lineRenderer.positionCount = Mathf.CeilToInt(data.Length * 0.5f) + 1;
+                lineRenderer.positionCount = Mathf.CeilToInt(data.Length * 0.5f);
                 int index = 0;
 
                 // Add the vertices to the wall
@@ -151,8 +154,6 @@ public class MapDrawer : MonoBehaviour
                     // Add the point to the current wall
                     lineRenderer.SetPosition(index++, position);
                 }
-
-                lineRenderer.SetPosition(index++, lineRenderer.GetPosition(0));
             }
     }
 

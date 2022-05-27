@@ -10,11 +10,15 @@ public static class RMThresholds
     private static int _maxDepth = 1;
     
     private static float _minSearchRisk = 0.7f;
-    private static float _maxSearchRisk = 0.99f;
+    private static float _maxSearchRisk = 0.9f;
 
-    private static float _minPathRisk = 0.1f;
-    private static float _maxPathRisk = 0.99f;
+    private static float _minPathRisk = 0.5f;
+    private static float _maxPathRisk = 0.9f;
 
+    public static float GetMaxRisk()
+    {
+        return _maxSearchRisk;
+    }
 
     public static void ResetAttempts()
     {

@@ -105,7 +105,7 @@ public static class StealthStudySessions
         List<PathCanceller> pathCancellers = new List<PathCanceller>()
         {
             PathCanceller.DistanceCalculation,
-            // PathCanceller.RiskComparison
+            PathCanceller.RiskComparison
         };
 
         List<RiskThresholdType> riskThresholdTypes = new List<RiskThresholdType>()
@@ -128,10 +128,10 @@ public static class StealthStudySessions
 
         List<SafetyPriority> safetyPriorities = new List<SafetyPriority>()
         {
-            // SafetyPriority.Occlusion,
-            SafetyPriority.GuardProximity,
-            // SafetyPriority.GetWeightedCostVsGuardDistance,
-            // SafetyPriority.Random
+            SafetyPriority.Occlusion,
+            // SafetyPriority.GuardProximity,
+            SafetyPriority.WeightedSpot,
+            SafetyPriority.Random
         };
 
 
@@ -192,7 +192,7 @@ public static class StealthStudySessions
                     PathFollowing.SimpleFunnel, null);
             }
 
-            // sessions.Add(session);
+            sessions.Add(session);
         }
 
         foreach (var guardMethod in guardMethods)
@@ -290,7 +290,7 @@ public static class StealthStudySessions
         {
             SafetyPriority.Occlusion,
             // SafetyPriority.GuardProximity,
-            // SafetyPriority.GetWeightedCostVsGuardDistance,
+            SafetyPriority.WeightedSpot,
             SafetyPriority.Random
         };
 
