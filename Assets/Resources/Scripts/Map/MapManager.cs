@@ -48,9 +48,6 @@ public class MapManager : MonoBehaviour
         // Create the NavMesh
         mapDecomposer = gameObject.AddComponent<MapDecomposer>();
         mapDecomposer.Initiate(mapRenderer.GetInteriorWalls());
-
-        pathFinder = gameObject.AddComponent<PathFinding>();
-        pathFinder.Initiate();
         
         // Isovists map initiate
         isovists = gameObject.AddComponent<Isovists>();
@@ -62,6 +59,9 @@ public class MapManager : MonoBehaviour
 
         // Build the road map based on the Scale Area Transform
         _roadMap = new RoadMap(sat, mapRenderer);
+        
+        pathFinder = gameObject.AddComponent<PathFinding>();
+        pathFinder.Initiate();
         
         // // Visibility graph
         // visibilityGraph = gameObject.AddComponent<VisibilityGraph>();

@@ -1340,7 +1340,7 @@ public class SAT : MonoBehaviour
 
         RoadMapNode firstWp = null;
         RoadMapNode secWp = null;
-
+        
         foreach (var wp in m_SatRoadMap)
         foreach (var con in wp.GetConnections(true))
         {

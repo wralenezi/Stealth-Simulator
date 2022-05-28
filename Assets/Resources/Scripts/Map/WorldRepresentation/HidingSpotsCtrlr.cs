@@ -163,8 +163,7 @@ public class HidingSpotsCtrlr
         HidingSpot closestSpot = null;
         foreach (var spot in _allSpots)
         {
-            if (!GeometryHelper.IsCirclesVisible(position, spot.Position, Properties.NpcRadius, "Wall")
-            ) continue;
+            if (!GeometryHelper.IsCirclesVisible(position, spot.Position, Properties.NpcRadius, "Wall")) continue;
 
             Vector2 offset = position - spot.Position;
             float sqrDistance = offset.SqrMagnitude();
@@ -404,8 +403,8 @@ public class HidingSpot
 
     public float WeightedFitness()
     {
-        float occlusionWeight = 0.3f;
-        float guardApproxWeight = 0.3f;
+        float occlusionWeight = 0.1f;
+        float guardApproxWeight = 0.4f;
         float coverWeight = 1f - (occlusionWeight + guardApproxWeight);
 
         return OcclusionUtility * occlusionWeight + GuardProximityUtility * guardApproxWeight +

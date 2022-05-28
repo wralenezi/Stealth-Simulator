@@ -17,8 +17,9 @@ public class MapDecomposer : MonoBehaviour
     private List<Polygon> m_WallBorders;
 
     // Walkable area
+    [SerializeField]
     private float m_WalakbleArea;
-
+    
     // Regions before decomposition
     private List<List<Polygon>> m_SeenRegions;
     private List<List<Polygon>> m_UnseenRegions;

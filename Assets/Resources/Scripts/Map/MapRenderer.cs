@@ -58,10 +58,8 @@ public class MapRenderer : MonoBehaviour
                 }
 
                 // if the wall is not the first then it is a hole
-                if (lineIndex != 0)
-                    wall.EnsureWindingOrder(Properties.innerPolygonWinding);
-                else
-                    wall.EnsureWindingOrder(Properties.outerPolygonWinding);
+                wall.EnsureWindingOrder(
+                    lineIndex != 0 ? Properties.innerPolygonWinding : Properties.outerPolygonWinding);
 
                 m_walls.Add(wall);
             }

@@ -85,7 +85,7 @@ public class GameManager : MonoBehaviour
         // Main path
         DataPath = "Data/";
         // Logs path
-        LogsPath = DataPath + LogsPath;
+        LogsPath = "C:/LogFiles/";// DataPath + LogsPath;
         // Map related data paths
         MapsDataPath = DataPath + MapsDataPath;
         MapsPath = MapsDataPath + MapsPath;

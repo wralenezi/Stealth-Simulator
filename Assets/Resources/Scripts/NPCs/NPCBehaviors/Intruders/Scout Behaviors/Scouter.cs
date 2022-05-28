@@ -67,6 +67,8 @@ public struct IntruderBehavior
 
     public TrajectoryType trajectoryType;
 
+    public float maxRiskAsSafe;
+    
     public GoalPriority goalPriority;
 
     public SafetyPriority safetyPriority;
@@ -97,8 +99,10 @@ public struct IntruderBehavior
         output += sep;
 
         output += safetyPriority;
-        // output += sep;
+        output += sep;
 
+        output += maxRiskAsSafe;
+        
         return output;
     }
 }

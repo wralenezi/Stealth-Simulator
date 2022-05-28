@@ -8,11 +8,12 @@ public static class StealthStudySessions
         List<Session> sessions = new List<Session>();
 
         List<int> guardTeams = new List<int>();
-        guardTeams.Add(4);
+        // guardTeams.Add(4);
         guardTeams.Add(5);
-        guardTeams.Add(6);
+        // guardTeams.Add(6);
+        // guardTeams.Add(7);
 
-        // MapData mapData = new MapData("BoxSet01", 1f);
+        // MapData mapData = new MapData("BoxeSet02", 1f);
         // AddDynamicSession(ref sessions, mapData, guardTeams);
         
         // MapData mapData = new MapData("BoxSet02", 1f);
@@ -23,10 +24,21 @@ public static class StealthStudySessions
         //
         // MapData mapData = new MapData("BoxSet04", 1f);
         // AddDynamicSession(ref sessions, mapData, guardTeams);
+
+        MapData mapData;
         
-        MapData mapData = new MapData("amongUs", 0.5f);
+        // mapData = new MapData("amongUsMod", 0.5f);
+        // AddDynamicSession(ref sessions, mapData, guardTeams);
+        
+        mapData = new MapData("amongUs", 0.5f);
         AddDynamicSession(ref sessions, mapData, guardTeams);
         
+        mapData = new MapData("AlienIsolation", 3.5f);
+        AddDynamicSession(ref sessions, mapData, guardTeams);
+        
+        // mapData = new MapData("AlienIsolationMod", 0.75f);
+        // AddDynamicSession(ref sessions, mapData, guardTeams);
+
         mapData = new MapData("Boxes", 1f);
         AddDynamicSession(ref sessions, mapData, guardTeams);
         
@@ -36,7 +48,10 @@ public static class StealthStudySessions
         mapData = new MapData("dragonAge2", 1f);
         AddDynamicSession(ref sessions, mapData, guardTeams);
         
-        // guardTeams.Clear();
+        mapData = new MapData("MgsDock", 2f);
+        AddDynamicSession(ref sessions, mapData, guardTeams);
+        
+        guardTeams.Clear();
         // guardTeams.Add(3);
         // guardTeams.Add(4);
         // guardTeams.Add(5);
@@ -44,14 +59,11 @@ public static class StealthStudySessions
         // mapData = new MapData("dragonAgeBrc202d", 1f);
         // AddDynamicSession(ref sessions, mapData, guardTeams);
         //
-        // mapData = new MapData("MgsDock", 2f);
-        // AddDynamicSession(ref sessions, mapData, guardTeams);
-        //
-        // mapData = new MapData("AlienIsolationMod", 0.75f);
-        // AddDynamicSession(ref sessions, mapData, guardTeams);
-        
-       
+        mapData = new MapData("MgsDock", 2f);
+        AddDynamicSession(ref sessions, mapData, guardTeams);
 
+        
+        
         // Add Scripted scenarios
         
         // NpcLocation? intruderLocation = new NpcLocation(new Vector2(-15.69f, 5.91f), 0f);
@@ -92,7 +104,7 @@ public static class StealthStudySessions
 
         List<PatrolPlanner> guardMethods = new List<PatrolPlanner>()
         {
-            PatrolPlanner.gRoadMap,
+            // PatrolPlanner.gRoadMap,
             PatrolPlanner.gRandom
         };
 
@@ -105,7 +117,7 @@ public static class StealthStudySessions
         List<PathCanceller> pathCancellers = new List<PathCanceller>()
         {
             PathCanceller.DistanceCalculation,
-            PathCanceller.RiskComparison
+            // PathCanceller.RiskComparison
         };
 
         List<RiskThresholdType> riskThresholdTypes = new List<RiskThresholdType>()
@@ -128,10 +140,10 @@ public static class StealthStudySessions
 
         List<SafetyPriority> safetyPriorities = new List<SafetyPriority>()
         {
-            SafetyPriority.Occlusion,
+            // SafetyPriority.Occlusion,
             // SafetyPriority.GuardProximity,
             SafetyPriority.WeightedSpot,
-            SafetyPriority.Random
+            // SafetyPriority.Random
         };
 
 
@@ -149,6 +161,14 @@ public static class StealthStudySessions
             // 1.25f,
             // 1.5f
         };
+        
+        List<float> maxRiskAsSafeValues = new List<float>()
+        {
+            0f,
+            0.5f,
+            0.9f
+        };
+        
 
         foreach (var guardMethod in guardMethods)
         foreach (var guardTeam in guardTeams)
@@ -205,12 +225,13 @@ public static class StealthStudySessions
         foreach (var aSafetyPriority in safetyPriorities)
         foreach (var neighbour in neighbourhoods)
         foreach (var projectionDistance in projectionDistances)
+        foreach (var maxRiskAsSafeValue in maxRiskAsSafeValues)
         {
             IntruderBehavior intruderBehavior = new IntruderBehavior
             {
                 spotsNeighbourhood = neighbour, pathCancel = pathCanceller, thresholdType = riskThresholdType,
                 trajectoryType = trajectoryType, goalPriority = aGoalPriority, safetyPriority = aSafetyPriority,
-                fovProjectionMultiplier = projectionDistance
+                fovProjectionMultiplier = projectionDistance, maxRiskAsSafe = maxRiskAsSafeValue
             };
 
             Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue", guardSpawnType,
