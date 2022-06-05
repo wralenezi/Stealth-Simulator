@@ -8,10 +8,10 @@ public static class StealthStudySessions
         List<Session> sessions = new List<Session>();
 
         List<int> guardTeams = new List<int>();
-        // guardTeams.Add(4);
+        guardTeams.Add(4);
         guardTeams.Add(5);
-        // guardTeams.Add(6);
-        // guardTeams.Add(7);
+        guardTeams.Add(6);
+        guardTeams.Add(7);
 
         // MapData mapData = new MapData("BoxeSet02", 1f);
         // AddDynamicSession(ref sessions, mapData, guardTeams);
@@ -25,33 +25,36 @@ public static class StealthStudySessions
         // MapData mapData = new MapData("BoxSet04", 1f);
         // AddDynamicSession(ref sessions, mapData, guardTeams);
 
+       
         MapData mapData;
         
         // mapData = new MapData("amongUsMod", 0.5f);
         // AddDynamicSession(ref sessions, mapData, guardTeams);
-        
-        mapData = new MapData("amongUs", 0.5f);
-        AddDynamicSession(ref sessions, mapData, guardTeams);
-        
-        mapData = new MapData("AlienIsolation", 3.5f);
-        AddDynamicSession(ref sessions, mapData, guardTeams);
-        
+        //
+        // mapData = new MapData("amongUs", 0.5f);
+        // AddDynamicSession(ref sessions, mapData, guardTeams);
+        //
+        // mapData = new MapData("AlienIsolation", 3.5f);
+        // AddDynamicSession(ref sessions, mapData, guardTeams);
+        //
         // mapData = new MapData("AlienIsolationMod", 0.75f);
         // AddDynamicSession(ref sessions, mapData, guardTeams);
-
-        mapData = new MapData("Boxes", 1f);
-        AddDynamicSession(ref sessions, mapData, guardTeams);
-        
-        mapData = new MapData("valorantAscent", 1.5f);
-        AddDynamicSession(ref sessions, mapData, guardTeams);
+        //
+        // mapData = new MapData("Boxes", 1f);
+        // AddDynamicSession(ref sessions, mapData, guardTeams);
+        //
+        // mapData = new MapData("valorantAscent", 1.5f);
+        // AddDynamicSession(ref sessions, mapData, guardTeams);
         
         mapData = new MapData("dragonAge2", 1f);
         AddDynamicSession(ref sessions, mapData, guardTeams);
         
-        mapData = new MapData("MgsDock", 2f);
-        AddDynamicSession(ref sessions, mapData, guardTeams);
+        // mapData = new MapData("MgsDock", 2f);
+        // AddDynamicSession(ref sessions, mapData, guardTeams);
         
-        guardTeams.Clear();
+        // guardTeams.Clear();
+        // guardTeams.Add(2);
+        
         // guardTeams.Add(3);
         // guardTeams.Add(4);
         // guardTeams.Add(5);
@@ -59,8 +62,8 @@ public static class StealthStudySessions
         // mapData = new MapData("dragonAgeBrc202d", 1f);
         // AddDynamicSession(ref sessions, mapData, guardTeams);
         //
-        mapData = new MapData("MgsDock", 2f);
-        AddDynamicSession(ref sessions, mapData, guardTeams);
+        // mapData = new MapData("MgsDock", 2f);
+        // AddDynamicSession(ref sessions, mapData, guardTeams);
 
         
         
@@ -149,9 +152,9 @@ public static class StealthStudySessions
 
         List<GuardSpawnType> guardSpawnTypes = new List<GuardSpawnType>()
         {
-            GuardSpawnType.Random,
+            // GuardSpawnType.Random,
             GuardSpawnType.Separate,
-            GuardSpawnType.Goal
+            // GuardSpawnType.Goal
         };
 
         List<float> projectionDistances = new List<float>()
@@ -165,8 +168,8 @@ public static class StealthStudySessions
         List<float> maxRiskAsSafeValues = new List<float>()
         {
             0f,
-            0.5f,
-            0.9f
+            // 0.5f,
+            // 0.9f
         };
         
 
@@ -188,7 +191,7 @@ public static class StealthStudySessions
             };
 
             Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue", guardSpawnType,
-                guardTeam, 1,
+                guardTeam, 0,
                 intruderBehavior,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
@@ -212,7 +215,7 @@ public static class StealthStudySessions
                     PathFollowing.SimpleFunnel, null);
             }
 
-            sessions.Add(session);
+            // sessions.Add(session);
         }
 
         foreach (var guardMethod in guardMethods)

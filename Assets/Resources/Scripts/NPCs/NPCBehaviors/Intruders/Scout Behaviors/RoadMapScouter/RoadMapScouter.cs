@@ -406,7 +406,7 @@ public class RoadMapScouter : Scouter
             }
         }
 
-        Gizmos.color = Color.blue;
+        Gizmos.color = Color.yellow;
         if (showAvailableHidingSpots && !Equals(_availableSpots, null))
             foreach (var s in _availableSpots)
             {

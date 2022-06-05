@@ -1229,6 +1229,8 @@ public class RoadMap
         {
             if (noCorners && Equals(t.type, NodeType.Corner)) continue;
 
+            if(t.GetProbability() >= 0.5f) continue;
+            
             Gizmos.DrawSphere(t.GetPosition(), 0.025f);
             float prob = Mathf.Round(t.GetProbability() * 100f) * 0.01f;
             Handles.Label(t.GetPosition(), prob.ToString());
@@ -1241,12 +1243,14 @@ public class RoadMap
                 if (t.GetProbability() != 0f && wp.GetProbability() != 0f)
                     Gizmos.color = Color.red;
                 else
+                {
                     Gizmos.color = Color.yellow;
-
-
-                Gizmos.DrawLine(t.GetPosition(), wp.GetPosition());
+                    Gizmos.DrawLine(t.GetPosition(), wp.GetPosition());
+                }
             }
         }
+
+        return;
 
 
         Gizmos.color = Color.red;

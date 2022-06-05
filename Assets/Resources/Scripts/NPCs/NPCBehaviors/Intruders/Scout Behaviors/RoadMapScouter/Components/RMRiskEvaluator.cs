@@ -49,8 +49,8 @@ public class RMRiskEvaluator : MonoBehaviour
         _intruderRiskSpot.Reset();
         _intruderRiskSpot.position = intruder.GetTransform().position;
 
-        // SetMaxRiskWithinRange(roadMap, RISK_RANGE, intruder, ref _intruderRiskSpot);
-        SetClosestRiskWithinRange(roadMap, RISK_RANGE, intruder, ref _intruderRiskSpot);
+        SetMaxRiskWithinRange(roadMap, RISK_RANGE, intruder, ref _intruderRiskSpot);
+        // SetClosestRiskWithinRange(roadMap, RISK_RANGE, intruder, ref _intruderRiskSpot);
     }
 
     private void SetRiskyPositions(RoadMap roadMap, List<Guard> guards, Intruder intruder)
@@ -291,13 +291,13 @@ public class RMRiskEvaluator : MonoBehaviour
     {
         if (!Equals(_intruderRiskSpot, null))
         {
-            _intruderRiskSpot.Draw(_intruderRiskSpot.risk.ToString(), Color.red);
+            _intruderRiskSpot.Draw(_intruderRiskSpot.risk.ToString(), Color.magenta);
         }
 
         foreach (var spot in _riskSpots)
         {
             float value = Mathf.Round(spot.risk * 100f) * 0.01f;
-            spot.Draw(value.ToString(), Color.red);
+            spot.Draw(value.ToString(), Color.magenta);
         }
     }
 }
