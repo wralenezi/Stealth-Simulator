@@ -138,6 +138,11 @@ public abstract class NPC : MonoBehaviour
         Fov.Initiate(angle, radius, color);
     }
 
+    public void SetFovColor(Color32 color)
+    {
+        Fov.ChangeColor(color);
+    }
+
     private void LoadFovPolygon()
     {
         GetFovPolygon().Clear();
@@ -224,7 +229,7 @@ public abstract class NPC : MonoBehaviour
     }
 
     // Place the NPC's start position
-    public void ResetLocation(List<MeshPolygon> navMesh, List<Guard> guards, Session sessionInfo)
+    public void ResetLocation(List<MeshPolygon> navMesh, List<Intruder> intruders, List<Guard> guards, Session sessionInfo)
     {
         // If there is no location specified for the agent to be set in; place them randomly.
         if (Data.location == null)
@@ -267,7 +272,7 @@ public abstract class NPC : MonoBehaviour
                     case GuardSpawnType.Separate:
                         // Randomly place the guards away from each other
                         GetTransform().position =
-                            GetPositionFarFromGuards(GetNpcData().id - 1, guards, MapManager.Instance.GetNavMesh());
+                            GetPositionFarFromGuards(GetNpcData().id - 1, intruders, guards, MapManager.Instance.GetNavMesh());
                         break;
 
                     case GuardSpawnType.Goal:
@@ -286,10 +291,13 @@ public abstract class NPC : MonoBehaviour
         }
     }
 
-    private Vector2 GetPositionFarFromGuards(int index, List<Guard> guards, List<MeshPolygon> navMesh)
+    private Vector2 GetPositionFarFromGuards(int index, List<Intruder> intruders, List<Guard> guards, List<MeshPolygon> navMesh)
     {
-        int attempts = 250;
 
+        float minDistanceFromIntruder = PathFinding.Instance.longestShortestPath * 0.3f;
+        Vector2 intruderPosition = intruders[0].GetTransform().position;
+        
+        int attempts = 250;
         float maxSqrMag = Mathf.NegativeInfinity;
         Vector2? furthestPoint = null;
 
@@ -301,8 +309,10 @@ public abstract class NPC : MonoBehaviour
             Vector2 pos = navMesh[polygonIndex].GetRandomPosition();
 
             bool inPoly = navMesh[polygonIndex].IsCircleContainedInPolygon(pos, Properties.NpcRadius);
-
             if (!inPoly) continue;
+
+            bool isFarEnough = minDistanceFromIntruder < PathFinding.Instance.GetShortestPathDistance(pos, intruderPosition);
+            if(!isFarEnough) continue;
 
             float sqrMag = 0f;
             for (int i = 0; i <= index; i++)

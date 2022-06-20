@@ -75,8 +75,10 @@ public class Intruder : NPC
         {
             m_SearchedTime += timeDelta;
         }
+
     }
 
+    
     // In the case of intruder nothing to be done in this function yet
     public override void ClearLines()
     {

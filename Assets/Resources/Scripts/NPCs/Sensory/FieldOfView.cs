@@ -22,6 +22,7 @@ public class FieldOfView : MonoBehaviour
     // Mesh for rendering the field of view
     MeshFilter m_ViewMeshFilter;
     Mesh m_ViewMesh;
+    private Material _material;
 
     // Vertices of the field of view mesh
     private List<Vector3> m_ViewPoints = new List<Vector3>();
@@ -40,10 +41,10 @@ public class FieldOfView : MonoBehaviour
         m_ViewMesh = new Mesh();
         m_ViewMeshFilter = gameObject.AddComponent<MeshFilter>();
         MeshRenderer meshRenderer = gameObject.AddComponent<MeshRenderer>();
-        var material = new Material(Shader.Find("Sprites/Default")) {color = viewConeColor};
-        material.renderQueue = RenderQueue.Geometry.GetHashCode();
-        meshRenderer.material = material;
-        material.renderQueue = 3000;
+        _material = new Material(Shader.Find("Sprites/Default")) {color = viewConeColor};
+        _material.renderQueue = RenderQueue.Geometry.GetHashCode();
+        meshRenderer.material = _material;
+        _material.renderQueue = 3000;
         GetComponent<Renderer>().sortingOrder = 0;
 
 
@@ -54,6 +55,12 @@ public class FieldOfView : MonoBehaviour
 
         m_ViewAngle = viewAngle;
         m_ViewRadius = viewRadius;
+    }
+
+
+    public void ChangeColor(Color32 color)
+    {
+        _material.color = color;
     }
 
     // Cast the Vision

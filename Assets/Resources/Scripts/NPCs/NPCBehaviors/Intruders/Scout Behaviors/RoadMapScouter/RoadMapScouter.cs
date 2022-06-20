@@ -72,7 +72,7 @@ public class RoadMapScouter : Scouter
 
         // showAvailableHidingSpots = true;
         // showRiskSpots = true;
-        // // showProjectedTrajectories = true;
+        showProjectedTrajectories = true;
         // showRoadMapEndNodes = true;
         // showRoadMap = true;
     }

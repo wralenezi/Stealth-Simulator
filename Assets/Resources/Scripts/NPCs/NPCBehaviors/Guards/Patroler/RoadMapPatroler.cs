@@ -97,6 +97,8 @@ public class RoadMapPatroler : Patroler
         // Get the closest Way point
         RoadMapNode closestWp = m_RoadMap.GetClosestWp(guard.GetTransform().position, guard.GetDirection());
 
+        if (Equals(closestWp, null)) return;
+
         RoadMapLine startLine = null;
         float maxProb = Mathf.NegativeInfinity;
 

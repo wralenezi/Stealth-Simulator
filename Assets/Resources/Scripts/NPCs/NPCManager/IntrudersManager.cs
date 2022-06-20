@@ -27,12 +27,12 @@ public class IntrudersManager : Agent
     }
 
 
-    public void Reset(List<MeshPolygon> navMesh, List<Guard> guards, Session session)
+    public void Reset(List<MeshPolygon> navMesh, List<Intruder> intruders, List<Guard> guards, Session session)
     {
         // Reset Intruders
         foreach (var intruder in _intruders)
         {
-            intruder.ResetLocation(navMesh, guards, session);
+            intruder.ResetLocation(navMesh, intruders, guards, session);
             intruder.ResetNpc();
         }
     }
@@ -76,7 +76,7 @@ public class IntrudersManager : Agent
         npc.Initiate(npcData, GameManager.Instance.GetVoice());
 
         // Allocate the NPC based on the specified scenario
-        npc.ResetLocation(navMesh, guards, session);
+        npc.ResetLocation(navMesh, _intruders, guards, session);
 
         npcGameObject.layer = m_npcLayer;
     }

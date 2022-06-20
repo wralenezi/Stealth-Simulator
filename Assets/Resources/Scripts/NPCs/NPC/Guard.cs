@@ -26,6 +26,17 @@ public class Guard : NPC
     // Number of pellets found
     protected int m_FoundHidingSpots;
 
+    // time spent in a guard's FOV
+    public float _timeInFov;
+    private const float _maxTimeInFov = 0.75f;
+
+    public AnimationCurve _spottedCurve;
+
+    // if this is one then the intruder is spotted
+    private float _spottedFactor;
+    private Color32 _spottedColor;
+
+
     // Initialize the guard
     public override void Initiate(NpcData data, VoiceParams _voice)
     {
@@ -36,6 +47,13 @@ public class Guard : NPC
         m_excMarkGo = Instantiate(m_excMarkPrefab, transform);
         m_excMarkGo.AddComponent<SeparateRotator>();
         m_excMarkGo.SetActive(false);
+
+        _timeInFov = 0;
+        _spottedCurve = new AnimationCurve();
+        _spottedCurve.AddKey(0f, 0f);
+        _spottedCurve.AddKey(1f, 1f);
+        _spottedColor = new Color32(255, 0, 0, 100);
+
 
         // Add guard label
         GameObject labelOg = new GameObject();
@@ -99,8 +117,13 @@ public class Guard : NPC
     {
         foreach (var intruder in intruders)
         {
+            bool isIntruderInFov = GetFovPolygon().IsCircleInPolygon(intruder.transform.position, 0.03f);
+
+            ModifyTimeInFOV(isIntruderInFov ? Time.deltaTime : -Time.deltaTime);
+
             // Check if the intruder is seen
-            if (GetFovPolygon().IsCircleInPolygon(intruder.transform.position, 0.03f))
+            // if (isIntruderInFov)
+            if (SpottedIntruder())
             {
                 intruder.Seen();
                 WorldState.Set(name + "_see_" + intruder.name, true.ToString());
@@ -123,6 +146,20 @@ public class Guard : NPC
 
         m_excMarkGo.SetActive(false);
         return false;
+    }
+
+    public void ModifyTimeInFOV(float timeDelta)
+    {
+        _timeInFov += timeDelta;
+        _timeInFov = Mathf.Clamp(_timeInFov, 0f, _maxTimeInFov);
+    }
+
+    public bool SpottedIntruder()
+    {
+        _spottedFactor = _timeInFov / _maxTimeInFov;
+        float value = _spottedCurve.Evaluate(_spottedFactor);
+        SetFovColor(Color32.Lerp(Properties.GetFovColor(NpcType.Guard), _spottedColor, value));
+        return value == 1f;
     }
 
 
@@ -193,7 +230,7 @@ public class Guard : NPC
 
         return seenArea;
     }
-    
+
     // Check if a point is in the FoV
     public bool IsPointInFoV(Vector2 point)
     {

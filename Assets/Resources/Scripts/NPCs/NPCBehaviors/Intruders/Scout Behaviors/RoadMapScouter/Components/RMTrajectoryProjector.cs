@@ -39,7 +39,7 @@ public class RMTrajectoryProjector
 
             float projectionDistance = GetGuardProjectionDistance(guard);
             float stepSize = 2f;
-            
+
             switch (_trajectoryType)
             {
                 case TrajectoryType.Simple:
@@ -131,6 +131,6 @@ public enum TrajectoryType
     Simple,
 
     AngleBased,
-    
+
     None
 }

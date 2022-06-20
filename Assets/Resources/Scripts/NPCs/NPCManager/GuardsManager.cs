@@ -182,8 +182,10 @@ public class GuardsManager : Agent
         // 
         npc.Initiate(npcData, GameManager.Instance.GetVoice());
 
+        NpcsManager.Instance.GetIntruders();
+        
         // Allocate the NPC based on the specified scenario
-        npc.ResetLocation(navMesh, _guards, session);
+        npc.ResetLocation(navMesh, NpcsManager.Instance.GetIntruders(), _guards, session);
 
         npcGameObject.layer = m_npcLayer;
     }
@@ -199,14 +201,14 @@ public class GuardsManager : Agent
     }
 
     // Reset NPCs at the end of the round
-    public void Reset(List<MeshPolygon> navMesh, Session session)
+    public void Reset(List<MeshPolygon> navMesh, List<Intruder> intruders, Session session)
     {
         GuardsOverlapTime = 0f;
 
         // Reset guards
         foreach (var guard in _guards)
         {
-            guard.ResetLocation(navMesh, _guards, session);
+            guard.ResetLocation(navMesh, intruders, _guards, session);
             guard.ResetNpc();
         }
     }

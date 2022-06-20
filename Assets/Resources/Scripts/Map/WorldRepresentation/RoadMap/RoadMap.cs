@@ -275,7 +275,7 @@ public class RoadMap
             float dotProduct = Vector2.Dot(toWayPointDir, velocityNorm);
             dotProducts.Add(dotProduct);
         }
-
+        
         // Get the index of the closest way point that is in front of intruder
         int closestFrontalWpIndex = -1;
         float minFrontalDistance = Mathf.Infinity;
@@ -287,9 +287,8 @@ public class RoadMap
         for (int i = 0; i < distances.Count; i++)
         {
             // if not visible then skip
-            if (!_mapRenderer.VisibilityCheck(position, _wayPoints[i].GetPosition()))
-                continue;
-
+            if (!_mapRenderer.VisibilityCheck(position, _wayPoints[i].GetPosition())) continue;
+            
             if (minDistance > distances[i])
             {
                 closestWpIndex = i;
@@ -305,7 +304,9 @@ public class RoadMap
                 minFrontalDistance = distances[i];
             }
         }
-
+        
+        if (closestWpIndex == -1) return null;
+        
         // If nothing is in the front then just get a visible closest node
         if (closestFrontalWpIndex == -1) return _wayPoints[closestWpIndex];
 
@@ -665,7 +666,7 @@ public class RoadMap
         RoadMapNode wp1, RoadMapNode wp2, float stepSize, float totalDistance, NPC npc)
     {
         _points.Clear();
-
+        
         // Get the next Way point 
         RoadMapNode nextWayPoint = GetWayPointInDirection(pointOnRoadMap, npc.GetDirection(), wp1, wp2);
         Vector2 source = pointOnRoadMap;
@@ -684,7 +685,7 @@ public class RoadMap
         ptp.GetTrajectory().AddPoint(source);
 
         _points.Enqueue(ptp);
-
+        
         int limit = 100;
         int counter = 0;
 

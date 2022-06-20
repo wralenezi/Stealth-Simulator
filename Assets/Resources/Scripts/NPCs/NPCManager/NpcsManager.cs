@@ -21,27 +21,28 @@ public class NpcsManager : MonoBehaviour
 
     public void Initialize(Session session, MapManager mapManager)
     {
-        // Assign the Guard Manager
-        GameObject guardsOG = new GameObject("Guards");
-        guardsOG.transform.parent = transform;
-        _guardsManager = guardsOG.AddComponent<GuardsManager>();
-        _guardsManager.Initiate(session, mapManager);
-
-        // Create the Guards
-        _guardsManager.CreateGuards(session, mapManager.GetNavMesh());
-
         // Add the Intruder manager
         GameObject intrudersOG = new GameObject("Intruders");
         intrudersOG.transform.parent = transform;
         _intrudersManager = intrudersOG.AddComponent<IntrudersManager>();
         _intrudersManager.Initiate(session, mapManager);
 
+        // Assign the Guard Manager
+        GameObject guardsOG = new GameObject("Guards");
+        guardsOG.transform.parent = transform;
+        _guardsManager = guardsOG.AddComponent<GuardsManager>();
+        _guardsManager.Initiate(session, mapManager);
+
+        _state = new StateMachine();
+        Reset(mapManager.GetNavMesh(), session);
+
         // Create the intruders
         _intrudersManager.CreateIntruders(session, _guardsManager.GetGuards(), mapManager.GetNavMesh());
 
-        _state = new StateMachine();
-
-        Reset(mapManager.GetNavMesh(), session);
+        // Create the Guards
+        _guardsManager.CreateGuards(session, mapManager.GetNavMesh());
+        
+        ResetState();
     }
 
     public void ResetState()
@@ -55,9 +56,8 @@ public class NpcsManager : MonoBehaviour
         Instance = this;
         m_score = 0f;
         AreaUIManager.Instance.UpdateScore(m_score, m_score);
-        _guardsManager.Reset(navMesh, session);
-        _intrudersManager.Reset(navMesh, GetGuards(), session);
-        ChangeState<Patrol>();
+        _intrudersManager.Reset(navMesh, GetIntruders(), GetGuards(), session);
+        _guardsManager.Reset(navMesh, GetIntruders(), session);
     }
 
     public void Done()
@@ -153,6 +153,9 @@ public class NpcsManager : MonoBehaviour
             spotter = guard;
         }
 
+        // if (GetState() is Patrol)
+        //     GetIntruders()[0].ModifyTimeInFOV(intruderSpotted ? Time.deltaTime : -Time.deltaTime);
+
         // Render guards if the intruder can see them
         foreach (var intruder in GetIntruders())
         {
@@ -166,7 +169,6 @@ public class NpcsManager : MonoBehaviour
         if (intruderSpotted)
         {
             // Guards knows the intruders location
-            // m_guardsManager.GetController().StartChase(GetIntruders()[0]);
             ChangeState<Chase>();
             Speak(spotter, "Spot", 1f);
         }
@@ -175,7 +177,6 @@ public class NpcsManager : MonoBehaviour
         {
             // Change the guard state
             ChangeState<Search>();
-            // m_guardsManager.GetController().StartSearch(GetIntruders()[0]);
         }
     }
 }

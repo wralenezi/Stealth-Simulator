@@ -75,6 +75,7 @@ public class StealthArea : MonoBehaviour
         CollectManager.Reset(SessionInfo);
 
         NpcManager.Reset(Map.GetNavMesh(), SessionInfo);
+        NpcManager.ResetState();
         
         performanceMonitor.ResetResults();
 
