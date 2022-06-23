@@ -403,6 +403,11 @@ public class RoadMapScouter : Scouter
             {
                 float value = Mathf.Round(t.GetProbability() * 100f) * 0.01f;
                 t.Draw(value.ToString());
+
+                foreach (var con in t.GetConnections(true))
+                {
+                    Gizmos.DrawLine(t.GetPosition(),con.GetPosition());
+                }
             }
         }
 

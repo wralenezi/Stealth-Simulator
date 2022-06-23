@@ -37,7 +37,7 @@ public class RoadMapNode
     public int WallId;
 
     public NodeType type;
-
+    
     // The node original location on the grid. Used in the grid simplification to a graph.
     public int row;
     public int col;

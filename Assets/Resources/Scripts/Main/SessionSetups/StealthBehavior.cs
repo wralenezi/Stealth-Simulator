@@ -9,7 +9,7 @@ public static class StealthBehavior
         List<Session> sessions = new List<Session>();
 
         List<int> guardTeams = new List<int>();
-        guardTeams.Add(4);
+        guardTeams.Add(1);
 
         
         MapData mapData;

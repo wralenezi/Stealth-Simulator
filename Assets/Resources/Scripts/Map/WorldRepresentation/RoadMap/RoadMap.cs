@@ -275,7 +275,7 @@ public class RoadMap
             float dotProduct = Vector2.Dot(toWayPointDir, velocityNorm);
             dotProducts.Add(dotProduct);
         }
-        
+
         // Get the index of the closest way point that is in front of intruder
         int closestFrontalWpIndex = -1;
         float minFrontalDistance = Mathf.Infinity;
@@ -288,7 +288,7 @@ public class RoadMap
         {
             // if not visible then skip
             if (!_mapRenderer.VisibilityCheck(position, _wayPoints[i].GetPosition())) continue;
-            
+
             if (minDistance > distances[i])
             {
                 closestWpIndex = i;
@@ -304,9 +304,9 @@ public class RoadMap
                 minFrontalDistance = distances[i];
             }
         }
-        
+
         if (closestWpIndex == -1) return null;
-        
+
         // If nothing is in the front then just get a visible closest node
         if (closestFrontalWpIndex == -1) return _wayPoints[closestWpIndex];
 
@@ -666,7 +666,7 @@ public class RoadMap
         RoadMapNode wp1, RoadMapNode wp2, float stepSize, float totalDistance, NPC npc)
     {
         _points.Clear();
-        
+
         // Get the next Way point 
         RoadMapNode nextWayPoint = GetWayPointInDirection(pointOnRoadMap, npc.GetDirection(), wp1, wp2);
         Vector2 source = pointOnRoadMap;
@@ -685,7 +685,7 @@ public class RoadMap
         ptp.GetTrajectory().AddPoint(source);
 
         _points.Enqueue(ptp);
-        
+
         int limit = 100;
         int counter = 0;
 
@@ -783,6 +783,9 @@ public class RoadMap
     public void ProjectPositionsByAngle(ref List<PossibleTrajectory> trajectory, Vector2 pointOnRoadMap,
         RoadMapNode wp1, RoadMapNode wp2, float stepSize, float totalDistance, NPC npc)
     {
+        RoadMapNode firstIntersection = null;
+        
+        
         _points.Clear();
 
         // Get the next Way point 
@@ -801,8 +804,6 @@ public class RoadMap
 
         PointToProp ptp = new PointToProp(source, sourceWp, nextWayPoint, stepSize, stepSize, totalDistance, 0f, npc);
         ptp.GetTrajectory().AddPoint(source);
-        ptp.type = PointType.Stright;
-
         _points.Enqueue(ptp);
 
         int limit = 100;
@@ -856,7 +857,8 @@ public class RoadMap
 
                 // Set the probability to non zero since a guard might pass through here
                 pt.targetWp.SetProbability(npc,
-                    GetProbabilityValue(npc, pt.targetWp.GetPosition(), pt, pt.distance, fov, totalDistance));
+                    GetProbabilityValue(npc, pt.targetWp.GetPosition(), pt, pt.distance, fov,
+                        totalDistance));
 
                 // If it is a dead end then place a point at the end
                 if (pt.targetWp.GetConnections(true).Count == 1)
@@ -882,19 +884,18 @@ public class RoadMap
                 {
                     // Skip if the connection is the same
                     if (Equals(con, pt.sourceWp)) continue;
-
-                    if (!Equals(pt.fixedRiskValue, null) && !isOnStraightLine(pt, con))
-                        continue; // if (Equals(newPt.fixedRiskValue, null) &&  !isOnStraightLine(pt, con)) continue; //
-
+                    
+                    // Check if the connection is 
+                    .
+                    
+                    
+                
                     pt.GetTrajectory().AddPoint(pt.targetWp.GetPosition());
-
+                
                     // Add the point to the list
                     PointToProp newPt = new PointToProp(pt.targetWp.GetPosition(), pt.targetWp, con, pt.nextStep,
                         pt.stepSize,
                         pt.remainingDist, pt.distance, npc);
-
-                    SetupNewPoint(npc, pt, con, ref newPt);
-
                     newPt.GetTrajectory().CopyTrajectory(pt.GetTrajectory());
                     _points.Enqueue(newPt);
                 }
@@ -1230,8 +1231,8 @@ public class RoadMap
         {
             if (noCorners && Equals(t.type, NodeType.Corner)) continue;
 
-            if(t.GetProbability() >= 0.5f) continue;
-            
+            if (t.GetProbability() >= 0.5f) continue;
+
             Gizmos.DrawSphere(t.GetPosition(), 0.025f);
             float prob = Mathf.Round(t.GetProbability() * 100f) * 0.01f;
             Handles.Label(t.GetPosition(), prob.ToString());
@@ -1310,7 +1311,7 @@ public class PointToProp
     // Accumulated distance from the beginning to this point
     public float distance;
 
-    private PossibleTrajectory m_trajectory;
+    private PossibleTrajectory _trajectory;
 
     public PointToProp(Vector2 _source, RoadMapNode _sourceWp, RoadMapNode _targetWp, float _nextStep, float _stepSize,
         float _remainingDist,
@@ -1323,7 +1324,7 @@ public class PointToProp
         stepSize = _stepSize;
         nextStep = _nextStep;
         distance = _distance;
-        m_trajectory = new PossibleTrajectory(npc);
+        _trajectory = new PossibleTrajectory(npc);
         fixedRiskValue = null;
     }
 
@@ -1336,18 +1337,18 @@ public class PointToProp
         remainingDist = _remainingDist;
         nextStep = _nextStep;
         distance = _distance;
-        m_trajectory = new PossibleTrajectory(npc);
+        _trajectory = new PossibleTrajectory(npc);
         fixedRiskValue = null;
     }
 
     public List<Vector2> GetTrajectoriesCount()
     {
-        return m_trajectory.GetPath();
+        return _trajectory.GetPath();
     }
 
     public PossibleTrajectory GetTrajectory()
     {
-        return m_trajectory;
+        return _trajectory;
     }
 }
 

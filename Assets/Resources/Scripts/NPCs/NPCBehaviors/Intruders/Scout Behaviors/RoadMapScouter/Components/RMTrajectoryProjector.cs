@@ -73,55 +73,55 @@ public class RMTrajectoryProjector
 
 public class PossibleTrajectory
 {
-    private List<Vector2> m_path;
+    private List<Vector2> _path;
 
     public NPC npc;
 
     public PossibleTrajectory(NPC _npc)
     {
-        m_path = new List<Vector2>();
+        _path = new List<Vector2>();
         npc = _npc;
     }
 
     public void AddPoint(Vector2 point)
     {
-        m_path.Add(point);
+        _path.Add(point);
     }
 
     public void CopyTrajectory(PossibleTrajectory original)
     {
-        m_path.Clear();
+        _path.Clear();
         npc = original.npc;
         foreach (var pt in original.GetPath())
-            m_path.Add(pt);
+            _path.Add(pt);
     }
 
     public List<Vector2> GetPath()
     {
-        return m_path;
+        return _path;
     }
 
     public Vector2 GetFirstPoint()
     {
-        return m_path[0];
+        return _path[0];
     }
 
     public Vector2 GetLastPoint()
     {
-        return m_path[m_path.Count - 1];
+        return _path[_path.Count - 1];
     }
 
     public float GetDistanceToPoint(Vector2 point)
     {
-        return PathFinding.Instance.GetShortestPathDistance(m_path[0], point);
+        return PathFinding.Instance.GetShortestPathDistance(_path[0], point);
     }
 
     public void Draw()
     {
         Gizmos.color = Color.red;
-        for (int i = 0; i < m_path.Count - 1; i++)
+        for (int i = 0; i < _path.Count - 1; i++)
         {
-            Gizmos.DrawLine(m_path[i], m_path[i + 1]);
+            Gizmos.DrawLine(_path[i], _path[i + 1]);
         }
     }
 }
