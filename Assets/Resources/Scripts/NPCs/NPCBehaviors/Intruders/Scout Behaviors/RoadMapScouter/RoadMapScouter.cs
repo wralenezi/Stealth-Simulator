@@ -93,6 +93,8 @@ public class RoadMapScouter : Scouter
 
         _trajectoryProjector.SetGuardTrajectories(_roadMap, guards);
 
+        Debug.Log(_trajectoryProjector.GetTrajectories().Count);
+
         _riskEvaluator.UpdateCurrentRisk(_roadMap);
 
         Vector2? goal = GetDestination(gameType);
@@ -396,18 +398,17 @@ public class RoadMapScouter : Scouter
 
         if (showProjectedTrajectories)
         {
+            Gizmos.color = Color.red;
+
+            // Draw the lines
             foreach (var psbTrac in _trajectoryProjector.GetTrajectories())
                 psbTrac.Draw();
 
+            // Draw the nodes
             foreach (var t in _roadMap.GetPossibleGuardPositions())
             {
                 float value = Mathf.Round(t.GetProbability() * 100f) * 0.01f;
                 t.Draw(value.ToString());
-
-                foreach (var con in t.GetConnections(true))
-                {
-                    Gizmos.DrawLine(t.GetPosition(),con.GetPosition());
-                }
             }
         }
 

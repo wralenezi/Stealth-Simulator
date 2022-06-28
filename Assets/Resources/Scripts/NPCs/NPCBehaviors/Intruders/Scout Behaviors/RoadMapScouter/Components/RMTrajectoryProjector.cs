@@ -118,11 +118,12 @@ public class PossibleTrajectory
 
     public void Draw()
     {
-        Gizmos.color = Color.red;
         for (int i = 0; i < _path.Count - 1; i++)
         {
             Gizmos.DrawLine(_path[i], _path[i + 1]);
         }
+        
+        
     }
 }
 

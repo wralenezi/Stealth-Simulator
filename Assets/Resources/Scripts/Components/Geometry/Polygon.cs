@@ -78,12 +78,13 @@ public class Polygon
     {
         // Get the areas.
         float area = 0f;
-        if (GetVerticesCount() > 0)
-            for (int i = 0; i < GetVerticesCount(); i++)
-            {
-                area += (GetPoint(i + 1).x - GetPoint(i).x) *
-                    (GetPoint(i + 1).y + GetPoint(i).y) / 2f;
-            }
+        
+        if (GetVerticesCount() <= 0) return area;
+        for (int i = 0; i < GetVerticesCount(); i++)
+        {
+            area += (GetPoint(i + 1).x - GetPoint(i).x) *
+                (GetPoint(i + 1).y + GetPoint(i).y) / 2f;
+        }
 
         // Return the result.
         return area;
@@ -223,7 +224,7 @@ public class Polygon
     public bool IsCircleContainedInPolygon(Vector2 center, float radius)
     {
         bool isCenterIn = IsPointInPolygon(center, false);
-        
+
         if (!isCenterIn) return false;
 
         for (int i = 0; i < GetVerticesCount(); i++)
@@ -236,10 +237,7 @@ public class Polygon
 
         return true;
     }
-    
-    
-    
-    
+
 
     // Get a random position inside the polygon
     public Vector2 GetRandomPosition()

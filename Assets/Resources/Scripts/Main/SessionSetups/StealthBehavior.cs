@@ -56,8 +56,8 @@ public static class StealthBehavior
 
         List<TrajectoryType> trajectoryTypes = new List<TrajectoryType>()
         {
-            // TrajectoryType.Simple,
-            TrajectoryType.AngleBased
+            TrajectoryType.Simple,
+            // TrajectoryType.AngleBased
         };
 
         List<GoalPriority> goalPriorities = new List<GoalPriority>()

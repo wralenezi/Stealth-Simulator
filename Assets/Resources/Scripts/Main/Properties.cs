@@ -127,7 +127,7 @@ public static class Properties
                 return 0.15f;
             
             default:
-                return 0.1f;
+                return 0.5f;
         }
     }
 

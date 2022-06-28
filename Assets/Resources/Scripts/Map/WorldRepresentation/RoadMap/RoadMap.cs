@@ -784,8 +784,7 @@ public class RoadMap
         RoadMapNode wp1, RoadMapNode wp2, float stepSize, float totalDistance, NPC npc)
     {
         RoadMapNode firstIntersection = null;
-        
-        
+
         _points.Clear();
 
         // Get the next Way point 
@@ -884,19 +883,31 @@ public class RoadMap
                 {
                     // Skip if the connection is the same
                     if (Equals(con, pt.sourceWp)) continue;
-                    
-                    // Check if the connection is 
-                    .
-                    
-                    
-                
+
+                    // // Set the first node on a conjunction
+                    // if (Equals(firstIntersection, null))
+                    // {
+                    //     if (pt.targetWp.GetConnections(true).Count > 2) firstIntersection = pt.targetWp;
+                    // }
+                    // else
+                    // {
+                    //     // If this connection is visible by the first conjunction then expand to it.
+                    //     bool isVisible = GeometryHelper.IsCirclesVisible(con.GetPosition(),
+                    //         firstIntersection.GetPosition(), Properties.NpcRadius, "Wall");
+                    //
+                    //     if (!isVisible) continue;
+                    // }
+
+
                     pt.GetTrajectory().AddPoint(pt.targetWp.GetPosition());
-                
+
                     // Add the point to the list
                     PointToProp newPt = new PointToProp(pt.targetWp.GetPosition(), pt.targetWp, con, pt.nextStep,
                         pt.stepSize,
                         pt.remainingDist, pt.distance, npc);
+                    
                     newPt.GetTrajectory().CopyTrajectory(pt.GetTrajectory());
+                    
                     _points.Enqueue(newPt);
                 }
             }
