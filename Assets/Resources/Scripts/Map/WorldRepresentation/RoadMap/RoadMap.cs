@@ -785,6 +785,12 @@ public class RoadMap
     {
         RoadMapNode firstIntersection = null;
 
+        foreach (RoadMapNode n in _wpsActual)
+            n.isChecked = false;
+        
+        foreach (RoadMapNode n in _tempWpsActual)
+            n.isChecked = false;
+        
         _points.Clear();
 
         // Get the next Way point 
@@ -805,7 +811,7 @@ public class RoadMap
         ptp.GetTrajectory().AddPoint(source);
         _points.Enqueue(ptp);
 
-        int limit = 100;
+        int limit = 10000;
         int counter = 0;
 
         // Loop to insert the possible positions
@@ -877,38 +883,48 @@ public class RoadMap
 
                     continue;
                 }
+                
+                // if(pt.targetWp.isChecked) continue;
 
+                // Set the first node on a conjunction
+                if (Equals(firstIntersection, null))
+                {
+                    if (pt.targetWp.GetConnections(true).Count > 2) firstIntersection = pt.targetWp;
+                }
+                else
+                {
+                    // If this connection is visible by the first conjunction then expand to it.
+                    // bool isVisible = GeometryHelper.IsCirclesVisible(con.GetPosition(),
+                    //     firstIntersection.GetPosition(), Properties.NpcRadius, "Wall");
+                    
+
+                    bool isVisible = GeometryHelper.IsCirclesVisible(pt.targetWp.GetPosition(),
+                        firstIntersection.GetPosition(), Properties.NpcRadius, "Wall");
+
+
+                    if (!isVisible && pt.targetWp.GetConnections(true).Count > 2) continue;
+                }
+
+                pt.targetWp.isChecked = true;
+
+                
                 // Loop through the connections of next Way point to add the points to propagate.
                 foreach (var con in pt.targetWp.GetConnections(true))
                 {
                     // Skip if the connection is the same
                     if (Equals(con, pt.sourceWp)) continue;
-
-                    // // Set the first node on a conjunction
-                    // if (Equals(firstIntersection, null))
-                    // {
-                    //     if (pt.targetWp.GetConnections(true).Count > 2) firstIntersection = pt.targetWp;
-                    // }
-                    // else
-                    // {
-                    //     // If this connection is visible by the first conjunction then expand to it.
-                    //     bool isVisible = GeometryHelper.IsCirclesVisible(con.GetPosition(),
-                    //         firstIntersection.GetPosition(), Properties.NpcRadius, "Wall");
-                    //
-                    //     if (!isVisible) continue;
-                    // }
-
-
+                    
                     pt.GetTrajectory().AddPoint(pt.targetWp.GetPosition());
 
                     // Add the point to the list
                     PointToProp newPt = new PointToProp(pt.targetWp.GetPosition(), pt.targetWp, con, pt.nextStep,
                         pt.stepSize,
                         pt.remainingDist, pt.distance, npc);
-                    
+
                     newPt.GetTrajectory().CopyTrajectory(pt.GetTrajectory());
-                    
+
                     _points.Enqueue(newPt);
+                    con.isChecked = true;
                 }
             }
         }
