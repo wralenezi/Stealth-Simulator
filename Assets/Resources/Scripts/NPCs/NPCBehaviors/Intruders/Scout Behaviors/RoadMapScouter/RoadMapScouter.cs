@@ -92,9 +92,7 @@ public class RoadMapScouter : Scouter
         Intruder intruder = NpcsManager.Instance.GetIntruders()[0];
 
         _trajectoryProjector.SetGuardTrajectories(_roadMap, guards);
-
-        Debug.Log(_trajectoryProjector.GetTrajectories().Count);
-
+        
         _riskEvaluator.UpdateCurrentRisk(_roadMap);
 
         Vector2? goal = GetDestination(gameType);

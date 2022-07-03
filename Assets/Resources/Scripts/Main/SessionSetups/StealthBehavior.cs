@@ -13,7 +13,8 @@ public static class StealthBehavior
 
         
         MapData mapData;
-        mapData = new MapData("amongUs", 0.5f);
+        // mapData = new MapData("amongUs", 0.5f);
+        mapData = new MapData("bloodstainedAngle1", 0.5f);
         
         AddDynamicSession(ref sessions, mapData, guardTeams);
         

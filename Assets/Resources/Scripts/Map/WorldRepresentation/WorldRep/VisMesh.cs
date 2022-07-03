@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class VisMesh : WorldRep
+public class VisMesh : MonoBehaviour //WorldRep
 {
     // Previous Polygons
     private List<VisibilityPolygon> m_PreSeenPolygons;
@@ -15,10 +15,10 @@ public class VisMesh : WorldRep
     // Visibility mesh polygons
     private List<VisibilityPolygon> m_VisMeshPolygons;
 
-
-    public override void InitiateWorld(float mapScale)
+    private MapDecomposer _decomposer;
+    
+    public void Initiate(MapDecomposer decomposer)
     {
-        base.InitiateWorld(mapScale);
         m_VisMeshPolygons = new List<VisibilityPolygon>();
 
         // Previous Polygons
@@ -28,10 +28,12 @@ public class VisMesh : WorldRep
         // Current Polygons 
         m_CurSeenPolygons = new List<VisibilityPolygon>();
         m_CurUnseenPolygons = new List<VisibilityPolygon>();
+
+        _decomposer = decomposer;
     }
 
     // Reset the variables
-    private void ResetVariables()
+    public void Reset()
     {
         m_VisMeshPolygons.Clear();
 
@@ -46,23 +48,23 @@ public class VisMesh : WorldRep
 
 
     // Reset the VisMesh
-    public override void ResetWorld()
+    // public override void ResetWorld()
+    // {
+    //     // Reset the variables
+    //     ResetVariables();
+    //
+    //     // Reset the time
+    //     SetTimestamp();
+    //
+    //     // Construct the VisMesh
+    //     // ConstructVisMesh();
+    // }
+
+    public void UpdateWorld(GuardsManager guardsManager)
     {
-        // Reset the variables
-        ResetVariables();
-
-        // Reset the time
-        SetTimestamp();
-
-        // Construct the VisMesh
-        // ConstructVisMesh();
-    }
-
-    public override void UpdateWorld(GuardsManager guardsManager)
-    {
-        if (guardsManager.GetState() is Patrol)
+        // if (guardsManager.GetState() is Patrol)
             // Update the world once
-            UpdateForPatrol(guardsManager);
+            // UpdateForPatrol(guardsManager);
     }
 
 
@@ -70,7 +72,7 @@ public class VisMesh : WorldRep
     private void UpdateForPatrol(GuardsManager guardsManager)
     {
         // ConstructVisMesh();
-        base.UpdateWorld(guardsManager);
+        // base.UpdateWorld(guardsManager);
     }
 
     // Copy the current visibility polygons to the previous visibility polygons
@@ -97,14 +99,14 @@ public class VisMesh : WorldRep
     private void StalePolygons()
     {
         // Get the staleness value since the last update
-        float stalenessDelta = GetTimeDelta() * Properties.StalenessRate;
-
-        foreach (VisibilityPolygon vp in m_PreUnseenPolygons)
-            vp.IncreaseStaleness(stalenessDelta);
+        // float stalenessDelta = GetTimeDelta() * Properties.StalenessRate;
+        //
+        // foreach (VisibilityPolygon vp in m_PreUnseenPolygons)
+        //     vp.IncreaseStaleness(stalenessDelta);
     }
 
     // Get the new partitioning and populate the VisMesh
-    private void ConstructVisMesh(List<Guard> guards)
+    public void ConstructVisMesh(List<Guard> guards)
     {
         if (m_CurUnseenPolygons.Count > 0)
         {
@@ -116,11 +118,11 @@ public class VisMesh : WorldRep
         }
 
         // Decompose the area 
-        m_mapDecomposer.CreateVisMesh(guards);
+        _decomposer.CreateVisMesh(guards);
 
         // Get the current polygons
-        m_CurSeenPolygons = m_mapDecomposer.GetSeenPolygons();
-        m_CurUnseenPolygons = m_mapDecomposer.GetUnseenPolygons();
+        m_CurSeenPolygons = _decomposer.GetSeenPolygons();
+        m_CurUnseenPolygons = _decomposer.GetUnseenPolygons();
 
         // Calculate the staleness of the current polygons based on the old previous
         if (m_PreUnseenPolygons.Count > 0)
@@ -130,7 +132,7 @@ public class VisMesh : WorldRep
         PrepVisMesh();
 
         // Calculate the areas
-        CalculateAreas();
+        // CalculateAreas();
 
         // Render the visibility mesh
         // m_meshManager.RenderVisibilityMesh(GetVisMesh());
@@ -191,26 +193,26 @@ public class VisMesh : WorldRep
     }
 
 
-    private void CalculateAreas()
-    {
-        UnseenPortion = 0f;
-        SeenPortion = 0f;
-
-        AverageStaleness = 0f;
-
-        foreach (var p in m_CurSeenPolygons)
-        {
-            SeenPortion += p.GetArea();
-        }
-
-        foreach (var p in m_CurUnseenPolygons)
-        {
-            UnseenPortion += p.GetArea();
-            AverageStaleness += p.GetStaleness();
-        }
-
-        AverageStaleness /= m_CurUnseenPolygons.Count;
-    }
+    // private void CalculateAreas()
+    // {
+    //     UnseenPortion = 0f;
+    //     SeenPortion = 0f;
+    //
+    //     AverageStaleness = 0f;
+    //
+    //     foreach (var p in m_CurSeenPolygons)
+    //     {
+    //         SeenPortion += p.GetArea();
+    //     }
+    //
+    //     foreach (var p in m_CurUnseenPolygons)
+    //     {
+    //         UnseenPortion += p.GetArea();
+    //         AverageStaleness += p.GetStaleness();
+    //     }
+    //
+    //     AverageStaleness /= m_CurUnseenPolygons.Count;
+    // }
 
 
     public List<VisibilityPolygon> GetVisMesh()
@@ -220,12 +222,12 @@ public class VisMesh : WorldRep
 
     private void OnDrawGizmos()
     {
-        DrawHidingSpots();
+        // DrawHidingSpots();
 
-        if (showVisMesh)
-        {
-            foreach (var poly in m_VisMeshPolygons)
-                poly.Draw(poly.GetStaleness().ToString());
-        }
+        // if (showVisMesh)
+        // {
+        //     foreach (var poly in m_VisMeshPolygons)
+        //         poly.Draw(poly.GetStaleness().ToString());
+        // }
     }
 }
