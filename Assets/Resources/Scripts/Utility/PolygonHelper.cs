@@ -5,6 +5,78 @@ using UnityEngine;
 // Helper class for polygons operations
 public static class PolygonHelper
 {
+    // Variables for merging polygons
+    private static List<CyclicalList<IntPoint>> _subj;
+    private static List<CyclicalList<IntPoint>> _clip;
+    private static Clipper _clipper;
+
+    public static void Initiate()
+    {
+        _subj = new List<CyclicalList<IntPoint>>();
+        _clip = new List<CyclicalList<IntPoint>>();
+        _clipper = new Clipper();
+    }
+
+    public static void MergePolygons(List<Polygon> firstPolygon, List<Polygon> secondPolygon, ref List<Polygon> result,
+        ClipType clipType)
+    {
+        // Prepare the second (main) polygon to be merged
+        _subj.Clear();
+        foreach (Polygon p in secondPolygon)
+        {
+            if (p.GetVerticesCount() > 0)
+            {
+                _subj.Add(new CyclicalList<IntPoint>());
+                for (int i = 0; i < p.GetVerticesCount(); i++)
+                {
+                    _subj[_subj.Count - 1].Add(new IntPoint(p.GetPoint(i).x, p.GetPoint(i).y));
+                }
+            }
+        }
+
+        // The current seen area so it will be merged with the previous area
+        _clip.Clear();
+        foreach (Polygon p in firstPolygon)
+        {
+            if (p.GetVerticesCount() > 0)
+            {
+                _clip.Add(new CyclicalList<IntPoint>());
+                for (int i = 0; i < p.GetVerticesCount(); i++)
+                {
+                    _clip[_clip.Count - 1].Add(new IntPoint(p.GetPoint(i).x, p.GetPoint(i).y));
+                }
+            }
+        }
+
+
+        // Merge the two polygons
+        List<CyclicalList<IntPoint>> solution = new List<CyclicalList<IntPoint>>();
+
+        _clipper.Clear();
+        _clipper.AddPaths(_clip, PolyType.ptClip, true);
+        _clipper.AddPaths(_subj, PolyType.ptSubject, true);
+        _clipper.Execute(clipType, solution, PolyFillType.pftEvenOdd, PolyFillType.pftEvenOdd);
+
+
+        // Fill the result
+        result.Clear();
+        if (solution.Count == 0) return;
+
+        // int polygonIndex = 0;
+        foreach (CyclicalList<IntPoint> polygon in solution)
+        {
+            // if the merge is between seen area then the first polygon is seen area and the rest are seen area holes
+            result.Add(new Polygon());
+
+            for (int i = 0; i < polygon.Count; i++)
+                result[result.Count - 1].AddPoint(new Vector2(polygon[i].X, polygon[i].Y));
+
+            // Smooth the polygon
+            result[result.Count - 1].SmoothPolygon(0.2f);
+
+            // polygonIndex++;
+        }
+    }
 
     // Helper function
     public static T GetKeyByValue<T, W>(this Dictionary<T, W> dict, W val)
@@ -21,7 +93,7 @@ public static class PolygonHelper
 
         return key;
     }
-    
+
     // Cut holes in a polygon to prepare it for triangulations
     public static Polygon CutHoles(List<Polygon> polygons)
     {
@@ -62,12 +134,12 @@ public static class PolygonHelper
             holePolygons.Remove(currentHole);
         }
 
-        
+
         return outerPoly;
     }
-    
-        // Cut hole in the outer polygon
-        static Polygon CutHoleInShape(Polygon outerPoly, Polygon holePoly)
+
+    // Cut hole in the outer polygon
+    static Polygon CutHoleInShape(Polygon outerPoly, Polygon holePoly)
     {
         // Find the hole vertex with the largest X value
         Vertex rightMostHoleVertex = holePoly.GetVertex(0);
@@ -151,175 +223,95 @@ public static class PolygonHelper
         return newPoly;
     }
 
+    // Smooth a list of polygons
+    public static void SmoothPolygons(List<Polygon> overallPolygon, float minDistance)
+    {
+        foreach (Polygon p in overallPolygon)
+            p.SmoothPolygon(minDistance);
+    }
 
-        public static List<Polygon> MergePolygons(List<Polygon> firstPolygon, List<Polygon> secondPolygon,
-            ClipType clipType)
-        {
-            // Result merged polygon
-            List<Polygon> mergedPolygon = new List<Polygon>();
+    // Check if a node is in outer polygon and outside inner polygon (obstacle) 
+    public static bool IsPointInPolygons(List<Polygon> polygons, Vector2 point)
+    {
+        bool isIn = false;
 
 
-            // Prepare the second (main) polygon to be merged
-            List<CyclicalList<IntPoint>> subj = new List<CyclicalList<IntPoint>>();
-
-            foreach (Polygon p in secondPolygon)
-            {
-                if (p.GetVerticesCount() > 0)
+        if (polygons.Count > 0)
+            for (int i = 0; i < polygons.Count; i++)
+                if (polygons[i].IsPointInPolygon(point, true))
                 {
-                    subj.Add(new CyclicalList<IntPoint>());
-                    for (int i = 0; i < p.GetVerticesCount(); i++)
+                    if (polygons[i].DetermineWindingOrder() == Properties.outerPolygonWinding)
+                        isIn = true;
+                    else
                     {
-                        subj[subj.Count - 1].Add(new IntPoint(p.GetPoint(i).x, p.GetPoint(i).y));
+                        // If the point is inside the obstacle then its out
+                        return false;
                     }
                 }
-            }
 
+        return isIn;
+    }
 
-            // The current seen area so it will be merged with the previous area
-            List<CyclicalList<IntPoint>> clip = new List<CyclicalList<IntPoint>>();
+    public static VisibilityPolygon GetIntersectionArea(Polygon firstPolygon, Polygon secondPolygon)
+    {
+        // Prepare the second (main) polygon to be merged
+        List<CyclicalList<IntPoint>> subj = new List<CyclicalList<IntPoint>>();
 
-            foreach (Polygon p in firstPolygon)
-            {
-                if (p.GetVerticesCount() > 0)
-                {
-                    clip.Add(new CyclicalList<IntPoint>());
-                    for (int i = 0; i < p.GetVerticesCount(); i++)
-                    {
-                        clip[clip.Count - 1].Add(new IntPoint(p.GetPoint(i).x, p.GetPoint(i).y));
-                    }
-                }
-            }
-
-
-            // Merge the two polygons
-            List<CyclicalList<IntPoint>> solution = new List<CyclicalList<IntPoint>>();
-
-            Clipper c = new Clipper();
-            c.AddPaths(clip, PolyType.ptClip, true);
-            c.AddPaths(subj, PolyType.ptSubject, true);
-            c.Execute(clipType, solution, PolyFillType.pftEvenOdd, PolyFillType.pftEvenOdd);
-            
-            
-            // Fill the result 
-            int polygonIndex = 0;
-            if (solution.Count > 0)
-            {
-                foreach (CyclicalList<IntPoint> polygon in solution)
-                {
-                    // if the merge is between seen area then the first polygon is seen area and the rest are seen area holes
-                    mergedPolygon.Add(new Polygon());
-
-                    for (int i = 0; i < polygon.Count; i++)
-                    {
-                        mergedPolygon[mergedPolygon.Count - 1].AddPoint(new Vector2(polygon[i].X, polygon[i].Y));
-                    }
-
-                    // Smooth the polygon
-                    mergedPolygon[mergedPolygon.Count - 1].SmoothPolygon(0.2f);
-                    
-                    polygonIndex++;
-                }
-            }
-
-            return mergedPolygon;
-        }
-
-        // Smooth a list of polygons
-        public static void SmoothPolygons(List<Polygon> overallPolygon,  float minDistance)
+        if (secondPolygon.GetVerticesCount() > 0)
         {
-            foreach (Polygon p in overallPolygon)
-                p.SmoothPolygon(minDistance);
+            subj.Add(new CyclicalList<IntPoint>());
+            for (int i = 0; i < secondPolygon.GetVerticesCount(); i++)
+                subj[subj.Count - 1].Add(new IntPoint(secondPolygon.GetPoint(i).x, secondPolygon.GetPoint(i).y));
         }
-        
-        // Check if a node is in outer polygon and outside inner polygon (obstacle) 
-        public static bool IsPointInPolygons(List<Polygon> polygons, Vector2 point)
+
+
+        // The current seen area so it will be merged with the previous area
+        List<CyclicalList<IntPoint>> clip = new List<CyclicalList<IntPoint>>();
+
+        if (firstPolygon.GetVerticesCount() > 0)
         {
-            bool isIn = false;
-
-
-            if (polygons.Count > 0)
-                for (int i = 0; i < polygons.Count; i++)
-                    if (polygons[i].IsPointInPolygon(point,true))
-                    {
-                        if (polygons[i].DetermineWindingOrder() == Properties.outerPolygonWinding)
-                            isIn = true;
-                        else
-                        {
-                            // If the point is inside the obstacle then its out
-                            return false;
-                        }
-                    }
-            
-            return isIn;
+            clip.Add(new CyclicalList<IntPoint>());
+            for (int i = 0; i < firstPolygon.GetVerticesCount(); i++)
+                clip[clip.Count - 1].Add(new IntPoint(firstPolygon.GetPoint(i).x, firstPolygon.GetPoint(i).y));
         }
-        
-        public static VisibilityPolygon GetIntersectionArea(Polygon firstPolygon, Polygon secondPolygon)
-        {
-            // Prepare the second (main) polygon to be merged
-            List<CyclicalList<IntPoint>> subj = new List<CyclicalList<IntPoint>>();
 
-            if (secondPolygon.GetVerticesCount() > 0)
+
+        // Merge the two polygons
+        List<CyclicalList<IntPoint>> solution = new List<CyclicalList<IntPoint>>();
+
+        Clipper c = new Clipper();
+        c.AddPaths(clip, PolyType.ptClip, true);
+        c.AddPaths(subj, PolyType.ptSubject, true);
+        c.Execute(ClipType.ctIntersection, solution, PolyFillType.pftEvenOdd, PolyFillType.pftEvenOdd);
+
+
+        // Result merged polygon
+        VisibilityPolygon mergedPolygon = new VisibilityPolygon();
+
+        // Fill the result 
+        if (solution.Count > 0)
+            foreach (CyclicalList<IntPoint> polygon in solution)
             {
-                subj.Add(new CyclicalList<IntPoint>());
-                for (int i = 0; i < secondPolygon.GetVerticesCount(); i++)
-                    subj[subj.Count - 1].Add(new IntPoint(secondPolygon.GetPoint(i).x, secondPolygon.GetPoint(i).y));
+                for (int i = 0; i < polygon.Count; i++)
+                    mergedPolygon.AddPoint(new Vector2(polygon[i].X, polygon[i].Y));
             }
 
-
-            // The current seen area so it will be merged with the previous area
-            List<CyclicalList<IntPoint>> clip = new List<CyclicalList<IntPoint>>();
-
-            if (firstPolygon.GetVerticesCount() > 0)
-            {
-                clip.Add(new CyclicalList<IntPoint>());
-                for (int i = 0; i < firstPolygon.GetVerticesCount(); i++)
-                    clip[clip.Count - 1].Add(new IntPoint(firstPolygon.GetPoint(i).x, firstPolygon.GetPoint(i).y));
-            }
+        return mergedPolygon;
+    }
 
 
-            // Merge the two polygons
-            List<CyclicalList<IntPoint>> solution = new List<CyclicalList<IntPoint>>();
+    // Get the area of a polygon with holes
+    public static float GetPolygonArea(List<Polygon> polygons)
+    {
+        float area = 0f;
 
-            Clipper c = new Clipper();
-            c.AddPaths(clip, PolyType.ptClip, true);
-            c.AddPaths(subj, PolyType.ptSubject, true);
-            c.Execute(ClipType.ctIntersection, solution, PolyFillType.pftEvenOdd, PolyFillType.pftEvenOdd);
-
-
-            // Result merged polygon
-            VisibilityPolygon mergedPolygon = new VisibilityPolygon();
-
-            // Fill the result 
-            if (solution.Count > 0)
-                foreach (CyclicalList<IntPoint> polygon in solution)
-                {
-                    for (int i = 0; i < polygon.Count; i++)
-                        mergedPolygon.AddPoint(new Vector2(polygon[i].X, polygon[i].Y));
-                }
-
-            return mergedPolygon;
-        }
-
-        
-
-        // Get the area of a polygon with holes
-        public static float GetPolygonArea(List<Polygon> polygons)
-        {
-            float area = 0f;
-            
-            foreach (var polygon in polygons)
-                if (polygon.DetermineWindingOrder() == Properties.outerPolygonWinding)
-                    area += polygon.GetArea();
-                else
-                    area -= polygon.GetArea();
+        foreach (var polygon in polygons)
+            if (polygon.DetermineWindingOrder() == Properties.outerPolygonWinding)
+                area += polygon.GetArea();
+            else
+                area -= polygon.GetArea();
 
 
-            return area;
-        }
-        
-        
-        
-        
-        
-        
+        return area;
+    }
 }

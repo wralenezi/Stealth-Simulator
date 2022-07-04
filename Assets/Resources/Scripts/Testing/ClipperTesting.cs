@@ -39,16 +39,16 @@ public class ClipperTesting : MonoBehaviour
 
         List<Polygon> p2 = new List<Polygon>() {poly2};
 
-
-        List<Polygon> intersection = PolygonHelper.MergePolygons(p1, p2, ClipType.ctIntersection);
-        
-        List<Polygon> diff = PolygonHelper.MergePolygons(intersection, p1, ClipType.ctDifference);
-
-        Debug.Log(diff.Count);
-
-        // m_polys.AddRange(p1);
-        // m_polys.AddRange(p2);
-        m_polys = diff;
+        //
+        // List<Polygon> intersection = PolygonHelper.MergePolygons(p1, p2, ClipType.ctIntersection);
+        //
+        // List<Polygon> diff = PolygonHelper.MergePolygons(intersection, p1, ClipType.ctDifference);
+        //
+        // Debug.Log(diff.Count);
+        //
+        // // m_polys.AddRange(p1);
+        // // m_polys.AddRange(p2);
+        // m_polys = diff;
     }
 
     private void OnDrawGizmos()

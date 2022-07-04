@@ -14,8 +14,6 @@ public abstract class WorldRep : MonoBehaviour
     // Decompose the area
     protected MapDecomposer m_mapDecomposer;
 
-    // The last timestamp recorded
-    private float m_LastTimestamp;
 
     // Areas
     protected float UnseenPortion;
@@ -83,19 +81,9 @@ public abstract class WorldRep : MonoBehaviour
         return AverageStaleness;
     }
 
-    // Set the timestamp to the current time
-    public void SetTimestamp()
-    {
-        m_LastTimestamp = Time.time;
-    }
 
-    // Get the time delta 
-    public float GetTimeDelta()
-    {
-        float timeDelta = Time.time - m_LastTimestamp;
-        SetTimestamp();
-        return timeDelta;
-    }
+
+
 
 
     public void DrawHidingSpots()

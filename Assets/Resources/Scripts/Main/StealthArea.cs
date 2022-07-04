@@ -60,6 +60,8 @@ public class StealthArea : MonoBehaviour
         // World state variables
         WorldState.Reset();
 
+        PolygonHelper.Initiate();
+
         // Reset World Representation and NPCs
         ResetArea();
     }

@@ -129,14 +129,7 @@ public class MeshPolygon : Polygon
     public override void Draw(string label)
     {
         Gizmos.color = Color.green;
-
-        // foreach (var neigh in GetAdjcentPolygons())
-        // {
-        //     Vector2 mid = GetMidPointOfDiagonalNeighbor(neigh.Value);
-        //     Gizmos.DrawLine(GetCentroidPosition(), mid);
-        // }
-
-
+        
         base.Draw(label);
     }
 

@@ -6,11 +6,10 @@ public class VisMeshPatroler : Patroler
 {
     private VisMesh _visMesh;
 
-    private MapDecomposer _decomposer;
-    
     public override void Initiate(MapManager mapManager)
     {
-        _visMesh.Initiate(mapManager.mapDecomposer);
+        _visMesh = gameObject.AddComponent<VisMesh>();
+        _visMesh.Initiate();
     }
 
     public override void Start()
@@ -22,11 +21,11 @@ public class VisMeshPatroler : Patroler
     {
         _visMesh.ConstructVisMesh(guards);
     }
+    
+    
 
     public override void Patrol(List<Guard> guards)
     {
-        throw new System.NotImplementedException();
+        // throw new System.NotImplementedException();
     }
-    
-    
 }

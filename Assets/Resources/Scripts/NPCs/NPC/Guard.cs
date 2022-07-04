@@ -197,25 +197,21 @@ public class Guard : NPC
         Renderer.enabled = isSeen;
         FovRenderer.enabled = isSeen;
     }
-
-    // public abstract Vector2? GetPatrolGoal();
-
+    
     // Add the FoV to the Overall Seen Area
-    public void AccumulateSeenArea()
-    {
-        // If there is no area seen start with the guards current vision
-        if (SeenArea.Count == 0)
-        {
-            SeenArea.Add(GetFovPolygon());
-        }
-        else
-        {
-            // Merge with the total seen area by this guard
-            SeenArea = PolygonHelper.MergePolygons(GetFov(), SeenArea, ClipType.ctUnion);
-        }
-
-        // CheckForFoundHidingSpots();
-    }
+    // public void AccumulateSeenArea()
+    // {
+    //     // If there is no area seen start with the guards current vision
+    //     if (SeenArea.Count == 0)
+    //     {
+    //         SeenArea.Add(GetFovPolygon());
+    //     }
+    //     else
+    //     {
+    //         // Merge with the total seen area by this guard
+    //         SeenArea = PolygonHelper.MergePolygons(GetFov(), SeenArea, ClipType.ctUnion);
+    //     }
+    // }
 
     // 
     public List<Polygon> CopySeenArea()
@@ -227,7 +223,7 @@ public class Guard : NPC
             Polygon p = new Polygon(poly);
             seenArea.Add(p);
         }
-
+        
         return seenArea;
     }
 

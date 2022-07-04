@@ -32,7 +32,8 @@ public static class StealthBehavior
 
         List<PatrolPlanner> guardMethods = new List<PatrolPlanner>()
         {
-            PatrolPlanner.gRoadMap,
+            // PatrolPlanner.gRoadMap,
+            PatrolPlanner.gVisMesh,
             // PatrolPlanner.gRandom
         };
 

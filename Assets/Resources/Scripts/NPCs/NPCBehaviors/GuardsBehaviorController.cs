@@ -34,6 +34,10 @@ public class GuardsBehaviorController : MonoBehaviour
                 patroler = gameObject.AddComponent<RoadMapPatroler>();
                 break;
             
+            case PatrolPlanner.gVisMesh:
+                patroler = gameObject.AddComponent<VisMeshPatroler>();
+                break;
+            
             case PatrolPlanner.gRandom:
                 patroler = gameObject.AddComponent<RandomPatroler>();
                 break;

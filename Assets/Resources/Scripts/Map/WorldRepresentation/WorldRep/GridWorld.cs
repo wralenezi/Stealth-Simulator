@@ -99,7 +99,7 @@ public class GridWorld : WorldRep
             node.SetStaleness(Properties.StalenessLow);
         }
 
-        SetTimestamp();
+        // SetTimestamp();
     }
 
 

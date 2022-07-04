@@ -22,9 +22,14 @@ public struct Behavior
 public enum PatrolPlanner
 {
     gStalest,
+    // Using the road map to create dynamic patrol patterns.
     gRoadMap,
+    // Use scripted guard patrol patterns.
     gScripted,
+    // Create Randomized patrol routes. 
     gRandom,
+    // Create patrol routes using VisMesh method.
+    gVisMesh,
     iSimple,
     iRoadMap,
     iPathFinding,

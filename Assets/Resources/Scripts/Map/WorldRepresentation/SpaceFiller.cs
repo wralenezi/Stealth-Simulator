@@ -157,8 +157,8 @@ public class SpaceFiller : MonoBehaviour
 
     public void RemoveFromCircle(List<Polygon> fov)
     {
-        if (m_SearchRegions.Count > 0)
-            m_SearchRegions = PolygonHelper.MergePolygons(fov, m_SearchRegions, ClipType.ctDifference);
+        // if (m_SearchRegions.Count > 0)
+        //     m_SearchRegions = PolygonHelper.MergePolygons(fov, m_SearchRegions, ClipType.ctDifference);
     }
 
 
@@ -179,9 +179,9 @@ public class SpaceFiller : MonoBehaviour
         //     guard.RestrictSearchArea();
         // }
 
-        m_SearchRegions =
-            PolygonHelper.MergePolygons(m_SearchRegions, m_MapRenderer.GetInteriorWalls(),
-                ClipType.ctIntersection);
+        // m_SearchRegions =
+        //     PolygonHelper.MergePolygons(m_SearchRegions, m_MapRenderer.GetInteriorWalls(),
+        //         ClipType.ctIntersection);
     }
 
 
