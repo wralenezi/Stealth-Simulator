@@ -102,20 +102,7 @@ public class GridWorld : WorldRep
         // SetTimestamp();
     }
 
-
-    public override void UpdateWorld(GuardsManager guardsManager)
-    {
-        // List<GridGuard> gridGuards = new List<GridGuard>();
-        //
-        // foreach (var guard in guardsManager.GetGuards())
-        //     gridGuards.Add((GridGuard) guard);
-        //
-        // UpdateGrid(gridGuards);
-        //
-        // base.UpdateWorld(guardsManager);
-        // // m_meshManager.RenderGrid(NodeList);
-    }
-
+    
 
     // Update the grid 
     // void UpdateGrid(List<GridGuard> guards)

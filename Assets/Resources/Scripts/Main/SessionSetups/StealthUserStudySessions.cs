@@ -115,7 +115,7 @@ public static class StealthUserStudySessions
             };
 
             Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue", guardSpawnType,
-                guardTeam, 1,
+                guardTeam, null,1,
                 intruderBehavior,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 

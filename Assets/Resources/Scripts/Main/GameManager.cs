@@ -508,27 +508,30 @@ public class Session
     
     // Number of guards
     public int guardsCount;
+   
+    // Guards Data
+    public List<NpcData> guardsList;
 
+    public PatrolerParams patrolerParams;
+    
     // Number of Intruders
     public int intruderCount;
 
     // dialog flag if enabled
     public SpeechType speechType;
 
-    private MapData map;
-
-    // Guards Data
-    public List<NpcData> guardsList;
-
     // Intruders Data
     public List<NpcData> intrudersList;
 
     public IntruderBehavior intruderBehavior;
 
+    private MapData map;
+
+    
     // the type of survey that will be showed after this session 
     public SurveyType surveyType;
 
-    public Session(string _gameCode, GameType _gameType, Scenario pScenario, string _guardColor, GuardSpawnType _guardSpawnType, int pGuardsCount,
+    public Session(string _gameCode, GameType _gameType, Scenario pScenario, string _guardColor, GuardSpawnType _guardSpawnType, int pGuardsCount, PatrolerParams _patrolerParams,
         int pIntruderCount, IntruderBehavior _intruderBehavior,
         MapData _map,
         SpeechType _speechType,
@@ -539,6 +542,7 @@ public class Session
         guardColor = _guardColor;
         guardSpawnMethod = _guardSpawnType;
         guardsCount = pGuardsCount;
+        patrolerParams = _patrolerParams;
         intruderCount = pIntruderCount;
         map = _map;
         guardsList = new List<NpcData>();

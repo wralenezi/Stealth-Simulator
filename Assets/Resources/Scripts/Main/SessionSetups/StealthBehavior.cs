@@ -30,12 +30,17 @@ public static class StealthBehavior
             // PatrolPlanner.UserInput
         };
 
+        // Guard Patrol Behavior
+        
         List<PatrolPlanner> guardMethods = new List<PatrolPlanner>()
         {
             // PatrolPlanner.gRoadMap,
             PatrolPlanner.gVisMesh,
             // PatrolPlanner.gRandom
         };
+        
+       
+        
 
         List<SpotsNeighbourhoods> neighbourhoods = new List<SpotsNeighbourhoods>()
         {
@@ -116,9 +121,12 @@ public static class StealthBehavior
                 trajectoryType = trajectoryType, goalPriority = aGoalPriority, safetyPriority = aSafetyPriority,
                 fovProjectionMultiplier = projectionDistance
             };
+            
+            PatrolerParams patrolParams = new VisMeshPatrolerParams(0.4f);
+
 
             Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue",
-                guardSpawnType, guardTeam, 1,
+                guardSpawnType, guardTeam, patrolParams, 1,
                 intruderBehavior,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 

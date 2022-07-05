@@ -190,7 +190,7 @@ public static class StealthStudySessions
             };
 
             Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue", guardSpawnType,
-                guardTeam, 0,
+                guardTeam, null,0,
                 intruderBehavior,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
@@ -237,7 +237,7 @@ public static class StealthStudySessions
             };
 
             Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue", guardSpawnType,
-                guardTeam, 1,
+                guardTeam, null,1,
                 intruderBehavior,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
@@ -338,7 +338,7 @@ public static class StealthStudySessions
             };
 
             Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue",
-                GuardSpawnType.Scripted, guardLocations.Count, 1,
+                GuardSpawnType.Scripted, guardLocations.Count, null,1,
                 intruderBehavior,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
@@ -382,7 +382,7 @@ public static class StealthStudySessions
             };
 
             Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue",
-                GuardSpawnType.Scripted, guardLocations.Count, 1,
+                GuardSpawnType.Scripted, guardLocations.Count, null,1,
                 intruderBehavior,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 

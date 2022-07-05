@@ -5,6 +5,8 @@ using UnityEngine;
 
 public class VisMesh : MonoBehaviour //WorldRep
 {
+    private float _maxSeenRegionAreaPerGuard;
+    
     // Guards seen regions
     private Dictionary<string, List<Polygon>> _guardsSeenRegions;
 
@@ -34,8 +36,10 @@ public class VisMesh : MonoBehaviour //WorldRep
     // The last timestamp recorded
     private float _lastTimestamp;
 
-    public void Initiate()
+    public void Initiate(float maxSeenRegionAreaPerGuard)
     {
+        _maxSeenRegionAreaPerGuard = maxSeenRegionAreaPerGuard;
+        
         _guardsSeenRegions = new Dictionary<string, List<Polygon>>();
 
         _seenRegions = new List<List<Polygon>>();
@@ -100,16 +104,32 @@ public class VisMesh : MonoBehaviour //WorldRep
     {
         foreach (var guard in guards)
         {
-            // guard.AccumulateSeenArea();
-
             if (!_guardsSeenRegions.ContainsKey(guard.name))
             {
-                _guardsSeenRegions.Add(guard.name, new List<Polygon>() {guard.GetFovPolygon()});
+                _guardsSeenRegions.Add(guard.name, new List<Polygon>());
                 continue;
             }
 
+            ResetSeenRegion(guard);
+            
             List<Polygon> guardSeenRegion = _guardsSeenRegions[guard.name];
             PolygonHelper.MergePolygons(guardSeenRegion, guard.GetFov(), ref guardSeenRegion, ClipType.ctUnion);
+        }
+    }
+
+    private void ResetSeenRegion(Guard guard)
+    {
+        float totalArea = 0f;
+        List<Polygon> seenRegion = _guardsSeenRegions[guard.name];
+        foreach (var poly in seenRegion)
+            totalArea += poly.GetArea();
+
+        float seenAreaPercent = totalArea / MapManager.Instance.mapDecomposer.GetNavMeshArea();
+
+        if (seenAreaPercent > _maxSeenRegionAreaPerGuard)
+        {
+            List<Polygon> guardSeenRegion = _guardsSeenRegions[guard.name];
+            guardSeenRegion.Clear();
         }
     }
 
@@ -121,9 +141,8 @@ public class VisMesh : MonoBehaviour //WorldRep
         // Go through the guards
         foreach (var guard in guards)
         {
-            if (guard.GetSeenArea() != null && guard.GetSeenArea().Count > 0 &&
-                guard.GetSeenArea()[0].GetVerticesCount() > 0)
-                _seenRegions.Add(guard.CopySeenArea());
+            if(_guardsSeenRegions.ContainsKey(guard.name))
+                _seenRegions.Add(_guardsSeenRegions[guard.name]);
         }
 
         // Merge the guards seen areas if they intersect
@@ -504,7 +523,7 @@ public class VisMesh : MonoBehaviour //WorldRep
     void PrepVisMesh()
     {
         _visMeshPolygons.Clear();
-        _visMeshPolygons.AddRange(_curSeenPolygons);
+        // _visMeshPolygons.AddRange(_curSeenPolygons);
         _visMeshPolygons.AddRange(_curUnseenPolygons);
     }
 

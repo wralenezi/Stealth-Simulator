@@ -32,13 +32,7 @@ public abstract class WorldRep : MonoBehaviour
         CreateHidingSpots();
     }
 
-    public virtual void UpdateWorld(GuardsManager guardsManager)
-    {
-        foreach (Guard guard in guardsManager.GetGuards())
-        {
-            guard.SetSeenPortion();
-        }
-    }
+
     
     // Create the hiding spots 
     private void CreateHidingSpots()

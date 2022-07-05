@@ -17,3 +17,8 @@ public abstract class Patroler : MonoBehaviour
     public abstract void Patrol(List<Guard> guards);
 
 }
+
+public class PatrolerParams
+{
+    
+}

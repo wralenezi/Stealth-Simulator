@@ -70,7 +70,7 @@ public static class PatrolSessions
             };
 
             Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue", guardSpawnType,
-                guardTeam, 0,
+                guardTeam, null,0,
                 intruderBehavior,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
@@ -101,7 +101,7 @@ public static class PatrolSessions
             };
 
             Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue",
-                GuardSpawnType.Scripted, guardLocations.Count, 0,
+                GuardSpawnType.Scripted, guardLocations.Count, null, 0,
                 intruderBehavior,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 

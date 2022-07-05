@@ -401,13 +401,13 @@ public class GuardsManager : Agent
     //     }
     // }
 
-    public void ResetGuardSeenArea(float resetThreshold)
-    {
-        foreach (var guard in _guards)
-        {
-            guard.RestrictSeenArea(resetThreshold);
-        }
-    }
+    // public void ResetGuardSeenArea(float resetThreshold)
+    // {
+    //     foreach (var guard in _guards)
+    //     {
+    //         guard.RestrictSeenArea(resetThreshold);
+    //     }
+    // }
 
     public List<Guard> GetGuards()
     {
