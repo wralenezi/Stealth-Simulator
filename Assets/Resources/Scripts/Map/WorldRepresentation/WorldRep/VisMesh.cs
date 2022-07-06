@@ -1,12 +1,11 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using ClipperLib;
 using UnityEngine;
 
-public class VisMesh : MonoBehaviour //WorldRep
+public class VisMesh : MonoBehaviour
 {
     private float _maxSeenRegionAreaPerGuard;
-    
+
     // Guards seen regions
     private Dictionary<string, List<Polygon>> _guardsSeenRegions;
 
@@ -15,10 +14,6 @@ public class VisMesh : MonoBehaviour //WorldRep
     public bool showUnseenRegions;
     private List<List<Polygon>> _seenRegions;
     private List<List<Polygon>> _unseenRegions;
-
-    // Polygon Lists the will make the NavMesh
-    private List<VisibilityPolygon> m_SeenPolygons;
-    private List<VisibilityPolygon> m_UnseenPolygons;
 
     // Previous Polygons
     private List<VisibilityPolygon> _preSeenPolygons;
@@ -30,6 +25,13 @@ public class VisMesh : MonoBehaviour //WorldRep
     private List<VisibilityPolygon> _curSeenPolygons;
     private List<VisibilityPolygon> _curUnseenPolygons;
 
+    // Temp containers
+    List<VisibilityPolygon> overallMesh;
+    List<Polygon> holePolys;
+    List<List<Polygon>> _tempSeenRegions;
+    List<Polygon> differenceResult;
+
+
     // Visibility mesh polygons
     private List<VisibilityPolygon> _visMeshPolygons;
 
@@ -39,14 +41,11 @@ public class VisMesh : MonoBehaviour //WorldRep
     public void Initiate(float maxSeenRegionAreaPerGuard)
     {
         _maxSeenRegionAreaPerGuard = maxSeenRegionAreaPerGuard;
-        
+
         _guardsSeenRegions = new Dictionary<string, List<Polygon>>();
 
         _seenRegions = new List<List<Polygon>>();
         _unseenRegions = new List<List<Polygon>>();
-
-        m_SeenPolygons = new List<VisibilityPolygon>();
-        m_UnseenPolygons = new List<VisibilityPolygon>();
 
         // Current Polygons 
         _curSeenPolygons = new List<VisibilityPolygon>();
@@ -55,6 +54,11 @@ public class VisMesh : MonoBehaviour //WorldRep
         // Previous Polygons
         _preSeenPolygons = new List<VisibilityPolygon>();
         _preUnseenPolygons = new List<VisibilityPolygon>();
+
+        overallMesh = new List<VisibilityPolygon>();
+        holePolys = new List<Polygon>();
+        _tempSeenRegions = new List<List<Polygon>>();
+        differenceResult = new List<Polygon>();
 
         _visMeshPolygons = new List<VisibilityPolygon>();
 
@@ -68,9 +72,6 @@ public class VisMesh : MonoBehaviour //WorldRep
     {
         _seenRegions.Clear();
         _unseenRegions.Clear();
-
-        m_SeenPolygons.Clear();
-        m_UnseenPolygons.Clear();
 
         // Current Polygons 
         _curSeenPolygons.Clear();
@@ -111,7 +112,7 @@ public class VisMesh : MonoBehaviour //WorldRep
             }
 
             ResetSeenRegion(guard);
-            
+
             List<Polygon> guardSeenRegion = _guardsSeenRegions[guard.name];
             PolygonHelper.MergePolygons(guardSeenRegion, guard.GetFov(), ref guardSeenRegion, ClipType.ctUnion);
         }
@@ -141,7 +142,7 @@ public class VisMesh : MonoBehaviour //WorldRep
         // Go through the guards
         foreach (var guard in guards)
         {
-            if(_guardsSeenRegions.ContainsKey(guard.name))
+            if (_guardsSeenRegions.ContainsKey(guard.name))
                 _seenRegions.Add(_guardsSeenRegions[guard.name]);
         }
 
@@ -219,21 +220,11 @@ public class VisMesh : MonoBehaviour //WorldRep
         // Decompose the area 
         CreateVisMesh(guards);
 
-        // Get the current polygons
-        _curSeenPolygons = m_SeenPolygons;
-        _curUnseenPolygons = m_UnseenPolygons;
-
         // Calculate the staleness of the current polygons based on the old previous
         if (_preUnseenPolygons.Count > 0) CalculateCurrentStaleness();
 
         // Prepare the NavMesh 
         PrepVisMesh();
-
-        // Calculate the areas
-        // CalculateAreas();
-
-        // Render the visibility mesh
-        // m_meshManager.RenderVisibilityMesh(GetVisMesh());
     }
 
 
@@ -242,18 +233,12 @@ public class VisMesh : MonoBehaviour //WorldRep
     {
         _preUnseenPolygons.Clear();
         foreach (var polygon in _curUnseenPolygons)
-        {
             _preUnseenPolygons.Add(polygon);
-        }
-
         _curUnseenPolygons.Clear();
 
         _preSeenPolygons.Clear();
         foreach (var polygon in _curSeenPolygons)
-        {
             _preSeenPolygons.Add(polygon);
-        }
-
         _curSeenPolygons.Clear();
     }
 
@@ -270,7 +255,7 @@ public class VisMesh : MonoBehaviour //WorldRep
 
 
     // Create the VisMesh
-    public void CreateVisMesh(List<Guard> guards)
+    private void CreateVisMesh(List<Guard> guards)
     {
         CreateSeenRegions(guards);
 
@@ -293,9 +278,9 @@ public class VisMesh : MonoBehaviour //WorldRep
     private void PrepareRegions()
     {
         _unseenRegions.Clear();
+        
         // the difference between the walkable area and seen area is the unseen area
-        List<Polygon> differenceResult = new List<Polygon>();
-
+        differenceResult.Clear();
         differenceResult.AddRange(MapManager.Instance.mapRenderer.GetInteriorWalls());
 
         // Take the difference for each seen region; The polygons in the result are Outer polygons (they have CounterClockWise winding) and holes (opposite winding)
@@ -310,12 +295,6 @@ public class VisMesh : MonoBehaviour //WorldRep
             return;
         }
 
-        // The result of the difference can contain complex polygons which will ruin the triangulation. This will simplify them
-        // PolygonHelper.SimplifyComplexPolygons(differenceResult);
-
-        // Remove the tiny shards 
-        // CleanPolygons(differenceResult);
-
         // Sort the outer walls and inner walls
         OrganizeUnseenPolygons(differenceResult);
 
@@ -325,15 +304,16 @@ public class VisMesh : MonoBehaviour //WorldRep
     // Sort the CounterClockWise polygons as Outer polygons and find the holes in them
     void OrganizeUnseenPolygons(List<Polygon> differenceResult)
     {
-        List<Polygon> holePolys = new List<Polygon>();
+        holePolys.Clear();
 
         foreach (Polygon p in differenceResult)
         {
             if (p.DetermineWindingOrder() == Properties.outerPolygonWinding)
             {
-                List<Polygon> wall = new List<Polygon>();
-                wall.Add(p);
-                _unseenRegions.Add(wall);
+                List<Polygon> _tempWall = new List<Polygon>();
+                _tempWall.Clear();
+                _tempWall.Add(p);
+                _unseenRegions.Add(_tempWall);
             }
             else
             {
@@ -356,8 +336,8 @@ public class VisMesh : MonoBehaviour //WorldRep
 
     void OrganizeSeenRegions()
     {
-        List<Polygon> holePolys = new List<Polygon>();
-        List<List<Polygon>> seenRegions = new List<List<Polygon>>();
+        holePolys.Clear();
+        _tempSeenRegions.Clear();
 
         foreach (var seenRegion in _seenRegions)
         foreach (Polygon p in seenRegion)
@@ -366,7 +346,7 @@ public class VisMesh : MonoBehaviour //WorldRep
             {
                 List<Polygon> wall = new List<Polygon>();
                 wall.Add(p);
-                seenRegions.Add(wall);
+                _tempSeenRegions.Add(wall);
             }
             else
             {
@@ -376,7 +356,7 @@ public class VisMesh : MonoBehaviour //WorldRep
 
 
         // Add the hole to the outer wall the contains it
-        foreach (List<Polygon> wall in seenRegions)
+        foreach (List<Polygon> wall in _tempSeenRegions)
         {
             foreach (Polygon hole in holePolys)
                 if (wall[0].IsPolygonInside(hole, false))
@@ -387,15 +367,15 @@ public class VisMesh : MonoBehaviour //WorldRep
 
         // Intersect with the borders so it will intersect it
         int i = 0;
-        while (i < seenRegions.Count)
+        while (i < _tempSeenRegions.Count)
         {
-            List<Polygon> region = seenRegions[i];
-            PolygonHelper.MergePolygons(seenRegions[i],
+            List<Polygon> region = _tempSeenRegions[i];
+            PolygonHelper.MergePolygons(_tempSeenRegions[i],
                 MapManager.Instance.mapRenderer.GetInteriorWalls(), ref region, ClipType.ctIntersection);
             i++;
         }
 
-        _seenRegions = seenRegions;
+        _seenRegions = _tempSeenRegions;
     }
 
 
@@ -446,21 +426,21 @@ public class VisMesh : MonoBehaviour //WorldRep
     // Triangulate the unseen areas
     void DecomposeUnseenArea()
     {
-        m_UnseenPolygons.Clear();
+        _curUnseenPolygons.Clear();
 
         foreach (List<Polygon> pL in _unseenRegions)
         {
             Polygon polygon = PolygonHelper.CutHoles(pL);
             List<MeshPolygon> tempPolys = HertelMelDecomp.ConvexPartition(polygon);
 
-            m_UnseenPolygons.AddRange(tempPolys.ConvertAll(x => new VisibilityPolygon(x)));
+            _curUnseenPolygons.AddRange(tempPolys.ConvertAll(x => new VisibilityPolygon(x)));
         }
     }
 
     // Triangulate the seen area
     void DecomposeSeenArea()
     {
-        m_SeenPolygons.Clear();
+        _curSeenPolygons.Clear();
 
         foreach (List<Polygon> guardSeenArea in _seenRegions)
         {
@@ -469,7 +449,7 @@ public class VisMesh : MonoBehaviour //WorldRep
             if (polygon != null)
             {
                 List<MeshPolygon> tempPolys = HertelMelDecomp.ConvexPartition(polygon);
-                m_SeenPolygons.AddRange(tempPolys.ConvertAll(x => new VisibilityPolygon(x)));
+                _curSeenPolygons.AddRange(tempPolys.ConvertAll(x => new VisibilityPolygon(x)));
             }
         }
     }
@@ -477,7 +457,7 @@ public class VisMesh : MonoBehaviour //WorldRep
     // Move the staleness information from the previous mesh to current mesh
     void CalculateCurrentStaleness()
     {
-        List<VisibilityPolygon> overallMesh = new List<VisibilityPolygon>();
+        overallMesh.Clear();
         overallMesh.AddRange(_preSeenPolygons);
         overallMesh.AddRange(_preUnseenPolygons);
 
@@ -526,28 +506,6 @@ public class VisMesh : MonoBehaviour //WorldRep
         // _visMeshPolygons.AddRange(_curSeenPolygons);
         _visMeshPolygons.AddRange(_curUnseenPolygons);
     }
-
-
-    // private void CalculateAreas()
-    // {
-    //     UnseenPortion = 0f;
-    //     SeenPortion = 0f;
-    //
-    //     AverageStaleness = 0f;
-    //
-    //     foreach (var p in m_CurSeenPolygons)
-    //     {
-    //         SeenPortion += p.GetArea();
-    //     }
-    //
-    //     foreach (var p in m_CurUnseenPolygons)
-    //     {
-    //         UnseenPortion += p.GetArea();
-    //         AverageStaleness += p.GetStaleness();
-    //     }
-    //
-    //     AverageStaleness /= m_CurUnseenPolygons.Count;
-    // }
 
 
     public List<VisibilityPolygon> GetVisMesh()

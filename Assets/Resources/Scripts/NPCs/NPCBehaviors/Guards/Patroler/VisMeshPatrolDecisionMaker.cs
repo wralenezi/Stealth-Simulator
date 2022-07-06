@@ -25,4 +25,37 @@ public class VisMeshPatrolDecisionMaker
         guard.SetDestination(bestVisbilityPolygon.GetCentroidPosition(), false, false);
     }
 
+    public void SetFittestTarget(Guard guard, VisMeshPatrolerParams patrolerParams, List<VisibilityPolygon> unseenPolys)
+    {
+        VisibilityPolygon bestVisbilityPolygon = null;
+        float highestScore = Mathf.NegativeInfinity;
+
+        foreach (var visPoly in unseenPolys)
+        {
+            float score = 0f;
+
+            score += visPoly.GetStaleness() * patrolerParams.stalenessWeight;
+                
+                
+
+            if (highestScore < score)
+            {
+                highestScore = score;
+                bestVisbilityPolygon = visPoly;
+            }
+        }
+
+        if (Equals(bestVisbilityPolygon, null)) return;
+
+        guard.SetDestination(bestVisbilityPolygon.GetCentroidPosition(), false, false);
+    }
+
+
+
 }
+
+public enum VMDecision
+{
+    Weighted,
+    
+} 

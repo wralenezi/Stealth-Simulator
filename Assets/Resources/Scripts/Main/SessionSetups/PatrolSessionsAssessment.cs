@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public  class PatrolSessionsAssessment
+public class PatrolSessionsAssessment
 {
     public static List<Session> GetSessions()
     {
@@ -15,7 +15,6 @@ public  class PatrolSessionsAssessment
         MapData mapData;
         // mapData = new MapData("amongUs", 0.5f);
         mapData = new MapData("bloodstainedAngle1", 0.5f);
-
         AddDynamicSession(ref sessions, mapData, guardTeams);
 
         return sessions;
@@ -23,7 +22,6 @@ public  class PatrolSessionsAssessment
 
     private static void AddDynamicSession(ref List<Session> sessions, MapData mapData, List<int> guardTeams)
     {
-
         // Guard Patrol Behavior
         List<PatrolPlanner> guardMethods = new List<PatrolPlanner>()
         {
@@ -31,7 +29,7 @@ public  class PatrolSessionsAssessment
             PatrolPlanner.gVisMesh,
             // PatrolPlanner.gRandom
         };
-        
+
 
         List<GuardSpawnType> guardSpawnTypes = new List<GuardSpawnType>()
         {
@@ -40,14 +38,61 @@ public  class PatrolSessionsAssessment
             // GuardSpawnType.Goal
         };
 
+        List<float> maxSeenRegionPortions = new List<float>()
+        {
+            0.3f,
+            0.5f,
+            0.7f
+        };
+        
+        List<float> areaWeights = new List<float>();
+        for (int i = 1; i <= 10; i++)
+        {
+            areaWeights.Add(1 / i);
+        }
 
+        List<float> stalenessWeights = new List<float>();
+        for (int i = 1; i <= 10; i++)
+        {
+            stalenessWeights.Add(1 / i);
+        }
+        
+        List<float> distanceWeights = new List<float>();
+        for (int i = 1; i <= 10; i++)
+        {
+            distanceWeights.Add(1 / i);
+        }
+
+        List<float> separationWeights = new List<float>();
+        for (int i = 1; i <= 10; i++)
+        {
+            separationWeights.Add(1 / i);
+        }
 
         foreach (var guardMethod in guardMethods)
         foreach (var guardSpawnType in guardSpawnTypes)
+        foreach (var areaWeight in areaWeights)
+        foreach (var stalenessWeight in stalenessWeights)
+        foreach (var distanceWeight in distanceWeights)
+        foreach (var separationWeight in separationWeights)
+        foreach (var maxSeenRegionPortion in maxSeenRegionPortions)    
         foreach (var guardTeam in guardTeams)
         {
-
-            PatrolerParams patrolParams = new VisMeshPatrolerParams(0.4f, 1f, 0f, 0f, 0f);
+            // Set the Hyperparamets for the behavior
+            PatrolerParams patrolParams;
+            switch (guardMethod)
+            {
+                case PatrolPlanner.gVisMesh:
+                    patrolParams = new VisMeshPatrolerParams(maxSeenRegionPortion, areaWeight, stalenessWeight,
+                        distanceWeight, separationWeight);
+                    break;
+                
+                
+                default:
+                    patrolParams = null;
+                    break;
+            }
+            
             GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolParams);
 
 
