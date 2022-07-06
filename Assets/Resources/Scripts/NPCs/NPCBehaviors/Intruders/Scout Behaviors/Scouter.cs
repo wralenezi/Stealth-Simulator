@@ -54,7 +54,7 @@ public abstract class Scouter : MonoBehaviour
     }
 }
 
-public struct IntruderBehavior
+public class IntruderBehavior
 {
     public SpotsNeighbourhoods spotsNeighbourhood;
 

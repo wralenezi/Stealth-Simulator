@@ -1,27 +1,25 @@
-using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 
-public static class StealthBehavior 
+public static class StealthBehavior
 {
-   public static List<Session> GetSessions()
+    public static List<Session> GetSessions()
     {
         List<Session> sessions = new List<Session>();
 
         List<int> guardTeams = new List<int>();
         guardTeams.Add(1);
 
-        
+
         MapData mapData;
         // mapData = new MapData("amongUs", 0.5f);
         mapData = new MapData("bloodstainedAngle1", 0.5f);
-        
+
         AddDynamicSession(ref sessions, mapData, guardTeams);
-        
+
         return sessions;
     }
-    
-        private static void AddDynamicSession(ref List<Session> sessions, MapData mapData, List<int> guardTeams)
+
+    private static void AddDynamicSession(ref List<Session> sessions, MapData mapData, List<int> guardTeams)
     {
         List<PatrolPlanner> intruderMethods = new List<PatrolPlanner>()
         {
@@ -31,16 +29,14 @@ public static class StealthBehavior
         };
 
         // Guard Patrol Behavior
-        
+
         List<PatrolPlanner> guardMethods = new List<PatrolPlanner>()
         {
             // PatrolPlanner.gRoadMap,
             PatrolPlanner.gVisMesh,
             // PatrolPlanner.gRandom
         };
-        
-       
-        
+
 
         List<SpotsNeighbourhoods> neighbourhoods = new List<SpotsNeighbourhoods>()
         {
@@ -95,14 +91,14 @@ public static class StealthBehavior
             // 1.25f,
             // 1.5f
         };
-        
+
         List<float> maxRiskAsSafeValues = new List<float>()
         {
             0f,
             // 0.5f,
             // 0.9f
         };
-        
+
 
         foreach (var guardMethod in guardMethods)
         foreach (var pathCanceller in pathCancellers)
@@ -113,7 +109,7 @@ public static class StealthBehavior
         foreach (var neighbour in neighbourhoods)
         foreach (var projectionDistance in projectionDistances)
         foreach (var guardSpawnType in guardSpawnTypes)
-        foreach (var guardTeam in guardTeams)    
+        foreach (var guardTeam in guardTeams)
         {
             IntruderBehavior intruderBehavior = new IntruderBehavior
             {
@@ -121,12 +117,12 @@ public static class StealthBehavior
                 trajectoryType = trajectoryType, goalPriority = aGoalPriority, safetyPriority = aSafetyPriority,
                 fovProjectionMultiplier = projectionDistance
             };
-            
-            PatrolerParams patrolParams = new VisMeshPatrolerParams(0.4f);
+
+            PatrolerParams patrolParams = new VisMeshPatrolerParams(0.4f, 1f, 0f, 0f, 0f);
 
 
             Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue",
-                guardSpawnType, guardTeam, patrolParams, 1,
+                guardSpawnType, guardTeam, null,  1,
                 intruderBehavior,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
@@ -152,7 +148,5 @@ public static class StealthBehavior
 
             sessions.Add(session);
         }
-        
     }
-
 }

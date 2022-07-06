@@ -48,8 +48,7 @@ public class GameManager : MonoBehaviour
     public static string RoadMapsPath = "RoadMaps/";
     public static string DialogsPath = "Dialogs/";
     public static string PatrolPathsPath = "NPCs/PatrolPaths/";
-
-
+    
     // The main camera
     public static Camera MainCamera;
 
@@ -175,7 +174,8 @@ public class GameManager : MonoBehaviour
         // List<Session> sessions = SessionsSetup.StealthStudyProcedural01();
         // List<Session> sessions = StealthStudySessions.GetSessions();
         // List<Session> sessions = StealthUserStudySessions.GetSessions();
-        List<Session> sessions = StealthBehavior.GetSessions();
+        // List<Session> sessions = StealthBehavior.GetSessions();
+        List<Session> sessions = PatrolSessionsAssessment.GetSessions();
         // List<Session> sessions = PatrolSessions.GetSessions();
 
         // Each line represents a session
@@ -512,7 +512,7 @@ public class Session
     // Guards Data
     public List<NpcData> guardsList;
 
-    public PatrolerParams patrolerParams;
+    public GuardBehaviorParams guardBehaviorParams;
     
     // Number of Intruders
     public int intruderCount;
@@ -531,7 +531,7 @@ public class Session
     // the type of survey that will be showed after this session 
     public SurveyType surveyType;
 
-    public Session(string _gameCode, GameType _gameType, Scenario pScenario, string _guardColor, GuardSpawnType _guardSpawnType, int pGuardsCount, PatrolerParams _patrolerParams,
+    public Session(string _gameCode, GameType _gameType, Scenario pScenario, string _guardColor, GuardSpawnType _guardSpawnType, int pGuardsCount, GuardBehaviorParams _guardBehaviorParams,
         int pIntruderCount, IntruderBehavior _intruderBehavior,
         MapData _map,
         SpeechType _speechType,
@@ -542,7 +542,7 @@ public class Session
         guardColor = _guardColor;
         guardSpawnMethod = _guardSpawnType;
         guardsCount = pGuardsCount;
-        patrolerParams = _patrolerParams;
+        guardBehaviorParams = _guardBehaviorParams;
         intruderCount = pIntruderCount;
         map = _map;
         guardsList = new List<NpcData>();
@@ -624,5 +624,15 @@ public class Session
         
         
         return sessionInfo;
+    }
+}
+
+public class GuardBehaviorParams
+{
+    public PatrolerParams patrolerParams;
+
+    public GuardBehaviorParams(PatrolerParams _patrolerParams)
+    {
+        patrolerParams = _patrolerParams;
     }
 }
