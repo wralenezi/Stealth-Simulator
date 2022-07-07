@@ -4,31 +4,37 @@ using UnityEngine;
 
 public class VisibilityPolygon : MeshPolygon
 {
-    // area "staleness" Max value is 255. The higher the value the more stale it is
-    private float m_Staleness = Properties.StalenessLow;
+    // Timestamp last seen
+    private float _timeStampLastSeen;
 
     public VisibilityPolygon()
     {
     }
 
-    public VisibilityPolygon(Polygon p) : base(p)
+    public VisibilityPolygon(Polygon p, float timestamp) : base(p)
     {
-        
+        _timeStampLastSeen = timestamp;
     }
 
     public float GetStaleness()
     {
-        return m_Staleness;
+        float nominator = StealthArea.GetElapsedTimeInSeconds() - _timeStampLastSeen;
+        float denominator = VisMesh.OldestTimestamp - _timeStampLastSeen;
+
+        float staleness = VisMesh.OldestTimestamp == _timeStampLastSeen ? 0f : nominator / denominator;
+        
+        return staleness;
     }
 
 
-    public void SetStaleness(float staleness)
+    public void SetTimestamp(float timestamp)
     {
-        m_Staleness = staleness;
+        _timeStampLastSeen = timestamp;
     }
-    
-    public void IncreaseStaleness(float staleness)
+
+    public float GetTimestamp()
     {
-        m_Staleness += staleness;
+        return _timeStampLastSeen;
     }
+
 }

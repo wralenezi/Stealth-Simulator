@@ -31,6 +31,7 @@ public class VisMesh : MonoBehaviour
     List<List<Polygon>> _tempSeenRegions;
     List<Polygon> differenceResult;
 
+    public static float OldestTimestamp;
 
     // Visibility mesh polygons
     private List<VisibilityPolygon> _visMeshPolygons;
@@ -84,22 +85,22 @@ public class VisMesh : MonoBehaviour
         _visMeshPolygons.Clear();
 
         // Reset the time
-        SetTimestamp();
+        // SetTimestamp();
     }
 
     // Set the timestamp to the current time
-    private void SetTimestamp()
-    {
-        _lastTimestamp = StealthArea.GetElapsedTimeInSeconds();
-    }
+    // private void SetTimestamp()
+    // {
+    //     _lastTimestamp = StealthArea.GetElapsedTimeInSeconds();
+    // }
 
-    // Get the time delta 
-    private float GetTimeDelta()
-    {
-        float timeDelta = StealthArea.GetElapsedTimeInSeconds() - _lastTimestamp;
-        SetTimestamp();
-        return timeDelta;
-    }
+    // // Get the time delta 
+    // private float GetTimeDelta()
+    // {
+    //     float timeDelta = StealthArea.GetElapsedTimeInSeconds() - _lastTimestamp;
+    //     SetTimestamp();
+    //     return timeDelta;
+    // }
 
     private void CreateSeenRegions(List<Guard> guards)
     {
@@ -203,6 +204,7 @@ public class VisMesh : MonoBehaviour
                 _seenRegions.Add(seenAreaUnion);
             }
         }
+        
     }
 
     // Get the new partitioning and populate the VisMesh
@@ -214,7 +216,7 @@ public class VisMesh : MonoBehaviour
             MigrateVisMesh();
 
             // Increase the staleness of polygons
-            StalePolygons();
+            // StalePolygons();
         }
 
         // Decompose the area 
@@ -222,6 +224,8 @@ public class VisMesh : MonoBehaviour
 
         // Calculate the staleness of the current polygons based on the old previous
         if (_preUnseenPolygons.Count > 0) CalculateCurrentStaleness();
+
+        SetOldestTimestamp();
 
         // Prepare the NavMesh 
         PrepVisMesh();
@@ -244,14 +248,14 @@ public class VisMesh : MonoBehaviour
 
 
     // Calculate how stale the polygons are based on time delta; the currently seen polygons do not stale
-    private void StalePolygons()
-    {
-        // Get the staleness value since the last update
-        float stalenessDelta = GetTimeDelta() * Properties.StalenessRate;
-
-        foreach (VisibilityPolygon vp in _preUnseenPolygons)
-            vp.IncreaseStaleness(stalenessDelta);
-    }
+    // private void StalePolygons()
+    // {
+    //     // Get the staleness value since the last update
+    //     float stalenessDelta = GetTimeDelta() * Properties.StalenessRate;
+    //
+    //     foreach (VisibilityPolygon vp in _preUnseenPolygons)
+    //         vp.IncreaseStaleness(stalenessDelta);
+    // }
 
 
     // Create the VisMesh
@@ -277,8 +281,19 @@ public class VisMesh : MonoBehaviour
     // Prepare the unseen polygons of the NavMesh ( important to be done before the seen area since it modifies the seen area)
     private void PrepareRegions()
     {
+
+        // Sort the outer walls and inner walls
+        OrganizeUnseenPolygons();
+        // OrganizeUnseenRegions();
+
+        OrganizeSeenRegions();
+    }
+
+    // Sort the CounterClockWise polygons as Outer polygons and find the holes in them
+    void OrganizeUnseenPolygons()
+    {
         _unseenRegions.Clear();
-        
+
         // the difference between the walkable area and seen area is the unseen area
         differenceResult.Clear();
         differenceResult.AddRange(MapManager.Instance.mapRenderer.GetInteriorWalls());
@@ -294,16 +309,7 @@ public class VisMesh : MonoBehaviour
             _unseenRegions.Add(MapManager.Instance.mapRenderer.GetInteriorWalls());
             return;
         }
-
-        // Sort the outer walls and inner walls
-        OrganizeUnseenPolygons(differenceResult);
-
-        OrganizeSeenRegions();
-    }
-
-    // Sort the CounterClockWise polygons as Outer polygons and find the holes in them
-    void OrganizeUnseenPolygons(List<Polygon> differenceResult)
-    {
+        
         holePolys.Clear();
 
         foreach (Polygon p in differenceResult)
@@ -333,50 +339,99 @@ public class VisMesh : MonoBehaviour
                 }
         }
     }
-
-    void OrganizeSeenRegions()
+    
+    private void OrganizeUnseenRegions()
     {
-        holePolys.Clear();
-        _tempSeenRegions.Clear();
+        List<Polygon> temp = new List<Polygon>();
 
-        foreach (var seenRegion in _seenRegions)
-        foreach (Polygon p in seenRegion)
+        foreach (var region in _seenRegions)
+        foreach (var p in region)
         {
-            if (p.DetermineWindingOrder() == Properties.outerPolygonWinding)
-            {
-                List<Polygon> wall = new List<Polygon>();
-                wall.Add(p);
-                _tempSeenRegions.Add(wall);
-            }
-            else
-            {
-                holePolys.Add(p);
-            }
+            temp.Add(p);
         }
+        
+        _unseenRegions.Clear();
+        List<Polygon> regionTemp = new List<Polygon>();
+        _unseenRegions.Add(regionTemp);
+        
+        List<Polygon> walls = MapManager.Instance.mapRenderer.GetInteriorWalls();
 
+        PolygonHelper.MergePolygons(temp,
+            walls, ref regionTemp, ClipType.ctDifference);
 
-        // Add the hole to the outer wall the contains it
-        foreach (List<Polygon> wall in _tempSeenRegions)
-        {
-            foreach (Polygon hole in holePolys)
-                if (wall[0].IsPolygonInside(hole, false))
-                {
-                    wall.Add(hole);
-                }
-        }
-
-        // Intersect with the borders so it will intersect it
-        int i = 0;
-        while (i < _tempSeenRegions.Count)
-        {
-            List<Polygon> region = _tempSeenRegions[i];
-            PolygonHelper.MergePolygons(_tempSeenRegions[i],
-                MapManager.Instance.mapRenderer.GetInteriorWalls(), ref region, ClipType.ctIntersection);
-            i++;
-        }
-
-        _seenRegions = _tempSeenRegions;
+        
+        // for (int i = 0; i < _unseenRegions.Count; i++)
+        // {
+        //     List<Polygon> seenRegion = _unseenRegions[i];
+        //     List<Polygon> walls = MapManager.Instance.mapRenderer.GetInteriorWalls();
+        //     
+        //     PolygonHelper.MergePolygons(seenRegion,
+        //         walls, ref seenRegion, ClipType.ctIntersection);
+        // }
     }
+
+
+    private void OrganizeSeenRegions()
+    {
+        for (int i = 0; i < _seenRegions.Count; i++)
+        {
+            List<Polygon> seenRegion = _seenRegions[i];
+            List<Polygon> walls = MapManager.Instance.mapRenderer.GetInteriorWalls();
+            
+            PolygonHelper.MergePolygons(seenRegion,
+                walls, ref seenRegion, ClipType.ctIntersection);
+        }
+    }
+
+
+    // void OrganizeSeenRegions()
+    // {
+    //     holePolys.Clear();
+    //     _tempSeenRegions.Clear();
+    //
+    //     foreach (var seenRegion in _seenRegions)
+    //     foreach (Polygon p in seenRegion)
+    //     {
+    //         if (p.DetermineWindingOrder() == Properties.outerPolygonWinding)
+    //         {
+    //             List<Polygon> wall = new List<Polygon>();
+    //             wall.Add(p);
+    //             _tempSeenRegions.Add(wall);
+    //         }
+    //         else
+    //         {
+    //             holePolys.Add(p);
+    //         }
+    //     }
+    //
+    //
+    //     // Add the hole to the outer wall the contains it
+    //     foreach (List<Polygon> wall in _tempSeenRegions)
+    //     {
+    //         foreach (Polygon hole in holePolys)
+    //             if (wall[0].IsPolygonInside(hole, false))
+    //             {
+    //                 wall.Add(hole);
+    //             }
+    //     }
+    //
+    //     // Intersect with the borders so it will intersect it
+    //     int i = 0;
+    //     while (i < _tempSeenRegions.Count)
+    //     {
+    //         List<Polygon> region = _tempSeenRegions[i];
+    //         PolygonHelper.MergePolygons(_tempSeenRegions[i],
+    //             MapManager.Instance.mapRenderer.GetInteriorWalls(), ref region, ClipType.ctIntersection);
+    //         i++;
+    //     }
+    //
+    //     Debug.Log(_seenRegions.Count);
+    //
+    //     _seenRegions = _tempSeenRegions;
+    //     
+    //     Debug.Log(_seenRegions.Count);
+    //
+    // }
 
 
     private void RegularizePolygons()
@@ -433,7 +488,8 @@ public class VisMesh : MonoBehaviour
             Polygon polygon = PolygonHelper.CutHoles(pL);
             List<MeshPolygon> tempPolys = HertelMelDecomp.ConvexPartition(polygon);
 
-            _curUnseenPolygons.AddRange(tempPolys.ConvertAll(x => new VisibilityPolygon(x)));
+            _curUnseenPolygons.AddRange(tempPolys.ConvertAll(x =>
+                new VisibilityPolygon(x, StealthArea.GetElapsedTimeInSeconds())));
         }
     }
 
@@ -449,7 +505,8 @@ public class VisMesh : MonoBehaviour
             if (polygon != null)
             {
                 List<MeshPolygon> tempPolys = HertelMelDecomp.ConvexPartition(polygon);
-                _curSeenPolygons.AddRange(tempPolys.ConvertAll(x => new VisibilityPolygon(x)));
+                _curSeenPolygons.AddRange(tempPolys.ConvertAll(x =>
+                    new VisibilityPolygon(x, StealthArea.GetElapsedTimeInSeconds())));
             }
         }
     }
@@ -465,14 +522,24 @@ public class VisMesh : MonoBehaviour
         MigratePolygonStaleness(_curUnseenPolygons, overallMesh);
     }
 
+    private void SetOldestTimestamp()
+    {
+        OldestTimestamp = StealthArea.GetElapsedTimeInSeconds();
+        foreach (var vp in _curUnseenPolygons)
+        {
+            if (OldestTimestamp > vp.GetTimestamp())
+                OldestTimestamp = vp.GetTimestamp();
+        }
+    }
+
 
     // Alternative method to pass the staleness info
     void MigratePolygonStaleness(List<VisibilityPolygon> newMesh, List<VisibilityPolygon> oldMesh)
     {
         foreach (VisibilityPolygon newVp in newMesh)
         {
-            // the staleness of the new polygon
-            float newStaleness = newVp.GetStaleness();
+            float largestOverlapArea = Mathf.NegativeInfinity;
+            float timestamp = Mathf.NegativeInfinity;
 
             foreach (VisibilityPolygon oldVp in oldMesh)
             {
@@ -484,19 +551,15 @@ public class VisMesh : MonoBehaviour
                 {
                     float overlapArea = intersection.GetArea();
 
-                    float newPolyArea = newVp.GetArea();
-
-                    float areaWeight = overlapArea / newPolyArea;
-
-                    // Add to the navMesh
-                    intersection.IncreaseStaleness(areaWeight * oldVp.GetStaleness());
-
-                    // Add the weighted staleness based on the size of the previous polygon
-                    newStaleness += areaWeight * oldVp.GetStaleness();
-
-                    newVp.SetStaleness(newStaleness);
+                    if (largestOverlapArea < overlapArea)
+                    {
+                        largestOverlapArea = overlapArea;
+                        timestamp = oldVp.GetTimestamp();
+                    }
                 }
             }
+
+            newVp.SetTimestamp(timestamp);
         }
     }
 
