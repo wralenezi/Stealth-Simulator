@@ -12,8 +12,11 @@ public class VisMesh : MonoBehaviour
     // Regions before decomposition
     public bool showSeenRegions;
     public bool showUnseenRegions;
-    private List<List<Polygon>> _seenRegions;
-    private List<List<Polygon>> _unseenRegions;
+    private List<Polygon> _newSeenRegion;
+    private List<Polygon> _newUnseenRegion;
+    
+    private List<Polygon> _SeenRegion;
+    private List<Polygon> _UnseenRegion;
 
     // Previous Polygons
     private List<VisibilityPolygon> _preSeenPolygons;
@@ -27,9 +30,6 @@ public class VisMesh : MonoBehaviour
 
     // Temp containers
     List<VisibilityPolygon> overallMesh;
-    List<Polygon> holePolys;
-    List<List<Polygon>> _tempSeenRegions;
-    List<Polygon> differenceResult;
 
     public static float OldestTimestamp;
 
@@ -45,9 +45,6 @@ public class VisMesh : MonoBehaviour
 
         _guardsSeenRegions = new Dictionary<string, List<Polygon>>();
 
-        _seenRegions = new List<List<Polygon>>();
-        _unseenRegions = new List<List<Polygon>>();
-
         // Current Polygons 
         _curSeenPolygons = new List<VisibilityPolygon>();
         _curUnseenPolygons = new List<VisibilityPolygon>();
@@ -57,23 +54,25 @@ public class VisMesh : MonoBehaviour
         _preUnseenPolygons = new List<VisibilityPolygon>();
 
         overallMesh = new List<VisibilityPolygon>();
-        holePolys = new List<Polygon>();
-        _tempSeenRegions = new List<List<Polygon>>();
-        differenceResult = new List<Polygon>();
+
+        _newSeenRegion = new List<Polygon>();
+        _newUnseenRegion = new List<Polygon>();
+        
+        _SeenRegion = new List<Polygon>();
+        _UnseenRegion = new List<Polygon>();
 
         _visMeshPolygons = new List<VisibilityPolygon>();
 
         // showSeenPolygons = true;
-        showUnseenPolygons = true;
+        // showUnseenPolygons = true;
+
         // showSeenRegions = true;
+        showUnseenRegions = true;
     }
 
     // Reset the variables
     public void Reset()
     {
-        _seenRegions.Clear();
-        _unseenRegions.Clear();
-
         // Current Polygons 
         _curSeenPolygons.Clear();
         _curUnseenPolygons.Clear();
@@ -82,142 +81,21 @@ public class VisMesh : MonoBehaviour
         _preSeenPolygons.Clear();
         _preUnseenPolygons.Clear();
 
-        _visMeshPolygons.Clear();
-
-        // Reset the time
-        // SetTimestamp();
-    }
-
-    // Set the timestamp to the current time
-    // private void SetTimestamp()
-    // {
-    //     _lastTimestamp = StealthArea.GetElapsedTimeInSeconds();
-    // }
-
-    // // Get the time delta 
-    // private float GetTimeDelta()
-    // {
-    //     float timeDelta = StealthArea.GetElapsedTimeInSeconds() - _lastTimestamp;
-    //     SetTimestamp();
-    //     return timeDelta;
-    // }
-
-    private void CreateSeenRegions(List<Guard> guards)
-    {
-        foreach (var guard in guards)
-        {
-            if (!_guardsSeenRegions.ContainsKey(guard.name))
-            {
-                _guardsSeenRegions.Add(guard.name, new List<Polygon>());
-                continue;
-            }
-
-            ResetSeenRegion(guard);
-
-            List<Polygon> guardSeenRegion = _guardsSeenRegions[guard.name];
-            PolygonHelper.MergePolygons(guardSeenRegion, guard.GetFov(), ref guardSeenRegion, ClipType.ctUnion);
-        }
-    }
-
-    private void ResetSeenRegion(Guard guard)
-    {
-        float totalArea = 0f;
-        List<Polygon> seenRegion = _guardsSeenRegions[guard.name];
-        foreach (var poly in seenRegion)
-            totalArea += poly.GetArea();
-
-        float seenAreaPercent = totalArea / MapManager.Instance.mapDecomposer.GetNavMeshArea();
-
-        if (seenAreaPercent > _maxSeenRegionAreaPerGuard)
-        {
-            List<Polygon> guardSeenRegion = _guardsSeenRegions[guard.name];
-            guardSeenRegion.Clear();
-        }
-    }
-
-    // Model and Aggregate the guards seen region
-    private void ConsiderGuardVision(List<Guard> guards)
-    {
-        _seenRegions.Clear();
-
-        // Go through the guards
-        foreach (var guard in guards)
-        {
-            if (_guardsSeenRegions.ContainsKey(guard.name))
-                _seenRegions.Add(_guardsSeenRegions[guard.name]);
-        }
-
-        // Merge the guards seen areas if they intersect
-        MergeGuardSeenAreas();
-    }
-
-    // Merge guards seen area
-    void MergeGuardSeenAreas()
-    {
-        // Assume there are intersection of seen areas between the guards
-        bool isThereIntersectionHappened = true;
-
-        while (isThereIntersectionHappened)
-        {
-            isThereIntersectionHappened = false;
-            int firstPoly = -1;
-            int secondPoly = -1;
-
-            for (var i = 0; i < _seenRegions.Count; i++)
-            {
-                for (var j = i + 1; j < _seenRegions.Count; j++)
-                {
-                    List<Polygon> intersection = new List<Polygon>();
-                    PolygonHelper.MergePolygons(_seenRegions[i], _seenRegions[j], ref intersection,
-                        ClipType.ctIntersection);
-
-                    if (intersection.Count > 0)
-                    {
-                        isThereIntersectionHappened = true;
-                        firstPoly = i;
-                        secondPoly = j;
-
-                        break;
-                    }
-                }
-
-                // if there is intersection, stop the loop
-                if (firstPoly != -1)
-                    break;
-            }
-
-            // Remove the two intersecting areas and replace them with their union
-            if (firstPoly != -1)
-            {
-                // Union the two guards seen area
-                List<Polygon> seenAreaUnion = new List<Polygon>();
-                PolygonHelper.MergePolygons(_seenRegions[firstPoly], _seenRegions[secondPoly], ref seenAreaUnion,
-                    ClipType.ctUnion);
-
-                // intersect it with the walls to remove overlapping areas
-                PolygonHelper.MergePolygons(MapManager.Instance.mapRenderer.GetInteriorWalls(),
-                    seenAreaUnion, ref seenAreaUnion,
-                    ClipType.ctIntersection);
-
-                _seenRegions.Remove(_seenRegions[secondPoly]);
-                _seenRegions.Remove(_seenRegions[firstPoly]);
-                _seenRegions.Add(seenAreaUnion);
-            }
-        }
+        _newSeenRegion.Clear();
+        _newUnseenRegion.Clear();
         
+        _SeenRegion.Clear();
+        _UnseenRegion.Clear();
+
+        _visMeshPolygons.Clear();
     }
+    
 
     // Get the new partitioning and populate the VisMesh
     public void ConstructVisMesh(List<Guard> guards)
     {
-        if (_curUnseenPolygons.Count > 0)
-        {
-            // Move the current VisMesh to the previous one
-            MigrateVisMesh();
-
-            // Increase the staleness of polygons
-            // StalePolygons();
-        }
+        // Move the current VisMesh to the previous one
+        if (_curUnseenPolygons.Count > 0) MigrateVisMesh();
 
         // Decompose the area 
         CreateVisMesh(guards);
@@ -246,268 +124,136 @@ public class VisMesh : MonoBehaviour
         _curSeenPolygons.Clear();
     }
 
-
-    // Calculate how stale the polygons are based on time delta; the currently seen polygons do not stale
-    // private void StalePolygons()
-    // {
-    //     // Get the staleness value since the last update
-    //     float stalenessDelta = GetTimeDelta() * Properties.StalenessRate;
-    //
-    //     foreach (VisibilityPolygon vp in _preUnseenPolygons)
-    //         vp.IncreaseStaleness(stalenessDelta);
-    // }
-
-
     // Create the VisMesh
     private void CreateVisMesh(List<Guard> guards)
     {
+        _SeenRegion.Clear();
+        _UnseenRegion.Clear();
+        
         CreateSeenRegions(guards);
 
-        // Prepare the guards vision to be considered in the space decomposition
-        ConsiderGuardVision(guards);
+        PrepareRegionsNew();
 
-        // Modify the regions to facilitate triangulation
-        PrepareRegions();
-
-        RegularizePolygons();
-
-        // Decompose the unseen area
-        DecomposeUnseenArea();
-
-        // Decompose the seen area
-        DecomposeSeenArea();
-    }
-
-    // Prepare the unseen polygons of the NavMesh ( important to be done before the seen area since it modifies the seen area)
-    private void PrepareRegions()
-    {
-
-        // Sort the outer walls and inner walls
-        OrganizeUnseenPolygons();
-        // OrganizeUnseenRegions();
-
-        OrganizeSeenRegions();
-    }
-
-    // Sort the CounterClockWise polygons as Outer polygons and find the holes in them
-    void OrganizeUnseenPolygons()
-    {
-        _unseenRegions.Clear();
-
-        // the difference between the walkable area and seen area is the unseen area
-        differenceResult.Clear();
-        differenceResult.AddRange(MapManager.Instance.mapRenderer.GetInteriorWalls());
-
-        // Take the difference for each seen region; The polygons in the result are Outer polygons (they have CounterClockWise winding) and holes (opposite winding)
-        foreach (List<Polygon> guardSeenArea in _seenRegions)
-            PolygonHelper.MergePolygons(guardSeenArea, differenceResult, ref differenceResult,
-                ClipType.ctDifference);
-
-        // To triangulate the area without guards
-        if (_seenRegions.Count == 0)
-        {
-            _unseenRegions.Add(MapManager.Instance.mapRenderer.GetInteriorWalls());
-            return;
-        }
+        CleanRegion(ref _newSeenRegion);
         
-        holePolys.Clear();
+        _SeenRegion.AddRange(_newSeenRegion);
 
-        foreach (Polygon p in differenceResult)
-        {
-            if (p.DetermineWindingOrder() == Properties.outerPolygonWinding)
-            {
-                List<Polygon> _tempWall = new List<Polygon>();
-                _tempWall.Clear();
-                _tempWall.Add(p);
-                _unseenRegions.Add(_tempWall);
-            }
-            else
-            {
-                holePolys.Add(p);
-            }
-        }
+        DecomposeRegions(ref _newSeenRegion, ref _curSeenPolygons);
 
-        differenceResult.Clear();
-
-        // Add the hole to the outer wall the contains it
-        foreach (List<Polygon> wall in _unseenRegions)
-        {
-            foreach (Polygon hole in holePolys)
-                if (wall[0].IsPolygonInside(hole, false))
-                {
-                    wall.Add(hole);
-                }
-        }
+        CleanRegion(ref _newUnseenRegion);
+        
+        _UnseenRegion.AddRange(_newUnseenRegion);
+        
+        DecomposeRegions(ref _newUnseenRegion, ref _curUnseenPolygons);
     }
     
-    private void OrganizeUnseenRegions()
+    private void CreateSeenRegions(List<Guard> guards)
     {
-        List<Polygon> temp = new List<Polygon>();
+        // ResetSeenRegion();
 
-        foreach (var region in _seenRegions)
-        foreach (var p in region)
+        foreach (var guard in guards)
         {
-            temp.Add(p);
+            if (!_guardsSeenRegions.ContainsKey(guard.name))
+            {
+                _guardsSeenRegions.Add(guard.name, new List<Polygon>());
+                continue;
+            }
+
+            List<Polygon> guardSeenRegion = _guardsSeenRegions[guard.name];
+            PolygonHelper.MergePolygons(guardSeenRegion, guard.GetFov(), ref guardSeenRegion, ClipType.ctUnion);
         }
-        
-        _unseenRegions.Clear();
-        List<Polygon> regionTemp = new List<Polygon>();
-        _unseenRegions.Add(regionTemp);
-        
+    }
+
+    private void ResetSeenRegion()
+    {
+        float totalArea = 0f;
+
+        foreach (var seenRegion in _guardsSeenRegions.Values)
+        foreach (var poly in seenRegion)
+            totalArea += poly.GetArea();
+
+        float seenAreaPercent = totalArea / MapManager.Instance.mapDecomposer.GetNavMeshArea();
+
+        if (seenAreaPercent > _maxSeenRegionAreaPerGuard)
+            foreach (var seenRegion in _guardsSeenRegions.Values)
+                seenRegion.Clear();
+    }
+
+    private void PrepareRegionsNew()
+    {
+        _newSeenRegion.Clear();
+        foreach (var region in _guardsSeenRegions.Values)
+            PolygonHelper.MergePolygons(_newSeenRegion, region, ref _newSeenRegion, ClipType.ctUnion);
+
+        _newUnseenRegion.Clear();
         List<Polygon> walls = MapManager.Instance.mapRenderer.GetInteriorWalls();
-
-        PolygonHelper.MergePolygons(temp,
-            walls, ref regionTemp, ClipType.ctDifference);
-
-        
-        // for (int i = 0; i < _unseenRegions.Count; i++)
-        // {
-        //     List<Polygon> seenRegion = _unseenRegions[i];
-        //     List<Polygon> walls = MapManager.Instance.mapRenderer.GetInteriorWalls();
-        //     
-        //     PolygonHelper.MergePolygons(seenRegion,
-        //         walls, ref seenRegion, ClipType.ctIntersection);
-        // }
+        PolygonHelper.MergePolygons(_newSeenRegion, walls, ref _newUnseenRegion, ClipType.ctDifference);
     }
 
 
-    private void OrganizeSeenRegions()
+    private void CleanRegion(ref List<Polygon> region)
     {
-        for (int i = 0; i < _seenRegions.Count; i++)
+        for (int j = 0; j < region.Count; j++)
         {
-            List<Polygon> seenRegion = _seenRegions[i];
-            List<Polygon> walls = MapManager.Instance.mapRenderer.GetInteriorWalls();
-            
-            PolygonHelper.MergePolygons(seenRegion,
-                walls, ref seenRegion, ClipType.ctIntersection);
-        }
-    }
+            // region[j].SmoothPolygon(0.1f);
 
-
-    // void OrganizeSeenRegions()
-    // {
-    //     holePolys.Clear();
-    //     _tempSeenRegions.Clear();
-    //
-    //     foreach (var seenRegion in _seenRegions)
-    //     foreach (Polygon p in seenRegion)
-    //     {
-    //         if (p.DetermineWindingOrder() == Properties.outerPolygonWinding)
-    //         {
-    //             List<Polygon> wall = new List<Polygon>();
-    //             wall.Add(p);
-    //             _tempSeenRegions.Add(wall);
-    //         }
-    //         else
-    //         {
-    //             holePolys.Add(p);
-    //         }
-    //     }
-    //
-    //
-    //     // Add the hole to the outer wall the contains it
-    //     foreach (List<Polygon> wall in _tempSeenRegions)
-    //     {
-    //         foreach (Polygon hole in holePolys)
-    //             if (wall[0].IsPolygonInside(hole, false))
-    //             {
-    //                 wall.Add(hole);
-    //             }
-    //     }
-    //
-    //     // Intersect with the borders so it will intersect it
-    //     int i = 0;
-    //     while (i < _tempSeenRegions.Count)
-    //     {
-    //         List<Polygon> region = _tempSeenRegions[i];
-    //         PolygonHelper.MergePolygons(_tempSeenRegions[i],
-    //             MapManager.Instance.mapRenderer.GetInteriorWalls(), ref region, ClipType.ctIntersection);
-    //         i++;
-    //     }
-    //
-    //     Debug.Log(_seenRegions.Count);
-    //
-    //     _seenRegions = _tempSeenRegions;
-    //     
-    //     Debug.Log(_seenRegions.Count);
-    //
-    // }
-
-
-    private void RegularizePolygons()
-    {
-        for (int i = 0; i < _unseenRegions.Count; i++)
-        {
-            // Remove the empty lists
-            if (_unseenRegions[i].Count == 0)
+            if (region[j].GetVerticesCount() < 3)
             {
-                _unseenRegions.RemoveAt(i);
-                i = 0;
-                continue;
+                region.RemoveAt(j);
+                j = 0;
             }
-
-            // Remove any non-polygon objects.
-            for (int j = 0; j < _unseenRegions[i].Count; j++)
-                if (_unseenRegions[i][j].GetVerticesCount() < 3)
-                {
-                    _unseenRegions[i].RemoveAt(j);
-                    j = 0;
-                    i = 0;
-                }
-        }
-
-
-        for (int i = 0; i < _seenRegions.Count; i++)
-        {
-            // Remove the empty lists
-            if (_seenRegions[i].Count == 0)
-            {
-                _seenRegions.RemoveAt(i);
-                i = 0;
-                continue;
-            }
-
-            // Remove any non-polygon objects.
-            for (int j = 0; j < _seenRegions[i].Count; j++)
-                if (_seenRegions[i][j].GetVerticesCount() < 3)
-                {
-                    _seenRegions[i].RemoveAt(j);
-                    j = 0;
-                    i = 0;
-                }
         }
     }
 
     // Triangulate the unseen areas
-    void DecomposeUnseenArea()
+    void DecomposeRegions(ref List<Polygon> regions, ref List<VisibilityPolygon> output)
     {
-        _curUnseenPolygons.Clear();
+        output.Clear();
 
-        foreach (List<Polygon> pL in _unseenRegions)
+        List<Polygon> polygonToDecomp = new List<Polygon>();
+
+        int regionsCount = regions.Count;
+        while (regions.Count > 0 && regionsCount > 0)
         {
-            Polygon polygon = PolygonHelper.CutHoles(pL);
+            polygonToDecomp.Clear();
+
+            // Get an outer polygon
+            for (int i = 0; i < regions.Count; i++)
+            {
+                Polygon outerPoly = regions[i];
+
+                if (Equals(outerPoly.DetermineWindingOrder(), Properties.outerPolygonWinding))
+                {
+                    polygonToDecomp.Add(outerPoly);
+                    regions.RemoveAt(i);
+                    break;
+                }
+            }
+
+
+            // fill the holes
+            if (polygonToDecomp.Count > 0)
+                for (int i = 0; i < regions.Count; i++)
+                {
+                    Polygon hole = regions[i];
+
+                    if (!Equals(hole.DetermineWindingOrder(), Properties.outerPolygonWinding) &&
+                        polygonToDecomp[0].IsPolygonInside(hole, false))
+                    {
+                        polygonToDecomp.Add(hole);
+                        regions.RemoveAt(i);
+                        i = 0;
+                    }
+                }
+
+
+            Polygon polygon = PolygonHelper.CutHoles(polygonToDecomp);
             List<MeshPolygon> tempPolys = HertelMelDecomp.ConvexPartition(polygon);
 
-            _curUnseenPolygons.AddRange(tempPolys.ConvertAll(x =>
+            output.AddRange(tempPolys.ConvertAll(x =>
                 new VisibilityPolygon(x, StealthArea.GetElapsedTimeInSeconds())));
-        }
-    }
 
-    // Triangulate the seen area
-    void DecomposeSeenArea()
-    {
-        _curSeenPolygons.Clear();
-
-        foreach (List<Polygon> guardSeenArea in _seenRegions)
-        {
-            Polygon polygon = PolygonHelper.CutHoles(guardSeenArea);
-
-            if (polygon != null)
-            {
-                List<MeshPolygon> tempPolys = HertelMelDecomp.ConvexPartition(polygon);
-                _curSeenPolygons.AddRange(tempPolys.ConvertAll(x =>
-                    new VisibilityPolygon(x, StealthArea.GetElapsedTimeInSeconds())));
-            }
+            regionsCount--;
         }
     }
 
@@ -580,15 +326,13 @@ public class VisMesh : MonoBehaviour
     {
         if (showSeenRegions)
         {
-            foreach (var region in _seenRegions)
-            foreach (var poly in region)
+            foreach (var poly in _SeenRegion)
                 poly.Draw(poly.DetermineWindingOrder().ToString());
         }
 
         if (showUnseenRegions)
         {
-            foreach (var region in _unseenRegions)
-            foreach (var poly in region)
+            foreach (var poly in _UnseenRegion)
                 poly.Draw(poly.DetermineWindingOrder().ToString());
         }
 
@@ -607,13 +351,5 @@ public class VisMesh : MonoBehaviour
                 poly.Draw(poly.GetStaleness().ToString());
             }
         }
-
-        // DrawHidingSpots();
-
-        // if (showVisMesh)
-        // {
-        //     foreach (var poly in m_VisMeshPolygons)
-        //         poly.Draw(poly.GetStaleness().ToString());
-        // }
     }
 }

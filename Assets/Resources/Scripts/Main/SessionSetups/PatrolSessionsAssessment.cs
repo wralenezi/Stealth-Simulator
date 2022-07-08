@@ -9,7 +9,7 @@ public class PatrolSessionsAssessment
         List<Session> sessions = new List<Session>();
 
         List<int> guardTeams = new List<int>();
-        guardTeams.Add(1);
+        guardTeams.Add(2);
 
 
         MapData mapData;
@@ -40,9 +40,9 @@ public class PatrolSessionsAssessment
 
         List<float> maxSeenRegionPortions = new List<float>()
         {
-            0.3f,
-            0.5f,
-            0.7f
+            // 0.5f,
+            // 0.7f,
+            1f
         };
         
         List<float> areaWeights = new List<float>();
