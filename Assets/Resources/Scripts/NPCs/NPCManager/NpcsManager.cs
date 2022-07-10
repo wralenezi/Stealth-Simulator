@@ -58,6 +58,8 @@ public class NpcsManager : MonoBehaviour
         AreaUIManager.Instance.UpdateScore(m_score, m_score);
         _intrudersManager.Reset(navMesh, GetIntruders(), GetGuards(), session);
         _guardsManager.Reset(navMesh, GetIntruders(), session);
+        ResetState();
+
     }
 
     public void Done()

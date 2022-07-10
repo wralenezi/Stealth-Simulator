@@ -12,11 +12,11 @@ public class VisMesh : MonoBehaviour
     // Regions before decomposition
     public bool showSeenRegions;
     public bool showUnseenRegions;
-    private List<Polygon> _newSeenRegion;
-    private List<Polygon> _newUnseenRegion;
-    
     private List<Polygon> _SeenRegion;
     private List<Polygon> _UnseenRegion;
+
+    private List<Polygon> _tempSeenRegion;
+    private List<Polygon> _tempUnseenRegion;
 
     // Previous Polygons
     private List<VisibilityPolygon> _preSeenPolygons;
@@ -55,19 +55,19 @@ public class VisMesh : MonoBehaviour
 
         overallMesh = new List<VisibilityPolygon>();
 
-        _newSeenRegion = new List<Polygon>();
-        _newUnseenRegion = new List<Polygon>();
-        
         _SeenRegion = new List<Polygon>();
         _UnseenRegion = new List<Polygon>();
+
+        _tempSeenRegion = new List<Polygon>();
+        _tempUnseenRegion = new List<Polygon>();
 
         _visMeshPolygons = new List<VisibilityPolygon>();
 
         // showSeenPolygons = true;
-        // showUnseenPolygons = true;
+        showUnseenPolygons = true;
 
         // showSeenRegions = true;
-        showUnseenRegions = true;
+        // showUnseenRegions = true;
     }
 
     // Reset the variables
@@ -81,15 +81,15 @@ public class VisMesh : MonoBehaviour
         _preSeenPolygons.Clear();
         _preUnseenPolygons.Clear();
 
-        _newSeenRegion.Clear();
-        _newUnseenRegion.Clear();
-        
         _SeenRegion.Clear();
         _UnseenRegion.Clear();
 
+        _tempSeenRegion.Clear();
+        _tempUnseenRegion.Clear();
+
         _visMeshPolygons.Clear();
     }
-    
+
 
     // Get the new partitioning and populate the VisMesh
     public void ConstructVisMesh(List<Guard> guards)
@@ -97,13 +97,13 @@ public class VisMesh : MonoBehaviour
         // Move the current VisMesh to the previous one
         if (_curUnseenPolygons.Count > 0) MigrateVisMesh();
 
+        SetOldestTimestamp();
+
         // Decompose the area 
         CreateVisMesh(guards);
 
         // Calculate the staleness of the current polygons based on the old previous
         if (_preUnseenPolygons.Count > 0) CalculateCurrentStaleness();
-
-        SetOldestTimestamp();
 
         // Prepare the NavMesh 
         PrepVisMesh();
@@ -127,29 +127,31 @@ public class VisMesh : MonoBehaviour
     // Create the VisMesh
     private void CreateVisMesh(List<Guard> guards)
     {
-        _SeenRegion.Clear();
-        _UnseenRegion.Clear();
-        
+        _tempSeenRegion.Clear();
+        _tempUnseenRegion.Clear();
+
         CreateSeenRegions(guards);
 
         PrepareRegionsNew();
 
-        CleanRegion(ref _newSeenRegion);
-        
-        _SeenRegion.AddRange(_newSeenRegion);
+        CleanRegion(ref _SeenRegion);
 
-        DecomposeRegions(ref _newSeenRegion, ref _curSeenPolygons);
+        _tempSeenRegion.AddRange(_SeenRegion);
 
-        CleanRegion(ref _newUnseenRegion);
-        
-        _UnseenRegion.AddRange(_newUnseenRegion);
-        
-        DecomposeRegions(ref _newUnseenRegion, ref _curUnseenPolygons);
+        DecomposeRegions(ref _SeenRegion, ref _curSeenPolygons);
+
+        CleanRegion(ref _UnseenRegion);
+
+        _tempUnseenRegion.AddRange(_UnseenRegion);
+
+        DecomposeRegions(ref _UnseenRegion, ref _curUnseenPolygons);
+
+        RemoveInsignificantPolygons(ref _curUnseenPolygons);
     }
-    
+
     private void CreateSeenRegions(List<Guard> guards)
     {
-        // ResetSeenRegion();
+        ResetSeenRegion();
 
         foreach (var guard in guards)
         {
@@ -168,11 +170,10 @@ public class VisMesh : MonoBehaviour
     {
         float totalArea = 0f;
 
-        foreach (var seenRegion in _guardsSeenRegions.Values)
-        foreach (var poly in seenRegion)
-            totalArea += poly.GetArea();
+        foreach (var vp in _preUnseenPolygons)
+            totalArea += vp.GetArea();
 
-        float seenAreaPercent = totalArea / MapManager.Instance.mapDecomposer.GetNavMeshArea();
+        float seenAreaPercent = 1.001f - totalArea / MapManager.Instance.mapDecomposer.GetNavMeshArea();
 
         if (seenAreaPercent > _maxSeenRegionAreaPerGuard)
             foreach (var seenRegion in _guardsSeenRegions.Values)
@@ -181,13 +182,13 @@ public class VisMesh : MonoBehaviour
 
     private void PrepareRegionsNew()
     {
-        _newSeenRegion.Clear();
+        _SeenRegion.Clear();
         foreach (var region in _guardsSeenRegions.Values)
-            PolygonHelper.MergePolygons(_newSeenRegion, region, ref _newSeenRegion, ClipType.ctUnion);
+            PolygonHelper.MergePolygons(_SeenRegion, region, ref _SeenRegion, ClipType.ctUnion);
 
-        _newUnseenRegion.Clear();
+        _UnseenRegion.Clear();
         List<Polygon> walls = MapManager.Instance.mapRenderer.GetInteriorWalls();
-        PolygonHelper.MergePolygons(_newSeenRegion, walls, ref _newUnseenRegion, ClipType.ctDifference);
+        PolygonHelper.MergePolygons(_SeenRegion, walls, ref _UnseenRegion, ClipType.ctDifference);
     }
 
 
@@ -195,7 +196,7 @@ public class VisMesh : MonoBehaviour
     {
         for (int j = 0; j < region.Count; j++)
         {
-            // region[j].SmoothPolygon(0.1f);
+            region[j].SmoothPolygon(0.1f);
 
             if (region[j].GetVerticesCount() < 3)
             {
@@ -250,12 +251,34 @@ public class VisMesh : MonoBehaviour
             Polygon polygon = PolygonHelper.CutHoles(polygonToDecomp);
             List<MeshPolygon> tempPolys = HertelMelDecomp.ConvexPartition(polygon);
 
+            if (Equals(tempPolys, null)) return;
+
             output.AddRange(tempPolys.ConvertAll(x =>
                 new VisibilityPolygon(x, StealthArea.GetElapsedTimeInSeconds())));
 
             regionsCount--;
         }
     }
+
+    private void RemoveInsignificantPolygons(ref List<VisibilityPolygon> polygons)
+    {
+        float minArea = 0.1f;
+        int index = 0;
+
+        while (index < polygons.Count)
+        {
+            float area = polygons[index].GetArea();
+
+            if (area <= minArea)
+            {
+                polygons.RemoveAt(index);
+                continue;
+            }
+
+            index++;
+        }
+    }
+
 
     // Move the staleness information from the previous mesh to current mesh
     void CalculateCurrentStaleness()
@@ -271,9 +294,10 @@ public class VisMesh : MonoBehaviour
     private void SetOldestTimestamp()
     {
         OldestTimestamp = StealthArea.GetElapsedTimeInSeconds();
-        foreach (var vp in _curUnseenPolygons)
+
+        foreach (var vp in _preUnseenPolygons)
         {
-            if (OldestTimestamp > vp.GetTimestamp())
+            if (OldestTimestamp >= vp.GetTimestamp())
                 OldestTimestamp = vp.GetTimestamp();
         }
     }
@@ -284,8 +308,10 @@ public class VisMesh : MonoBehaviour
     {
         foreach (VisibilityPolygon newVp in newMesh)
         {
+            float oldestTimestamp = Mathf.Infinity;
+
             float largestOverlapArea = Mathf.NegativeInfinity;
-            float timestamp = Mathf.NegativeInfinity;
+            float timestamp = StealthArea.GetElapsedTimeInSeconds();
 
             foreach (VisibilityPolygon oldVp in oldMesh)
             {
@@ -296,6 +322,9 @@ public class VisMesh : MonoBehaviour
                 if (intersection.GetVerticesCount() > 0)
                 {
                     float overlapArea = intersection.GetArea();
+
+                    if (oldestTimestamp > oldVp.GetTimestamp())
+                        oldestTimestamp = oldVp.GetTimestamp();
 
                     if (largestOverlapArea < overlapArea)
                     {
@@ -326,13 +355,13 @@ public class VisMesh : MonoBehaviour
     {
         if (showSeenRegions)
         {
-            foreach (var poly in _SeenRegion)
+            foreach (var poly in _tempSeenRegion)
                 poly.Draw(poly.DetermineWindingOrder().ToString());
         }
 
         if (showUnseenRegions)
         {
-            foreach (var poly in _UnseenRegion)
+            foreach (var poly in _tempUnseenRegion)
                 poly.Draw(poly.DetermineWindingOrder().ToString());
         }
 
@@ -340,7 +369,7 @@ public class VisMesh : MonoBehaviour
         {
             foreach (var poly in _curSeenPolygons)
             {
-                poly.Draw(poly.GetStaleness().ToString());
+                poly.Draw(poly.GetTimestamp().ToString());
             }
         }
 
@@ -348,7 +377,7 @@ public class VisMesh : MonoBehaviour
         {
             foreach (var poly in _curUnseenPolygons)
             {
-                poly.Draw(poly.GetStaleness().ToString());
+                poly.Draw(poly.GetTimestamp().ToString());
             }
         }
     }

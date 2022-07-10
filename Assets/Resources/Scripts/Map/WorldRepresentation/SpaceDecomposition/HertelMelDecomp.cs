@@ -13,6 +13,8 @@ public static class HertelMelDecomp
         // Check if the poly is already convex
         bool isConvex = true;
 
+        if (Equals(polygon, null)) return null;
+
         for (i11 = 0; i11 < polygon.GetVerticesCount(); i11++)
         {
             // The previous vertex

@@ -40,9 +40,9 @@ public class PatrolSessionsAssessment
 
         List<float> maxSeenRegionPortions = new List<float>()
         {
-            // 0.5f,
+            0.5f,
             // 0.7f,
-            1f
+            // 1f
         };
         
         List<float> areaWeights = new List<float>();

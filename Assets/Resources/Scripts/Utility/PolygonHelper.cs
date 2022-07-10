@@ -97,6 +97,8 @@ public static class PolygonHelper
     // Cut holes in a polygon to prepare it for triangulations
     public static Polygon CutHoles(List<Polygon> polygons)
     {
+        if (polygons.Count == 0) return null;
+        
         // Create the containers for the outer polygon and the hole polygons
         Polygon outerPoly = new Polygon(polygons[0]);
         var holePolygons = new List<Polygon>();
@@ -124,8 +126,7 @@ public static class PolygonHelper
                         holePointIndex = i;
                     }
 
-            if (currentHole.GetVerticesCount() == 0)
-                continue;
+            if (currentHole.GetVerticesCount() == 0) continue;
 
             // Cut the hole and merge it with the outer polygon
             outerPoly = CutHoleInShape(outerPoly, currentHole);

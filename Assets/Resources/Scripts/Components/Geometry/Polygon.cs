@@ -126,6 +126,8 @@ public class Polygon
         int index = 0;
         while (index < m_Vertices.Count)
         {
+            if(m_Vertices.Count < 4) break;
+            
             // Remove the vertices if its angle is below the min threshold or more than the max threshold
             if (GeometryHelper.GetAngle(m_Vertices[index - 1].position, m_Vertices[index].position,
                 m_Vertices[index + 1].position) >= maxAngle)
