@@ -73,6 +73,8 @@ public class VisMesh : MonoBehaviour
     // Reset the variables
     public void Reset()
     {
+        _guardsSeenRegions.Clear();
+
         // Current Polygons 
         _curSeenPolygons.Clear();
         _curUnseenPolygons.Clear();
@@ -97,8 +99,6 @@ public class VisMesh : MonoBehaviour
         // Move the current VisMesh to the previous one
         if (_curUnseenPolygons.Count > 0) MigrateVisMesh();
 
-        SetOldestTimestamp();
-
         // Decompose the area 
         CreateVisMesh(guards);
 
@@ -107,6 +107,8 @@ public class VisMesh : MonoBehaviour
 
         // Prepare the NavMesh 
         PrepVisMesh();
+
+        SetOldestTimestamp(ref _curUnseenPolygons);
     }
 
 
@@ -291,11 +293,11 @@ public class VisMesh : MonoBehaviour
         MigratePolygonStaleness(_curUnseenPolygons, overallMesh);
     }
 
-    private void SetOldestTimestamp()
+    private void SetOldestTimestamp(ref List<VisibilityPolygon> polygons)
     {
         OldestTimestamp = StealthArea.GetElapsedTimeInSeconds();
 
-        foreach (var vp in _preUnseenPolygons)
+        foreach (var vp in polygons)
         {
             if (OldestTimestamp >= vp.GetTimestamp())
                 OldestTimestamp = vp.GetTimestamp();
@@ -369,7 +371,7 @@ public class VisMesh : MonoBehaviour
         {
             foreach (var poly in _curSeenPolygons)
             {
-                poly.Draw(poly.GetTimestamp().ToString());
+                poly.Draw(poly.GetStaleness().ToString());
             }
         }
 
@@ -377,7 +379,7 @@ public class VisMesh : MonoBehaviour
         {
             foreach (var poly in _curUnseenPolygons)
             {
-                poly.Draw(poly.GetTimestamp().ToString());
+                poly.Draw(poly.GetStaleness().ToString());
             }
         }
     }

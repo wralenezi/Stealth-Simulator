@@ -17,11 +17,13 @@ public class VisMeshPatroler : Patroler
         _visMesh.Initiate(_params.maxSeenRegionAreaPerGuard);
         
         _decisionMaker = new VisMeshPatrolDecisionMaker();
+        _decisionMaker.Initiate(_params);
     }
 
     public override void Start()
     {
         _visMesh.Reset();
+        _decisionMaker.Reset();
     }
 
     public override void UpdatePatroler(List<Guard> guards, float speed, float timeDelta)

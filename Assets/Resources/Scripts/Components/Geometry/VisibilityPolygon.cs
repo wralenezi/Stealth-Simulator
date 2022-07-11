@@ -18,11 +18,10 @@ public class VisibilityPolygon : MeshPolygon
 
     public float GetStaleness()
     {
-        float nominator = VisMesh.OldestTimestamp - _timeStampLastSeen;
-        float denominator = VisMesh.OldestTimestamp;
+        float nominator = _timeStampLastSeen - VisMesh.OldestTimestamp;
+        float denominator = StealthArea.GetElapsedTimeInSeconds() -  VisMesh.OldestTimestamp;
 
-        float staleness = VisMesh.OldestTimestamp == 0 ? 1f : nominator / denominator;
-        // float staleness = VisMesh.OldestTimestamp == _timeStampLastSeen ? 0f : nominator / denominator;
+        float staleness = denominator == 0 ? 1f : 1f - nominator / denominator;
         
         return staleness;
     }
