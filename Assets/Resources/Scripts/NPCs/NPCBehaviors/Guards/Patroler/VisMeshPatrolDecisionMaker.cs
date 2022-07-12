@@ -1,13 +1,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 using UnityEngine;
 
 public class VisMeshPatrolDecisionMaker
 {
     private VisMeshPatrolerParams _params;
 
-    // Guard goals
     private Dictionary<string, Vector2> _guardGoals;
 
     public void Initiate(VisMeshPatrolerParams param)
@@ -23,7 +23,7 @@ public class VisMeshPatrolDecisionMaker
 
     private bool IsGoalTaken(Guard guard, Vector2 goal)
     {
-        float minSqrMagThreshold = 0.25f;
+        float minSqrMagThreshold = 1f;
 
         foreach (var guardGoal in _guardGoals)
         {
@@ -34,60 +34,59 @@ public class VisMeshPatrolDecisionMaker
             if (minSqrMagThreshold >= sqrMag) return true;
         }
 
-
         return false;
     }
 
-    public void SetTarget(Guard guard, List<VisibilityPolygon> unseenPolys)
+    public void SetTarget(Guard guard, List<Guard> guards, VisMeshPatrolerParams patrolerParams,
+        List<VisibilityPolygon> unseenPolys)
     {
-        VisibilityPolygon bestVisbilityPolygon = null;
-        float highestScore = Mathf.Infinity;
+        Vector2? target = null;
 
         if (_guardGoals.ContainsKey(guard.name)) _guardGoals.Remove(guard.name);
+
+        switch (patrolerParams.DecisionType)
+        {
+            case VMDecision.Weighted:
+                target = GetWeightedSumFittestTarget(guard, guards, patrolerParams, unseenPolys);
+                break;
+        }
+
+
+        if (Equals(target, null)) return;
+
+        _guardGoals[guard.name] = target.Value;
+        guard.SetDestination(target.Value, false, false);
+    }
+
+    private Vector2? GetWeightedSumFittestTarget(Guard guard, List<Guard> guards,
+        VisMeshPatrolerParams patrolerParams, List<VisibilityPolygon> unseenPolys)
+    {
+        VisibilityPolygon bestTarget = null;
+        float highestScore = Mathf.NegativeInfinity;
 
         foreach (var visPoly in unseenPolys)
         {
             if (IsGoalTaken(guard, visPoly.GetCentroidPosition())) continue;
 
-            float score = visPoly.GetTimestamp();
-
-            if (highestScore > score)
-            {
-                highestScore = score;
-                bestVisbilityPolygon = visPoly;
-            }
-        }
-
-        if (Equals(bestVisbilityPolygon, null)) return;
-
-        _guardGoals[guard.name] = bestVisbilityPolygon.GetCentroidPosition();
-        guard.SetDestination(bestVisbilityPolygon.GetCentroidPosition(), false, false);
-    }
-
-    public void SetFittestTarget(Guard guard, VisMeshPatrolerParams patrolerParams, List<VisibilityPolygon> unseenPolys)
-    {
-        VisibilityPolygon bestVisbilityPolygon = null;
-        float highestScore = Mathf.NegativeInfinity;
-
-        foreach (var visPoly in unseenPolys)
-        {
             float score = 0f;
 
-            score += visPoly.GetStaleness() * patrolerParams.stalenessWeight;
+            score += visPoly.GetStaleness() * patrolerParams.StalenessWeight;
 
-            score += GetAreaPortion(visPoly) * patrolerParams.areaWeight;
+            score += GetAreaPortion(visPoly) * patrolerParams.AreaWeight;
 
+            // Subtracted by 1 to reverse the relation ( higher value is closer, thus more desirable)
+            score += (1f - GetNormalizedDistance(guard, visPoly)) * patrolerParams.DistanceWeight;
+
+            score += GetClosestGuardDistance(guard, guards, visPoly) * patrolerParams.SeparationWeight;
 
             if (highestScore < score)
             {
                 highestScore = score;
-                bestVisbilityPolygon = visPoly;
+                bestTarget = visPoly;
             }
         }
 
-        if (Equals(bestVisbilityPolygon, null)) return;
-
-        guard.SetDestination(bestVisbilityPolygon.GetCentroidPosition(), false, false);
+        return bestTarget?.GetCentroidPosition();
     }
 
 
@@ -109,7 +108,7 @@ public class VisMeshPatrolDecisionMaker
     }
 
 
-    public float GetClosestGuardDistance(Guard guard, List<Guard> guards, Polygon polygon)
+    private float GetClosestGuardDistance(Guard guard, List<Guard> guards, Polygon polygon)
     {
         float longestPath = PathFinding.Instance.longestShortestPath;
 
@@ -129,6 +128,18 @@ public class VisMeshPatrolDecisionMaker
         }
 
         return closestGuardDistance / longestPath;
+    }
+
+    public void DrawGoals()
+    {
+        Gizmos.color = Color.red;
+        foreach (var guardGoal in _guardGoals)
+        {
+#if UNITY_EDITOR
+            Handles.Label(guardGoal.Value, guardGoal.Key);
+#endif
+            Gizmos.DrawSphere(guardGoal.Value, 0.1f);
+        }
     }
 }
 

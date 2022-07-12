@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -5,6 +6,8 @@ using UnityEngine;
 public class VisMeshPatroler : Patroler
 {
     private VisMesh _visMesh;
+
+    public bool ShowGuardGoals;
     private VisMeshPatrolDecisionMaker _decisionMaker;
 
     private VisMeshPatrolerParams _params;
@@ -14,8 +17,8 @@ public class VisMeshPatroler : Patroler
         _params = (VisMeshPatrolerParams) StealthArea.SessionInfo.guardBehaviorParams.patrolerParams;
 
         _visMesh = gameObject.AddComponent<VisMesh>();
-        _visMesh.Initiate(_params.maxSeenRegionAreaPerGuard);
-        
+        _visMesh.Initiate(_params.MaxSeenRegionAreaPerGuard);
+
         _decisionMaker = new VisMeshPatrolDecisionMaker();
         _decisionMaker.Initiate(_params);
     }
@@ -30,35 +33,42 @@ public class VisMeshPatroler : Patroler
     {
         _visMesh.ConstructVisMesh(guards);
     }
-    
+
     public override void Patrol(List<Guard> guards)
     {
         foreach (var guard in guards)
         {
-            if(guard.IsBusy()) continue;
-            
-            _decisionMaker.SetTarget(guard, _visMesh.GetVisMesh());
+            if (guard.IsBusy()) continue;
+
+            _decisionMaker.SetTarget(guard, guards, _params, _visMesh.GetVisMesh());
         }
+    }
+
+
+    private void OnDrawGizmos()
+    {
+        if (ShowGuardGoals)
+            _decisionMaker?.DrawGoals();
     }
 }
 
 public class VisMeshPatrolerParams : PatrolerParams
 {
-    public float maxSeenRegionAreaPerGuard;
+    public readonly float MaxSeenRegionAreaPerGuard;
+    public readonly float AreaWeight;
+    public readonly float StalenessWeight;
+    public readonly float DistanceWeight;
+    public readonly float SeparationWeight;
+    public readonly VMDecision DecisionType;
 
-    public float areaWeight;
-    public float stalenessWeight;
-    public float distanceWeight;
-    public float separationWeight;
-
-
-    public VisMeshPatrolerParams(float _maxSeenRegionAreaPerGuard, float _areaWeight, float _stalenessWeight, float _distanceWeight, float _separationWeight)
+    public VisMeshPatrolerParams(float _maxSeenRegionAreaPerGuard, float _areaWeight, float _stalenessWeight,
+        float _distanceWeight, float _separationWeight, VMDecision _decisionType)
     {
-        maxSeenRegionAreaPerGuard = _maxSeenRegionAreaPerGuard;
-
-        areaWeight = _areaWeight;
-        stalenessWeight = _stalenessWeight;
-        distanceWeight = _distanceWeight;
-        separationWeight = _separationWeight;
+        MaxSeenRegionAreaPerGuard = _maxSeenRegionAreaPerGuard;
+        AreaWeight = _areaWeight;
+        StalenessWeight = _stalenessWeight;
+        DistanceWeight = _distanceWeight;
+        SeparationWeight = _separationWeight;
+        DecisionType = _decisionType;
     }
 }

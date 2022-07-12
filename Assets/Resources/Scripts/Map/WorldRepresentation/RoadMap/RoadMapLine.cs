@@ -74,6 +74,11 @@ public class RoadMapLine
         return m_passingGuardS.Count;
     }
 
+    public float GetProbability()
+    {
+        return GetSearchSegment().GetProbability();
+    }
+
     // Get the utility value of a guard passing through this line
     public float GetUtility()
     {

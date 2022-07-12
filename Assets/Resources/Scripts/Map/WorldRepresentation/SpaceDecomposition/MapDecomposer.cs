@@ -15,7 +15,7 @@ public class MapDecomposer : MonoBehaviour
     private List<Polygon> _wallBorders;
 
     // Walkable area
-    [SerializeField] private float _walakbleArea;
+    [SerializeField] private float _walkableArea;
 
 
     public void Initiate(List<Polygon> walls)
@@ -39,9 +39,9 @@ public class MapDecomposer : MonoBehaviour
         HertelMelDecomp.BuildNavMesh(_navMesh);
 
         // Calculate the area of the interior
-        _walakbleArea = 0f;
+        _walkableArea = 0f;
         foreach (var p in GetNavMesh())
-            _walakbleArea += p.GetArea();
+            _walkableArea += p.GetArea();
     }
 
     // Get a random polygon from the NavMesh
@@ -59,7 +59,7 @@ public class MapDecomposer : MonoBehaviour
     // Get the walkable area 
     public float GetNavMeshArea()
     {
-        return _walakbleArea;
+        return _walkableArea;
     }
 
     private void OnDrawGizmos()

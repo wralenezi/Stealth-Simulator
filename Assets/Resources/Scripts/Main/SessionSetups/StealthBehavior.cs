@@ -118,7 +118,7 @@ public static class StealthBehavior
                 fovProjectionMultiplier = projectionDistance
             };
 
-            PatrolerParams patrolParams = new VisMeshPatrolerParams(0.4f, 1f, 0f, 0f, 0f);
+            PatrolerParams patrolParams = new VisMeshPatrolerParams(0.4f, 1f, 0f, 0f, 0f, VMDecision.Weighted);
 
 
             Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue",

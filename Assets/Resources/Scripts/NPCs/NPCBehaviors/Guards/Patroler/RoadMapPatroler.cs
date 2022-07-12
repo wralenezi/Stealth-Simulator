@@ -8,16 +8,20 @@ public class RoadMapPatroler : Patroler
     // Road map of the level
     private RoadMap m_RoadMap;
 
-    // Variables for path finding
-    private List<RoadMapLine> open;
-    private List<RoadMapLine> closed;
+    private RoadMapPatrolerDecisionMaker _decisionMaker;
+    // // Variables for path finding
+    // private List<RoadMapLine> open;
+    // private List<RoadMapLine> closed;
 
+    private RoadMapPatrolerParams _params;
 
     public override void Initiate(MapManager mapManager)
     {
         m_RoadMap = mapManager.GetRoadMap();
-        open = new List<RoadMapLine>();
-        closed = new List<RoadMapLine>();
+        _decisionMaker = new RoadMapPatrolerDecisionMaker();
+        _decisionMaker.Initiate();
+        // open = new List<RoadMapLine>();
+        // closed = new List<RoadMapLine>();
     }
 
     public override void Start()
@@ -52,23 +56,22 @@ public class RoadMapPatroler : Patroler
             else
                 sS.SetProb(sS.GetProbability());
         }
-
     }
 
     public override void Patrol(List<Guard> guards)
     {
-        AssignPaths(guards);
+        AssignGoals(guards);
     }
 
-    private void AssignPaths(List<Guard> guards)
+    private void AssignGoals(List<Guard> guards)
     {
         foreach (var guard in guards)
         {
             if (!guard.IsBusy())
-                GetPath(guard);
+                _decisionMaker.SetTarget(guard, guards, _params, m_RoadMap);
         }
     }
-    
+
     // Check for the seen search segments
     private void CheckSeenSs(List<Guard> guards, RoadMapLine line)
     {
@@ -87,224 +90,216 @@ public class RoadMapPatroler : Patroler
             line.PropagateToSegment(line.GetMid(), 1f, StealthArea.GetElapsedTimeInSeconds());
         }
     }
-    
-        // // Get a complete path of no more than param@length that a guard needs to traverse to search for an intruder.
-    public void GetPath(Guard guard)
-    {
-        open.Clear();
-        closed.Clear();
 
-        // Get the closest Way point
-        RoadMapNode closestWp = m_RoadMap.GetClosestWp(guard.GetTransform().position, guard.GetDirection());
+    //     // // Get a complete path of no more than param@length that a guard needs to traverse to search for an intruder.
+    // public void GetPath(Guard guard)
+    // {
+    //     open.Clear();
+    //     closed.Clear();
+    //
+    //     // Get the closest Way point
+    //     RoadMapNode closestWp = m_RoadMap.GetClosestWp(guard.GetTransform().position, guard.GetDirection());
+    //
+    //     if (Equals(closestWp, null)) return;
+    //
+    //     RoadMapLine startLine = null;
+    //     float maxProb = Mathf.NegativeInfinity;
+    //
+    //     // Get the start line from the way point
+    //     foreach (var line in closestWp.GetLines(false))
+    //     {
+    //         if (maxProb < line.GetSearchSegment().GetProbability())
+    //         {
+    //             startLine = line;
+    //             maxProb = line.GetSearchSegment().GetProbability();
+    //         }
+    //     }
+    //
+    //     // Clear the variables
+    //     float minUtility = Mathf.Infinity;
+    //     foreach (var line in m_RoadMap.GetLines(false))
+    //     {
+    //         line.pathUtility = Mathf.NegativeInfinity;
+    //         line.distance = Mathf.Infinity;
+    //         line.pathParent = null;
+    //
+    //         if (minUtility > line.GetUtility())
+    //         {
+    //             minUtility = line.GetUtility();
+    //         }
+    //     }
+    //
+    //     // if the min utility is negative, inverse it's sign to modify all utilities to be zero or more
+    //     minUtility = minUtility < 0f ? -minUtility : 0f;
+    //     // minUtility = 5f;
+    //
+    //
+    //     startLine.pathUtility = startLine.GetUtility() + minUtility;
+    //     startLine.distance = 0f;
+    //     startLine.pathParent = null;
+    //
+    //     open.Add(startLine);
+    //
+    //     RoadMapLine bestLine = null;
+    //
+    //     // Dijkstra
+    //     while (open.Count > 0)
+    //     {
+    //         RoadMapLine currentLine = open[0];
+    //         open.RemoveAt(0);
+    //
+    //         foreach (var neighbor in currentLine.GetWp1Connections())
+    //         {
+    //             if (!closed.Contains(neighbor) && !open.Contains(neighbor) && neighbor != currentLine)
+    //             {
+    //                 // Update the distance
+    //                 neighbor.distance = currentLine.distance + neighbor.GetLength();
+    //
+    //                 float utilityTotal = currentLine.pathUtility + neighbor.GetUtility() + minUtility;
+    //
+    //                 if (neighbor.pathUtility < utilityTotal)
+    //                 {
+    //                     neighbor.pathUtility = utilityTotal;
+    //                     neighbor.pathParent = currentLine;
+    //                 }
+    //
+    //                 open.InsertIntoSortedList(neighbor,
+    //                     delegate(RoadMapLine x, RoadMapLine y) { return x.pathUtility.CompareTo(y.pathUtility); },
+    //                     Order.Dsc);
+    //             }
+    //         }
+    //
+    //         foreach (var neighbor in currentLine.GetWp2Connections())
+    //         {
+    //             if (!closed.Contains(neighbor) && !open.Contains(neighbor) && neighbor != currentLine)
+    //             {
+    //                 // Update the distance
+    //                 neighbor.distance = currentLine.distance + neighbor.GetLength();
+    //
+    //                 float utilityTotal = currentLine.pathUtility + neighbor.GetUtility() + minUtility;
+    //
+    //                 if (neighbor.pathUtility < utilityTotal)
+    //                 {
+    //                     neighbor.pathUtility = utilityTotal;
+    //                     neighbor.pathParent = currentLine;
+    //                 }
+    //
+    //                 open.InsertIntoSortedList(neighbor,
+    //                     delegate(RoadMapLine x, RoadMapLine y) { return x.pathUtility.CompareTo(y.pathUtility); },
+    //                     Order.Dsc);
+    //             }
+    //         }
+    //
+    //         if (bestLine != null)
+    //         {
+    //             if (bestLine.pathUtility < currentLine.pathUtility)
+    //                 bestLine = currentLine;
+    //         }
+    //         else
+    //             bestLine = currentLine;
+    //
+    //
+    //         closed.Add(currentLine);
+    //     }
+    //
+    //     guard.ClearLines();
+    //
+    //     // Get the member of the sequence of lines the guard will be visiting
+    //     List<RoadMapLine> linesToVisit = guard.GetLinesToPass();
+    //
+    //     // fill the path
+    //     while (bestLine.pathParent != null)
+    //     {
+    //         // Mark that a guard will be passing through here
+    //         bestLine.AddPassingGuard(guard);
+    //         linesToVisit.Add(bestLine);
+    //
+    //         if (bestLine.pathParent == null)
+    //             break;
+    //
+    //         bestLine = bestLine.pathParent;
+    //     }
+    //
+    //     // Reverse the path to start from the beginning.
+    //     linesToVisit.Reverse();
+    //
+    //     // Get the path member variable to load it to the guard
+    //     List<Vector2> path = guard.GetPath();
+    //
+    //     path.Add(guard.GetTransform().position);
+    //
+    //     // Add the necessary intermediate nodes only.
+    //     for (int i = 0; i < linesToVisit.Count; i++)
+    //     {
+    //         RoadMapLine line = linesToVisit[i];
+    //
+    //         Vector2 lastPoint = path[path.Count - 1];
+    //
+    //         if ((line.wp1.Id != 0 && line.wp2.Id != 0) || i == linesToVisit.Count - 1)
+    //         {
+    //             float wp1Distance = Vector2.Distance(lastPoint, line.wp1.GetPosition());
+    //             float wp2Distance = Vector2.Distance(lastPoint, line.wp2.GetPosition());
+    //
+    //             if (wp1Distance < wp2Distance)
+    //             {
+    //                 path.Add(line.wp1.GetPosition());
+    //                 path.Add(line.wp2.GetPosition());
+    //             }
+    //             else
+    //             {
+    //                 path.Add(line.wp2.GetPosition());
+    //                 path.Add(line.wp1.GetPosition());
+    //             }
+    //         }
+    //         else if (line.wp1.Id != 0)
+    //             path.Add(line.wp1.GetPosition());
+    //         else if (line.wp2.Id != 0)
+    //             path.Add(line.wp2.GetPosition());
+    //     }
+    //
+    //     // Remove the start node since it is not needed
+    //     path.RemoveAt(0);
+    //
+    //
+    //     SimplifyPath(ref path);
+    // }
 
-        if (Equals(closestWp, null)) return;
 
-        RoadMapLine startLine = null;
-        float maxProb = Mathf.NegativeInfinity;
-
-        // Get the start line from the way point
-        foreach (var line in closestWp.GetLines(false))
-        {
-            if (maxProb < line.GetSearchSegment().GetProbability())
-            {
-                startLine = line;
-                maxProb = line.GetSearchSegment().GetProbability();
-            }
-        }
-
-        // Clear the variables
-        float minUtility = Mathf.Infinity;
-        foreach (var line in m_RoadMap.GetLines(false))
-        {
-            line.pathUtility = Mathf.NegativeInfinity;
-            line.distance = Mathf.Infinity;
-            line.pathParent = null;
-
-            if (minUtility > line.GetUtility())
-            {
-                minUtility = line.GetUtility();
-            }
-        }
-
-        // if the min utility is negative, inverse it's sign to modify all utilities to be zero or more
-        minUtility = minUtility < 0f ? -minUtility : 0f;
-        // minUtility = 5f;
-
-
-        startLine.pathUtility = startLine.GetUtility() + minUtility;
-        startLine.distance = 0f;
-        startLine.pathParent = null;
-
-        open.Add(startLine);
-
-        RoadMapLine bestLine = null;
-
-        // Dijkstra
-        while (open.Count > 0)
-        {
-            RoadMapLine currentLine = open[0];
-            open.RemoveAt(0);
-
-            foreach (var neighbor in currentLine.GetWp1Connections())
-            {
-                if (!closed.Contains(neighbor) && !open.Contains(neighbor) && neighbor != currentLine)
-                {
-                    // Update the distance
-                    neighbor.distance = currentLine.distance + neighbor.GetLength();
-
-                    float utilityTotal = currentLine.pathUtility + neighbor.GetUtility() + minUtility;
-
-                    if (neighbor.pathUtility < utilityTotal)
-                    {
-                        neighbor.pathUtility = utilityTotal;
-                        neighbor.pathParent = currentLine;
-                    }
-
-                    open.InsertIntoSortedList(neighbor,
-                        delegate(RoadMapLine x, RoadMapLine y) { return x.pathUtility.CompareTo(y.pathUtility); },
-                        Order.Dsc);
-                }
-            }
-
-            foreach (var neighbor in currentLine.GetWp2Connections())
-            {
-                if (!closed.Contains(neighbor) && !open.Contains(neighbor) && neighbor != currentLine)
-                {
-                    // Update the distance
-                    neighbor.distance = currentLine.distance + neighbor.GetLength();
-
-                    float utilityTotal = currentLine.pathUtility + neighbor.GetUtility() + minUtility;
-
-                    if (neighbor.pathUtility < utilityTotal)
-                    {
-                        neighbor.pathUtility = utilityTotal;
-                        neighbor.pathParent = currentLine;
-                    }
-
-                    open.InsertIntoSortedList(neighbor,
-                        delegate(RoadMapLine x, RoadMapLine y) { return x.pathUtility.CompareTo(y.pathUtility); },
-                        Order.Dsc);
-                }
-            }
-
-            if (bestLine != null)
-            {
-                if (bestLine.pathUtility < currentLine.pathUtility)
-                    bestLine = currentLine;
-            }
-            else
-                bestLine = currentLine;
-
-
-            closed.Add(currentLine);
-        }
-
-        guard.ClearLines();
-
-        // Get the member of the sequence of lines the guard will be visiting
-        List<RoadMapLine> linesToVisit = guard.GetLinesToPass();
-
-        // fill the path
-        while (bestLine.pathParent != null)
-        {
-            // Mark that a guard will be passing through here
-            bestLine.AddPassingGuard(guard);
-            linesToVisit.Add(bestLine);
-
-            if (bestLine.pathParent == null)
-                break;
-
-            bestLine = bestLine.pathParent;
-        }
-
-        // Reverse the path to start from the beginning.
-        linesToVisit.Reverse();
-
-        // Get the path member variable to load it to the guard
-        List<Vector2> path = guard.GetPath();
-
-        path.Add(guard.GetTransform().position);
-
-        // Add the necessary intermediate nodes only.
-        for (int i = 0; i < linesToVisit.Count; i++)
-        {
-            RoadMapLine line = linesToVisit[i];
-
-            Vector2 lastPoint = path[path.Count - 1];
-
-            if ((line.wp1.Id != 0 && line.wp2.Id != 0) || i == linesToVisit.Count - 1)
-            {
-                float wp1Distance = Vector2.Distance(lastPoint, line.wp1.GetPosition());
-                float wp2Distance = Vector2.Distance(lastPoint, line.wp2.GetPosition());
-
-                if (wp1Distance < wp2Distance)
-                {
-                    path.Add(line.wp1.GetPosition());
-                    path.Add(line.wp2.GetPosition());
-                }
-                else
-                {
-                    path.Add(line.wp2.GetPosition());
-                    path.Add(line.wp1.GetPosition());
-                }
-            }
-            else if (line.wp1.Id != 0)
-                path.Add(line.wp1.GetPosition());
-            else if (line.wp2.Id != 0)
-                path.Add(line.wp2.GetPosition());
-        }
-
-        // Remove the start node since it is not needed
-        path.RemoveAt(0);
-
-
-        SimplifyPath(ref path);
-    }
-
-    
-    // private void SimplifyPath(List<Vector2> path)
+    // private void SimplifyPath(ref List<Vector2> path)
     // {
     //     for (int i = 0; i < path.Count - 2; i++)
     //     {
     //         Vector2 first = path[i];
     //         Vector2 second = path[i + 2];
     //
-    //         Vector2 dir = (second - first).normalized;
     //         float distance = Vector2.Distance(first, second);
+    //         bool isMutuallyVisible = GeometryHelper.IsCirclesVisible(first, second, Properties.NpcRadius, "Wall");
     //
-    //         Vector2 left = Vector2.Perpendicular(dir);
-    //
-    //         float margine = 0.1f;
-    //         RaycastHit2D hitLeft = Physics2D.Raycast(first + left * margine, dir, distance, LayerMask.GetMask("Wall"));
-    //         RaycastHit2D hitRight = Physics2D.Raycast(first - left * margine, dir, distance, LayerMask.GetMask("Wall"));
-    //
-    //
-    //         if (Equals(hitLeft.collider, null) && Equals(hitRight.collider, null))
+    //         if (distance < 0.1f || isMutuallyVisible)
     //         {
     //             path.RemoveAt(i + 1);
     //             i--;
     //         }
     //     }
     // }
-    
-    
-    private void SimplifyPath(ref List<Vector2> path)
+}
+
+public class RoadMapPatrolerParams : PatrolerParams
+{
+    public readonly float MaxNormalizedPathLength;
+    public readonly float StalenessWeight;
+    public readonly float PassingGuardsWeight;
+    public readonly float ConnectivityWeight;
+    public readonly RMDecision DecisionType;
+    public readonly RMPassingGuardsSenstivity PGSen;
+
+    public RoadMapPatrolerParams(float _maxNormalizedPathLength, float _stalenessWeight, float _PassingGuardsWeight, float _connectivityWeight, RMDecision _decisionType, RMPassingGuardsSenstivity _pgSen)
     {
-        for (int i = 0; i < path.Count - 2; i++)
-        {
-            Vector2 first = path[i];
-            Vector2 second = path[i + 2];
-
-            float distance = Vector2.Distance(first, second);
-            bool isMutuallyVisible = GeometryHelper.IsCirclesVisible(first, second, Properties.NpcRadius, "Wall");
-
-            if (distance < 0.1f || isMutuallyVisible)
-            {
-                path.RemoveAt(i + 1);
-                i--;
-            }
-        }
+        MaxNormalizedPathLength = _maxNormalizedPathLength;
+        StalenessWeight = _stalenessWeight;
+        PassingGuardsWeight = _PassingGuardsWeight;
+        ConnectivityWeight = _connectivityWeight;
+        DecisionType = _decisionType;
+        PGSen = _pgSen;
     }
-
-
 }
