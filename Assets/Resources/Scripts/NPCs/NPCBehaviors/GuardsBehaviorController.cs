@@ -4,27 +4,28 @@ using UnityEngine;
 
 public class GuardsBehaviorController : MonoBehaviour
 {
+    List<BehaviorPerformanceSnapshot> _decisionTimes;
+
     private Behavior m_behavior;
 
     public Behavior behavior => m_behavior;
 
     // Guards behavior managers
     private Patroler patroler;
-    
+
     // Search controller for controlling how guards searched for an intruder.
     private Searcher searcher;
 
     // Interceptor controller for controlling how guards act when chasing an intruder in sight.
     private Interceptor interceptor;
-    
-    // Time it takes to make a decision for all guards
-    public float Decision;
 
     // Possible locations to search for the intruder in
     private List<InterceptionPoint> m_possiblePositions;
 
     public void Initiate(Session session, MapManager mapManager)
     {
+        _decisionTimes = new List<BehaviorPerformanceSnapshot>();
+
         m_behavior = session.GetGuardsData()[0].behavior;
 
         // Patroler controller
@@ -33,26 +34,27 @@ public class GuardsBehaviorController : MonoBehaviour
             case PatrolPlanner.gRoadMap:
                 patroler = gameObject.AddComponent<RoadMapPatroler>();
                 break;
-            
+
             case PatrolPlanner.gVisMesh:
                 patroler = gameObject.AddComponent<VisMeshPatroler>();
                 break;
-            
+
             case PatrolPlanner.gRandom:
                 patroler = gameObject.AddComponent<RandomPatroler>();
                 break;
-            
+
             case PatrolPlanner.gScripted:
                 patroler = gameObject.AddComponent<ScriptedPatroler>();
                 break;
         }
-        patroler.Initiate(mapManager);
 
+        patroler.Initiate(mapManager);
 
 
         // Interception controller
         interceptor = gameObject.AddComponent<Interceptor>();
         interceptor.Initiate(mapManager);
+
 
         // Search Controller
         switch (behavior.search)
@@ -76,7 +78,42 @@ public class GuardsBehaviorController : MonoBehaviour
 
         searcher.Initiate(session, mapManager);
     }
+
     
+    public void Reset()
+    {
+        LogResults();
+        _decisionTimes.Clear();
+    }
+
+    private void LogResults()
+    {
+        if (_decisionTimes.Count == 0) return;
+
+        if (!Equals(GameManager.Instance.loggingMethod, Logging.None))
+            CsvController.WriteString(
+                CsvController.GetPath(StealthArea.SessionInfo, FileType.RunningTimes, null),
+                GetResult(CsvController.IsFileExist(StealthArea.SessionInfo, FileType.RunningTimes, null)), true);
+    }
+    
+    private string GetResult(bool isFileExist)
+    {
+        if (_decisionTimes != null)
+        {
+            // Write the exploration results for this episode
+            string data = "";
+
+            if (!isFileExist) data += BehaviorPerformanceSnapshot.Headers + ",EpisodeID" + "\n";
+
+            foreach (var decisionTime in _decisionTimes)
+                data += decisionTime + "," +  + PerformanceLogger.Instance.GetEpisodeNo() +"\n";
+            return data;
+        }
+
+        return "";
+    }
+
+
     // Start patrol shift
     public void StartShift()
     {
@@ -86,25 +123,27 @@ public class GuardsBehaviorController : MonoBehaviour
     // Order Guards to patrol
     public void Patrol()
     {
+        var watch = System.Diagnostics.Stopwatch.StartNew();
         patroler.UpdatePatroler(NpcsManager.Instance.GetGuards(), 0.3f, Time.deltaTime);
+        watch.Stop();
+        var elapsedMs = watch.ElapsedMilliseconds;
+        _decisionTimes.Add(new BehaviorPerformanceSnapshot(patroler.GetType().Name + " Update", elapsedMs));
+
+
+        watch = System.Diagnostics.Stopwatch.StartNew();
         patroler.Patrol(NpcsManager.Instance.GetGuards());
+        watch.Stop();
+        elapsedMs = watch.ElapsedMilliseconds;
+        _decisionTimes.Add(new BehaviorPerformanceSnapshot(patroler.GetType().Name + " Decision", elapsedMs));
     }
 
 
     // In case the intruder is not seen and the guards were on alert, start the search or keep doing it.
     public void StartSearch(Intruder intruder)
     {
-        // if we were chasing then switch to search
-        // if (!(NpcsManager.Instance.GetState() is Chase)) return;
-
-        // m_StealthArea.AreaUiManager.UpdateGuardLabel(GetState());
-
-        // Spawn the coins
-        // if (m_SA.GetSessionInfo().gameType == GameType.CoinCollection) m_SA.coinSpawner.SpawnCoins();
-
         // Flow the probability for intruder positions
         searcher.StartSearch(intruder);
-        
+
         // Order the guards to go the intruder's last known position
         foreach (var guard in NpcsManager.Instance.GetGuards())
             guard.SetDestination(intruder.GetLastKnownLocation(), true, true);
@@ -114,19 +153,20 @@ public class GuardsBehaviorController : MonoBehaviour
     // Keep searching for the intruder
     public void Search(Intruder intruder)
     {
+        var watch = System.Diagnostics.Stopwatch.StartNew();
         searcher.UpdateSearcher(intruder.GetNpcSpeed(), NpcsManager.Instance.GetGuards(), Time.deltaTime);
+        watch.Stop();
+        var elapsedMs = watch.ElapsedMilliseconds;
+        _decisionTimes.Add(new BehaviorPerformanceSnapshot(patroler.GetType().Name + " Update", elapsedMs));
 
-        // Benchmark purposes 
-        float timeBefore = Time.realtimeSinceStartup;
 
+
+        watch = System.Diagnostics.Stopwatch.StartNew();
         foreach (var guard in NpcsManager.Instance.GetGuards())
-        {
             searcher.Search(guard);
-        }
-
-        // Logging purposes
-        if (Time.realtimeSinceStartup - timeBefore > Decision)
-            Decision = (Time.realtimeSinceStartup - timeBefore);
+        watch.Stop();
+        elapsedMs = watch.ElapsedMilliseconds;
+        _decisionTimes.Add(new BehaviorPerformanceSnapshot(searcher.GetType().Name + " Decision", elapsedMs));
     }
 
     public void ClearSearch()
@@ -154,16 +194,12 @@ public class GuardsBehaviorController : MonoBehaviour
     {
         // Switch to chase state
         if (GetState() is Chase) return;
-        
-        // ChangeState(new Chase(this, m_SA.intrdrManager.GetController()));
 
         // The region the intruder was last seen in 
         WorldState.Set("intruder_last_seen_region",
             RegionLabelsManager.GetRegion(intruder.GetTransform().position));
 
         interceptor.Clear();
-
-        // if (m_SA.GetSessionInfo().gameType == GameType.CoinCollection) m_SA.coinSpawner.DisableCoins();
     }
 
     // Order guards to chase
@@ -184,23 +220,8 @@ public class GuardsBehaviorController : MonoBehaviour
             else if (guard.GetNpcData().behavior.alert == AlertPlanner.Simple)
                 guard.SetDestination(intruder.GetLastKnownLocation(), true, true);
         }
-
-        // // Update the score based on the game type if the intruder is seen
-        // if (intrdrs.Count > 0)
-        // {
-        //     if (m_SA.GetSessionInfo().gameType == GameType.Stealth)
-        //     {
-        //         float percentage = Properties.EpisodeLength - intruder.GetAlertTime();
-        //         percentage = Mathf.Round((percentage * 1000f) / Properties.EpisodeLength) / 10f;
-        //         GameManager.Instance.GetActiveArea().AreaUiManager.UpdateScore(percentage);
-        //     }
-        //     else if (m_SA.GetSessionInfo().gameType == GameType.CoinCollection)
-        //     {
-        //         m_SA.guardsManager.IncrementScore(-decreaseRate * Time.deltaTime);
-        //     }
-        // }
     }
-    
+
     // Check if the intercepting guard can switch to chasing; this is not done every frame since it requires path finding and is expensive. 
     public void StopChase()
     {

@@ -29,6 +29,8 @@ public class IntrudersManager : Agent
 
     public void Reset(List<MeshPolygon> navMesh, List<Intruder> intruders, List<Guard> guards, Session session)
     {
+        m_iCtrl.Reset();
+        
         // Reset Intruders
         foreach (var intruder in _intruders)
         {

@@ -17,6 +17,7 @@ public class PerformanceLogger : MonoBehaviour
 
     private Dictionary<string, NPCReplay> _npcsRecording;
 
+    public static PerformanceLogger Instance; 
 
     public void Initialize()
     {
@@ -26,6 +27,8 @@ public class PerformanceLogger : MonoBehaviour
 
     public void ResetResults()
     {
+        Instance = this;
+        
         _lastLoggedTime = 0f;
 
         _snapshots.Clear();

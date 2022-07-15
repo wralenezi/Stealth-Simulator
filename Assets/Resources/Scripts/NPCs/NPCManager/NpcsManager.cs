@@ -21,6 +21,8 @@ public class NpcsManager : MonoBehaviour
 
     public void Initialize(Session session, MapManager mapManager)
     {
+        Instance = this;
+
         // Add the Intruder manager
         GameObject intrudersOG = new GameObject("Intruders");
         intrudersOG.transform.parent = transform;
@@ -34,15 +36,14 @@ public class NpcsManager : MonoBehaviour
         _guardsManager.Initiate(session, mapManager);
 
         _state = new StateMachine();
-        Reset(mapManager.GetNavMesh(), session);
 
         // Create the intruders
         _intrudersManager.CreateIntruders(session, _guardsManager.GetGuards(), mapManager.GetNavMesh());
 
         // Create the Guards
         _guardsManager.CreateGuards(session, mapManager.GetNavMesh());
-        
-        ResetState();
+
+        Reset(mapManager.GetNavMesh(), session);
     }
 
     public void ResetState()
@@ -59,7 +60,6 @@ public class NpcsManager : MonoBehaviour
         _intrudersManager.Reset(navMesh, GetIntruders(), GetGuards(), session);
         _guardsManager.Reset(navMesh, GetIntruders(), session);
         ResetState();
-
     }
 
     public void Done()

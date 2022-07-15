@@ -9,7 +9,7 @@ public static class Properties
     public const int EpisodesCount = 400;
 
     // The duration of an episode.
-    public const float EpisodeLength = 300f;
+    public const float EpisodeLength = 10f;
     
     //-------------------------------------------------------------------------//
     // Geometry Parameters
@@ -127,7 +127,7 @@ public static class Properties
                 return 0.15f;
             
             default:
-                return 0.5f;
+                return 0.1f;
         }
     }
 

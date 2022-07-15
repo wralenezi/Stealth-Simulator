@@ -203,8 +203,9 @@ public class GuardsManager : Agent
     // Reset NPCs at the end of the round
     public void Reset(List<MeshPolygon> navMesh, List<Intruder> intruders, Session session)
     {
+        m_gCtrl.Reset();
+            
         GuardsOverlapTime = 0f;
-
         // Reset guards
         foreach (var guard in _guards)
         {

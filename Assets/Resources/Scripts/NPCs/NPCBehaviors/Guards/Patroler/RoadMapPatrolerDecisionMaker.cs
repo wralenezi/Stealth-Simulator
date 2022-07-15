@@ -216,14 +216,38 @@ public class RoadMapPatrolerDecisionMaker
         // Remove the start node since it is not needed
         path.RemoveAt(0);
 
-        SimplifyPath(ref path);
+        // SimplifyPath(ref path);
     }
 
     private void SetGoal(Guard guard, List<Guard> guards, RoadMapPatrolerParams _params, RoadMap roadMap)
     {
         List<RoadMapLine> lines = roadMap.GetLines(false);
+
+        RoadMapLine bestLine = null;
+        float highestFitness = Mathf.NegativeInfinity;
         
-        
+        foreach (var line in lines)
+        {
+            if (IsGoalTaken(guard, line.GetMid())) continue;
+
+            float score = 0f;
+
+            score += line.GetProbability() * _params.StalenessWeight;
+
+        //     score += GetAreaPortion(visPoly) * patrolerParams.AreaWeight;
+        //
+        //     // Subtracted by 1 to reverse the relation ( higher value is closer, thus more desirable)
+        //     score += (1f - GetNormalizedDistance(guard, visPoly)) * patrolerParams.DistanceWeight;
+        //
+        //     score += GetClosestGuardDistance(guard, guards, visPoly) * patrolerParams.SeparationWeight;
+        //
+        //     if (highestScore < score)
+        //     {
+        //         highestScore = score;
+        //         bestTarget = visPoly;
+        //     }
+        //     
+        }
 
     }
 

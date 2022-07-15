@@ -132,7 +132,7 @@ public static class CsvController
     private static string GetFileName(FileType fileType, Session sa)
     {
         // return fileType + " " + sa;
-        return sa.ToString();
+        return fileType+"_"+sa.ToString();
     }
 
 
@@ -189,6 +189,8 @@ public static class CsvController
 
 public enum FileType
 {
+    RunningTimes,
+    
     Performance,
 
     Npcs,
