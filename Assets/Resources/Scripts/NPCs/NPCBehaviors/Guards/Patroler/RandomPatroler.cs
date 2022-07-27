@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class RandomPatroler : Patroler
 {
-    public override void Initiate(MapManager mapManager)
+    public override void Initiate(MapManager mapManager, GuardBehaviorParams guardParams)
     {
 
     }

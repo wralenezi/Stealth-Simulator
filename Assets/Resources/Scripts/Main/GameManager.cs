@@ -250,6 +250,14 @@ public class GameManager : MonoBehaviour
     {
         while (_sessions.Count > 0)
         {
+            // Skip this session if it is logged
+            if (Equals(loggingMethod, Logging.Local) && PerformanceLogger.IsLogged(_sessions[0]))
+            {
+                _sessions.RemoveAt(0);
+                continue;
+            }
+
+
             // if there is an active area then skip
             if (IsAreaLoaded())
             {
@@ -512,6 +520,7 @@ public class Session
     // Guards Data
     public List<NpcData> guardsList;
 
+    // Guard behavior parameters
     public GuardBehaviorParams guardBehaviorParams;
 
     // Number of Intruders
@@ -605,20 +614,20 @@ public class Session
         sessionInfo += map.name;
         sessionInfo += sep;
 
-        // Guard planner 
-        sessionInfo += GetGuardsData().Count > 0 ? GetGuardsData()[0].behavior.patrol.ToString() : "";
-        sessionInfo += sep;
-
         // Guards count 
         sessionInfo += guardsCount;
         sessionInfo += sep;
-
-        // intruder planner
-        sessionInfo += GetIntrudersData().Count > 0 ? GetIntrudersData()[0].behavior.patrol.ToString() : "";
+        
+        // Guard planner 
+        sessionInfo += GetGuardsData().Count > 0 ? guardBehaviorParams.ToString() : "";
         sessionInfo += sep;
-
-        if (!Equals(intruderBehavior, null))
+        
+        if (GetIntrudersData().Count > 0)
         {
+            // intruder planner
+            sessionInfo += GetIntrudersData()[0].behavior.patrol.ToString();
+            sessionInfo += sep;
+            
             sessionInfo += intruderBehavior.ToString();
             sessionInfo += sep;
         }
@@ -633,10 +642,26 @@ public class Session
 
 public class GuardBehaviorParams
 {
+    public PatrolPlanner planner;
     public PatrolerParams patrolerParams;
 
-    public GuardBehaviorParams(PatrolerParams _patrolerParams)
+    public GuardBehaviorParams(PatrolPlanner _planner, PatrolerParams _patrolerParams)
     {
+        planner = _planner;
         patrolerParams = _patrolerParams;
+    }
+
+    public override string ToString()
+    {
+        string output = "";
+        string sep = "_";
+
+        output += planner;
+        output += sep;
+
+        output += patrolerParams;
+        // output += sep;
+
+        return output;
     }
 }

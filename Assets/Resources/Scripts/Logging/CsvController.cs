@@ -29,46 +29,18 @@ public static class CsvController
             StreamReader reader = new StreamReader(path);
 
             string data = reader.ReadToEnd();
-            
+
             int count = data.Split('\n').Length;
-            
+
             episodesCount = count - 2;
 
             reader.Close();
         }
-        
+
         return episodesCount;
     }
-    
-    
-    // Get the length of the file 
-    public static int GetLastEpisode(string path)
-    {
-        int episodesCount = 0;
-
-        if (File.Exists(path))
-        {
-            //Read the text from directly from the test.txt file
-            StreamReader reader = new StreamReader(path);
-
-            string data = reader.ReadToEnd();
-            
-            string[] lines = data.Split('\n');
 
 
-            if (lines.Length < 2) return 0;
-            
-            episodesCount = ;
-
-            reader.Close();
-        }
-        
-        return episodesCount;
-    }
-    
-
-    
-    
     // Get the number of files that starts with a certain string
     public static int ReadFileStartWith(FileType fileType, Session sa)
     {
@@ -159,7 +131,7 @@ public static class CsvController
     private static string GetFileName(FileType fileType, Session sa)
     {
         // return fileType + " " + sa;
-        return fileType+"_"+sa.ToString();
+        return fileType + "_" + sa.ToString();
     }
 
 
@@ -176,20 +148,14 @@ public static class CsvController
     // Return the content of a CSV
     public static string ReadString(string path)
     {
-        try
-        {
-            //Read the text from directly from the test.txt file
-            StreamReader reader = new StreamReader(path);
-            string data = reader.ReadToEnd();
-            reader.Close();
+        if (!File.Exists(path)) return "0";
 
-            return data;
-        }
-        catch (Exception e)
-        {
-            Debug.LogError(path + " not found");
-            return "";
-        }
+        //Read the text from directly from the test.txt file
+        StreamReader reader = new StreamReader(path);
+        string data = reader.ReadToEnd();
+        reader.Close();
+
+        return data;
     }
 
 
@@ -216,15 +182,24 @@ public static class CsvController
 
 public enum FileType
 {
+    // Number of episodes recorded
+    EpisodeCount,
+
+    // the heat map data
     HeatMap,
-    
+
+    // the computation time data
     RunningTimes,
-    
+
+    // the performance of the npcs 
     Performance,
 
+    // the timestep locations of the npcs
     Npcs,
-    
+
+    // the user data
     User,
 
+    // the survey data 
     Survey
 }

@@ -8,7 +8,7 @@ public class ScriptedPatroler : Patroler
 {
     private PatrolPlan plan;
 
-    public override void Initiate(MapManager mapManager)
+    public override void Initiate(MapManager mapManager, GuardBehaviorParams guardParams)
     {
         LoadPatrolPaths(mapManager);
     }

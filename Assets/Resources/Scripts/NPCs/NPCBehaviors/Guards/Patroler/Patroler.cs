@@ -6,7 +6,7 @@ using UnityEngine;
 public abstract class Patroler : MonoBehaviour
 {
 
-    public abstract void Initiate(MapManager mapManager);
+    public abstract void Initiate(MapManager mapManager, GuardBehaviorParams _params);
 
 
     public abstract void Start();
@@ -18,7 +18,7 @@ public abstract class Patroler : MonoBehaviour
 
 }
 
-public class PatrolerParams
+public abstract class PatrolerParams
 {
     
 }

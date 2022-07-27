@@ -13,11 +13,12 @@ public class PatrolSessionsAssessment
 
 
         MapData mapData;
-        
-        
+
+
         // mapData = new MapData("amongUs", 0.5f);
         mapData = new MapData("bloodstainedAngle1", 0.5f);
-        AddVisMeshSession(ref sessions, mapData, guardTeams);
+        // AddVisMeshSession(ref sessions, mapData, guardTeams);
+        AddRoadMapSession(ref sessions, mapData, guardTeams);
 
         return sessions;
     }
@@ -25,12 +26,7 @@ public class PatrolSessionsAssessment
     private static void AddVisMeshSession(ref List<Session> sessions, MapData mapData, List<int> guardTeams)
     {
         // Guard Patrol Behavior
-        List<PatrolPlanner> guardMethods = new List<PatrolPlanner>()
-        {
-            // PatrolPlanner.gRoadMap,
-            PatrolPlanner.gVisMesh,
-            // PatrolPlanner.gRandom
-        };
+        PatrolPlanner patrolPlanner = PatrolPlanner.gRoadMap;
 
 
         List<GuardSpawnType> guardSpawnTypes = new List<GuardSpawnType>()
@@ -46,62 +42,54 @@ public class PatrolSessionsAssessment
             // 0.7f,
             // 1f
         };
-        
+
+        float max = 10f;
+        float min = 0f;
+        float increment = 11f;
+
         List<float> areaWeights = new List<float>();
-        for (int i = 1; i <= 10; i++)
+        for (float i = min; i <= max; i += increment)
         {
-            areaWeights.Add(1 / i);
+            areaWeights.Add(i / max);
         }
 
         List<float> stalenessWeights = new List<float>();
-        for (int i = 1; i <= 10; i++)
+        for (float i = min; i <= max; i += increment)
         {
-            stalenessWeights.Add(1 / i);
+            stalenessWeights.Add(i / max);
         }
-        
+
         List<float> distanceWeights = new List<float>();
-        for (int i = 1; i <= 10; i++)
+        for (float i = min; i <= max; i += increment)
         {
-            distanceWeights.Add(1 / i);
+            distanceWeights.Add(i / max);
         }
 
         List<float> separationWeights = new List<float>();
-        for (int i = 1; i <= 10; i++)
+        for (float i = min; i <= max; i += increment)
         {
-            separationWeights.Add(1 / i);
+            separationWeights.Add(i / max);
         }
-        
+
         List<VMDecision> decisionTypes = new List<VMDecision>()
         {
             VMDecision.Weighted
         };
 
-        foreach (var guardMethod in guardMethods)
         foreach (var guardSpawnType in guardSpawnTypes)
         foreach (var areaWeight in areaWeights)
         foreach (var stalenessWeight in stalenessWeights)
         foreach (var distanceWeight in distanceWeights)
         foreach (var separationWeight in separationWeights)
         foreach (var decisionType in decisionTypes)
-        foreach (var maxSeenRegionPortion in maxSeenRegionPortions)    
+        foreach (var maxSeenRegionPortion in maxSeenRegionPortions)
         foreach (var guardTeam in guardTeams)
         {
             // Set the Hyperparamets for the behavior
-            PatrolerParams patrolParams;
-            switch (guardMethod)
-            {
-                case PatrolPlanner.gVisMesh:
-                    patrolParams = new VisMeshPatrolerParams(maxSeenRegionPortion, areaWeight, stalenessWeight,
-                        distanceWeight, separationWeight,decisionType);
-                    break;
-                
-                
-                default:
-                    patrolParams = null;
-                    break;
-            }
-            
-            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolParams);
+            PatrolerParams patrolParams = new VisMeshPatrolerParams(maxSeenRegionPortion, areaWeight, stalenessWeight,
+                distanceWeight, separationWeight, decisionType);
+
+            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolPlanner, patrolParams);
 
 
             Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue",
@@ -112,7 +100,7 @@ public class PatrolSessionsAssessment
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)
             {
-                Behavior behavior = new Behavior(guardMethod, AlertPlanner.Simple,
+                Behavior behavior = new Behavior(patrolPlanner, AlertPlanner.Simple,
                     SearchPlanner.Cheating, PlanOutput.DijkstraPath);
 
                 session.AddNpc(i + 1, NpcType.Guard, behavior, PathFindingHeursitic.EuclideanDst,
@@ -132,19 +120,11 @@ public class PatrolSessionsAssessment
             sessions.Add(session);
         }
     }
-    
-    
-    
-        private static void AddRoadMapSession(ref List<Session> sessions, MapData mapData, List<int> guardTeams)
+
+
+    private static void AddRoadMapSession(ref List<Session> sessions, MapData mapData, List<int> guardTeams)
     {
-        // Guard Patrol Behavior
-        List<PatrolPlanner> guardMethods = new List<PatrolPlanner>()
-        {
-            PatrolPlanner.gRoadMap,
-            // PatrolPlanner.gVisMesh,
-            // PatrolPlanner.gRandom
-        };
-
+        PatrolPlanner patrolPlanner = PatrolPlanner.gRoadMap;
 
         List<GuardSpawnType> guardSpawnTypes = new List<GuardSpawnType>()
         {
@@ -153,68 +133,67 @@ public class PatrolSessionsAssessment
             // GuardSpawnType.Goal
         };
 
-        List<float> maxSeenRegionPortions = new List<float>()
+
+        float max = 10f;
+        float min = 0f;
+        float increment = 11f;
+
+        List<float> maxNormalizedPathLengths = new List<float>();
+        for (float i = min; i <= max; i += increment)
         {
-            0.5f,
-            // 0.7f,
-            // 1f
-        };
-        
-        List<float> areaWeights = new List<float>();
-        for (int i = 1; i <= 10; i++)
+            maxNormalizedPathLengths.Add(i / max);
+        }
+
+        List<float> guardPassingWeights = new List<float>();
+        for (float i = min; i <= max; i += increment)
         {
-            areaWeights.Add(1 / i);
+            guardPassingWeights.Add(i / max);
         }
 
         List<float> stalenessWeights = new List<float>();
-        for (int i = 1; i <= 10; i++)
+        for (float i = min; i <= max; i += increment)
         {
-            stalenessWeights.Add(1 / i);
+            stalenessWeights.Add(i / max);
         }
-        
-        List<float> distanceWeights = new List<float>();
-        for (int i = 1; i <= 10; i++)
+
+        List<float> connectivityWeights = new List<float>();
+        for (float i = min; i <= max; i += increment)
         {
-            distanceWeights.Add(1 / i);
+            connectivityWeights.Add(i / max);
         }
 
         List<float> separationWeights = new List<float>();
-        for (int i = 1; i <= 10; i++)
+        for (float i = min; i <= max; i += increment)
         {
-            separationWeights.Add(1 / i);
+            separationWeights.Add(i / max);
         }
-        
-        List<VMDecision> decisionTypes = new List<VMDecision>()
+
+        List<RMDecision> decisionTypes = new List<RMDecision>()
         {
-            VMDecision.Weighted
+            RMDecision.DijkstraPath,
+            RMDecision.EndPoint
         };
 
-        foreach (var guardMethod in guardMethods)
+        List<RMPassingGuardsSenstivity> passingGuardsSenstivities = new List<RMPassingGuardsSenstivity>()
+        {
+            RMPassingGuardsSenstivity.Actual,
+            RMPassingGuardsSenstivity.Max
+        };
+
+
         foreach (var guardSpawnType in guardSpawnTypes)
-        foreach (var areaWeight in areaWeights)
+        foreach (var maxNormalizedPathLength in maxNormalizedPathLengths)
+        foreach (var guardPassingWeight in guardPassingWeights)
         foreach (var stalenessWeight in stalenessWeights)
-        foreach (var distanceWeight in distanceWeights)
-        foreach (var separationWeight in separationWeights)
+        foreach (var connectivityWeight in connectivityWeights)
+        foreach (var passingGuardsSenstivity in passingGuardsSenstivities)
         foreach (var decisionType in decisionTypes)
-        foreach (var maxSeenRegionPortion in maxSeenRegionPortions)    
         foreach (var guardTeam in guardTeams)
         {
-            // Set the Hyperparamets for the behavior
-            PatrolerParams patrolParams;
-            switch (guardMethod)
-            {
-                case PatrolPlanner.gVisMesh:
-                    patrolParams = new VisMeshPatrolerParams(maxSeenRegionPortion, areaWeight, stalenessWeight,
-                        distanceWeight, separationWeight,decisionType);
-                    break;
-                
-                
-                default:
-                    patrolParams = null;
-                    break;
-            }
-            
-            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolParams);
+            PatrolerParams patrolParams = new RoadMapPatrolerParams(maxNormalizedPathLength, stalenessWeight,
+                guardPassingWeight, connectivityWeight, decisionType, passingGuardsSenstivity);
+
+            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolPlanner, patrolParams);
 
 
             Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue",
@@ -225,8 +204,8 @@ public class PatrolSessionsAssessment
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)
             {
-                Behavior behavior = new Behavior(guardMethod, AlertPlanner.Simple,
-                    SearchPlanner.Cheating, PlanOutput.DijkstraPath);
+                Behavior behavior = new Behavior(patrolPlanner, AlertPlanner.Simple, SearchPlanner.Cheating,
+                    PlanOutput.DijkstraPath);
 
                 session.AddNpc(i + 1, NpcType.Guard, behavior, PathFindingHeursitic.EuclideanDst,
                     PathFollowing.SimpleFunnel, null);
@@ -245,5 +224,4 @@ public class PatrolSessionsAssessment
             sessions.Add(session);
         }
     }
-
 }

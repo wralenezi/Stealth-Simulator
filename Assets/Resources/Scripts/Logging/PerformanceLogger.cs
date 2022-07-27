@@ -17,7 +17,7 @@ public class PerformanceLogger : MonoBehaviour
 
     private Dictionary<string, NPCReplay> _npcsRecording;
 
-    public static PerformanceLogger Instance; 
+    public static PerformanceLogger Instance;
 
     public void Initialize()
     {
@@ -28,7 +28,7 @@ public class PerformanceLogger : MonoBehaviour
     public void ResetResults()
     {
         Instance = this;
-        
+
         _lastLoggedTime = 0f;
 
         _snapshots.Clear();
@@ -46,10 +46,10 @@ public class PerformanceLogger : MonoBehaviour
     {
         Sa = sa;
 
-        if (GameManager.Instance.loggingMethod == Logging.Local)
-            GetEpisodesCountInLogs();
-        
-        Debug.Log(_episodeCount);
+        if (GameManager.Instance.loggingMethod != Logging.Local) return;
+
+        _episodeCount = GetEpisodeCount(sa);
+        _episodeCount++;
     }
 
     private bool IsTimeToLog()
@@ -96,25 +96,21 @@ public class PerformanceLogger : MonoBehaviour
         return _episodeCount;
     }
 
-    // Update the Episode count if there are any before
-    private void GetEpisodesCountInLogs()
-    {
-        // _episodeCount = CsvController.ReadFileStartWith(FileType.Performance, Sa);
-        // _episodeCount = CsvController.GetFileLength(CsvController.GetPath(Sa, FileType.Performance, null));
-        _episodeCount = CsvController.GetFileLength(CsvController.GetPath(Sa, FileType.Performance, null));
-    }
-
     public static bool IsLogged(Session sa)
     {
-        // int episodeCount = CsvController.ReadFileStartWith(FileType.Performance, sa);
-        int episodeCount = CsvController.GetFileLength(CsvController.GetPath(sa, FileType.Performance, null));
-        return episodeCount >= Properties.EpisodesCount;
+        return GetEpisodeCount(sa) >= Properties.EpisodesCount;
+    }
+
+    private static int GetEpisodeCount(Session sa)
+    {
+        string episodeCountString = CsvController.ReadString(CsvController.GetPath(sa, FileType.EpisodeCount, null));
+        return int.Parse(episodeCountString);
     }
 
     // Did the scenario recorded the required number of episodes
     public bool IsDone()
     {
-        return _episodeCount >= Properties.EpisodesCount;
+        return _episodeCount > Properties.EpisodesCount;
     }
 
     private void UpdateProgress()
@@ -148,6 +144,11 @@ public class PerformanceLogger : MonoBehaviour
     // Append the Episode performance to the log
     private void LogEpisodeFinish()
     {
+        CsvController.WriteString(
+            CsvController.GetPath(Sa, FileType.EpisodeCount, null),
+            _episodeCount.ToString(), false);
+
+
         // make sure the data list is non empty
         if (_snapshots.Count > 0)
         {

@@ -12,6 +12,8 @@ public class RoadMapPatrolerDecisionMaker
 
     public void Initiate()
     {
+        _guardGoals = new Dictionary<string, Vector2>();
+        
         open = new List<RoadMapLine>();
         closed = new List<RoadMapLine>();
     }
@@ -160,6 +162,8 @@ public class RoadMapPatrolerDecisionMaker
 
         guard.ClearLines();
 
+        if(Equals(bestLine, null)) return;
+        
         // Get the member of the sequence of lines the guard will be visiting
         List<RoadMapLine> linesToVisit = guard.GetLinesToPass();
 

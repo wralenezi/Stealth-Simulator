@@ -9,19 +9,17 @@ public class RoadMapPatroler : Patroler
     private RoadMap m_RoadMap;
 
     private RoadMapPatrolerDecisionMaker _decisionMaker;
-    // // Variables for path finding
-    // private List<RoadMapLine> open;
-    // private List<RoadMapLine> closed;
 
     private RoadMapPatrolerParams _params;
 
-    public override void Initiate(MapManager mapManager)
+    public override void Initiate(MapManager mapManager, GuardBehaviorParams guardParams)
     {
+        _params = (RoadMapPatrolerParams) guardParams.patrolerParams;
+        
         m_RoadMap = mapManager.GetRoadMap();
+        
         _decisionMaker = new RoadMapPatrolerDecisionMaker();
         _decisionMaker.Initiate();
-        // open = new List<RoadMapLine>();
-        // closed = new List<RoadMapLine>();
     }
 
     public override void Start()
@@ -301,5 +299,32 @@ public class RoadMapPatrolerParams : PatrolerParams
         ConnectivityWeight = _connectivityWeight;
         DecisionType = _decisionType;
         PGSen = _pgSen;
+    }
+
+    public override string ToString()
+    {
+        string output = "";
+        string sep = "_";
+        
+        output += MaxNormalizedPathLength;
+        output += sep;
+
+        output += StalenessWeight;
+        output += sep;
+
+        output += PassingGuardsWeight;
+        output += sep;
+
+        output += ConnectivityWeight;
+        output += sep;
+
+        output += DecisionType;
+        output += sep;
+
+        output += PGSen;
+        // output += sep;
+        
+        
+        return output;
     }
 }

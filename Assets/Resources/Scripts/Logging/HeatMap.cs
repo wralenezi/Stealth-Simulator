@@ -182,6 +182,8 @@ public class HeatMap : MonoBehaviour
 
     public void End()
     {
+        if (isDisabled) return;
+        
         CalculateHeatValues();
         RenderPixels();
         WriteResults();

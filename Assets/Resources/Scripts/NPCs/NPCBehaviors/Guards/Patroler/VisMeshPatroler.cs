@@ -12,9 +12,9 @@ public class VisMeshPatroler : Patroler
 
     private VisMeshPatrolerParams _params;
 
-    public override void Initiate(MapManager mapManager)
+    public override void Initiate(MapManager mapManager, GuardBehaviorParams guardParams)
     {
-        _params = (VisMeshPatrolerParams) StealthArea.SessionInfo.guardBehaviorParams.patrolerParams;
+        _params = (VisMeshPatrolerParams) guardParams.patrolerParams;
 
         _visMesh = gameObject.AddComponent<VisMesh>();
         _visMesh.Initiate(_params.MaxSeenRegionAreaPerGuard);
@@ -70,5 +70,32 @@ public class VisMeshPatrolerParams : PatrolerParams
         DistanceWeight = _distanceWeight;
         SeparationWeight = _separationWeight;
         DecisionType = _decisionType;
+    }
+
+    public override string ToString()
+    {
+        string output = "";
+        string sep = "_";
+        
+        output += MaxSeenRegionAreaPerGuard;
+        output += sep;
+
+        output += AreaWeight;
+        output += sep;
+
+        output += StalenessWeight;
+        output += sep;
+
+        output += DistanceWeight;
+        output += sep;
+
+        output += SeparationWeight;
+        output += sep;
+
+        output += DecisionType;
+        // output += sep;
+        
+        
+        return output;
     }
 }

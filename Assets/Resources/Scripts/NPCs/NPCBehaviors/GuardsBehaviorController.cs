@@ -48,7 +48,7 @@ public class GuardsBehaviorController : MonoBehaviour
                 break;
         }
 
-        patroler.Initiate(mapManager);
+        patroler.Initiate(mapManager, session.guardBehaviorParams);
 
 
         // Interception controller
