@@ -38,6 +38,8 @@ public class RoadMap
 
     private MapRenderer _mapRenderer;
 
+    private RMProperties _properties;
+
     public RoadMap(SAT sat, MapRenderer mapRenderer)
     {
         _sat = sat;
@@ -52,6 +54,9 @@ public class RoadMap
 
         PopulateEndNodes();
         PopulateLines();
+
+        // _properties = new RMProperties(this);
+        // Debug.Log("Map Area: " + MapManager.Instance.mapDecomposer.GetNavMeshArea());
     }
 
 
@@ -79,19 +84,7 @@ public class RoadMap
                 bool isFound = _linesActual.Any(line => line.IsPointPartOfLine(wp) && line.IsPointPartOfLine(con));
 
                 if (!isFound) _linesActual.Add(new RoadMapLine(con, wp));
-
-                // if (!isFound)
-                // {
-                //     RoadMapLine line = wp.GetLineWithWp(con, true);
-                //     _linesActual.Add(line);
-                // }
-
-                // wp.AddLine(new RoadMapLine(wp, con), true);
-                // AddLine(wp, con, true);
             }
-
-            // foreach (var line in wp.GetLines(true))
-            //     wp.AddReadOnlyLine(line);
         }
 
         // Add the line connected to the way point
@@ -106,21 +99,24 @@ public class RoadMap
             // // Check if the connection already exist
             bool isFound = _lines.Any(line => line.IsPointPartOfLine(wp) && line.IsPointPartOfLine(con));
             if (!isFound) _lines.Add(new RoadMapLine(con, wp));
-
-            // if (!isFound)
-            // {
-            //     RoadMapLine line = wp.GetLineWithWp(con, false);
-            //     _lines.Add(line);
-            // }
-
-            // AddLine(wp, con, true);
-            // wp.AddLine(new RoadMapLine(wp, con), false);
         }
 
         // Add the line connected to the way point
         foreach (var wp in _wayPoints)
             wp.AddLines(_lines, false);
     }
+
+    public RoadMapNode GetNodeById(int id)
+    {
+        for (int i = 0; i < _wpsActual.Count; i++)
+        {
+            if (Equals(_wpsActual[i].Id, id))
+                return _wpsActual[i];
+        }
+
+        return null;
+    }
+
 
     public RoadMapNode GetClosestNodes(Vector2 point, bool isOriginal, NodeType type, float radius)
     {
@@ -149,24 +145,6 @@ public class RoadMap
 
         return closestWp;
     }
-
-    // public RoadMapLine AddLine(WayPoint wp1, WayPoint wp2, bool isOriginal)
-    // {
-    //     List<RoadMapLine> lines = isOriginal ? _linesActual : _lines;
-    //
-    //     bool isFound = lines.Any(line => line.IsPointPartOfLine(wp1) && line.IsPointPartOfLine(wp2));
-    //
-    //     RoadMapLine roadmapLine = null;
-    //     
-    //     if (!isFound)
-    //     {
-    //         roadmapLine = new RoadMapLine(wp1, wp2);
-    //         lines.Add(roadmapLine);
-    //     }
-    //
-    //     return roadmapLine;
-    // }
-
 
     public void AddLine(RoadMapLine line, bool isOriginal)
     {
@@ -232,15 +210,6 @@ public class RoadMap
     public List<RoadMapLine> GetLines(bool isOriginal)
     {
         List<RoadMapLine> lines = isOriginal ? _linesActual : _lines;
-        // List<WayPoint> wayPoints = isOriginal ? _wpsActual : _wayPoints;
-        //
-        // lines.Clear();
-        // foreach (var wp in wayPoints)
-        // foreach (var line in wp.GetLines(isOriginal))
-        // {
-        //     lines.Add(line);
-        // }
-
         return lines;
     }
 
@@ -338,21 +307,6 @@ public class RoadMap
         // Remove the old arbitrary road map line.
         RemoveRoadLineMap();
 
-        // // Cast a ray from the last known position and direction, if it intersect with the road map then create a search segment there
-        // Vector2 dest = position + dir;
-        //
-        // Vector2? intersection = GetClosestIntersectionWithRoadmap(position, dest);
-        //
-        // if (intersection != null)
-        // {
-        //     // Add a new line to the road map.
-        //     AddRoadLineMap(position, intersection);
-        //     
-        //     m_AdHocRmLine.SetSearchSegment(position,
-        //         position,
-        //         1f,StealthArea.episodeTime);
-        // }
-
         // List of distances and direction differences of the parameters.
         List<float> distances = new List<float>();
         List<float> angleDiffs = new List<float>();
@@ -392,14 +346,6 @@ public class RoadMap
                 minDistance = distances[i];
             }
         }
-
-        // // Add a new line to the road map.
-        // AddRoadLineMap(position, m_WayPoints[closestWpIndex]);
-        //
-        // m_AdHocRmLine.SetSearchSegment(position,
-        //     position,
-        //     1f,StealthArea.episodeTime);
-
 
         RoadMapNode wp1 = _wayPoints[closestWpIndex];
         foreach (var line in wp1.GetLines(false))
@@ -583,30 +529,6 @@ public class RoadMap
                 wp.SetProbability(null, 0f);
                 wp.LoadCons();
             }
-
-
-            // while (_tempWpsActual.Count > 0)
-            // {
-            //     WayPoint wpToRemove = _tempWpsActual[0];
-            //
-            //     while (wpToRemove.GetConnections(true).Count > 0)
-            //     {
-            //         WayPoint originalWp = wpToRemove.GetConnections(true)[0];
-            //
-            //         while (originalWp.GetConnections(true).Count > 0)
-            //             originalWp.RemoveConnection(originalWp.GetConnections(true)[0], true);
-            //
-            //         foreach (var line in originalWp.GetLines(true))
-            //         {
-            //             if (Equals(line.wp1, originalWp))
-            //                 originalWp.Connect(line.wp2, true, false);
-            //             else
-            //                 originalWp.Connect(line.wp1, true, false);
-            //         }
-            //     }
-            //
-            //     _tempWpsActual.RemoveAt(0);
-            // }
         }
         catch (Exception e)
         {
@@ -787,10 +709,10 @@ public class RoadMap
 
         foreach (RoadMapNode n in _wpsActual)
             n.isChecked = false;
-        
+
         foreach (RoadMapNode n in _tempWpsActual)
             n.isChecked = false;
-        
+
         _points.Clear();
 
         // Get the next Way point 
@@ -883,8 +805,6 @@ public class RoadMap
 
                     continue;
                 }
-                
-                // if(pt.targetWp.isChecked) continue;
 
                 // Set the first node on a conjunction
                 if (Equals(firstIntersection, null))
@@ -893,11 +813,6 @@ public class RoadMap
                 }
                 else
                 {
-                    // If this connection is visible by the first conjunction then expand to it.
-                    // bool isVisible = GeometryHelper.IsCirclesVisible(con.GetPosition(),
-                    //     firstIntersection.GetPosition(), Properties.NpcRadius, "Wall");
-                    
-
                     bool isVisible = GeometryHelper.IsCirclesVisible(pt.targetWp.GetPosition(),
                         firstIntersection.GetPosition(), Properties.NpcRadius, "Wall");
 
@@ -907,13 +822,13 @@ public class RoadMap
 
                 pt.targetWp.isChecked = true;
 
-                
+
                 // Loop through the connections of next Way point to add the points to propagate.
                 foreach (var con in pt.targetWp.GetConnections(true))
                 {
                     // Skip if the connection is the same
                     if (Equals(con, pt.sourceWp)) continue;
-                    
+
                     pt.GetTrajectory().AddPoint(pt.targetWp.GetPosition());
 
                     // Add the point to the list
@@ -1030,203 +945,6 @@ public class RoadMap
         _adHocWp = null;
     }
 
-    // // // Get a complete path of no more than param@length that a guard needs to traverse to search for an intruder.
-    // public void GetPath(Guard guard)
-    // {
-    //     open.Clear();
-    //     closed.Clear();
-    //
-    //     // Get the closest Way point
-    //     WayPoint closestWp = GetClosestWp(guard.GetTransform().position, guard.GetDirection());
-    //
-    //     RoadMapLine startLine = null;
-    //     float maxProb = Mathf.NegativeInfinity;
-    //
-    //     // Get the start line from the way point
-    //     foreach (var line in closestWp.GetLines(false))
-    //     {
-    //         if (maxProb < line.GetSearchSegment().GetProbability())
-    //         {
-    //             startLine = line;
-    //             maxProb = line.GetSearchSegment().GetProbability();
-    //         }
-    //     }
-    //
-    //     // Clear the variables
-    //     float minUtility = Mathf.Infinity;
-    //     foreach (var line in GetLines())
-    //     {
-    //         line.pathUtility = Mathf.NegativeInfinity;
-    //         line.distance = Mathf.Infinity;
-    //         line.pathParent = null;
-    //
-    //         if (minUtility > line.GetUtility())
-    //         {
-    //             minUtility = line.GetUtility();
-    //         }
-    //     }
-    //
-    //     // if the min utility is negative, inverse it's sign to modify all utilities to be zero or more
-    //     minUtility = minUtility < 0f ? -minUtility : 0f;
-    //     // minUtility = 5f;
-    //
-    //
-    //     startLine.pathUtility = startLine.GetUtility() + minUtility;
-    //     startLine.distance = 0f;
-    //     startLine.pathParent = null;
-    //
-    //     open.Add(startLine);
-    //
-    //     RoadMapLine bestLine = null;
-    //
-    //     // Dijkstra
-    //     while (open.Count > 0)
-    //     {
-    //         RoadMapLine currentLine = open[0];
-    //         open.RemoveAt(0);
-    //
-    //         foreach (var neighbor in currentLine.GetWp1Connections())
-    //         {
-    //             if (!closed.Contains(neighbor) && !open.Contains(neighbor) && neighbor != currentLine)
-    //             {
-    //                 // Update the distance
-    //                 neighbor.distance = currentLine.distance + neighbor.GetLength();
-    //
-    //                 float utilityTotal = currentLine.pathUtility + neighbor.GetUtility() + minUtility;
-    //
-    //                 if (neighbor.pathUtility < utilityTotal)
-    //                 {
-    //                     neighbor.pathUtility = utilityTotal;
-    //                     neighbor.pathParent = currentLine;
-    //                 }
-    //
-    //                 open.InsertIntoSortedList(neighbor,
-    //                     delegate(RoadMapLine x, RoadMapLine y) { return x.pathUtility.CompareTo(y.pathUtility); },
-    //                     Order.Dsc);
-    //             }
-    //         }
-    //
-    //         foreach (var neighbor in currentLine.GetWp2Connections())
-    //         {
-    //             if (!closed.Contains(neighbor) && !open.Contains(neighbor) && neighbor != currentLine)
-    //             {
-    //                 // Update the distance
-    //                 neighbor.distance = currentLine.distance + neighbor.GetLength();
-    //
-    //                 float utilityTotal = currentLine.pathUtility + neighbor.GetUtility() + minUtility;
-    //
-    //                 if (neighbor.pathUtility < utilityTotal)
-    //                 {
-    //                     neighbor.pathUtility = utilityTotal;
-    //                     neighbor.pathParent = currentLine;
-    //                 }
-    //
-    //                 open.InsertIntoSortedList(neighbor,
-    //                     delegate(RoadMapLine x, RoadMapLine y) { return x.pathUtility.CompareTo(y.pathUtility); },
-    //                     Order.Dsc);
-    //             }
-    //         }
-    //
-    //         if (bestLine != null)
-    //         {
-    //             if (bestLine.pathUtility < currentLine.pathUtility)
-    //                 bestLine = currentLine;
-    //         }
-    //         else
-    //             bestLine = currentLine;
-    //
-    //
-    //         closed.Add(currentLine);
-    //     }
-    //
-    //     guard.ClearLines();
-    //
-    //     // Get the member of the sequence of lines the guard will be visiting
-    //     List<RoadMapLine> linesToVisit = guard.GetLinesToPass();
-    //
-    //     // fill the path
-    //     while (bestLine.pathParent != null)
-    //     {
-    //         // Mark that a guard will be passing through here
-    //         bestLine.AddPassingGuard(guard);
-    //         linesToVisit.Add(bestLine);
-    //
-    //         if (bestLine.pathParent == null)
-    //             break;
-    //
-    //         bestLine = bestLine.pathParent;
-    //     }
-    //
-    //     // Reverse the path to start from the beginning.
-    //     linesToVisit.Reverse();
-    //
-    //     // Get the path member variable to load it to the guard
-    //     List<Vector2> path = guard.GetPath();
-    //
-    //     path.Add(guard.GetTransform().position);
-    //
-    //     // Add the necessary intermediate nodes only.
-    //     for (int i = 0; i < linesToVisit.Count; i++)
-    //     {
-    //         RoadMapLine line = linesToVisit[i];
-    //
-    //         Vector2 lastPoint = path[path.Count - 1];
-    //
-    //         if ((line.wp1.Id != 0 && line.wp2.Id != 0) || i == linesToVisit.Count - 1)
-    //         {
-    //             float wp1Distance = Vector2.Distance(lastPoint, line.wp1.GetPosition());
-    //             float wp2Distance = Vector2.Distance(lastPoint, line.wp2.GetPosition());
-    //
-    //             if (wp1Distance < wp2Distance)
-    //             {
-    //                 path.Add(line.wp1.GetPosition());
-    //                 path.Add(line.wp2.GetPosition());
-    //             }
-    //             else
-    //             {
-    //                 path.Add(line.wp2.GetPosition());
-    //                 path.Add(line.wp1.GetPosition());
-    //             }
-    //         }
-    //         else if (line.wp1.Id != 0)
-    //             path.Add(line.wp1.GetPosition());
-    //         else if (line.wp2.Id != 0)
-    //             path.Add(line.wp2.GetPosition());
-    //     }
-    //
-    //     // Remove the start node since it is not needed
-    //     path.RemoveAt(0);
-    //
-    //
-    //     SimplifyPath(path);
-    // }
-    //
-    // private void SimplifyPath(List<Vector2> path)
-    // {
-    //     for (int i = 0; i < path.Count - 2; i++)
-    //     {
-    //         Vector2 first = path[i];
-    //         Vector2 second = path[i + 2];
-    //
-    //         Vector2 dir = (second - first).normalized;
-    //         float distance = Vector2.Distance(first, second);
-    //
-    //         Vector2 left = Vector2.Perpendicular(dir);
-    //
-    //         float margine = 0.1f;
-    //         RaycastHit2D hitLeft = Physics2D.Raycast(first + left * margine, dir, distance, LayerMask.GetMask("Wall"));
-    //         RaycastHit2D hitRight = Physics2D.Raycast(first - left * margine, dir, distance, LayerMask.GetMask("Wall"));
-    //
-    //
-    //         if (Equals(hitLeft.collider, null) && Equals(hitRight.collider, null))
-    //         {
-    //             path.RemoveAt(i + 1);
-    //             i--;
-    //         }
-    //     }
-    // }
-
-
     public void ClearSearchSegments()
     {
         foreach (var line in _lines)
@@ -1302,9 +1020,33 @@ public class RoadMap
 
     public void DrawRoadMap()
     {
-        foreach (var line in _linesActual)
+        List<RoadMapNode> nodes = _wpsActual;
+
+        // Go through each edge
+        for (int i = 0; i < nodes.Count; i++)
         {
-            line.DrawLine();
+            // Ignore the added corner nodes
+            if (Equals(nodes[i].type, NodeType.Corner)) continue;
+
+#if UNITY_EDITOR
+            Handles.Label(nodes[i].GetPosition(), nodes[i].Id.ToString());
+#endif
+
+            float maxDistance = Mathf.NegativeInfinity;
+            for (int j = i + 1; j < nodes.Count; j++)
+            {
+                if (Equals(nodes[j].type, NodeType.Corner)) continue;
+
+                List<RoadMapNode> firstConnections = nodes[i].GetConnections(true);
+                bool isSecNodeConnected = firstConnections.Contains(nodes[j]);
+
+                List<RoadMapNode> secondConnections = nodes[j].GetConnections(true);
+                bool isfirstNodeConnected = secondConnections.Contains(nodes[i]);
+
+                if (!isfirstNodeConnected || !isSecNodeConnected) continue;
+
+                Gizmos.DrawLine(nodes[i].GetPosition(), nodes[j].GetPosition());
+            }
         }
     }
 }

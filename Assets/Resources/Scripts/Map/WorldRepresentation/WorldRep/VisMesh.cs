@@ -150,6 +150,7 @@ public class VisMesh : MonoBehaviour
         RemoveInsignificantPolygons(ref _curUnseenPolygons);
     }
 
+    // Merge the guards seen reigons
     private void CreateSeenRegions(List<Guard> guards)
     {
         ResetSeenRegion();
@@ -165,6 +166,8 @@ public class VisMesh : MonoBehaviour
             List<Polygon> guardSeenRegion = _guardsSeenRegions[guard.name];
             PolygonHelper.MergePolygons(guardSeenRegion, guard.GetFov(), ref guardSeenRegion, ClipType.ctUnion);
         }
+        
+        
     }
 
     private void ResetSeenRegion()
@@ -181,6 +184,7 @@ public class VisMesh : MonoBehaviour
                 seenRegion.Clear();
     }
 
+    // Create the unseen regions
     private void PrepareRegionsNew()
     {
         _SeenRegion.Clear();
@@ -197,7 +201,7 @@ public class VisMesh : MonoBehaviour
     {
         for (int j = 0; j < region.Count; j++)
         {
-            region[j].SmoothPolygon(0.1f);
+            region[j].SmoothPolygon(1f);
 
             if (region[j].GetVerticesCount() < 3)
             {

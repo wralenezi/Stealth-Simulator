@@ -6,10 +6,10 @@ public static class Properties
     // General game set up
     //----------------------------------------------------------
     // The number of episodes to record
-    public const int EpisodesCount = 400;
+    public const int EpisodesCount = 2;
 
     // The duration of an episode.
-    public const float EpisodeLength = 10f;
+    public const float EpisodeLength = 30f;
     
     //-------------------------------------------------------------------------//
     // Geometry Parameters

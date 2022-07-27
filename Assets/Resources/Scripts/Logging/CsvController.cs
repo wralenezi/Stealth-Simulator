@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using UnityEngine;
@@ -6,7 +7,6 @@ using UnityEngine;
 // CSV Handler 
 public static class CsvController
 {
-
     public static bool IsFileExist(Session sa, FileType fileType, int? episodesCount)
     {
         return File.Exists(GetPath(sa, fileType, episodesCount));
@@ -39,6 +39,33 @@ public static class CsvController
         
         return episodesCount;
     }
+    
+    
+    // Get the length of the file 
+    public static int GetLastEpisode(string path)
+    {
+        int episodesCount = 0;
+
+        if (File.Exists(path))
+        {
+            //Read the text from directly from the test.txt file
+            StreamReader reader = new StreamReader(path);
+
+            string data = reader.ReadToEnd();
+            
+            string[] lines = data.Split('\n');
+
+
+            if (lines.Length < 2) return 0;
+            
+            episodesCount = ;
+
+            reader.Close();
+        }
+        
+        return episodesCount;
+    }
+    
 
     
     
@@ -189,6 +216,8 @@ public static class CsvController
 
 public enum FileType
 {
+    HeatMap,
+    
     RunningTimes,
     
     Performance,

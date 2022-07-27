@@ -149,7 +149,7 @@ public class HidingSpotsCtrlr
         hidingSpots.Add(hidingSpot);
 
         int counter = numOfSpots;
-        while (counter > 0 && neighbours.Count > 0 )
+        while (counter > 0 && neighbours.Count > 0)
         {
             int index = Random.Range(0, neighbours.Count);
             if (!hidingSpots.Contains(neighbours[index])) hidingSpots.Add(neighbours[index]);
@@ -183,7 +183,7 @@ public class HidingSpotsCtrlr
     }
 
     private HidingSpot
-        PlaceHidingSpot(Vector2 position, RoadMap roadMap, MapManager mapManager) // List<Polygon> interiorWalls)
+        PlaceHidingSpot(Vector2 position, RoadMap roadMap, MapManager mapManager)
     {
         // Make sure the position is inside the walls
         if (!PolygonHelper.IsPointInPolygons(mapManager.mapRenderer.GetWalls(), position)) return null;
@@ -437,7 +437,7 @@ public class HidingSpot
         Gizmos.DrawSphere(Position, Properties.NpcRadius);
 
         return;
-        
+
 #if UNITY_EDITOR
         string label = "";
         label += "Risk: " + (Mathf.Round(Risk * 100f) / 100f) + " \n";

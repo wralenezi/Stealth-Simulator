@@ -48,6 +48,8 @@ public class PerformanceLogger : MonoBehaviour
 
         if (GameManager.Instance.loggingMethod == Logging.Local)
             GetEpisodesCountInLogs();
+        
+        Debug.Log(_episodeCount);
     }
 
     private bool IsTimeToLog()
@@ -98,6 +100,7 @@ public class PerformanceLogger : MonoBehaviour
     private void GetEpisodesCountInLogs()
     {
         // _episodeCount = CsvController.ReadFileStartWith(FileType.Performance, Sa);
+        // _episodeCount = CsvController.GetFileLength(CsvController.GetPath(Sa, FileType.Performance, null));
         _episodeCount = CsvController.GetFileLength(CsvController.GetPath(Sa, FileType.Performance, null));
     }
 

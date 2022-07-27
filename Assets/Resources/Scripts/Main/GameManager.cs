@@ -48,7 +48,7 @@ public class GameManager : MonoBehaviour
     public static string RoadMapsPath = "RoadMaps/";
     public static string DialogsPath = "Dialogs/";
     public static string PatrolPathsPath = "NPCs/PatrolPaths/";
-    
+
     // The main camera
     public static Camera MainCamera;
 
@@ -84,7 +84,7 @@ public class GameManager : MonoBehaviour
         // Main path
         DataPath = "Data/";
         // Logs path
-        LogsPath = "C:/LogFiles/";// DataPath + LogsPath;
+        LogsPath = "C:/LogFiles/patrol/"; // DataPath + LogsPath;
         // Map related data paths
         MapsDataPath = DataPath + MapsDataPath;
         MapsPath = MapsDataPath + MapsPath;
@@ -172,10 +172,10 @@ public class GameManager : MonoBehaviour
         // List<Session> sessions = SessionsSetup.StealthStudy002();
         // List<Session> sessions = SessionsSetup.StealthStudyProcedural();
         // List<Session> sessions = SessionsSetup.StealthStudyProcedural01();
-        List<Session> sessions = StealthStudySessions.GetSessions();
+        // List<Session> sessions = StealthStudySessions.GetSessions();
         // List<Session> sessions = StealthUserStudySessions.GetSessions();
         // List<Session> sessions = StealthBehavior.GetSessions();
-        // List<Session> sessions = PatrolSessionsAssessment.GetSessions();
+        List<Session> sessions = PatrolSessionsAssessment.GetSessions();
         // List<Session> sessions = PatrolSessions.GetSessions();
 
         // Each line represents a session
@@ -505,15 +505,15 @@ public class Session
     public string guardColor;
 
     public GuardSpawnType guardSpawnMethod;
-    
+
     // Number of guards
     public int guardsCount;
-   
+
     // Guards Data
     public List<NpcData> guardsList;
 
     public GuardBehaviorParams guardBehaviorParams;
-    
+
     // Number of Intruders
     public int intruderCount;
 
@@ -527,11 +527,12 @@ public class Session
 
     private MapData map;
 
-    
+
     // the type of survey that will be showed after this session 
     public SurveyType surveyType;
 
-    public Session(string _gameCode, GameType _gameType, Scenario pScenario, string _guardColor, GuardSpawnType _guardSpawnType, int pGuardsCount, GuardBehaviorParams _guardBehaviorParams,
+    public Session(string _gameCode, GameType _gameType, Scenario pScenario, string _guardColor,
+        GuardSpawnType _guardSpawnType, int pGuardsCount, GuardBehaviorParams _guardBehaviorParams,
         int pIntruderCount, IntruderBehavior _intruderBehavior,
         MapData _map,
         SpeechType _speechType,
@@ -615,14 +616,17 @@ public class Session
         // intruder planner
         sessionInfo += GetIntrudersData().Count > 0 ? GetIntrudersData()[0].behavior.patrol.ToString() : "";
         sessionInfo += sep;
-        
-        sessionInfo += intruderBehavior.ToString();
-        sessionInfo += sep;
-        
+
+        if (!Equals(intruderBehavior, null))
+        {
+            sessionInfo += intruderBehavior.ToString();
+            sessionInfo += sep;
+        }
+
         sessionInfo += guardSpawnMethod;
         // sessionInfo += sep;
-        
-        
+
+
         return sessionInfo;
     }
 }

@@ -163,7 +163,8 @@ public class Interceptor : MonoBehaviour
 
         if (RenderRoadMap)
             if (m_roadMap != null)
-                m_roadMap.DrawDividedRoadMap();
+                // m_roadMap.DrawDividedRoadMap();
+                m_roadMap.DrawRoadMap();
     }
 
 

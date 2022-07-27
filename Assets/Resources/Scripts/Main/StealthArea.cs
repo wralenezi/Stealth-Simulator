@@ -72,7 +72,7 @@ public class StealthArea : MonoBehaviour
         WorldState.Set("episodeTime", _episodeStartTime.ToString());
         WorldState.Set("guardsCount", SessionInfo.guardsCount.ToString());
 
-        // heatMap.Clear();
+        heatMap.Reset();
         
         CollectManager.Reset(SessionInfo);
 
@@ -138,11 +138,11 @@ public class StealthArea : MonoBehaviour
 
         // Update the guards vision and apply the vision affects (seeing intruders,etc) 
         NpcManager.ProcessNpcsVision(SessionInfo);
-        
-        heatMap.IncrementHeatMapVisibility(NpcManager.GetGuards(), Time.deltaTime);
 
         // Idle NPCs make decisions
         NpcManager.MakeDecisions(GetSessionInfo().gameType);
+        
+        heatMap.IncrementHeatMapVisibility(NpcManager.GetGuards(), Time.deltaTime);
     }
 
     public Session GetSessionInfo()
@@ -163,8 +163,7 @@ public class StealthArea : MonoBehaviour
 
         if (!finished) return;
 
-        heatMap.CalculateHeatValues();
-        heatMap.RenderPixels();
+        heatMap.End();
         // EditorApplication.isPaused = true;
         
         FinishArea();

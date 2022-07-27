@@ -8,9 +8,9 @@ public static class StealthStudySessions
 
         List<int> guardTeams = new List<int>();
         guardTeams.Add(4);
-        guardTeams.Add(5);
-        guardTeams.Add(6);
-        guardTeams.Add(7);
+        // guardTeams.Add(5);
+        // guardTeams.Add(6);
+        // guardTeams.Add(7);
 
         // MapData mapData = new MapData("BoxeSet02", 1f);
         // AddDynamicSession(ref sessions, mapData, guardTeams);
@@ -27,26 +27,26 @@ public static class StealthStudySessions
        
         MapData mapData;
         
-        // mapData = new MapData("amongUsMod", 0.5f);
-        // AddDynamicSession(ref sessions, mapData, guardTeams);
-        //
+        mapData = new MapData("amongUsMod", 0.5f);
+        AddDynamicSession(ref sessions, mapData, guardTeams);
+        
         // mapData = new MapData("amongUs", 0.5f);
         // AddDynamicSession(ref sessions, mapData, guardTeams);
-        //
+        
         // mapData = new MapData("AlienIsolation", 3.5f);
         // AddDynamicSession(ref sessions, mapData, guardTeams);
-        //
+        
         // mapData = new MapData("AlienIsolationMod", 0.75f);
         // AddDynamicSession(ref sessions, mapData, guardTeams);
         //
         // mapData = new MapData("Boxes", 1f);
         // AddDynamicSession(ref sessions, mapData, guardTeams);
-        //
+        
         // mapData = new MapData("valorantAscent", 1.5f);
         // AddDynamicSession(ref sessions, mapData, guardTeams);
-        
-        mapData = new MapData("dragonAge2", 1f);
-        AddDynamicSession(ref sessions, mapData, guardTeams);
+        //
+        // mapData = new MapData("dragonAge2", 1f);
+        // AddDynamicSession(ref sessions, mapData, guardTeams);
         
         // mapData = new MapData("MgsDock", 2f);
         // AddDynamicSession(ref sessions, mapData, guardTeams);
@@ -110,6 +110,7 @@ public static class StealthStudySessions
             PatrolPlanner.gRandom
         };
 
+        
         List<SpotsNeighbourhoods> neighbourhoods = new List<SpotsNeighbourhoods>()
         {
             SpotsNeighbourhoods.LineOfSight,

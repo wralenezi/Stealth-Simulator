@@ -50,7 +50,6 @@ public class RMRiskEvaluator : MonoBehaviour
         _intruderRiskSpot.position = intruder.GetTransform().position;
 
         SetMaxRiskWithinRange(roadMap, RISK_RANGE, intruder, ref _intruderRiskSpot);
-        // SetClosestRiskWithinRange(roadMap, RISK_RANGE, intruder, ref _intruderRiskSpot);
     }
 
     private void SetRiskyPositions(RoadMap roadMap, List<Guard> guards, Intruder intruder)

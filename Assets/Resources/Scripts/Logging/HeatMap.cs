@@ -4,7 +4,9 @@ using UnityEngine;
 public class HeatMap : MonoBehaviour
 {
     private bool isDisabled = true;
-    
+
+    private bool isRenderMap = false;
+
     public bool showHeatMap;
     private MapGrid<HeatNode> _heatMap;
 
@@ -15,8 +17,10 @@ public class HeatMap : MonoBehaviour
 
     public void Initiate(Bounds bounds)
     {
-        if(isDisabled) return;
-        
+        // isDisabled = false;
+
+        if (isDisabled) return;
+
         _heatMap = new MapGrid<HeatNode>(bounds, _cellSide, _cellSide);
 
         HeatNode[,] map = _heatMap.GetGrid();
@@ -28,12 +32,12 @@ public class HeatMap : MonoBehaviour
         _whitePixelSprite = Resources.Load<Sprite>("Sprites/white_pixel");
         _pixels = new List<GameObject>();
     }
-    
+
 
     public void IncrementHeatMapVisibility(List<Guard> guards, float timeDelta)
     {
-        if(isDisabled) return;
-        
+        if (isDisabled) return;
+
         HeatNode[,] map = _heatMap.GetGrid();
 
         for (int i = 0; i < map.GetLength(0); i++)
@@ -43,8 +47,8 @@ public class HeatMap : MonoBehaviour
 
     private void CheckIfNodeVisible(List<Guard> guards, float timeDelta, HeatNode node)
     {
-        if(isDisabled) return;
-        
+        if (isDisabled) return;
+
         bool isVisible = false;
 
         foreach (var guard in guards)
@@ -58,10 +62,10 @@ public class HeatMap : MonoBehaviour
     }
 
 
-    public void CalculateHeatValues()
+    private void CalculateHeatValues()
     {
-        if(isDisabled) return;
-        
+        if (isDisabled) return;
+
         float minValue = Mathf.Infinity;
         float maxValue = Mathf.NegativeInfinity;
 
@@ -71,6 +75,9 @@ public class HeatMap : MonoBehaviour
         for (int j = 0; j < map.GetLength(1); j++)
         {
             HeatNode node = map[i, j];
+
+            if (!_heatMap.IsNodeInMap(node.position, _cellSide * 0.5f)) continue;
+
             float spottedTime = node.GetTime();
 
             if (spottedTime < minValue) minValue = spottedTime;
@@ -89,10 +96,19 @@ public class HeatMap : MonoBehaviour
         }
     }
 
-    public void Clear()
+    public void Reset()
     {
-        if(isDisabled) return;
-        
+        if (isDisabled) return;
+
+        HeatNode[,] map = _heatMap.GetGrid();
+
+        for (int i = 0; i < map.GetLength(0); i++)
+        for (int j = 0; j < map.GetLength(1); j++)
+        {
+            map[i, j].Reset();
+        }
+
+
         while (_pixels.Count > 0)
         {
             GameObject pixel = _pixels[0];
@@ -102,19 +118,21 @@ public class HeatMap : MonoBehaviour
     }
 
 
-    public void RenderPixels()
+    private void RenderPixels()
     {
-        if(isDisabled) return;
-        
+        if (isDisabled) return;
+
+        if (!isRenderMap) return;
+
         HeatNode[,] map = _heatMap.GetGrid();
 
         for (int i = 0; i < map.GetLength(0); i++)
         for (int j = 0; j < map.GetLength(1); j++)
         {
             HeatNode node = map[i, j];
-            
-            if(!_heatMap.IsNodeInMap(node.position, _cellSide * 0.5f)) continue;
-            
+
+            if (!_heatMap.IsNodeInMap(node.position, _cellSide * 0.5f)) continue;
+
             GameObject pixel = new GameObject();
             pixel.transform.parent = transform;
             pixel.transform.position = node.position;
@@ -129,6 +147,46 @@ public class HeatMap : MonoBehaviour
             _pixels.Add(spriteRenderer.gameObject);
         }
     }
+
+
+    public string GetHeatMapResult(bool isFileExist)
+    {
+        // Write the exploration results for this episode
+        string data = "";
+
+        if (!isFileExist) data += "Col,Row,heatValue,EpisodeID" + "\n";
+
+        HeatNode[,] map = _heatMap.GetGrid();
+
+        for (int i = 0; i < map.GetLength(0); i++)
+        for (int j = 0; j < map.GetLength(1); j++)
+        {
+            HeatNode node = map[i, j];
+            if (!_heatMap.IsNodeInMap(node.position, _cellSide * 0.5f)) continue;
+
+
+            data += i + "," + j + "," + node.heatValue + "," + PerformanceLogger.Instance.GetEpisodeNo() + "\n";
+        }
+
+        return data;
+    }
+
+    private void WriteResults()
+    {
+        if (!Equals(GameManager.Instance.loggingMethod, Logging.None))
+            CsvController.WriteString(
+                CsvController.GetPath(StealthArea.SessionInfo, FileType.HeatMap, null),
+                GetHeatMapResult(CsvController.IsFileExist(StealthArea.SessionInfo, FileType.HeatMap, null)), true);
+    }
+
+
+    public void End()
+    {
+        CalculateHeatValues();
+        RenderPixels();
+        WriteResults();
+    }
+
 
     public void OnDrawGizmos()
     {
@@ -146,6 +204,11 @@ public class HeatNode
     public float heatValue;
 
     public HeatNode()
+    {
+        spottedTime = 0f;
+    }
+
+    public void Reset()
     {
         spottedTime = 0f;
     }

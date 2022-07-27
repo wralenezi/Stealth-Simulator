@@ -78,17 +78,24 @@ public class IntrudersBehaviorController : MonoBehaviour
     public void Reset()
     {
         LogResults();
-        _decisionTimes.Clear();
     }
 
     private void LogResults()
     {
+        if (!Equals(GameManager.Instance.loggingMethod, Logging.Local)) return;
+        
+        noIntruders = StealthArea.SessionInfo.GetIntrudersData().Count == 0;
+
+        if (noIntruders) return;
+        
         if (_decisionTimes.Count == 0) return;
 
         if (!Equals(GameManager.Instance.loggingMethod, Logging.None))
             CsvController.WriteString(
                 CsvController.GetPath(StealthArea.SessionInfo, FileType.RunningTimes, null),
                 GetResult(CsvController.IsFileExist(StealthArea.SessionInfo, FileType.RunningTimes, null)), true);
+        
+        _decisionTimes.Clear();
     }
 
     private string GetResult(bool isFileExist)

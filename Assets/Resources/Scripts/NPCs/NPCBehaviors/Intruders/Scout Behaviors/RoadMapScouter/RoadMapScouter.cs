@@ -72,7 +72,7 @@ public class RoadMapScouter : Scouter
 
         // showAvailableHidingSpots = true;
         // showRiskSpots = true;
-        showProjectedTrajectories = true;
+        // showProjectedTrajectories = true;
         // showRoadMapEndNodes = true;
         // showRoadMap = true;
     }
@@ -140,8 +140,6 @@ public class RoadMapScouter : Scouter
         List<Vector2> path = _intruder.GetPath();
         float maxSearchRisk = RMThresholds.GetMaxSearchRisk(intruderBehavior.thresholdType);
         bool doAstar = _riskEvaluator.GetRisk() <= minSafeRisk && !Equals(destination, null);
-        // bool doAstar = !Equals(destination, null);
-        // bool doAstar = true;
 
         _pathFinder.GetClosestPointToGoal(_roadMap, _intruder.GetTransform().position,
             destination.Value, numOfPossibleRmNodes, ref _closestWpsToDestination,
@@ -486,9 +484,12 @@ public struct LabelSpot
     }
 }
 
+// The hiding spot neighbourhood population method 
 public enum SpotsNeighbourhoods
 {
+    // Add hiding spot based on line of sight
     LineOfSight,
+    // Add hiding spots based on a grid
     Grid,
     All
 }

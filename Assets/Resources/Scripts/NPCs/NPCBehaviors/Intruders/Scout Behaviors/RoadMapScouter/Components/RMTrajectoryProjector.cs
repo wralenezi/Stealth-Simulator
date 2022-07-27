@@ -127,6 +127,7 @@ public class PossibleTrajectory
     }
 }
 
+// Type of the trajectory the guard is formed.
 public enum TrajectoryType
 {
     Simple,
