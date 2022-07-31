@@ -260,7 +260,7 @@ public abstract class NPC : MonoBehaviour
                     case GuardSpawnType.Random:
                         // Randomly place the NPC on the map
                         int polygonIndex = Random.Range(0, navMesh.Count);
-                        GetTransform().position = navMesh[polygonIndex].GetCentroidPosition();
+                        GetTransform().position = navMesh[polygonIndex].GetRandomPosition();
                         break;
 
                     case GuardSpawnType.Separate:

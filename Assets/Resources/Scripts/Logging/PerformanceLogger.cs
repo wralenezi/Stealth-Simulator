@@ -11,7 +11,7 @@ public class PerformanceLogger : MonoBehaviour
     private float _lastLoggedTime;
 
     // Number of episodes done
-    private int _episodeCount;
+    // private int _episodeCount;
 
     private List<LogSnapshot> _snapshots;
 
@@ -45,11 +45,7 @@ public class PerformanceLogger : MonoBehaviour
     public void SetArea(Session sa)
     {
         Sa = sa;
-
-        if (GameManager.Instance.loggingMethod != Logging.Local) return;
-
-        _episodeCount = GetEpisodeCount(sa);
-        _episodeCount++;
+        sa.currentEpisode++;
     }
 
     private bool IsTimeToLog()
@@ -91,26 +87,15 @@ public class PerformanceLogger : MonoBehaviour
         }
     }
 
-    public int GetEpisodeNo()
-    {
-        return _episodeCount;
-    }
-
     public static bool IsLogged(Session sa)
     {
-        return GetEpisodeCount(sa) >= Properties.EpisodesCount;
-    }
-
-    private static int GetEpisodeCount(Session sa)
-    {
-        string episodeCountString = CsvController.ReadString(CsvController.GetPath(sa, FileType.EpisodeCount, null));
-        return int.Parse(episodeCountString);
+        return sa.currentEpisode >= sa.MaxEpisodes;
     }
 
     // Did the scenario recorded the required number of episodes
     public bool IsDone()
     {
-        return _episodeCount > Properties.EpisodesCount;
+        return Sa.currentEpisode > Sa.MaxEpisodes;
     }
 
     private void UpdateProgress()
@@ -138,7 +123,8 @@ public class PerformanceLogger : MonoBehaviour
     public void IncrementEpisode()
     {
         // Increment the episode counter
-        _episodeCount++;
+        Sa.currentEpisode++;
+        // _episodeCount++;
     }
 
     // Append the Episode performance to the log
@@ -146,7 +132,7 @@ public class PerformanceLogger : MonoBehaviour
     {
         CsvController.WriteString(
             CsvController.GetPath(Sa, FileType.EpisodeCount, null),
-            _episodeCount.ToString(), false);
+            Sa.currentEpisode.ToString(), false);
 
 
         // make sure the data list is non empty
@@ -219,7 +205,7 @@ public class PerformanceLogger : MonoBehaviour
             if (!isFileExist)
                 data += "episodeId," + LogSnapshot.Headers + "\n";
 
-            data += _episodeCount + "," + _snapshots[_snapshots.Count - 1] + "\n";
+            data += Sa.currentEpisode + "," + _snapshots[_snapshots.Count - 1] + "\n";
 
             return data;
         }

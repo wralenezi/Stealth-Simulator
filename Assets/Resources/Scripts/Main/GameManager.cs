@@ -181,9 +181,16 @@ public class GameManager : MonoBehaviour
         // Each line represents a session
         foreach (var sc in sessions)
         {
-            // Check if the required number of Episodes is logged already or skip if logging is not required.
-            if (loggingMethod != Logging.Local || !PerformanceLogger.IsLogged(sc))
-                _sessions.Add(sc);
+            if (Equals(loggingMethod, Logging.Local))
+            {
+                // Set the number of recorded session
+                SetEpisodeCount(sc);
+
+                // Check if the required number of Episodes is logged already or skip if logging is not required.
+                if (PerformanceLogger.IsLogged(sc)) continue;
+            }
+
+            _sessions.Add(sc);
         }
     }
 
@@ -250,13 +257,17 @@ public class GameManager : MonoBehaviour
     {
         while (_sessions.Count > 0)
         {
-            // Skip this session if it is logged
-            if (Equals(loggingMethod, Logging.Local) && PerformanceLogger.IsLogged(_sessions[0]))
-            {
-                _sessions.RemoveAt(0);
-                continue;
-            }
-
+            // // Skip this session if it is logged
+            // if (Equals(loggingMethod, Logging.Local))
+            // {
+            //     SetEpisodeCount(_sessions[0]);
+            //
+            //     if (PerformanceLogger.IsLogged(_sessions[0]))
+            //     {
+            //         _sessions.RemoveAt(0);
+            //         continue;
+            //     }
+            // }
 
             // if there is an active area then skip
             if (IsAreaLoaded())
@@ -292,6 +303,13 @@ public class GameManager : MonoBehaviour
             // Remove the session
             _sessions.RemoveAt(0);
         }
+    }
+
+    private void SetEpisodeCount(Session sa)
+    {
+        string episodeCountString = CsvController.ReadString(CsvController.GetPath(sa, FileType.EpisodeCount, null));
+        int episode = Equals(episodeCountString.Length, 0) ? 0 : int.Parse(episodeCountString);
+        sa.currentEpisode = episode;
     }
 
 
@@ -498,6 +516,9 @@ public struct NpcLocation
 [Serializable]
 public class Session
 {
+    public int currentEpisode = 0;
+    public readonly int MaxEpisodes = 10;
+
     // the ID of the game session
     private string timeStamp;
 
@@ -617,17 +638,17 @@ public class Session
         // Guards count 
         sessionInfo += guardsCount;
         sessionInfo += sep;
-        
+
         // Guard planner 
         sessionInfo += GetGuardsData().Count > 0 ? guardBehaviorParams.ToString() : "";
         sessionInfo += sep;
-        
+
         if (GetIntrudersData().Count > 0)
         {
             // intruder planner
             sessionInfo += GetIntrudersData()[0].behavior.patrol.ToString();
             sessionInfo += sep;
-            
+
             sessionInfo += intruderBehavior.ToString();
             sessionInfo += sep;
         }

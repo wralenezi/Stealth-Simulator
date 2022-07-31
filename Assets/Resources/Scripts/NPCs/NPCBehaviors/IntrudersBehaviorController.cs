@@ -77,7 +77,7 @@ public class IntrudersBehaviorController : MonoBehaviour
 
     public void Reset()
     {
-        LogResults();
+        // LogResults();
     }
 
     private void LogResults()
@@ -108,7 +108,7 @@ public class IntrudersBehaviorController : MonoBehaviour
             if (!isFileExist) data += BehaviorPerformanceSnapshot.Headers + ",EpisodeID" + "\n";
 
             foreach (var decisionTime in _decisionTimes)
-                data += decisionTime + "," +  + PerformanceLogger.Instance.GetEpisodeNo() +"\n";
+                data += decisionTime + "," +  + StealthArea.SessionInfo.currentEpisode +"\n";
             return data;
         }
 

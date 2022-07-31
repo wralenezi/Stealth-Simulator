@@ -1,7 +1,6 @@
 ﻿using UnityEditor;
 using UnityEngine;
 
-
 public class StealthArea : MonoBehaviour
 {
     // The episode time 
@@ -176,11 +175,11 @@ public class StealthArea : MonoBehaviour
 
         if (GameManager.Instance.showSurvey)
         {
-            if (!Equals(GetSessionInfo().gameCode, "tutorial"))
-                SessionsSetup.AddSessionColor(GetSessionInfo().guardColor);
+            if (!Equals(GetSessionInfo().gameCode, "tutorial")) SessionsSetup.AddSessionColor(GetSessionInfo().guardColor);
 
             GameManager.SurveyManager.CreateSurvey(GameManager.GetRunId(), GetSessionInfo().surveyType,
                 scoreController.score);
+            
             GameManager.SurveyManager.ShowSurvey();
         }
 

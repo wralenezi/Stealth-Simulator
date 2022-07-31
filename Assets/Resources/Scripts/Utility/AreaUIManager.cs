@@ -10,6 +10,7 @@ public class AreaUIManager : MonoBehaviour
     public TextMeshProUGUI guardsLabel { set; get; }
 
     // Remaining episode time label
+    public float ElapsedTime;
     public TextMeshProUGUI timeLabel { set; get; }
 
     // Score of the player
@@ -31,7 +32,6 @@ public class AreaUIManager : MonoBehaviour
 
     public static AreaUIManager Instance;
 
-
     public void Initiate()
     {
         canvasRect = GetComponent<RectTransform>();
@@ -52,7 +52,6 @@ public class AreaUIManager : MonoBehaviour
         Reset();
     }
 
-
     public void Reset()
     {
         scoreLabel.color = Color.white;
@@ -62,7 +61,6 @@ public class AreaUIManager : MonoBehaviour
         
         Instance = this;
     }
-
 
     // Update the label of the status of the game.
     public void UpdateGuardLabel(State state)
@@ -97,9 +95,10 @@ public class AreaUIManager : MonoBehaviour
 
     public void UpdateTime(float remainingTime)
     {
+        ElapsedTime = remainingTime;
         int time = Mathf.RoundToInt(remainingTime);
         timeLabel.text = time.ToString();
-
+        
         if (Time.timeScale > 1f) return;
 
         if (time <= 3f)
@@ -147,7 +146,6 @@ public class AreaUIManager : MonoBehaviour
         ScoreController.Instance.UpdateScore(score);
     }
 
-
     public void ShakeScore(float scoreChange)
     {
         if (scoreShaking == null)
@@ -157,7 +155,6 @@ public class AreaUIManager : MonoBehaviour
             StartCoroutine(scoreShaking);
         }
     }
-
 
     private IEnumerator ShakeText(TextMeshProUGUI textMeshPro, Color color)
     {

@@ -17,7 +17,7 @@ public class HeatMap : MonoBehaviour
 
     public void Initiate(Bounds bounds)
     {
-        // isDisabled = false;
+        isDisabled = false;
 
         if (isDisabled) return;
 
@@ -32,7 +32,6 @@ public class HeatMap : MonoBehaviour
         _whitePixelSprite = Resources.Load<Sprite>("Sprites/white_pixel");
         _pixels = new List<GameObject>();
     }
-
 
     public void IncrementHeatMapVisibility(List<Guard> guards, float timeDelta)
     {
@@ -154,7 +153,7 @@ public class HeatMap : MonoBehaviour
         // Write the exploration results for this episode
         string data = "";
 
-        if (!isFileExist) data += "Col,Row,heatValue,EpisodeID" + "\n";
+        if (!isFileExist) data += "Col,Row,Time,EpisodeTime,heatValue,EpisodeID" + "\n";
 
         HeatNode[,] map = _heatMap.GetGrid();
 
@@ -165,7 +164,8 @@ public class HeatMap : MonoBehaviour
             if (!_heatMap.IsNodeInMap(node.position, _cellSide * 0.5f)) continue;
 
 
-            data += i + "," + j + "," + node.heatValue + "," + PerformanceLogger.Instance.GetEpisodeNo() + "\n";
+            data += i + "," + j + "," + node.GetTime() + "," + Properties.EpisodeLength + "," + node.heatValue + "," +
+                    StealthArea.SessionInfo.currentEpisode + "\n";
         }
 
         return data;
@@ -183,7 +183,7 @@ public class HeatMap : MonoBehaviour
     public void End()
     {
         if (isDisabled) return;
-        
+
         CalculateHeatValues();
         RenderPixels();
         WriteResults();
@@ -192,8 +192,7 @@ public class HeatMap : MonoBehaviour
 
     public void OnDrawGizmos()
     {
-        if (showHeatMap)
-            _heatMap.Draw();
+        if (showHeatMap) _heatMap.Draw();
     }
 }
 

@@ -82,7 +82,7 @@ public class GuardsBehaviorController : MonoBehaviour
     
     public void Reset()
     {
-        LogResults();
+        // LogResults();
         _decisionTimes.Clear();
     }
 
@@ -106,7 +106,7 @@ public class GuardsBehaviorController : MonoBehaviour
             if (!isFileExist) data += BehaviorPerformanceSnapshot.Headers + ",EpisodeID" + "\n";
 
             foreach (var decisionTime in _decisionTimes)
-                data += decisionTime + "," +  + PerformanceLogger.Instance.GetEpisodeNo() +"\n";
+                data += decisionTime + "," +  + StealthArea.SessionInfo.currentEpisode +"\n";
             return data;
         }
 

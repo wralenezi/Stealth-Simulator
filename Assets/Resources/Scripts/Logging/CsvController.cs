@@ -148,7 +148,7 @@ public static class CsvController
     // Return the content of a CSV
     public static string ReadString(string path)
     {
-        if (!File.Exists(path)) return "0";
+        if (!File.Exists(path)) return "";
 
         //Read the text from directly from the test.txt file
         StreamReader reader = new StreamReader(path);

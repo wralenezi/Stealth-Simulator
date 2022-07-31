@@ -9,16 +9,18 @@ public class PatrolSessionsAssessment
         List<Session> sessions = new List<Session>();
 
         List<int> guardTeams = new List<int>();
-        guardTeams.Add(2);
+        guardTeams.Add(4);
 
 
         MapData mapData;
 
 
-        // mapData = new MapData("amongUs", 0.5f);
-        mapData = new MapData("bloodstainedAngle1", 0.5f);
-        // AddVisMeshSession(ref sessions, mapData, guardTeams);
-        AddRoadMapSession(ref sessions, mapData, guardTeams);
+        mapData = new MapData("amongUs", 0.5f);
+        // mapData = new MapData("bloodstainedAngle1", 0.5f);
+
+        
+        AddVisMeshSession(ref sessions, mapData, guardTeams);
+        // AddRoadMapSession(ref sessions, mapData, guardTeams);
 
         return sessions;
     }
@@ -26,26 +28,26 @@ public class PatrolSessionsAssessment
     private static void AddVisMeshSession(ref List<Session> sessions, MapData mapData, List<int> guardTeams)
     {
         // Guard Patrol Behavior
-        PatrolPlanner patrolPlanner = PatrolPlanner.gRoadMap;
+        PatrolPlanner patrolPlanner = PatrolPlanner.gVisMesh;
 
 
         List<GuardSpawnType> guardSpawnTypes = new List<GuardSpawnType>()
         {
-            // GuardSpawnType.Random,
-            GuardSpawnType.Separate,
+            GuardSpawnType.Random,
+            // GuardSpawnType.Separate,
             // GuardSpawnType.Goal
         };
 
         List<float> maxSeenRegionPortions = new List<float>()
         {
-            0.5f,
+            // 0.5f,
             // 0.7f,
-            // 1f
+            1f
         };
 
         float max = 10f;
         float min = 0f;
-        float increment = 11f;
+        float increment = 5f;
 
         List<float> areaWeights = new List<float>();
         for (float i = min; i <= max; i += increment)
@@ -128,15 +130,15 @@ public class PatrolSessionsAssessment
 
         List<GuardSpawnType> guardSpawnTypes = new List<GuardSpawnType>()
         {
-            // GuardSpawnType.Random,
-            GuardSpawnType.Separate,
+            GuardSpawnType.Random,
+            // GuardSpawnType.Separate,
             // GuardSpawnType.Goal
         };
 
 
         float max = 10f;
         float min = 0f;
-        float increment = 11f;
+        float increment = 5f;
 
         List<float> maxNormalizedPathLengths = new List<float>();
         for (float i = min; i <= max; i += increment)
