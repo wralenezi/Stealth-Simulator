@@ -252,8 +252,10 @@ public class VisMesh : MonoBehaviour
                     }
                 }
 
-
             Polygon polygon = PolygonHelper.CutHoles(polygonToDecomp);
+
+            if (Equals(polygon, null)) return;
+
             List<MeshPolygon> tempPolys = HertelMelDecomp.ConvexPartition(polygon);
 
             if (Equals(tempPolys, null)) return;

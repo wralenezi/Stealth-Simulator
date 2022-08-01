@@ -517,7 +517,7 @@ public struct NpcLocation
 public class Session
 {
     public int currentEpisode = 0;
-    public readonly int MaxEpisodes = 10;
+    public readonly int MaxEpisodes = 5;
 
     // the ID of the game session
     private string timeStamp;
