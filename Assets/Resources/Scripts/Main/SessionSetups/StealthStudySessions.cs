@@ -7,7 +7,7 @@ public static class StealthStudySessions
         List<Session> sessions = new List<Session>();
 
         List<int> guardTeams = new List<int>();
-        guardTeams.Add(4);
+        guardTeams.Add(2);
         // guardTeams.Add(5);
         // guardTeams.Add(6);
         // guardTeams.Add(7);
@@ -27,8 +27,8 @@ public static class StealthStudySessions
        
         MapData mapData;
         
-        mapData = new MapData("amongUsMod", 0.5f);
-        AddDynamicSession(ref sessions, mapData, guardTeams);
+        // mapData = new MapData("amongUsMod", 0.5f);
+        // AddDynamicSession(ref sessions, mapData, guardTeams);
         
         // mapData = new MapData("amongUs", 0.5f);
         // AddDynamicSession(ref sessions, mapData, guardTeams);
@@ -48,8 +48,8 @@ public static class StealthStudySessions
         // mapData = new MapData("dragonAge2", 1f);
         // AddDynamicSession(ref sessions, mapData, guardTeams);
         
-        // mapData = new MapData("MgsDock", 2f);
-        // AddDynamicSession(ref sessions, mapData, guardTeams);
+        mapData = new MapData("MgsDock", 2f);
+        AddDynamicSession(ref sessions, mapData, guardTeams);
         
         // guardTeams.Clear();
         // guardTeams.Add(2);

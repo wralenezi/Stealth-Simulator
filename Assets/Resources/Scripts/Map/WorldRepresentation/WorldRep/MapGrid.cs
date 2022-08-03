@@ -80,7 +80,7 @@ public class MapGrid<T> where T : new()
     public bool IsNodeInMap(Vector2 node, float cellSide)
     {
         // if the position is on barrier
-        if (Physics2D.OverlapCircle(node, cellSide) != null) return false;
+        if (Physics2D.OverlapCircle(node, cellSide, LayerMask.GetMask("Wall")) != null) return false;
 
         return PolygonHelper.IsPointInPolygons(MapManager.Instance.GetExWalls(), node);
     }

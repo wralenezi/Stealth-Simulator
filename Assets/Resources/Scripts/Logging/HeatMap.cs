@@ -10,6 +10,8 @@ public class HeatMap : MonoBehaviour
     public bool showHeatMap;
     private MapGrid<HeatNode> _heatMap;
 
+    private List<HeatNode> _heatNodes;
+
     private Sprite _whitePixelSprite;
 
     private List<GameObject> _pixels;
@@ -19,15 +21,26 @@ public class HeatMap : MonoBehaviour
     {
         isDisabled = false;
 
+        // showHeatMap = true;
+
         if (isDisabled) return;
 
         _heatMap = new MapGrid<HeatNode>(bounds, _cellSide, _cellSide);
+
+        _heatNodes = new List<HeatNode>();
 
         HeatNode[,] map = _heatMap.GetGrid();
 
         for (int i = 0; i < map.GetLength(0); i++)
         for (int j = 0; j < map.GetLength(1); j++)
+        {
             map[i, j].position = _heatMap.GetWorldPosition(i, j);
+            map[i, j].Col = i;
+            map[i, j].Row = j;
+
+            if (_heatMap.IsNodeInMap(map[i, j].position, _cellSide * 0.5f))
+                _heatNodes.Add(map[i, j]);
+        }
 
         _whitePixelSprite = Resources.Load<Sprite>("Sprites/white_pixel");
         _pixels = new List<GameObject>();
@@ -37,17 +50,18 @@ public class HeatMap : MonoBehaviour
     {
         if (isDisabled) return;
 
-        HeatNode[,] map = _heatMap.GetGrid();
+        // HeatNode[,] map = _heatMap.GetGrid();
+        //
+        // for (int i = 0; i < map.GetLength(0); i++)
+        // for (int j = 0; j < map.GetLength(1); j++)
+        //     CheckIfNodeVisible(guards, timeDelta, map[i, j]);
 
-        for (int i = 0; i < map.GetLength(0); i++)
-        for (int j = 0; j < map.GetLength(1); j++)
-            CheckIfNodeVisible(guards, timeDelta, map[i, j]);
+        foreach (var node in _heatNodes)
+            CheckIfNodeVisible(guards, timeDelta, node);
     }
 
     private void CheckIfNodeVisible(List<Guard> guards, float timeDelta, HeatNode node)
     {
-        if (isDisabled) return;
-
         bool isVisible = false;
 
         foreach (var guard in guards)
@@ -83,8 +97,7 @@ public class HeatMap : MonoBehaviour
 
             if (spottedTime > maxValue) maxValue = spottedTime;
         }
-
-
+        
         for (int i = 0; i < map.GetLength(0); i++)
         for (int j = 0; j < map.GetLength(1); j++)
         {
@@ -99,14 +112,16 @@ public class HeatMap : MonoBehaviour
     {
         if (isDisabled) return;
 
-        HeatNode[,] map = _heatMap.GetGrid();
+        // HeatNode[,] map = _heatMap.GetGrid();
+        // for (int i = 0; i < map.GetLength(0); i++)
+        // for (int j = 0; j < map.GetLength(1); j++)
+        // {
+        //     map[i, j].Reset();
+        // }
 
-        for (int i = 0; i < map.GetLength(0); i++)
-        for (int j = 0; j < map.GetLength(1); j++)
-        {
-            map[i, j].Reset();
-        }
-
+        foreach (var node in _heatNodes)
+            node.Reset();
+        
 
         while (_pixels.Count > 0)
         {
@@ -199,6 +214,9 @@ public class HeatMap : MonoBehaviour
 
 public class HeatNode
 {
+    public int Col;
+    public int Row;
+
     public Vector2 position;
     private float spottedTime;
 

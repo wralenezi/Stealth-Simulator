@@ -39,6 +39,20 @@ public class Polygon
         return m_Vertices[i].position;
     }
 
+    public Vector2 GetCorner(int i)
+    {
+        bool isConvex = GeometryHelper.IsReflex(GetPoint(i - 1), GetPoint(i), GetPoint(i + 1));
+
+        Vector2 normal = GeometryHelper.GetNormal(GetPoint(i - 1), GetPoint(i), GetPoint(i + 1));
+
+        normal *= isConvex ? -1 : 1;
+        
+        Vector2 spotPosition = GetPoint(i) + normal;
+        
+        return spotPosition;
+    }
+
+
     public Vector2 GetAngelNormal(int i)
     {
         return GeometryHelper.GetNormal(GetPoint(i - 1), GetPoint(i), GetPoint(i + 1));

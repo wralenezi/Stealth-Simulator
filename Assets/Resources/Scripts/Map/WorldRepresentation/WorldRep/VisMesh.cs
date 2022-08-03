@@ -137,9 +137,9 @@ public class VisMesh : MonoBehaviour
 
         CleanRegion(ref _SeenRegion);
 
-        _tempSeenRegion.AddRange(_SeenRegion);
+        // _tempSeenRegion.AddRange(_SeenRegion);
 
-        DecomposeRegions(ref _SeenRegion, ref _curSeenPolygons);
+        // DecomposeRegions(ref _SeenRegion, ref _curSeenPolygons);
 
         CleanRegion(ref _UnseenRegion);
 
@@ -166,8 +166,6 @@ public class VisMesh : MonoBehaviour
             List<Polygon> guardSeenRegion = _guardsSeenRegions[guard.name];
             PolygonHelper.MergePolygons(guardSeenRegion, guard.GetFov(), ref guardSeenRegion, ClipType.ctUnion);
         }
-        
-        
     }
 
     private void ResetSeenRegion()

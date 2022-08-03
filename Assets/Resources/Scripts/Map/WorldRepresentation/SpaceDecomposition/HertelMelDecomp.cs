@@ -34,7 +34,13 @@ public static class HertelMelDecomp
         // if there are no reflex nodes then the polygon is already convex
         if (isConvex)
         {
-            List<MeshPolygon> outputPolygons = new List<MeshPolygon> {(MeshPolygon) polygon};
+            List<MeshPolygon> outputPolygons = new List<MeshPolygon>();
+            MeshPolygon meshPolygon = polygon as MeshPolygon;
+
+            if (Equals(meshPolygon, null)) return null;
+            
+            outputPolygons.Add(meshPolygon);
+            
             return outputPolygons;
         }
 

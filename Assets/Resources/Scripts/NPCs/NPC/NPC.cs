@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
@@ -265,9 +266,13 @@ public abstract class NPC : MonoBehaviour
 
                     case GuardSpawnType.Separate:
                         // Randomly place the guards away from each other
+                        // GetTransform().position =
+                        //     GetPositionFarFromGuards(GetNpcData().id - 1, intruders, guards,
+                        //         MapManager.Instance.GetNavMesh());
+
                         GetTransform().position =
                             GetPositionFarFromGuards(GetNpcData().id - 1, intruders, guards,
-                                MapManager.Instance.GetNavMesh());
+                                MapManager.Instance.GetWalls()[0]);
                         break;
 
                     case GuardSpawnType.Goal:
@@ -333,6 +338,53 @@ public abstract class NPC : MonoBehaviour
 
         int pIndex = Random.Range(0, navMesh.Count);
         return navMesh[pIndex].GetCentroidPosition();
+    }
+
+    private Vector2 GetPositionFarFromGuards(int index, List<Intruder> intruders, List<Guard> guards, Polygon outerWall)
+    {
+        float minDistanceFromIntruder = PathFinding.Instance.longestShortestPath * 0.3f;
+
+        int attempts = 250;
+        float maxMinSqrMag = Mathf.NegativeInfinity;
+        Vector2? furthestPoint = null;
+
+        while (attempts > 0)
+        {
+            attempts--;
+
+            int vertexIndex = Random.Range(0, outerWall.GetVerticesCount());
+            Vector2 pos = outerWall.GetCorner(vertexIndex);
+
+            if (intruders.Count > 0)
+            {
+                Vector2 intruderPosition = intruders[0].GetTransform().position;
+                bool isFarEnough = minDistanceFromIntruder <
+                                   PathFinding.Instance.GetShortestPathDistance(pos, intruderPosition);
+                if (!isFarEnough) continue;
+            }
+
+            float minSqrMag = Mathf.Infinity;
+            for (int i = 0; i < index; i++)
+            {
+                Vector2 offset = pos - (Vector2) guards[i].GetTransform().position;
+
+                if (minSqrMag > offset.sqrMagnitude)
+                    minSqrMag = offset.sqrMagnitude;
+            }
+
+            if (maxMinSqrMag < minSqrMag)
+            {
+                maxMinSqrMag = minSqrMag;
+                furthestPoint = pos;
+            }
+        }
+
+
+        if (!Equals(furthestPoint, null)) return furthestPoint.Value;
+
+
+        int pIndex = Random.Range(0, outerWall.GetVerticesCount());
+        return outerWall.GetCorner(pIndex);
     }
 
     private Vector2 PlaceInGuardFoV(List<Guard> guards, List<MeshPolygon> navMesh)

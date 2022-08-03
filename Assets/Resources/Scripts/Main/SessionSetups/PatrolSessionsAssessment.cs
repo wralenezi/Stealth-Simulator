@@ -10,14 +10,12 @@ public class PatrolSessionsAssessment
 
         List<int> guardTeams = new List<int>();
         guardTeams.Add(4);
-
-
+        
         MapData mapData;
 
-
         mapData = new MapData("amongUs", 0.5f);
+        // mapData = new MapData("MgsDock", 2f);
         // mapData = new MapData("bloodstainedAngle1", 0.5f);
-
         
         AddVisMeshSession(ref sessions, mapData, guardTeams);
         // AddRoadMapSession(ref sessions, mapData, guardTeams);
@@ -29,12 +27,11 @@ public class PatrolSessionsAssessment
     {
         // Guard Patrol Behavior
         PatrolPlanner patrolPlanner = PatrolPlanner.gVisMesh;
-
-
+        
         List<GuardSpawnType> guardSpawnTypes = new List<GuardSpawnType>()
         {
-            GuardSpawnType.Random,
-            // GuardSpawnType.Separate,
+            // GuardSpawnType.Random,
+            GuardSpawnType.Separate,
             // GuardSpawnType.Goal
         };
 
@@ -130,8 +127,8 @@ public class PatrolSessionsAssessment
 
         List<GuardSpawnType> guardSpawnTypes = new List<GuardSpawnType>()
         {
-            GuardSpawnType.Random,
-            // GuardSpawnType.Separate,
+            // GuardSpawnType.Random,
+            GuardSpawnType.Separate,
             // GuardSpawnType.Goal
         };
 
