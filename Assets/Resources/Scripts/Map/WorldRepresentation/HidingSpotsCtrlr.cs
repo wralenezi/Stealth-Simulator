@@ -391,8 +391,13 @@ public class HidingSpot
 
     public bool IsAlreadyChecked()
     {
-        float timeDiff = StealthArea.GetElapsedTimeInSeconds() - lastCheckTimestamp;
+        if (Equals(lastCheckTimestamp, 0f))
+        {
+            MarkAsChecked();
+            return false;
+        }
 
+        float timeDiff = StealthArea.GetElapsedTimeInSeconds() - lastCheckTimestamp;
         return timeDiff < CoolDownInSeconds;
     }
 
@@ -436,7 +441,6 @@ public class HidingSpot
     {
         Gizmos.DrawSphere(Position, Properties.NpcRadius);
 
-        return;
 
 #if UNITY_EDITOR
         string label = "";

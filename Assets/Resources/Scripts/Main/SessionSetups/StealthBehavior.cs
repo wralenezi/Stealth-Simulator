@@ -33,8 +33,8 @@ public static class StealthBehavior
         List<PatrolPlanner> guardMethods = new List<PatrolPlanner>()
         {
             // PatrolPlanner.gRoadMap,
-            PatrolPlanner.gVisMesh,
-            // PatrolPlanner.gRandom
+            // PatrolPlanner.gVisMesh,
+            PatrolPlanner.gRandom
         };
 
 
@@ -59,8 +59,8 @@ public static class StealthBehavior
 
         List<TrajectoryType> trajectoryTypes = new List<TrajectoryType>()
         {
-            // TrajectoryType.Simple,
-            TrajectoryType.AngleBased
+            TrajectoryType.Simple,
+            // TrajectoryType.AngleBased
         };
 
         List<GoalPriority> goalPriorities = new List<GoalPriority>()
@@ -72,7 +72,8 @@ public static class StealthBehavior
         {
             // SafetyPriority.Occlusion,
             // SafetyPriority.GuardProximity,
-            SafetyPriority.WeightedSpot,
+            // SafetyPriority.WeightedSpot,
+            SafetyPriority.ClosestWeightedSpot,
             // SafetyPriority.Random
         };
 
@@ -117,9 +118,6 @@ public static class StealthBehavior
                 trajectoryType = trajectoryType, goalPriority = aGoalPriority, safetyPriority = aSafetyPriority,
                 fovProjectionMultiplier = projectionDistance
             };
-
-            PatrolerParams patrolParams = new VisMeshPatrolerParams(0.4f, 1f, 0f, 0f, 0f, VMDecision.Weighted);
-
 
             Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue",
                 guardSpawnType, guardTeam, null,  1,

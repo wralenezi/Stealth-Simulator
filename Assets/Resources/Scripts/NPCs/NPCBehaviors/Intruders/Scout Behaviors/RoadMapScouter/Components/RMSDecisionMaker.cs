@@ -29,6 +29,9 @@ public class RMSDecisionMaker
                     GreedySafeSpot(ref spots);
                     break;
 
+                case SafetyPriority.ClosestWeightedSpot:
+                    GreedyClosestSafeSpot(ref spots);
+                    break;
 
                 case SafetyPriority.Occlusion:
                     GreedySafeOccludedSpot(ref spots);
@@ -114,6 +117,20 @@ public class RMSDecisionMaker
             return ret;
         });
     }
+    
+    private void GreedyClosestSafeSpot(ref List<HidingSpot> spots)
+    {
+        spots.Sort((x, y) =>
+        {
+            int ret = x.Risk.CompareTo(y.Risk);
+            if (ret != 0) return ret;
+            ret = y.CostUtility.CompareTo(x.CostUtility);
+            if (ret != 0) return ret;
+            ret = y.WeightedFitness().CompareTo(x.WeightedFitness());
+            return ret;
+        });
+    }
+
 
 
     private void GreedySafeOccludedSpot(ref List<HidingSpot> spots)
@@ -340,6 +357,7 @@ public enum SafetyPriority
     Occlusion,
     GuardProximity,
     WeightedSpot,
+    ClosestWeightedSpot,
     Random,
     None
 }

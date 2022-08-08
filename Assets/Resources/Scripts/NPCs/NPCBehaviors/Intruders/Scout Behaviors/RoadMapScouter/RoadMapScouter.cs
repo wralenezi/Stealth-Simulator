@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using Vector2 = UnityEngine.Vector2;
@@ -6,6 +7,8 @@ using Vector2 = UnityEngine.Vector2;
 public class RoadMapScouter : Scouter
 {
     private Intruder _intruder;
+
+    public bool showIntruderGoal;
     private HidingSpot _currentGoalHs;
 
     // Road map of the level
@@ -28,7 +31,6 @@ public class RoadMapScouter : Scouter
     private SpotsNeighbourhoods _neighbourhoodType;
 
     private float _maxSafeRisk;
-
 
     // A dictionary of the riskiest spots by each guard on the intruders current path
     public bool showRiskSpots;
@@ -70,11 +72,12 @@ public class RoadMapScouter : Scouter
 
         _maxSafeRisk = session.intruderBehavior.maxRiskAsSafe;
 
-        // showAvailableHidingSpots = true;
+        showAvailableHidingSpots = true;
         // showRiskSpots = true;
         // showProjectedTrajectories = true;
-        // showRoadMapEndNodes = true;
-        // showRoadMap = true;
+        showRoadMapEndNodes = true;
+        // showIntruderGoal = true;
+        showRoadMap = true;
     }
 
 
@@ -92,14 +95,62 @@ public class RoadMapScouter : Scouter
         Intruder intruder = NpcsManager.Instance.GetIntruders()[0];
 
         _trajectoryProjector.SetGuardTrajectories(_roadMap, guards);
-        
+
         _riskEvaluator.UpdateCurrentRisk(_roadMap);
 
         Vector2? goal = GetDestination(gameType);
 
+        if (!intruder.IsBusy())
+            PlanPath(intruder, goal);
+            
+        // _availableSpots.Clear();
+        // PathFindToDestination(goal, _maxSafeRisk);
+        //
+        // EvaluateSpots(intruder, goal);
+        //
+        // int tries = 0;
+        // int count = _availableSpots.Count;
+        //
+        // HidingSpot bestHs = null;
+        // // Get a new destination for the intruder
+        // while (!intruder.IsBusy() && _availableSpots.Count > 0)
+        // {
+        //     bestHs =
+        //         _decisionMaker.GetBestSpot(_availableSpots, _riskEvaluator.GetRisk(), _maxSafeRisk);
+        //
+        //     if (Equals(bestHs, null)) break;
+        //
+        //     List<Vector2> path = intruder.GetPath();
+        //     float maxPathRisk = RMThresholds.GetMaxPathRisk(intruderBehavior.thresholdType);
+        //
+        //     _pathFinder.GetShortestPath(_roadMap, intruder.GetTransform().position, bestHs, ref path,
+        //         maxPathRisk);
+        //
+        //     _availableSpots.Remove(bestHs);
+        //     tries++;
+        // }
+        //
+        //
+        // if (!Equals(bestHs, null) ) _currentGoalHs = bestHs;
+        // else
+        // {
+        //     Debug.Log("Fail after try count of " + tries + " out of " + count);
+        // }
+
+        // Abort the current path if it is too risky
+        _riskEvaluator.CheckPathRisk(intruderBehavior.pathCancel, _roadMap, intruder, guards, ref _availableSpots,
+            ref _currentGoalHs);
+    }
+
+    private void PlanPath(Intruder intruder, Vector2? goal)
+    {
+        _availableSpots.Clear();
         PathFindToDestination(goal, _maxSafeRisk);
 
         EvaluateSpots(intruder, goal);
+
+        int tries = 0;
+        int count = _availableSpots.Count;
 
         HidingSpot bestHs = null;
         // Get a new destination for the intruder
@@ -108,7 +159,7 @@ public class RoadMapScouter : Scouter
             bestHs =
                 _decisionMaker.GetBestSpot(_availableSpots, _riskEvaluator.GetRisk(), _maxSafeRisk);
 
-            if (Equals(bestHs, null)) return;
+            if (Equals(bestHs, null)) break;
 
             List<Vector2> path = intruder.GetPath();
             float maxPathRisk = RMThresholds.GetMaxPathRisk(intruderBehavior.thresholdType);
@@ -117,13 +168,16 @@ public class RoadMapScouter : Scouter
                 maxPathRisk);
 
             _availableSpots.Remove(bestHs);
+            tries++;
+        }
+        
+        if (!Equals(bestHs, null) ) _currentGoalHs = bestHs;
+        else
+        {
+            Debug.Log("Fail after try count of " + tries + " out of " + count);
         }
 
-        if (!Equals(bestHs, null)) _currentGoalHs = bestHs;
 
-        // Abort the current path if it is too risky
-        _riskEvaluator.CheckPathRisk(intruderBehavior.pathCancel, _roadMap, intruder, guards, ref _availableSpots,
-            ref _currentGoalHs);
     }
 
     /// <summary>
@@ -135,21 +189,23 @@ public class RoadMapScouter : Scouter
     {
         if (_intruder.IsBusy()) return;
 
-        float maxDistance = 20f;
+        float maxDistance = 50f;
         int numOfPossibleRmNodes = 8;
-        List<Vector2> path = _intruder.GetPath();
         float maxSearchRisk = RMThresholds.GetMaxSearchRisk(intruderBehavior.thresholdType);
         bool doAstar = _riskEvaluator.GetRisk() <= minSafeRisk && !Equals(destination, null);
 
+        List<Vector2> path = _intruder.GetPath();
         _pathFinder.GetClosestPointToGoal(_roadMap, _intruder.GetTransform().position,
             destination.Value, numOfPossibleRmNodes, ref _closestWpsToDestination,
             ref path, maxSearchRisk, doAstar, maxDistance);
 
+        // If there is no path to the goal, then check the populate possible hiding spots
         if (_intruder.IsBusy()) return;
 
-        _availableSpots.Clear();
         foreach (var wp in _closestWpsToDestination)
             FillAvailableSpots(wp.GetPosition());
+
+        EditorApplication.isPaused = true;
     }
 
     private void FillAvailableSpots(Vector2 position)
@@ -173,12 +229,10 @@ public class RoadMapScouter : Scouter
     }
 
 
-    public void EvaluateSpots(Intruder intruder, Vector2? goal)
+    private void EvaluateSpots(Intruder intruder, Vector2? goal)
     {
-        foreach (var hs in _availableSpots)
+        foreach (var hs in _availableSpots.Where(hs => !hs.IsAlreadyChecked()))
         {
-            if (hs.IsAlreadyChecked()) continue;
-
             SetRiskValue(hs);
             SetGoalUtility(hs, goal);
             SetCostUtility(intruder, hs);
@@ -385,6 +439,12 @@ public class RoadMapScouter : Scouter
             }
         }
 
+        if (showIntruderGoal && !Equals(_currentGoalHs, null))
+        {
+            Gizmos.color = Color.green;
+            _currentGoalHs.Draw();
+        }
+
 
         if (showRoadMap)
             _roadMap.DrawWalkableRoadmap(true);
@@ -489,6 +549,7 @@ public enum SpotsNeighbourhoods
 {
     // Add hiding spot based on line of sight
     LineOfSight,
+
     // Add hiding spots based on a grid
     Grid,
     All
