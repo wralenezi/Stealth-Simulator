@@ -15,7 +15,9 @@ public class RMSDecisionMaker
 
     public HidingSpot GetBestSpot(List<HidingSpot> spots, float currentRisk, float maxSafeRisk)
     {
-        if (currentRisk <= maxSafeRisk)
+        bool isSafe = currentRisk <= maxSafeRisk;
+        
+        if (isSafe)
             switch (_goalPriority)
             {
                 case GoalPriority.Safety:
@@ -75,11 +77,10 @@ public class RMSDecisionMaker
             case 2:
                 GreedySafeDistantSpot(ref spots);
                 break;
-            
+
             case 3:
                 SortGreedyGoalSpot(ref spots);
                 break;
-
         }
     }
 
@@ -117,7 +118,7 @@ public class RMSDecisionMaker
             return ret;
         });
     }
-    
+
     private void GreedyClosestSafeSpot(ref List<HidingSpot> spots)
     {
         spots.Sort((x, y) =>
@@ -132,7 +133,6 @@ public class RMSDecisionMaker
     }
 
 
-
     private void GreedySafeOccludedSpot(ref List<HidingSpot> spots)
     {
         spots.Sort((x, y) =>
@@ -143,7 +143,7 @@ public class RMSDecisionMaker
             // if (ret != 0) return ret;
             // ret = y.CoverUtility.CompareTo(x.CoverUtility);
             // return ret;
-            
+
             int ret = x.Risk.CompareTo(y.Risk);
             if (ret != 0) return ret;
             ret = y.WeightedOcclusion().CompareTo(x.WeightedOcclusion());

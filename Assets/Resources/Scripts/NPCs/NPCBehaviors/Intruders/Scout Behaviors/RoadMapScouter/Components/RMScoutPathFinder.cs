@@ -327,16 +327,6 @@ public class RMScoutPathFinder
 
             path.RemoveAt(0);
         }
-
-
-        // Option 2 -- Less Efficient path
-        // path.RemoveAt(0);
-        //
-        // if (path.Count == 2)
-        // {
-        //     Vector2 tempEnd = path[1];
-        //     PathFinding.Instance.GetShortestPath(start, tempEnd, ref path);
-        // }
     }
 
     // Get heuristic value for way points road map

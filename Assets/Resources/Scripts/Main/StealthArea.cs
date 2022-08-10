@@ -151,8 +151,8 @@ public class StealthArea : MonoBehaviour
 
     void CheckGameEnd()
     {
-        bool timeOver = GetElapsedTimeInSeconds() >= Properties.EpisodeLength;
-        bool highscoreReached = scoreController.score > 0f;
+        bool timeOver = GetElapsedTimeInSeconds() >= SessionInfo.episodeLength;
+        bool highscoreReached = scoreController.score > Mathf.Infinity;
         bool spotted = NpcManager.GetState() is Chase;
 
         bool finished = timeOver || highscoreReached || spotted;
@@ -203,6 +203,6 @@ public class StealthArea : MonoBehaviour
 
     int GetRemainingTime()
     {
-        return Mathf.RoundToInt(Properties.EpisodeLength - GetElapsedTimeInSeconds());
+        return Mathf.RoundToInt(SessionInfo.episodeLength - GetElapsedTimeInSeconds());
     }
 }

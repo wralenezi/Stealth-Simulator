@@ -110,7 +110,7 @@ public class NpcsManager : MonoBehaviour
     {
         if (!(GetState() is Chase))
         {
-            IncrementScore(20f);
+            IncrementScore(1f);
         }
     }
 

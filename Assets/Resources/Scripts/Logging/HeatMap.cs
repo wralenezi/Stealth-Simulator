@@ -19,7 +19,7 @@ public class HeatMap : MonoBehaviour
 
     public void Initiate(Bounds bounds)
     {
-        isDisabled = false;
+        // isDisabled = false;
 
         // showHeatMap = true;
 
@@ -179,7 +179,7 @@ public class HeatMap : MonoBehaviour
             if (!_heatMap.IsNodeInMap(node.position, _cellSide * 0.5f)) continue;
 
 
-            data += i + "," + j + "," + node.GetTime() + "," + Properties.EpisodeLength + "," + node.heatValue + "," +
+            data += i + "," + j + "," + node.GetTime() + "," + StealthArea.SessionInfo.episodeLength + "," + node.heatValue + "," +
                     StealthArea.SessionInfo.currentEpisode + "\n";
         }
 

@@ -11,12 +11,13 @@ public class SurveyManager : MonoBehaviour
     private Image m_FadeInScreen;
 
     // Survey item element
-    List<Choice> m_Choices = new List<Choice>();
+    List<Choice> m_Choices;
     string m_itemName;
     string m_itemDesc;
 
     public void Initiate()
     {
+        m_Choices = new List<Choice>();
         m_currentSurvey = gameObject.AddComponent<Survey>();
         m_currentSurvey.Initiate(this);
 
@@ -118,7 +119,6 @@ public class SurveyManager : MonoBehaviour
             "By participating in this study, I declare that I am over 18 years of age. I consent that the data I produce by playing this game can be used by the School of Computer Science at McGill University.";
         m_currentSurvey.AddItemMultiple(m_itemName, "", m_itemDesc, m_Choices);
 
-
         // Played before?
         m_Choices.Clear();
         m_Choices.Add(new Choice("Yes", "Yes", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
@@ -126,6 +126,14 @@ public class SurveyManager : MonoBehaviour
         m_itemName = "played before";
         m_itemDesc = "Have you played this game before?";
         m_currentSurvey.AddItemMultiple(m_itemName, "", m_itemDesc, m_Choices);
+        
+        // Consent
+        m_Choices.Clear();
+        m_Choices.Add(new Choice("Ok", "Next", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
+        m_itemName = "nickname";
+        m_itemDesc =
+            "Set the nickname";
+        m_currentSurvey.AddTextItem(m_itemName, "", m_itemDesc, m_Choices, true);
 
         // Video game skill
         m_Choices.Clear();
@@ -144,24 +152,8 @@ public class SurveyManager : MonoBehaviour
         m_Choices.Clear();
         m_Choices.Add(new Choice("Next", "Next", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
         m_itemName = "explain game";
-
-        GameType gameType = GameManager.Instance.GetGameType();
-
-        string gameDesc = "";
-
-        switch (gameType)
-        {
-            case GameType.Stealth:
-                gameDesc =
-                    "Your goal is to simply stay away from the guards and keep your score high by avoiding their sight.";
-                break;
-
-            case GameType.CoinCollection:
-                gameDesc =
-                    "Avoid detection and collect coins to reach 100.\nIf you are seen, your score will decrease with time.";
-                break;
-        }
-
+        
+        string gameDesc = "Avoid detection and collect coins to reach 100.\nIf you are seen, your score will decrease with time.";
         m_itemDesc = gameDesc;
         m_currentSurvey.AddItemMultiple(m_itemName, "", m_itemDesc, m_Choices);
 
@@ -388,7 +380,7 @@ public struct Choice
 
     public Color color;
 
-    public Choice(string _value, string _label, ButtonType _buttonType, Color _color)
+    public Choice(string _value, string _label, ButtonType _buttonType, Color _color = default)
     {
         value = _value;
         label = _label;

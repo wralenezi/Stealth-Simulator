@@ -169,7 +169,7 @@ public class Intruder : NPC
 
     public float GetPercentAlertTime()
     {
-        return m_AlertTime / Properties.EpisodeLength;
+        return m_AlertTime / StealthArea.SessionInfo.episodeLength;
     }
 
     public float GetAlertTime()

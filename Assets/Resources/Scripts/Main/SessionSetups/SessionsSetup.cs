@@ -73,7 +73,7 @@ public class SessionsSetup : MonoBehaviour
         {
             string color = GetUniqueColor();
 
-            Session session = new Session("", GameType.CoinCollection, Scenario.Chase, color, GuardSpawnType.Random,4, null,1,new IntruderBehavior(), 
+            Session session = new Session(120, "", GameType.CoinCollection, Scenario.Chase, color, GuardSpawnType.Random,4, null,1,null, 
                 new MapData("amongUs", 0.5f), speechMethod, SurveyType.EndEpisode);
 
             // Add guards
@@ -116,7 +116,7 @@ public class SessionsSetup : MonoBehaviour
         }
 
         // Add the tutorial session
-        Session tutorialSession = new Session("tutorial", GameType.CoinCollection, Scenario.Chase, "grey", GuardSpawnType.Random,2, null, 1,new IntruderBehavior(), 
+        Session tutorialSession = new Session(120, "tutorial", GameType.CoinCollection, Scenario.Chase, "grey", GuardSpawnType.Random,2, null, 1,null, 
             new MapData("MgsDock", 2f), SpeechType.None, SurveyType.EndTutorial);
 
         for (int i = 0; i < tutorialSession.guardsCount; i++)
@@ -165,7 +165,7 @@ public class SessionsSetup : MonoBehaviour
         foreach (var guardMethod in guardMethods)
         foreach (var pathType in pathTypes)
         {
-            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, color, GuardSpawnType.Random,4, null,1,new IntruderBehavior(), 
+            Session session = new Session(120, "", GameType.CoinCollection, Scenario.Stealth, color, GuardSpawnType.Random,4, null,1,null, 
                 new MapData("amongUs", 0.5f), speechMethod, SurveyType.EndEpisode);
 
             // MgsDock
@@ -224,7 +224,7 @@ public class SessionsSetup : MonoBehaviour
         foreach (var guardMethod in guardMethods)
         foreach (var pathType in pathTypes)
         {
-            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, color, GuardSpawnType.Random,2, null, 1, new IntruderBehavior(), 
+            Session session = new Session(120, "", GameType.CoinCollection, Scenario.Stealth, color, GuardSpawnType.Random,2, null, 1, null, 
                 new MapData("MgsDock", 2f), speechMethod, SurveyType.EndEpisode);
 
 
@@ -290,7 +290,7 @@ public class SessionsSetup : MonoBehaviour
         foreach (var guardMethod in guardMethods)
         foreach (var pathType in pathTypes)
         {
-            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, color, GuardSpawnType.Random,4, null, 1, new IntruderBehavior(), 
+            Session session = new Session(120, "", GameType.CoinCollection, Scenario.Stealth, color, GuardSpawnType.Random,4, null, 1, null, 
                 new MapData("MgsDock", 2f), speechMethod, SurveyType.EndEpisode);
 
             // Add guards
@@ -348,7 +348,7 @@ public class SessionsSetup : MonoBehaviour
         foreach (var guardMethod in guardMethods)
         foreach (var pathType in pathTypes)
         {
-            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, color, GuardSpawnType.Random,4, null,1, new IntruderBehavior(), 
+            Session session = new Session(120, "", GameType.CoinCollection, Scenario.Stealth, color, GuardSpawnType.Random,4, null,1, null, 
                 new MapData("amongUs", 0.5f), speechMethod, SurveyType.EndEpisode);
 
             // Add guards
@@ -403,7 +403,7 @@ public class SessionsSetup : MonoBehaviour
         foreach (var guardMethod in guardMethods)
         foreach (var pathType in pathTypes)
         {
-            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, color, GuardSpawnType.Random,1, null, 1, new IntruderBehavior(), 
+            Session session = new Session(120, "", GameType.CoinCollection, Scenario.Stealth, color, GuardSpawnType.Random,1, null, 1, null, 
                 new MapData("Hall", 1f), speechMethod, SurveyType.EndEpisode);
 
 

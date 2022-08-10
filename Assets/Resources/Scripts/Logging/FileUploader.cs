@@ -32,14 +32,6 @@ public static class FileUploader
         return fileName;
     }
 
-    // private static string GetLocalIPv4()
-    // {
-    //     return Dns.GetHostEntry(Dns.GetHostName())
-    //         .AddressList.First(
-    //             f => f.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-    //         .ToString();
-    // }    
-
     private static WWWForm GetForm(byte[] content, string fileName, string fileType)
     {
         WWWForm form = new WWWForm();

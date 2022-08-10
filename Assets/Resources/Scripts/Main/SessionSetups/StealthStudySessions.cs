@@ -179,20 +179,20 @@ public static class StealthStudySessions
         foreach (var guardSpawnType in guardSpawnTypes)
         foreach (var projectionDistance in projectionDistances)
         {
-            IntruderBehavior intruderBehavior = new IntruderBehavior
-            {
-                spotsNeighbourhood = SpotsNeighbourhoods.All,
-                pathCancel = PathCanceller.None,
-                thresholdType = RiskThresholdType.None,
-                trajectoryType = TrajectoryType.None,
-                goalPriority = GoalPriority.None,
-                safetyPriority = SafetyPriority.None,
-                fovProjectionMultiplier = projectionDistance
-            };
+            // IntruderBehavior intruderBehavior = new IntruderBehavior
+            // {
+            //     spotsNeighbourhood = SpotsNeighbourhoods.All,
+            //     pathCancel = PathCanceller.None,
+            //     thresholdType = RiskThresholdType.None,
+            //     trajectoryType = TrajectoryType.None,
+            //     goalPriority = GoalPriority.None,
+            //     safetyPriority = SafetyPriority.None,
+            //     fovProjectionMultiplier = projectionDistance
+            // };
 
-            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue", guardSpawnType,
+            Session session = new Session(120, "", GameType.CoinCollection, Scenario.Stealth, "blue", guardSpawnType,
                 guardTeam, null,1,
-                intruderBehavior,
+                null, //intruderBehavior,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
             // Add guards
@@ -230,16 +230,16 @@ public static class StealthStudySessions
         foreach (var projectionDistance in projectionDistances)
         foreach (var maxRiskAsSafeValue in maxRiskAsSafeValues)
         {
-            IntruderBehavior intruderBehavior = new IntruderBehavior
-            {
-                spotsNeighbourhood = neighbour, pathCancel = pathCanceller, thresholdType = riskThresholdType,
-                trajectoryType = trajectoryType, goalPriority = aGoalPriority, safetyPriority = aSafetyPriority,
-                fovProjectionMultiplier = projectionDistance, maxRiskAsSafe = maxRiskAsSafeValue
-            };
+            // IntruderBehavior intruderBehavior = new IntruderBehavior
+            // {
+            //     spotsNeighbourhood = neighbour, pathCancel = pathCanceller, thresholdType = riskThresholdType,
+            //     trajectoryType = trajectoryType, goalPriority = aGoalPriority, safetyPriority = aSafetyPriority,
+            //     fovProjectionMultiplier = projectionDistance, maxRiskAsSafe = maxRiskAsSafeValue
+            // };
 
-            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue", guardSpawnType,
+            Session session = new Session(120, "", GameType.CoinCollection, Scenario.Stealth, "blue", guardSpawnType,
                 guardTeam, null,1,
-                intruderBehavior,
+                null, //intruderBehavior,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
             // Add guards
@@ -331,16 +331,16 @@ public static class StealthStudySessions
         foreach (var guardMethod in guardMethods)
         foreach (var intruderMethod in intruderMethods)
         {
-            IntruderBehavior intruderBehavior = new IntruderBehavior
-            {
-                pathCancel = PathCanceller.None,
-                thresholdType = RiskThresholdType.None,
-                trajectoryType = TrajectoryType.None
-            };
+            // IntruderBehavior intruderBehavior = new IntruderBehavior
+            // {
+            //     pathCancel = PathCanceller.None,
+            //     thresholdType = RiskThresholdType.None,
+            //     trajectoryType = TrajectoryType.None
+            // };
 
-            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue",
+            Session session = new Session(120, "", GameType.CoinCollection, Scenario.Stealth, "blue",
                 GuardSpawnType.Scripted, guardLocations.Count, null,1,
-                intruderBehavior,
+                null, //intruderBehavior,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
             // Add guards
@@ -375,16 +375,16 @@ public static class StealthStudySessions
         foreach (var neighbour in neighbourhoods)
         foreach (var projectionDistance in projectionDistances)
         {
-            IntruderBehavior intruderBehavior = new IntruderBehavior
-            {
-                spotsNeighbourhood = neighbour, pathCancel = pathCanceller, thresholdType = riskThresholdType,
-                trajectoryType = trajectoryType, goalPriority = aGoalPriority, safetyPriority = aSafetyPriority,
-                fovProjectionMultiplier = projectionDistance
-            };
+            // IntruderBehavior intruderBehavior = new IntruderBehavior
+            // {
+            //     spotsNeighbourhood = neighbour, pathCancel = pathCanceller, thresholdType = riskThresholdType,
+            //     trajectoryType = trajectoryType, goalPriority = aGoalPriority, safetyPriority = aSafetyPriority,
+            //     fovProjectionMultiplier = projectionDistance
+            // };
 
-            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue",
+            Session session = new Session(120, "", GameType.CoinCollection, Scenario.Stealth, "blue",
                 GuardSpawnType.Scripted, guardLocations.Count, null,1,
-                intruderBehavior,
+                null, //intruderBehavior,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
             // Add guards

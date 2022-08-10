@@ -4,6 +4,10 @@ using UnityEngine;
 
 public class PatrolSessionsAssessment
 {
+    private static int _episodeLength = 120;
+    private static int _episodeCount = 1; 
+    
+    
     public static List<Session> GetSessions()
     {
         List<Session> sessions = new List<Session>();
@@ -91,7 +95,7 @@ public class PatrolSessionsAssessment
             GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolPlanner, patrolParams);
 
 
-            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue",
+            Session session = new Session(_episodeLength, "", GameType.CoinCollection, Scenario.Stealth, "blue",
                 guardSpawnType, guardTeam, guardBehaviorParams, 0,
                 null,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
@@ -195,7 +199,7 @@ public class PatrolSessionsAssessment
             GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolPlanner, patrolParams);
 
 
-            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue",
+            Session session = new Session(_episodeLength, "", GameType.CoinCollection, Scenario.Stealth, "blue",
                 guardSpawnType, guardTeam, guardBehaviorParams, 0,
                 null,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);

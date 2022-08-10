@@ -111,17 +111,16 @@ public static class StealthBehavior
         foreach (var projectionDistance in projectionDistances)
         foreach (var guardSpawnType in guardSpawnTypes)
         foreach (var guardTeam in guardTeams)
+        foreach (var maxRiskAsSafeValue in maxRiskAsSafeValues)
         {
-            IntruderBehavior intruderBehavior = new IntruderBehavior
-            {
-                spotsNeighbourhood = neighbour, pathCancel = pathCanceller, thresholdType = riskThresholdType,
-                trajectoryType = trajectoryType, goalPriority = aGoalPriority, safetyPriority = aSafetyPriority,
-                fovProjectionMultiplier = projectionDistance
-            };
+            
+            ScouterParams scouterParams = new RMScouterParams(neighbour, pathCanceller, riskThresholdType , trajectoryType , maxRiskAsSafeValue, aGoalPriority, aSafetyPriority, projectionDistance);
 
-            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue",
+            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.iRoadMap, scouterParams);
+            
+            Session session = new Session(120, "", GameType.CoinCollection, Scenario.Stealth, "blue",
                 guardSpawnType, guardTeam, null,  1,
-                intruderBehavior,
+                intruderBehaviorParams,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
             // Add guards

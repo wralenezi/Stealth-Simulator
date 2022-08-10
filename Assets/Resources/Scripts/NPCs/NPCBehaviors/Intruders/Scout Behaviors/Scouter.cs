@@ -1,9 +1,8 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public abstract class Scouter : MonoBehaviour
 {
-    public IntruderBehavior intruderBehavior;
-
     // Hiding spots manager
     public bool ShowHidingSpots;
     protected HidingSpotsCtrlr _HsC;
@@ -19,11 +18,8 @@ public abstract class Scouter : MonoBehaviour
 
     public virtual void Begin()
     {
-        intruderBehavior = GameManager.Instance.GetActiveArea().GetSessionInfo().intruderBehavior;
-
         foreach (var hs in _HsC.GetHidingSpots())
             hs.ResetCheck();
-        
     }
 
 
@@ -54,65 +50,7 @@ public abstract class Scouter : MonoBehaviour
     }
 }
 
-public class IntruderBehavior
+public abstract class ScouterParams
 {
-    public SpotsNeighbourhoods spotsNeighbourhood;
-
-    /// <summary>
-    /// Path Cancelling method
-    /// </summary>
-    public PathCanceller pathCancel;
-
-    public RiskThresholdType thresholdType;
-
-    public TrajectoryType trajectoryType;
-
-    public float maxRiskAsSafe;
     
-    public GoalPriority goalPriority;
-
-    public SafetyPriority safetyPriority;
-
-    public float fovProjectionMultiplier;
-
-    public override string ToString()
-    {
-        string output = "";
-        string sep = "_";
-
-        output += spotsNeighbourhood;
-        output += sep;
-
-        output += pathCancel;
-        output += sep;
-
-        output += thresholdType;
-        output += sep;
-        
-        output += fovProjectionMultiplier;
-        output += sep;            
-            
-        output += trajectoryType;
-        output += sep;
-
-        output += goalPriority;
-        output += sep;
-
-        output += safetyPriority;
-        output += sep;
-
-        output += maxRiskAsSafe;
-        
-        return output;
-    }
-}
-
-
-public enum PathCanceller
-{
-    DistanceCalculation,
-
-    RiskComparison,
-
-    None
 }

@@ -57,6 +57,28 @@ public class Survey : MonoBehaviour
         currentSurveyIndex = 0;
     }
 
+    /// <summary>
+    /// Add a multiple choice item to the survey
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="code"></param>
+    /// <param name="question"></param>
+    /// <param name="choices"></param>
+    public void AddTextItem(string id, string code, string question, List<Choice> choices, bool isNickName)
+    {
+        // Create the item object and hide it
+        GameObject surveyItemGo = Instantiate(surveyItemPrefab, transform);
+        surveyItemGo.SetActive(false);
+
+        SurveyTextInput surveyMultiple = surveyItemGo.AddComponent<SurveyTextInput>();
+        surveyMultiple.Initiate(id, ItemType.Survey, this, code, isNickName);
+
+        // Add the question
+        surveyMultiple.SetQuestion(question);
+        
+        items.Add(surveyMultiple);
+    }
+
 
     /// <summary>
     /// Add a multiple choice item to the survey

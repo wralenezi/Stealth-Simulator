@@ -62,30 +62,30 @@ public static class PatrolSessions
         foreach (var guardTeam in guardTeams)
         foreach (var guardSpawnType in guardSpawnTypes)
         {
-            IntruderBehavior intruderBehavior = new IntruderBehavior
-            {
-                pathCancel = PathCanceller.None,
-                thresholdType = RiskThresholdType.None,
-                trajectoryType = TrajectoryType.None
-            };
+            // IntruderBehavior intruderBehavior = new IntruderBehavior
+            // {
+            //     pathCancel = PathCanceller.None,
+            //     thresholdType = RiskThresholdType.None,
+            //     trajectoryType = TrajectoryType.None
+            // };
 
-            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue", guardSpawnType,
-                guardTeam, null,0,
-                intruderBehavior,
-                mapData, SpeechType.Simple, SurveyType.EndEpisode);
+            // Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue", guardSpawnType,
+            //     guardTeam, null,0,
+            //     intruderBehavior,
+            //     mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
             // Add guards
-            for (int i = 0; i < session.guardsCount; i++)
-            {
-                Behavior behavior = new Behavior(guardMethod, AlertPlanner.Simple,
-                    SearchPlanner.Cheating, PlanOutput.DijkstraPath);
-
-                session.AddNpc(i + 1, NpcType.Guard, behavior, PathFindingHeursitic.EuclideanDst,
-                    PathFollowing.SimpleFunnel, null);
-            }
-
-
-            sessions.Add(session);
+            // for (int i = 0; i < session.guardsCount; i++)
+            // {
+            //     Behavior behavior = new Behavior(guardMethod, AlertPlanner.Simple,
+            //         SearchPlanner.Cheating, PlanOutput.DijkstraPath);
+            //
+            //     session.AddNpc(i + 1, NpcType.Guard, behavior, PathFindingHeursitic.EuclideanDst,
+            //         PathFollowing.SimpleFunnel, null);
+            // }
+            //
+            //
+            // sessions.Add(session);
         }
     }
 
@@ -93,29 +93,29 @@ public static class PatrolSessions
         List<NpcLocation> guardLocations)
     {
         {
-            IntruderBehavior intruderBehavior = new IntruderBehavior
-            {
-                pathCancel = PathCanceller.None,
-                thresholdType = RiskThresholdType.None,
-                trajectoryType = TrajectoryType.None
-            };
-
-            Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue",
-                GuardSpawnType.Scripted, guardLocations.Count, null, 0,
-                intruderBehavior,
-                mapData, SpeechType.Simple, SurveyType.EndEpisode);
-
-            // Add guards
-            for (int i = 0; i < session.guardsCount; i++)
-            {
-                Behavior behavior = new Behavior(PatrolPlanner.gScripted, AlertPlanner.Simple,
-                    SearchPlanner.Cheating, PlanOutput.DijkstraPath);
-
-                session.AddNpc(i + 1, NpcType.Guard, behavior, PathFindingHeursitic.EuclideanDst,
-                    PathFollowing.SimpleFunnel, guardLocations[i]);
-            }
-
-            sessions.Add(session);
+            // IntruderBehavior intruderBehavior = new IntruderBehavior
+            // {
+            //     pathCancel = PathCanceller.None,
+            //     thresholdType = RiskThresholdType.None,
+            //     trajectoryType = TrajectoryType.None
+            // };
+            //
+            // Session session = new Session("", GameType.CoinCollection, Scenario.Stealth, "blue",
+            //     GuardSpawnType.Scripted, guardLocations.Count, null, 0,
+            //     intruderBehavior,
+            //     mapData, SpeechType.Simple, SurveyType.EndEpisode);
+            //
+            // // Add guards
+            // for (int i = 0; i < session.guardsCount; i++)
+            // {
+            //     Behavior behavior = new Behavior(PatrolPlanner.gScripted, AlertPlanner.Simple,
+            //         SearchPlanner.Cheating, PlanOutput.DijkstraPath);
+            //
+            //     session.AddNpc(i + 1, NpcType.Guard, behavior, PathFindingHeursitic.EuclideanDst,
+            //         PathFollowing.SimpleFunnel, guardLocations[i]);
+            // }
+            //
+            // sessions.Add(session);
         }
     }
 }

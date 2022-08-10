@@ -7,6 +7,7 @@ using Vector2 = UnityEngine.Vector2;
 public class RoadMapScouter : Scouter
 {
     private Intruder _intruder;
+    private RMScouterParams _rmScouterParams;
 
     public bool showIntruderGoal;
     private HidingSpot _currentGoalHs;
@@ -52,15 +53,17 @@ public class RoadMapScouter : Scouter
 
         base.Initiate(mapManager, session);
 
+        _rmScouterParams = (RMScouterParams) session.IntruderBehaviorParams.scouterParams;
+
         _closestWpsToDestination = new List<RoadMapNode>();
         _availableSpots = new List<HidingSpot>();
 
         _trajectoryProjector = new RMTrajectoryProjector();
-        _trajectoryProjector.Initiate(session.intruderBehavior.trajectoryType,
-            session.intruderBehavior.fovProjectionMultiplier);
+        _trajectoryProjector.Initiate(_rmScouterParams.trajectoryType,
+            _rmScouterParams.fovProjectionMultiplier);
 
         _roadMap = mapManager.GetRoadMap();
-        _neighbourhoodType = session.intruderBehavior.spotsNeighbourhood;
+        _neighbourhoodType = _rmScouterParams.spotsNeighbourhood;
 
         _riskEvaluator = gameObject.AddComponent<RMRiskEvaluator>();
         _riskEvaluator.Initiate();
@@ -68,9 +71,9 @@ public class RoadMapScouter : Scouter
         _pathFinder = new RMScoutPathFinder();
 
         _decisionMaker = new RMSDecisionMaker();
-        _decisionMaker.Initiate(session.intruderBehavior.goalPriority, session.intruderBehavior.safetyPriority);
+        _decisionMaker.Initiate(_rmScouterParams.goalPriority, _rmScouterParams.safetyPriority);
 
-        _maxSafeRisk = session.intruderBehavior.maxRiskAsSafe;
+        _maxSafeRisk = _rmScouterParams.maxRiskAsSafe;
 
         showAvailableHidingSpots = true;
         // showRiskSpots = true;
@@ -98,59 +101,21 @@ public class RoadMapScouter : Scouter
 
         _riskEvaluator.UpdateCurrentRisk(_roadMap);
 
-        Vector2? goal = GetDestination(gameType);
-
-        if (!intruder.IsBusy())
-            PlanPath(intruder, goal);
-            
-        // _availableSpots.Clear();
-        // PathFindToDestination(goal, _maxSafeRisk);
-        //
-        // EvaluateSpots(intruder, goal);
-        //
-        // int tries = 0;
-        // int count = _availableSpots.Count;
-        //
-        // HidingSpot bestHs = null;
-        // // Get a new destination for the intruder
-        // while (!intruder.IsBusy() && _availableSpots.Count > 0)
-        // {
-        //     bestHs =
-        //         _decisionMaker.GetBestSpot(_availableSpots, _riskEvaluator.GetRisk(), _maxSafeRisk);
-        //
-        //     if (Equals(bestHs, null)) break;
-        //
-        //     List<Vector2> path = intruder.GetPath();
-        //     float maxPathRisk = RMThresholds.GetMaxPathRisk(intruderBehavior.thresholdType);
-        //
-        //     _pathFinder.GetShortestPath(_roadMap, intruder.GetTransform().position, bestHs, ref path,
-        //         maxPathRisk);
-        //
-        //     _availableSpots.Remove(bestHs);
-        //     tries++;
-        // }
-        //
-        //
-        // if (!Equals(bestHs, null) ) _currentGoalHs = bestHs;
-        // else
-        // {
-        //     Debug.Log("Fail after try count of " + tries + " out of " + count);
-        // }
+        if (!intruder.IsBusy()) PlanPath(intruder, gameType);
 
         // Abort the current path if it is too risky
-        _riskEvaluator.CheckPathRisk(intruderBehavior.pathCancel, _roadMap, intruder, guards, ref _availableSpots,
+        _riskEvaluator.CheckPathRisk(_rmScouterParams.pathCancel, _roadMap, intruder, guards, ref _availableSpots,
             ref _currentGoalHs);
     }
 
-    private void PlanPath(Intruder intruder, Vector2? goal)
+    private void PlanPath(Intruder intruder, GameType gameType)
     {
+        Vector2? goal = GetDestination(gameType);
+
         _availableSpots.Clear();
         PathFindToDestination(goal, _maxSafeRisk);
 
         EvaluateSpots(intruder, goal);
-
-        int tries = 0;
-        int count = _availableSpots.Count;
 
         HidingSpot bestHs = null;
         // Get a new destination for the intruder
@@ -162,22 +127,15 @@ public class RoadMapScouter : Scouter
             if (Equals(bestHs, null)) break;
 
             List<Vector2> path = intruder.GetPath();
-            float maxPathRisk = RMThresholds.GetMaxPathRisk(intruderBehavior.thresholdType);
+            float maxPathRisk = RMThresholds.GetMaxPathRisk(_rmScouterParams.thresholdType);
 
             _pathFinder.GetShortestPath(_roadMap, intruder.GetTransform().position, bestHs, ref path,
                 maxPathRisk);
 
             _availableSpots.Remove(bestHs);
-            tries++;
-        }
-        
-        if (!Equals(bestHs, null) ) _currentGoalHs = bestHs;
-        else
-        {
-            Debug.Log("Fail after try count of " + tries + " out of " + count);
         }
 
-
+        if (!Equals(bestHs, null)) _currentGoalHs = bestHs;
     }
 
     /// <summary>
@@ -187,11 +145,9 @@ public class RoadMapScouter : Scouter
     /// <param name="minSafeRisk"></param>
     private void PathFindToDestination(Vector2? destination, float minSafeRisk)
     {
-        if (_intruder.IsBusy()) return;
-
-        float maxDistance = 50f;
+        float maxDistance = PathFinding.Instance.longestShortestPath * 0.3f;
         int numOfPossibleRmNodes = 8;
-        float maxSearchRisk = RMThresholds.GetMaxSearchRisk(intruderBehavior.thresholdType);
+        float maxSearchRisk = RMThresholds.GetMaxSearchRisk(_rmScouterParams.thresholdType);
         bool doAstar = _riskEvaluator.GetRisk() <= minSafeRisk && !Equals(destination, null);
 
         List<Vector2> path = _intruder.GetPath();
@@ -204,8 +160,6 @@ public class RoadMapScouter : Scouter
 
         foreach (var wp in _closestWpsToDestination)
             FillAvailableSpots(wp.GetPosition());
-
-        EditorApplication.isPaused = true;
     }
 
     private void FillAvailableSpots(Vector2 position)
@@ -222,7 +176,7 @@ public class RoadMapScouter : Scouter
                 break;
 
             case SpotsNeighbourhoods.Grid:
-                int numberOfAdjacentCell = RMThresholds.GetSearchDepth(intruderBehavior.thresholdType);
+                int numberOfAdjacentCell = RMThresholds.GetSearchDepth(_rmScouterParams.thresholdType);
                 _HsC.AddHidingSpots(ref _availableSpots, position, numberOfAdjacentCell);
                 break;
         }
@@ -394,34 +348,6 @@ public class RoadMapScouter : Scouter
         hs.OcclusionUtility = 1f - utility;
     }
 
-// /// <summary>
-// /// Get the occlusion value of a hiding spot.
-// /// The value is between 0 and 1, it reflects the normalized distance to the closest non occluded guard.
-// /// </summary>
-// private void SetOcclusionUtility(HidingSpot hs, List<Guard> guards)
-// {
-//     float utility = 1f;
-//     float denominator = PathFinding.Instance.longestShortestPath;
-//
-//     foreach (var guard in guards)
-//     {
-//         bool isVisible = GeometryHelper.IsCirclesVisible(hs.Position, guard.GetTransform().position, 0.1f, "Wall");
-//
-//         if (!isVisible) continue;
-//
-//         float distanceToHidingspot = Vector2.Distance(hs.Position, guard.GetTransform().position);
-//
-//         float normalizedDistance = distanceToHidingspot / denominator;
-//
-//         if (utility > normalizedDistance)
-//         {
-//             utility = normalizedDistance;
-//         }
-//     }
-//
-//     hs.OcclusionUtility = utility;
-// }
-
     public void OnDrawGizmos()
     {
         base.OnDrawGizmos();
@@ -477,6 +403,70 @@ public class RoadMapScouter : Scouter
     }
 }
 
+public class RMScouterParams : ScouterParams
+{
+    public readonly SpotsNeighbourhoods spotsNeighbourhood;
+
+    /// <summary>
+    /// Path Cancelling method
+    /// </summary>
+    public readonly PathCanceller pathCancel;
+
+    public readonly RiskThresholdType thresholdType;
+
+    public readonly TrajectoryType trajectoryType;
+
+    public readonly float maxRiskAsSafe;
+    
+    public readonly GoalPriority goalPriority;
+
+    public readonly SafetyPriority safetyPriority;
+
+    public readonly float fovProjectionMultiplier;
+
+    public RMScouterParams(SpotsNeighbourhoods spotsNeighbourhood, PathCanceller pathCancel, RiskThresholdType thresholdType, TrajectoryType trajectoryType, float maxRiskAsSafe, GoalPriority goalPriority, SafetyPriority safetyPriority, float fovProjectionMultiplier)
+    {
+        this.spotsNeighbourhood = spotsNeighbourhood;
+        this.pathCancel = pathCancel;
+        this.thresholdType = thresholdType;
+        this.trajectoryType = trajectoryType;
+        this.maxRiskAsSafe = maxRiskAsSafe;
+        this.goalPriority = goalPriority;
+        this.safetyPriority = safetyPriority;
+        this.fovProjectionMultiplier = fovProjectionMultiplier;
+    }
+
+    public override string ToString()
+    {
+        string output = "";
+        string sep = "_";
+
+        output += spotsNeighbourhood;
+        output += sep;
+
+        output += pathCancel;
+        output += sep;
+
+        output += thresholdType;
+        output += sep;
+        
+        output += fovProjectionMultiplier;
+        output += sep;            
+            
+        output += trajectoryType;
+        output += sep;
+
+        output += goalPriority;
+        output += sep;
+
+        output += safetyPriority;
+        output += sep;
+
+        output += maxRiskAsSafe;
+        
+        return output;
+    }
+}
 
 public class PossiblePosition
 {
@@ -553,4 +543,13 @@ public enum SpotsNeighbourhoods
     // Add hiding spots based on a grid
     Grid,
     All
+}
+
+public enum PathCanceller
+{
+    DistanceCalculation,
+
+    RiskComparison,
+
+    None
 }

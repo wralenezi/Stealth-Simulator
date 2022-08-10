@@ -174,8 +174,10 @@ public class GameManager : MonoBehaviour
         // List<Session> sessions = SessionsSetup.StealthStudyProcedural01();
         // List<Session> sessions = StealthStudySessions.GetSessions();
         // List<Session> sessions = StealthUserStudySessions.GetSessions();
-        List<Session> sessions = StealthBehavior.GetSessions();
+        // List<Session> sessions = StealthBehavior.GetSessions();
         // List<Session> sessions = PatrolSessionsAssessment.GetSessions();
+        List<Session> sessions = PatrolUserStudy.GetSessions();
+        
         // List<Session> sessions = PatrolSessions.GetSessions();
 
         // Each line represents a session
@@ -517,7 +519,9 @@ public struct NpcLocation
 public class Session
 {
     public int currentEpisode = 0;
-    public readonly int MaxEpisodes = 5;
+    public readonly int MaxEpisodes = 1;
+
+    public int episodeLength;
 
     // the ID of the game session
     private string timeStamp;
@@ -553,7 +557,8 @@ public class Session
     // Intruders Data
     public List<NpcData> intrudersList;
 
-    public IntruderBehavior intruderBehavior;
+    // public IntruderBehavior intruderBehavior;
+    public IntruderBehaviorParams IntruderBehaviorParams;
 
     private MapData map;
 
@@ -561,13 +566,14 @@ public class Session
     // the type of survey that will be showed after this session 
     public SurveyType surveyType;
 
-    public Session(string _gameCode, GameType _gameType, Scenario pScenario, string _guardColor,
+    public Session(int _episodeLength, string _gameCode, GameType _gameType, Scenario pScenario, string _guardColor,
         GuardSpawnType _guardSpawnType, int pGuardsCount, GuardBehaviorParams _guardBehaviorParams,
-        int pIntruderCount, IntruderBehavior _intruderBehavior,
+        int pIntruderCount, IntruderBehaviorParams _intruderBehaviorParams,
         MapData _map,
         SpeechType _speechType,
         SurveyType _surveyType = SurveyType.End)
     {
+        episodeLength = _episodeLength;
         gameCode = _gameCode;
         scenario = pScenario;
         guardColor = _guardColor;
@@ -578,7 +584,7 @@ public class Session
         map = _map;
         guardsList = new List<NpcData>();
         intrudersList = new List<NpcData>();
-        intruderBehavior = _intruderBehavior;
+        IntruderBehaviorParams = _intruderBehaviorParams;
         gameType = _gameType;
         speechType = _speechType;
         surveyType = _surveyType;
@@ -649,7 +655,7 @@ public class Session
             sessionInfo += GetIntrudersData()[0].behavior.patrol.ToString();
             sessionInfo += sep;
 
-            sessionInfo += intruderBehavior.ToString();
+            sessionInfo += IntruderBehaviorParams.ToString();
             sessionInfo += sep;
         }
 
@@ -681,6 +687,33 @@ public class GuardBehaviorParams
         output += sep;
 
         output += patrolerParams;
+        // output += sep;
+
+        return output;
+    }
+}
+
+
+public class IntruderBehaviorParams
+{
+    public PatrolPlanner planner;
+    public ScouterParams scouterParams;
+    
+    public IntruderBehaviorParams(PatrolPlanner _planner, ScouterParams _scouterParams)
+    {
+        planner = _planner;
+        scouterParams = _scouterParams;
+    }
+
+    public override string ToString()
+    {
+        string output = "";
+        string sep = "_";
+
+        output += planner;
+        output += sep;
+
+        output += scouterParams;
         // output += sep;
 
         return output;
