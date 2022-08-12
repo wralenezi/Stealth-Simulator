@@ -13,8 +13,6 @@ public class Survey : MonoBehaviour
 
     private int currentSurveyIndex;
 
-    private Session currentSession;
-
     // A container for the selected button in this survey
     private string previousButtonName;
 
@@ -29,7 +27,6 @@ public class Survey : MonoBehaviour
     {
         surveyItemPrefab = (GameObject) Resources.Load(surveyItemPath);
         items = new List<SurveyItem>();
-        // gameObject.SetActive(false);
         currentSurveyIndex = 0;
         m_SurveyManager = _surveyManager;
     }
@@ -75,7 +72,7 @@ public class Survey : MonoBehaviour
 
         // Add the question
         surveyMultiple.SetQuestion(question);
-        
+
         items.Add(surveyMultiple);
     }
 
@@ -116,7 +113,7 @@ public class Survey : MonoBehaviour
         GameControlQuestion repeatTutorial = surveyItemGo.AddComponent<GameControlQuestion>();
         string name = "repeatTutorial";
         string question = "Would you like to repeat the tutorial level?";
-        repeatTutorial.Initiate(name,ItemType.RepeatEpisode, this, "");
+        repeatTutorial.Initiate(name, ItemType.RepeatEpisode, this, "");
 
         // Add the question
         repeatTutorial.SetQuestion(question);
@@ -131,7 +128,7 @@ public class Survey : MonoBehaviour
 
         items.Add(repeatTutorial);
     }
-    
+
     public void AddTutorialSkip()
     {
         // Create the item object and hide it
@@ -141,7 +138,7 @@ public class Survey : MonoBehaviour
         GameControlQuestion skipTutorial = surveyItemGo.AddComponent<GameControlQuestion>();
         string name = "skipTutorial";
         string question = "Would you like to skip the tutorial level?";
-        skipTutorial.Initiate(name,ItemType.SkipEpisode, this, "");
+        skipTutorial.Initiate(name, ItemType.SkipEpisode, this, "");
 
         // Add the question
         skipTutorial.SetQuestion(question);
@@ -156,30 +153,24 @@ public class Survey : MonoBehaviour
 
         items.Add(skipTutorial);
     }
-    
+
     public SurveyManager GetManager()
     {
         return m_SurveyManager;
     }
 
-    public void SetSession(Session session)
-    {
-        currentSession = session;
-    }
-
     public string GetGuardColor()
     {
-        return currentSession.guardColor;
+        return StealthArea.SessionInfo.guardColor;
     }
 
     public void StartSurvey()
     {
         if (items.Count > 0)
+        {
+            Time.timeScale = 0f;
             items[0].gameObject.SetActive(true);
-    }
-
-    public void ShowLoading()
-    {
+        }
     }
 
     public void UpdateName(string itemName, string answer)
@@ -199,9 +190,9 @@ public class Survey : MonoBehaviour
             items[currentSurveyIndex].DeactivateInput(previousButtonName);
         }
     }
-    
+
     public void ClearSurveyItems()
-    {        
+    {
         items.Clear();
     }
 
@@ -217,14 +208,13 @@ public class Survey : MonoBehaviour
 
     public void SetQuestionIndex(int index)
     {
-        currentSurveyIndex = Mathf.Clamp(index,0, items.Count);
+        currentSurveyIndex = Mathf.Clamp(index, 0, items.Count);
     }
 
     public int GetQuestionsCount()
     {
         return items.Count;
     }
-
 
 
     public void EndSurvey()
@@ -244,17 +234,18 @@ public class Survey : MonoBehaviour
                 break;
 
             case SurveyType.BehaviorEval:
-                StartCoroutine(FileUploader.UploadData(currentSession,
+                StartCoroutine(FileUploader.UploadData(StealthArea.SessionInfo,
                     FileType.Survey, "application/json", surveyJson));
                 break;
 
             case SurveyType.EndEpisode:
-                StartCoroutine(FileUploader.UploadData(currentSession,
+                StartCoroutine(FileUploader.UploadData(StealthArea.SessionInfo,
                     FileType.Survey, "application/json", surveyJson));
+                GameManager.Instance.ClearArea();
                 break;
 
             case SurveyType.SpeechEval:
-                StartCoroutine(FileUploader.UploadData(currentSession,
+                StartCoroutine(FileUploader.UploadData(StealthArea.SessionInfo,
                     FileType.Survey, "application/json", surveyJson));
                 break;
 
@@ -262,10 +253,10 @@ public class Survey : MonoBehaviour
                 Application.Quit();
                 break;
         }
-        
+
 
         m_SurveyManager.ClearImage();
-        // GameManager.Instance.StartAreaAfterSurvey();
+        GameManager.Instance.StartAreaAfterSurvey();
         StartCoroutine(GameManager.Instance.StartGamePostSurvey());
     }
 }

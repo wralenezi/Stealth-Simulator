@@ -93,9 +93,7 @@ public class StealthArea : MonoBehaviour
         GameManager.MainCamera.backgroundColor = parsedColor - new Color(0.5f, 0.5f, 0.5f, 0.1f);
 
         AreaUiManager.Reset();
-        // AreaUiManager.UpdateGuardLabel(SessionInfo.guardColor, parsedColor);
-
-        if (GameManager.Instance.showSurvey) Time.timeScale = 0f;
+        AreaUiManager.UpdateGuardLabel(SessionInfo.guardColor, parsedColor);
     }
 
     public static float GetElapsedTimeInSeconds()
@@ -105,7 +103,6 @@ public class StealthArea : MonoBehaviour
 
     public void StartArea()
     {
-        ResetArea();
         gameObject.SetActive(true);
         // if (GameManager.Instance.showSurvey) StartCoroutine(Countdown());
     }
@@ -163,7 +160,6 @@ public class StealthArea : MonoBehaviour
         if (!finished) return;
 
         heatMap.End();
-        // EditorApplication.isPaused = true;
         
         FinishArea();
     }
@@ -175,8 +171,6 @@ public class StealthArea : MonoBehaviour
 
         if (GameManager.Instance.showSurvey)
         {
-            if (!Equals(GetSessionInfo().gameCode, "tutorial")) SessionsSetup.AddSessionColor(GetSessionInfo().guardColor);
-
             GameManager.SurveyManager.CreateSurvey(GameManager.GetRunId(), GetSessionInfo().surveyType,
                 scoreController.score);
             
@@ -198,7 +192,12 @@ public class StealthArea : MonoBehaviour
     public void EndArea()
     {
         if (!GameManager.Instance.showSurvey && performanceMonitor.IsDone())
-            GameManager.Instance.RemoveArea(gameObject);
+            RemoveArea();
+    }
+
+    public void RemoveArea()
+    {
+        GameManager.Instance.RemoveArea(gameObject);
     }
 
     int GetRemainingTime()

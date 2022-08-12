@@ -176,9 +176,10 @@ public class GameManager : MonoBehaviour
         // List<Session> sessions = StealthUserStudySessions.GetSessions();
         // List<Session> sessions = StealthBehavior.GetSessions();
         // List<Session> sessions = PatrolSessionsAssessment.GetSessions();
-        List<Session> sessions = PatrolUserStudy.GetSessions();
-        
         // List<Session> sessions = PatrolSessions.GetSessions();
+
+        List<Session> sessions = PatrolUserStudy.GetSessions();
+
 
         // Each line represents a session
         foreach (var sc in sessions)
@@ -200,6 +201,13 @@ public class GameManager : MonoBehaviour
     {
         return !Equals(_activeArea, null);
     }
+
+    public void ClearArea()
+    {
+        Destroy(_activeArea.gameObject);
+        _activeArea = null;
+    }
+
 
     /// <summary>
     /// Load the map data 
@@ -259,18 +267,6 @@ public class GameManager : MonoBehaviour
     {
         while (_sessions.Count > 0)
         {
-            // // Skip this session if it is logged
-            // if (Equals(loggingMethod, Logging.Local))
-            // {
-            //     SetEpisodeCount(_sessions[0]);
-            //
-            //     if (PerformanceLogger.IsLogged(_sessions[0]))
-            //     {
-            //         _sessions.RemoveAt(0);
-            //         continue;
-            //     }
-            // }
-
             // if there is an active area then skip
             if (IsAreaLoaded())
             {
@@ -314,17 +310,13 @@ public class GameManager : MonoBehaviour
         sa.currentEpisode = episode;
     }
 
-
     /// <summary>
     /// Start the game episode after the survey
     /// </summary>
     public void StartAreaAfterSurvey()
     {
         if (IsAreaLoaded())
-        {
-            _activeArea.StartArea();
-            SurveyManager.SetSession(_activeArea.GetSessionInfo());
-        }
+            Time.timeScale = 1f;
         else
         {
             // Show the end message
@@ -338,14 +330,12 @@ public class GameManager : MonoBehaviour
         while (_sessions.Count > 0)
         {
             yield return new WaitForSecondsRealtime(0.5f);
-
             if (IsAreaLoaded()) break;
         }
 
         if (IsAreaLoaded())
         {
             _activeArea.StartArea();
-            SurveyManager.SetSession(_activeArea.GetSessionInfo());
             yield break;
         }
 
@@ -369,13 +359,9 @@ public class GameManager : MonoBehaviour
             _activeArea.gameObject.SetActive(state);
     }
 
-
     public void EndCurrentGame()
     {
-        if (_activeArea != null)
-        {
-            RemoveArea(_activeArea.gameObject);
-        }
+        if (_activeArea != null) RemoveArea(_activeArea.gameObject);
     }
 
     public void EndNonTutorialGame()
@@ -406,13 +392,6 @@ public enum Logging
 
     // No logging.
     None
-}
-
-// World Representation Type 
-public enum WorldRepType
-{
-    Continuous,
-    Grid
 }
 
 // the scenario session will be set in
@@ -698,7 +677,7 @@ public class IntruderBehaviorParams
 {
     public PatrolPlanner planner;
     public ScouterParams scouterParams;
-    
+
     public IntruderBehaviorParams(PatrolPlanner _planner, ScouterParams _scouterParams)
     {
         planner = _planner;

@@ -53,6 +53,5 @@ public class SurveyTextInput : SurveyItem
     public override void ProcessAnswer(string answer)
     {
         m_answer = _inputField.text;
-        StealthArea.SessionInfo.gameCode = m_answer;
     }
 }

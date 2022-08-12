@@ -4,29 +4,54 @@ using UnityEngine;
 
 public class PatrolUserStudy : MonoBehaviour
 {
-    private static int _episodeLength = 120;
+    private static int _episodeLength = 10;
     private static int _episodeCount = 1;
 
+    private static List<string> _colors = new List<string>()
+    {
+        "blue",
+        "yellow",
+        "green"
+    };
+
+    private static string GetColor()
+    {
+        string output = "red";
+
+        if (_colors.Count > 0)
+        {
+            int index = Random.Range(0, _colors.Count);
+            output = _colors[index];
+            _colors.RemoveAt(index);
+        }
+
+        return output;
+    }
 
     public static List<Session> GetSessions()
     {
         List<Session> sessions = new List<Session>();
 
         List<int> guardTeams = new List<int>();
-        guardTeams.Add(4);
-
         MapData mapData;
 
-        mapData = new MapData("amongUs", 0.5f);
+        guardTeams.Add(1);
+        mapData = new MapData("MgsDock", 2f);
+        AddRandomSession(ref sessions, mapData, "red", guardTeams, SurveyType.EndTutorial);
 
-        AddVisMeshSession(ref sessions, mapData, guardTeams);
-        // AddRoadMapSession(ref sessions, mapData, guardTeams);
-        // AddRandomSession(ref sessions, mapData, guardTeams);
-        
+
+        guardTeams.Clear();
+        guardTeams.Add(4);
+        mapData = new MapData("amongUs", 0.5f);
+        AddVisMeshSession(ref sessions, mapData, _colors[0], guardTeams, SurveyType.EndEpisode);
+        AddRoadMapSession(ref sessions, mapData, _colors[1], guardTeams, SurveyType.EndEpisode);
+        AddRandomSession(ref sessions, mapData, _colors[2], guardTeams, SurveyType.EndEpisode);
+
         return sessions;
     }
 
-    private static void AddVisMeshSession(ref List<Session> sessions, MapData mapData, List<int> guardTeams)
+    private static void AddVisMeshSession(ref List<Session> sessions, MapData mapData, string color,
+        List<int> guardTeams, SurveyType surveyType)
     {
         foreach (var guardTeam in guardTeams)
         {
@@ -39,10 +64,10 @@ public class PatrolUserStudy : MonoBehaviour
             IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.UserInput, null);
 
 
-            Session session = new Session(_episodeLength, "", GameType.CoinCollection, Scenario.Stealth, "blue",
+            Session session = new Session(_episodeLength, "", GameType.CoinCollection, Scenario.Stealth, color,
                 GuardSpawnType.Separate, guardTeam, guardBehaviorParams, 1,
                 intruderBehaviorParams,
-                mapData, SpeechType.Simple, SurveyType.EndEpisode);
+                mapData, SpeechType.Simple, surveyType);
 
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)
@@ -67,9 +92,10 @@ public class PatrolUserStudy : MonoBehaviour
             sessions.Add(session);
         }
     }
-    
-    
-    private static void AddRoadMapSession(ref List<Session> sessions, MapData mapData, List<int> guardTeams)
+
+
+    private static void AddRoadMapSession(ref List<Session> sessions, MapData mapData, string guardColor,
+        List<int> guardTeams, SurveyType surveyType)
     {
         foreach (var guardTeam in guardTeams)
         {
@@ -85,7 +111,7 @@ public class PatrolUserStudy : MonoBehaviour
             Session session = new Session(_episodeLength, "", GameType.CoinCollection, Scenario.Stealth, "blue",
                 GuardSpawnType.Separate, guardTeam, guardBehaviorParams, 1,
                 intruderBehaviorParams,
-                mapData, SpeechType.Simple, SurveyType.EndEpisode);
+                mapData, SpeechType.Simple, surveyType);
 
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)
@@ -110,8 +136,9 @@ public class PatrolUserStudy : MonoBehaviour
             sessions.Add(session);
         }
     }
-    
-    private static void AddRandomSession(ref List<Session> sessions, MapData mapData, List<int> guardTeams)
+
+    private static void AddRandomSession(ref List<Session> sessions, MapData mapData, string guardColor,
+        List<int> guardTeams, SurveyType surveyType)
     {
         foreach (var guardTeam in guardTeams)
         {
@@ -123,10 +150,10 @@ public class PatrolUserStudy : MonoBehaviour
             IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.UserInput, null);
 
 
-            Session session = new Session(_episodeLength, "", GameType.CoinCollection, Scenario.Stealth, "blue",
+            Session session = new Session(_episodeLength, "", GameType.CoinCollection, Scenario.Stealth, guardColor,
                 GuardSpawnType.Separate, guardTeam, guardBehaviorParams, 1,
                 intruderBehaviorParams,
-                mapData, SpeechType.Simple, SurveyType.EndEpisode);
+                mapData, SpeechType.Simple, surveyType);
 
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)

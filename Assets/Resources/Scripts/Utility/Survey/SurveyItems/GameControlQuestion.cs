@@ -26,7 +26,8 @@ public class GameControlQuestion : SurveyMultiple
     {
         if (!Equals(_answer, "No")) return;
         
-        GameManager.Instance.EndCurrentGame();
+        // GameManager.Instance.EndCurrentGame();
+        GameManager.Instance.ClearArea();
         survey.GetManager().AddIntroToFirstHalf();
     }
 
@@ -34,7 +35,8 @@ public class GameControlQuestion : SurveyMultiple
     {
         if(!Equals(_answer, "Yes")) return;
         
-        GameManager.Instance.EndCurrentGame();
+        GameManager.Instance.ClearArea();
+        // GameManager.Instance.EndCurrentGame();
         survey.SetQuestionIndex(survey.GetQuestionsCount() - 2);
     }
 }

@@ -124,7 +124,6 @@ public class PerformanceLogger : MonoBehaviour
     {
         // Increment the episode counter
         Sa.currentEpisode++;
-        // _episodeCount++;
     }
 
     // Append the Episode performance to the log

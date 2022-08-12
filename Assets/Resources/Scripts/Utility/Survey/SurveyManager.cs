@@ -33,11 +33,6 @@ public class SurveyManager : MonoBehaviour
         m_FadeInScreen.color = bKColor;
     }
 
-    public void SetSession(Session session)
-    {
-        m_currentSurvey.SetSession(session);
-    }
-
     public void CreateSurvey(int timeStamp, SurveyType type, float score)
     {
         m_currentSurvey.ResetSurvey(type, timeStamp);
@@ -82,6 +77,8 @@ public class SurveyManager : MonoBehaviour
 
     private IEnumerator FadeInSurvey()
     {
+        Time.timeScale = 0f;
+
         float alpha = 0f;
         Color bKColor = m_FadeInScreen.color;
         bKColor.a = alpha;
@@ -95,9 +92,8 @@ public class SurveyManager : MonoBehaviour
             m_FadeInScreen.color = bKColor;
         }
 
-
         GameManager.Instance.SetGameActive(false);
-        GameManager.Instance.EndNonTutorialGame();
+        // GameManager.Instance.EndNonTutorialGame();
         m_currentSurvey.StartSurvey();
     }
 
@@ -126,7 +122,7 @@ public class SurveyManager : MonoBehaviour
         m_itemName = "played before";
         m_itemDesc = "Have you played this game before?";
         m_currentSurvey.AddItemMultiple(m_itemName, "", m_itemDesc, m_Choices);
-        
+
         // Consent
         m_Choices.Clear();
         m_Choices.Add(new Choice("Ok", "Next", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
@@ -137,9 +133,11 @@ public class SurveyManager : MonoBehaviour
 
         // Video game skill
         m_Choices.Clear();
-        m_Choices.Add(new Choice("Not at all", "Not at all", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
+        m_Choices.Add(new Choice("Not at all", "Not at all", ButtonType.Survey,
+            ColorBlock.defaultColorBlock.normalColor));
         m_Choices.Add(new Choice("Beginner", "Beginner", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
-        m_Choices.Add(new Choice("Intermediate", "Intermediate", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
+        m_Choices.Add(new Choice("Intermediate", "Intermediate", ButtonType.Survey,
+            ColorBlock.defaultColorBlock.normalColor));
         m_Choices.Add(new Choice("Advanced", "Advanced", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
         m_itemName = "video games skill";
         m_itemDesc = "How much are you experienced with video games?";
@@ -152,16 +150,14 @@ public class SurveyManager : MonoBehaviour
         m_Choices.Clear();
         m_Choices.Add(new Choice("Next", "Next", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
         m_itemName = "explain game";
-        
-        string gameDesc = "Avoid detection and collect coins to reach 100.\nIf you are seen, your score will decrease with time.";
-        m_itemDesc = gameDesc;
+        m_itemDesc =
+            "Avoid detection and collect coins to reach 100.\nIf you are seen, your score will decrease with time.";
         m_currentSurvey.AddItemMultiple(m_itemName, "", m_itemDesc, m_Choices);
 
         m_Choices.Clear();
         m_Choices.Add(new Choice("Go", "Go!", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
         m_itemName = "explain game 2 ";
-        m_itemDesc =
-            "You are spotted! Lose track of the robots and get a score of 100 before time runs out!\nMove your character with direction arrows.";
+        m_itemDesc = "Collect many coins as you can before the time runs out and without being detected.";
         m_currentSurvey.AddItemMultiple(m_itemName, "", m_itemDesc, m_Choices);
     }
 
@@ -212,9 +208,12 @@ public class SurveyManager : MonoBehaviour
     {
         // Fun
         m_Choices.Clear();
-        m_Choices.Add(new Choice("Not so much", "Not so much", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
-        m_Choices.Add(new Choice("Fairly fun", "Fairly fun", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
-        m_Choices.Add(new Choice("So much fun", "So much fun", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
+        m_Choices.Add(new Choice("Not so much", "Not so much", ButtonType.Survey,
+            ColorBlock.defaultColorBlock.normalColor));
+        m_Choices.Add(new Choice("Fairly fun", "Fairly fun", ButtonType.Survey,
+            ColorBlock.defaultColorBlock.normalColor));
+        m_Choices.Add(new Choice("So much fun", "So much fun", ButtonType.Survey,
+            ColorBlock.defaultColorBlock.normalColor));
         m_itemName = "fun";
         m_itemDesc = "How much did you enjoy playing against " + m_currentSurvey.GetGuardColor() + "?";
         m_currentSurvey.AddItemMultiple(m_itemName, "", m_itemDesc, m_Choices);
@@ -230,9 +229,12 @@ public class SurveyManager : MonoBehaviour
 
         // Naturalness
         m_Choices.Clear();
-        m_Choices.Add(new Choice("Not natural", "Not natural", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
-        m_Choices.Add(new Choice("Acceptable", "Acceptable", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
-        m_Choices.Add(new Choice("Very natural", "Very natural", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
+        m_Choices.Add(new Choice("Not natural", "Not natural", ButtonType.Survey,
+            ColorBlock.defaultColorBlock.normalColor));
+        m_Choices.Add(new Choice("Acceptable", "Acceptable", ButtonType.Survey,
+            ColorBlock.defaultColorBlock.normalColor));
+        m_Choices.Add(new Choice("Very natural", "Very natural", ButtonType.Survey,
+            ColorBlock.defaultColorBlock.normalColor));
         m_itemName = "behavior naturalness";
         m_itemDesc = "How natural the " + m_currentSurvey.GetGuardColor() + " team`s behavior was?";
         m_currentSurvey.AddItemMultiple(m_itemName, "", m_itemDesc, m_Choices);

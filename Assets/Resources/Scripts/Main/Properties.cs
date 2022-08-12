@@ -3,11 +3,6 @@ using UnityEngine;
 
 public static class Properties
 {
-    // General game set up
-    //----------------------------------------------------------
-    // The duration of an episode.
-    // public const float EpisodeLength = 120f;
-    
     //-------------------------------------------------------------------------//
     // Geometry Parameters
     // Winding order for outer polygons; inner polygon is opposite.
