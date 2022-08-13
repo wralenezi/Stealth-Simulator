@@ -104,6 +104,27 @@ public class Survey : MonoBehaviour
     }
 
 
+    public void AddScores(string id, string code, string question, List<Choice> choices)
+    {
+        // Create the item object and hide it
+        GameObject surveyItemGo = Instantiate(surveyItemPrefab, transform);
+        surveyItemGo.SetActive(false);
+
+        SurveyScores surveyScores = surveyItemGo.AddComponent<SurveyScores>();
+        surveyScores.Initiate(id, ItemType.Survey, this, code);
+
+        // Add the question
+        surveyScores.SetQuestion(question);
+
+        // Add the options
+        // foreach (var choice in choices)
+        //     surveyScores.AddChoice(choice);
+
+        items.Add(surveyScores); 
+    }
+    
+
+
     public void AddTutorialRepeat()
     {
         // Create the item object and hide it

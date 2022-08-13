@@ -35,17 +35,17 @@ public class PatrolUserStudy : MonoBehaviour
         List<int> guardTeams = new List<int>();
         MapData mapData;
 
-        guardTeams.Add(1);
-        mapData = new MapData("MgsDock", 2f);
-        AddRandomSession(ref sessions, mapData, "red", guardTeams, SurveyType.EndTutorial);
-
-
-        guardTeams.Clear();
-        guardTeams.Add(4);
-        mapData = new MapData("amongUs", 0.5f);
-        AddVisMeshSession(ref sessions, mapData, _colors[0], guardTeams, SurveyType.EndEpisode);
-        AddRoadMapSession(ref sessions, mapData, _colors[1], guardTeams, SurveyType.EndEpisode);
-        AddRandomSession(ref sessions, mapData, _colors[2], guardTeams, SurveyType.EndEpisode);
+        // guardTeams.Add(1);
+        // mapData = new MapData("MgsDock", 2f);
+        // AddRandomSession(ref sessions, mapData, "red", guardTeams, SurveyType.EndTutorial);
+        //
+        //
+        // guardTeams.Clear();
+        // guardTeams.Add(4);
+        // mapData = new MapData("amongUs", 0.5f);
+        // AddVisMeshSession(ref sessions, mapData, _colors[0], guardTeams, SurveyType.EndEpisode);
+        // AddRoadMapSession(ref sessions, mapData, _colors[1], guardTeams, SurveyType.EndEpisode);
+        // AddRandomSession(ref sessions, mapData, _colors[2], guardTeams, SurveyType.EndEpisode);
 
         return sessions;
     }

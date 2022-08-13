@@ -339,12 +339,18 @@ public class SurveyManager : MonoBehaviour
 
     private void EndGame()
     {
+        // m_Choices.Clear();
+        // // m_Choices.Add(new Choice("Exit", "Exit", ButtonType.Survey));
+        // m_itemName = "End";
+        // m_itemDesc =
+        //     "Thank for playing!You can play against other teams by restarting the game.\nTo restart you can press F5 on the keyboard.";
+        // m_currentSurvey.AddItemMultiple(m_itemName, "", m_itemDesc, m_Choices);
+
         m_Choices.Clear();
-        // m_Choices.Add(new Choice("Exit", "Exit", ButtonType.Survey));
         m_itemName = "End";
         m_itemDesc =
-            "Thank for playing!You can play against other teams by restarting the game.\nTo restart you can press F5 on the keyboard.";
-        m_currentSurvey.AddItemMultiple(m_itemName, "", m_itemDesc, m_Choices);
+            "Thank for playing! To play again you can press F5 on the keyboard.";
+        m_currentSurvey.AddScores(m_itemName, "", m_itemDesc, m_Choices);
     }
 }
 
