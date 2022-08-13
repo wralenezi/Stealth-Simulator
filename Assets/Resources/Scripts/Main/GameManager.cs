@@ -315,9 +315,10 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void StartAreaAfterSurvey()
     {
-        if (IsAreaLoaded())
-            Time.timeScale = 1f;
-        else
+        // if (IsAreaLoaded())
+        Time.timeScale = 1f;
+        
+        if (IsSessionsOver())
         {
             // Show the end message
             SurveyManager.CreateSurvey(_timeStamp, SurveyType.End, 0f);
@@ -344,6 +345,10 @@ public class GameManager : MonoBehaviour
         SurveyManager.ShowSurvey();
     }
 
+    public bool IsSessionsOver()
+    {
+        return _sessions.Count == 0;
+    }
 
     public StealthArea GetActiveArea()
     {

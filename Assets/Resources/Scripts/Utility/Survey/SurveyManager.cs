@@ -93,7 +93,6 @@ public class SurveyManager : MonoBehaviour
         }
 
         GameManager.Instance.SetGameActive(false);
-        // GameManager.Instance.EndNonTutorialGame();
         m_currentSurvey.StartSurvey();
     }
 

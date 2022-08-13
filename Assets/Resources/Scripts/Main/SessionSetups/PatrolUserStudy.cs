@@ -108,7 +108,7 @@ public class PatrolUserStudy : MonoBehaviour
             IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.UserInput, null);
 
 
-            Session session = new Session(_episodeLength, "", GameType.CoinCollection, Scenario.Stealth, "blue",
+            Session session = new Session(_episodeLength, "", GameType.CoinCollection, Scenario.Stealth, guardColor,
                 GuardSpawnType.Separate, guardTeam, guardBehaviorParams, 1,
                 intruderBehaviorParams,
                 mapData, SpeechType.Simple, surveyType);
