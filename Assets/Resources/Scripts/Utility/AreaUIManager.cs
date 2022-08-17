@@ -125,7 +125,7 @@ public class AreaUIManager : MonoBehaviour
 
     private IEnumerator Blinking()
     {
-        // timeGo.GetComponent<AudioSource>().Play();
+        timeGo.GetComponent<AudioSource>().Play();
 
         while (true)
         {
@@ -136,12 +136,12 @@ public class AreaUIManager : MonoBehaviour
 
     public void UpdateScore(float score, float oldScore)
     {
-        // if (GameManager.Instance.GetActiveArea().GetSessionInfo().gameType == GameType.CoinCollection)
-        //     scoreLabel.text = "Score: " + score;
-        // else
-        //     scoreLabel.text = "Score: " + score + " %";
-        //
-        // ShakeScore(score - oldScore);
+        if (GameManager.Instance.GetActiveArea().GetSessionInfo().gameType == GameType.CoinCollection)
+            scoreLabel.text = "Score: " + score;
+        else
+            scoreLabel.text = "Score: " + score + " %";
+        
+        ShakeScore(score - oldScore);
 
         ScoreController.Instance.UpdateScore(score);
     }

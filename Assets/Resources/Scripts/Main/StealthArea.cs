@@ -171,9 +171,7 @@ public class StealthArea : MonoBehaviour
 
         if (GameManager.Instance.showSurvey)
         {
-            GameManager.SurveyManager.CreateSurvey(GameManager.GetRunId(), GetSessionInfo().surveyType,
-                scoreController.score);
-            
+            GameManager.SurveyManager.CreateSurvey(GameManager.GetRunId(), GetSessionInfo().surveyType, scoreController.score);
             GameManager.SurveyManager.ShowSurvey();
         }
 

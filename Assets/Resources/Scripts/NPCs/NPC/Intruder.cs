@@ -37,29 +37,31 @@ public class Intruder : NPC
         NpcSpeed *= Properties.IntruderSpeedMulti;
         NpcRotationSpeed *= Properties.IntruderRotationSpeedMulti;
 
-        // GameObject gameLabel = Resources.Load<GameObject>("Prefabs/PlayerLabel");
-        // GameObject gameLabelGo = Instantiate(gameLabel, transform);
-        // m_PlayerLabel = gameLabelGo.GetComponent<PlayerLabelController>();
-        // m_PlayerLabel.Initiate(GetTransform());
-
-        isGhost = true;
-        ShowPath = true;
+        GameObject gameLabel = Resources.Load<GameObject>("Prefabs/PlayerLabel");
+        GameObject gameLabelGo = Instantiate(gameLabel, transform);
+        
+        m_PlayerLabel = gameLabelGo.GetComponent<PlayerLabelController>();
+        m_PlayerLabel.Initiate(GetTransform());
+        
+        // isGhost = true;
+        // ShowPath = true;
     }
 
     public override void ResetNpc()
     {
         base.ResetNpc();
-
+        m_PlayerLabel.Reset();
+            
         m_NoTimesSpotted = 0;
         m_AlertTime = 0f;
         m_SearchedTime = 0f;
         m_CollectCoins = 0;
     }
 
-    public void HideLabel()
-    {
-        m_PlayerLabel.HideLabel();
-    }
+    // public void HideLabel()
+    // {
+    //     m_PlayerLabel.HideLabel();
+    // }
     
     public void UpdateMetrics(State state, float timeDelta)
     {
@@ -75,9 +77,7 @@ public class Intruder : NPC
         {
             m_SearchedTime += timeDelta;
         }
-
     }
-
     
     // In the case of intruder nothing to be done in this function yet
     public override void ClearLines()
@@ -139,7 +139,6 @@ public class Intruder : NPC
         }
     }
 
-
     public void SpotCoins(List<Coin> coins)
     {
         foreach (var coin in coins.Where(coin => GetFovPolygon().IsCircleInPolygon(coin.transform.position, 0.3f)))
@@ -165,8 +164,7 @@ public class Intruder : NPC
 
         isWaiting = false;
     }
-
-
+    
     public float GetPercentAlertTime()
     {
         return m_AlertTime / StealthArea.SessionInfo.episodeLength;

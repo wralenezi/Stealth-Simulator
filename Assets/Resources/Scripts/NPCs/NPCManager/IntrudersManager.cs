@@ -26,7 +26,6 @@ public class IntrudersManager : Agent
         Physics2D.IgnoreLayerCollision(m_npcLayer, m_npcLayer);
     }
 
-
     public void Reset(List<MeshPolygon> navMesh, List<Intruder> intruders, List<Guard> guards, Session session)
     {
         m_iCtrl.Reset();
@@ -38,7 +37,6 @@ public class IntrudersManager : Agent
             intruder.ResetNpc();
         }
     }
-
 
     // Create the intruder
     private void CreateIntruder(NpcData npcData, List<MeshPolygon> navMesh, List<Guard> guards, Session session)
@@ -125,11 +123,11 @@ public class IntrudersManager : Agent
         }
     }
 
-    public void HideLabels()
-    {
-        foreach (var intruder in _intruders)
-        {
-            intruder.HideLabel();
-        }
-    }
+    // public void HideLabels()
+    // {
+    //     foreach (var intruder in _intruders)
+    //     {
+    //         intruder.HideLabel();
+    //     }
+    // }
 }

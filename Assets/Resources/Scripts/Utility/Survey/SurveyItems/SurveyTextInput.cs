@@ -6,6 +6,7 @@ using UnityEngine.UI;
 
 public class SurveyTextInput : SurveyItem
 {
+    private string originalQuestion = "";
     private GameObject textInputObject;
     private TMP_InputField _inputField;
     private string inputFieldPath = "Prefabs/UIs/InputField";
@@ -49,9 +50,34 @@ public class SurveyTextInput : SurveyItem
         _btn.colors = colorBlock;
     }
 
-
     public override void ProcessAnswer(string answer)
     {
         m_answer = _inputField.text;
+
+        if (Equals(m_code, "name"))
+        {
+            GameManager.playerName = m_answer;
+        }
+    }
+
+    public override bool IsAnswerValid(string answer)
+    {
+        if (Equals(m_code, "name"))
+        {
+            if (_inputField.text.Length < 3)
+            {
+                if (Equals(originalQuestion, ""))
+                    originalQuestion = m_question.text;
+                
+                m_question.text = originalQuestion + "\n" + "You need to insert exactly 3 characters";
+                return false;
+            }
+
+
+            GameManager.playerName = m_answer;
+        }
+        
+        
+        return true;
     }
 }

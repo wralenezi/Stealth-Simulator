@@ -71,6 +71,27 @@ public static class FileUploader
     }
 
 
+    public static IEnumerator UploadScore(Session? sessionInfo, float score)
+    {
+        string requestAddress = server + "get_scores.php?behavior=" + sessionInfo.sessionVariable + "&name=" +
+                                GameManager.playerName + "&score=" + score;
+
+        UnityWebRequest www = UnityWebRequest.Get(requestAddress);
+
+        yield return www.SendWebRequest();
+
+        if (www.result != UnityWebRequest.Result.Success || www.responseCode != 200)
+        {
+            string error = ResponseCodeLookUp.GetMeaning(www.responseCode);
+            Debug.LogError("Error with sending score ");
+        }
+        else
+            sessionInfo.LoadScores(www.downloadHandler.text);
+
+        // PatrolUserStudy.LoadScores(sessionInfo, www.downloadHandler.text);
+    }
+
+
     public static IEnumerator GetFile(string fileName, string type, float scale = 0f)
     {
         string requestAddress = server + "get_map.php?name=" + fileName + "&type=" + type + "&size=" + scale;

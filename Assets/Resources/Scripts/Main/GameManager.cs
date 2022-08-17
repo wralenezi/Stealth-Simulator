@@ -9,6 +9,7 @@ public class GameManager : MonoBehaviour
     // Run identifier so all data can be grouped for each run
     // The time stamp the game started
     private static int _timeStamp;
+    public static string playerName;
 
     // The path to the stealth area prefab
     private const string StealthArea = "Prefabs/StealthArea";
@@ -17,7 +18,8 @@ public class GameManager : MonoBehaviour
     private StealthArea _activeArea;
 
     // List of scenarios to be executed
-    private List<Session> _sessions;
+    private List<Session> _remainingSessions;
+    private List<Session> _closedSessions;
 
     // To determine which perspective the game is viewed from
     [Header("Game Mode")] [SerializeField] [Tooltip("What elements will be shown?")]
@@ -77,7 +79,8 @@ public class GameManager : MonoBehaviour
 
         // Initiate the references
         _activeArea = null;
-        _sessions = new List<Session>();
+        _remainingSessions = new List<Session>();
+        _closedSessions = new List<Session>();
         Instance = this;
 
         // Define the hierarchy of the paths for the game
@@ -127,7 +130,7 @@ public class GameManager : MonoBehaviour
 
     public GameType GetGameType()
     {
-        return _sessions[0].gameType;
+        return _remainingSessions[0].gameType;
     }
 
     private void FillVoices()
@@ -193,7 +196,7 @@ public class GameManager : MonoBehaviour
                 if (PerformanceLogger.IsLogged(sc)) continue;
             }
 
-            _sessions.Add(sc);
+            _remainingSessions.Add(sc);
         }
     }
 
@@ -265,7 +268,7 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator LoadGamesWhenReady()
     {
-        while (_sessions.Count > 0)
+        while (_remainingSessions.Count > 0)
         {
             // if there is an active area then skip
             if (IsAreaLoaded())
@@ -277,7 +280,9 @@ public class GameManager : MonoBehaviour
             LoadingScreen.Activate();
 
             // Get the first session
-            Session currentSession = _sessions[0];
+            Session currentSession = _remainingSessions[0];
+            
+            if(!Equals(currentSession.gameCode, "tutorial")) _closedSessions.Add(currentSession);
 
             // Load the map data
             currentMapData = "";
@@ -299,7 +304,7 @@ public class GameManager : MonoBehaviour
             CreateArea(currentSession);
 
             // Remove the session
-            _sessions.RemoveAt(0);
+            _remainingSessions.RemoveAt(0);
         }
     }
 
@@ -315,7 +320,6 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void StartAreaAfterSurvey()
     {
-        // if (IsAreaLoaded())
         Time.timeScale = 1f;
         
         if (IsSessionsOver())
@@ -328,7 +332,7 @@ public class GameManager : MonoBehaviour
 
     public IEnumerator StartGamePostSurvey()
     {
-        while (_sessions.Count > 0)
+        while (_remainingSessions.Count > 0)
         {
             yield return new WaitForSecondsRealtime(0.5f);
             if (IsAreaLoaded()) break;
@@ -347,7 +351,7 @@ public class GameManager : MonoBehaviour
 
     public bool IsSessionsOver()
     {
-        return _sessions.Count == 0;
+        return _remainingSessions.Count == 0;
     }
 
     public StealthArea GetActiveArea()
@@ -377,6 +381,10 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public List<Session> GetClosedSessions()
+    {
+        return _closedSessions;
+    }
 
     // Remove the current area and load the next scenario
     public void RemoveArea(GameObject area)
@@ -519,6 +527,7 @@ public class Session
     // Session scenario
     public Scenario scenario;
 
+    public string sessionVariable;
     public string guardColor;
 
     public GuardSpawnType guardSpawnMethod;
@@ -545,6 +554,8 @@ public class Session
     public IntruderBehaviorParams IntruderBehaviorParams;
 
     private MapData map;
+
+    public List<ScoreRecord> _scores;
 
 
     // the type of survey that will be showed after this session 
@@ -573,6 +584,7 @@ public class Session
         speechType = _speechType;
         surveyType = _surveyType;
         timeStamp = "";
+        _scores = new List<ScoreRecord>();
     }
 
     public void SetTimestamp()
@@ -614,6 +626,25 @@ public class Session
         return intrudersList;
     }
 
+    public void LoadScores(string scoresData)
+    {
+        _scores.Clear();
+        
+        // Split data by lines
+        var lines = scoresData.Split('\n');
+
+        // Each line represents a polygon
+        for (var lineIndex = 0; lineIndex < lines.Length; lineIndex++)
+            if (lines[lineIndex].Length > 0)
+            {
+                if(lineIndex == 0) continue;
+                
+                var data = lines[lineIndex].Split(',');
+             
+                _scores.Add(new ScoreRecord(lineIndex,float.Parse(data[1]),data[0]));
+            }
+    }
+
     public override string ToString()
     {
         // Separator
@@ -648,6 +679,18 @@ public class Session
 
 
         return sessionInfo;
+    }
+}
+
+public class SessionPair
+{
+    public string color;
+    public string variable;
+
+    public SessionPair(string _color, string _variable)
+    {
+        color = _color;
+        variable = _variable;
     }
 }
 

@@ -196,7 +196,7 @@ public enum FileType
 
     // the timestep locations of the npcs
     Npcs,
-
+    
     // the user data
     User,
 

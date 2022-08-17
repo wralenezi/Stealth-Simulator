@@ -110,7 +110,7 @@ public class NpcsManager : MonoBehaviour
     {
         if (!(GetState() is Chase))
         {
-            IncrementScore(1f);
+            IncrementScore(10f);
         }
     }
 
@@ -170,8 +170,12 @@ public class NpcsManager : MonoBehaviour
         // Switch the state of the guards 
         if (intruderSpotted)
         {
+            ScoreController.Instance.UpdateScore(0f);
+
             // Guards knows the intruders location
-            ChangeState<Chase>();
+            // ChangeState<Chase>();
+            
+            
             Speak(spotter, "Spot", 1f);
         }
         else if (GetState() is Chase)

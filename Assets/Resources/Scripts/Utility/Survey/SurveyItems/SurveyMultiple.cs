@@ -54,9 +54,15 @@ public class SurveyMultiple : SurveyItem
             string value = buttons[valueIndex].name;
             survey.UpdateName(name, value);
 
-            m_answer = SessionsSetup.GetCategoryFromColor(choices[valueIndex]);
+            m_answer = _answer;
         }
         else
             m_answer = _answer;
+    }
+
+
+    public override bool IsAnswerValid(string answer)
+    {
+        return true;
     }
 }

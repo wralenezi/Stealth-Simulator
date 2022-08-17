@@ -14,7 +14,7 @@ public abstract class SurveyItem : MonoBehaviour
     protected Survey survey;
 
     protected Transform questionPanel;
-    private TextMeshProUGUI m_question;
+    protected TextMeshProUGUI m_question;
 
     protected Transform inputPanel;
 
@@ -70,20 +70,23 @@ public abstract class SurveyItem : MonoBehaviour
         m_desc = question;
     }
 
-    // public abstract void Answer(string answer);
-
     public void Answer(string answer)
     {
         // Mark as answered and hide the game object
-        isAnswered = true;
-        gameObject.SetActive(false);
+        if (IsAnswerValid(answer))
+        {
+            isAnswered = true;
+            gameObject.SetActive(false);
 
-        ProcessAnswer(answer);
-        
-        survey.NextItem();
+            ProcessAnswer(answer);
+
+            survey.NextItem();
+        }
     }
 
     public abstract void ProcessAnswer(string answer);
+
+    public abstract bool IsAnswerValid(string answer);
 }
 
 

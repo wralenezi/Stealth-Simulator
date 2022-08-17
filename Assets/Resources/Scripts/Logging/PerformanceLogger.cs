@@ -159,6 +159,7 @@ public class PerformanceLogger : MonoBehaviour
     {
         StartCoroutine(FileUploader.UploadData(Sa, FileType.Performance, "text/csv", GetEpisodeResults(false)));
         StartCoroutine(FileUploader.UploadData(Sa, FileType.Npcs, "text/csv", GetNpcDataJson()));
+        StartCoroutine(FileUploader.UploadScore(Sa, ScoreController.Instance.score));
     }
 
     private string GetNpcDataJson()
