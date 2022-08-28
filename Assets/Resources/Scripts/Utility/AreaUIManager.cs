@@ -48,8 +48,6 @@ public class AreaUIManager : MonoBehaviour
 
         announcementLabel = transform.Find("Announcement").GetComponent<TextMeshProUGUI>();
         announcementLabel.text = "";
-
-        Reset();
     }
 
     public void Reset()
@@ -58,8 +56,9 @@ public class AreaUIManager : MonoBehaviour
         scoreShaking = null;
 
         timeLabel.gameObject.SetActive(true);
-        
+        UpdateLabel();
         Instance = this;
+        
     }
 
     // Update the label of the status of the game.
@@ -84,7 +83,8 @@ public class AreaUIManager : MonoBehaviour
 
     public void UpdateGuardLabel(string name, Color color)
     {
-        guardsLabel.color = color;
+        guardsLabel.color = Color.white;//color;
+        name = char.ToUpper(name[0]) + name.Substring(1); 
         guardsLabel.text = name + " Team";
     }
 
@@ -98,7 +98,7 @@ public class AreaUIManager : MonoBehaviour
         ElapsedTime = remainingTime;
         int time = Mathf.RoundToInt(remainingTime);
         timeLabel.text = time.ToString();
-        
+
         if (Time.timeScale > 1f) return;
 
         if (time <= 3f)
@@ -134,13 +134,38 @@ public class AreaUIManager : MonoBehaviour
         }
     }
 
+    public void UpdateIncrementedCoin()
+    {
+        ScoreController.Instance.IncrementCoin();
+        ShakeScore(1);
+        UpdateLabel();
+    }
+
+    public void UpdateSeenArea(float timeDelta)
+    {
+        ScoreController.Instance.IncrementSeenTime(timeDelta);
+        ShakeScore(-1);
+        UpdateLabel();
+    }
+
+
+    private void UpdateLabel()
+    {
+        // scoreLabel.text = "Coins: " + ScoreController.Instance.coin + "\n";
+        // scoreLabel.text += "Seen Time: " + Mathf.Round(ScoreController.Instance.seenTime * 10f) * 0.1f;
+
+
+        scoreLabel.text = "Score: " + ScoreController.Instance.CalculateScore();
+    }
+
+
     public void UpdateScore(float score, float oldScore)
     {
         if (GameManager.Instance.GetActiveArea().GetSessionInfo().gameType == GameType.CoinCollection)
             scoreLabel.text = "Score: " + score;
         else
             scoreLabel.text = "Score: " + score + " %";
-        
+
         ShakeScore(score - oldScore);
 
         ScoreController.Instance.UpdateScore(score);
@@ -173,5 +198,4 @@ public class AreaUIManager : MonoBehaviour
         textMeshPro.transform.position = originalPosition;
         scoreShaking = null;
     }
-    
 }

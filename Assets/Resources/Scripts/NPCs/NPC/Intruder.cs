@@ -78,7 +78,12 @@ public class Intruder : NPC
             m_SearchedTime += timeDelta;
         }
     }
-    
+
+    public void IncrementAlertTime()
+    {
+        m_AlertTime += Time.deltaTime;
+    }
+
     // In the case of intruder nothing to be done in this function yet
     public override void ClearLines()
     {
@@ -184,7 +189,7 @@ public class Intruder : NPC
     public override LogSnapshot LogNpcProgress()
     {
         return new LogSnapshot(GetTravelledDistance(), StealthArea.GetElapsedTimeInSeconds(), Data, NpcsManager.Instance.GetState().name,
-            m_NoTimesSpotted, GuardsManager.GuardsOverlapTime,
+            m_NoTimesSpotted, 0f,
             m_AlertTime, m_SearchedTime, 0, 0f, m_CollectCoins);
     }
 }

@@ -197,8 +197,12 @@ public enum FileType
     // the timestep locations of the npcs
     Npcs,
     
+    ColorPairing,
+    
     // the user data
     User,
+    
+    EndStudy,
 
     // the survey data 
     Survey

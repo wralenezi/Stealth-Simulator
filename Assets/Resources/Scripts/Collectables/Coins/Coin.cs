@@ -176,7 +176,7 @@ public class Coin : MonoBehaviour
         {
             // audioSource.Play();
             ModifyScore();
-            Spawn(gameObject.transform.position, MapManager.Instance.GetNavMesh(), MapManager.Instance.mapData, false);
+            Spawn(gameObject.transform.position, MapManager.Instance.GetNavMesh(), MapManager.Instance.mapData, true);
             other.gameObject.GetComponent<Intruder>().AddCoin();
         }
     }

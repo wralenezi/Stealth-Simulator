@@ -64,7 +64,7 @@ public class VisMesh : MonoBehaviour
         _visMeshPolygons = new List<VisibilityPolygon>();
 
         // showSeenPolygons = true;
-        // showUnseenPolygons = true;
+        showUnseenPolygons = true;
         // showSeenRegions = true;
         // showUnseenRegions = true;
     }

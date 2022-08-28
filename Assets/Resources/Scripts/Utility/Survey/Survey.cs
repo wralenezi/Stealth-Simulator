@@ -31,7 +31,6 @@ public class Survey : MonoBehaviour
         m_SurveyManager = _surveyManager;
     }
 
-
     /// <summary>
     /// Reset the survey properties and questions
     /// </summary>
@@ -120,9 +119,8 @@ public class Survey : MonoBehaviour
         // foreach (var choice in choices)
         //     surveyScores.AddChoice(choice);
 
-        items.Add(surveyScores); 
+        items.Add(surveyScores);
     }
-    
 
 
     public void AddTutorialRepeat()
@@ -133,7 +131,7 @@ public class Survey : MonoBehaviour
 
         GameControlQuestion repeatTutorial = surveyItemGo.AddComponent<GameControlQuestion>();
         string name = "repeatTutorial";
-        string question = "Would you like to repeat the tutorial level?";
+        string question = "Repeat tutorial level?";
         repeatTutorial.Initiate(name, ItemType.RepeatEpisode, this, "");
 
         // Add the question
@@ -158,7 +156,7 @@ public class Survey : MonoBehaviour
 
         GameControlQuestion skipTutorial = surveyItemGo.AddComponent<GameControlQuestion>();
         string name = "skipTutorial";
-        string question = "Would you like to skip the tutorial level?";
+        string question = "Skip tutorial level?";
         skipTutorial.Initiate(name, ItemType.SkipEpisode, this, "");
 
         // Add the question
@@ -205,6 +203,15 @@ public class Survey : MonoBehaviour
     private void ActiveItem()
     {
         items[currentSurveyIndex].gameObject.SetActive(true);
+
+        if (Equals(items[currentSurveyIndex].name, "End"))
+        {
+            string surveyJson = JsonConvert.SerializeObject(this);
+
+            StartCoroutine(FileUploader.UploadData(null,
+                FileType.EndStudy, "application/json", surveyJson));
+        }
+
 
         if (items[currentSurveyIndex].name.Contains("q2"))
         {

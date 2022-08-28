@@ -13,7 +13,7 @@ public class CoinSpawner : MonoBehaviour
 
     private List<Intruder> m_intruders;
 
-    private bool _isRandom = false;
+    private bool _isRandom = true;
 
     public void Initiate(Session session, List<MeshPolygon> navMesh)
     {

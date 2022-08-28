@@ -13,17 +13,16 @@ public class Guard : NPC
 
     //************ Guard's Vision *****************//
     
-    // time spent in a guard's FOV
+    // time spent in a guard's FOV to be discovered
     public float _timeInFov;
-    private const float _maxTimeInFov = 0.75f;
+    private const float _maxTimeInFov = 0.2f;
 
     public AnimationCurve _spottedCurve;
 
     // if this is one then the intruder is spotted
     private float _spottedFactor;
     private Color32 _spottedColor;
-
-
+    
     // Initialize the guard
     public override void Initiate(NpcData data, VoiceParams _voice)
     {
@@ -39,8 +38,7 @@ public class Guard : NPC
         _spottedCurve.AddKey(0f, 0f);
         _spottedCurve.AddKey(1f, 1f);
         _spottedColor = new Color32(255, 0, 0, 100);
-
-
+        
         // Add guard label
         GameObject labelOg = new GameObject();
 
@@ -71,9 +69,7 @@ public class Guard : NPC
             LinesToPassThrough.RemoveAt(0);
         }
     }
-
-
-
+    
     // Check if any intruder is spotted, return true if at least one is spotted
     public bool SpotIntruders(List<Intruder> intruders)
     {

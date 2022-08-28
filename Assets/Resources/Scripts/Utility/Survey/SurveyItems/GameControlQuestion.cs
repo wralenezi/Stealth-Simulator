@@ -20,6 +20,8 @@ public class GameControlQuestion : SurveyMultiple
             default:
                 throw new ArgumentOutOfRangeException();
         }
+        
+        m_answer = _answer;
     }
 
     public void RepeatEpisode(string _answer)

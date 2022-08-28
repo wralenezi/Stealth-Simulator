@@ -980,7 +980,11 @@ public class RoadMap
 
             Gizmos.DrawSphere(t.GetPosition(), 0.025f);
             float prob = Mathf.Round(t.GetProbability() * 100f) * 0.01f;
+
+#if UNITY_EDITOR
             Handles.Label(t.GetPosition(), prob.ToString());
+#endif
+            
 
 
             foreach (var wp in t.GetConnections(true))
@@ -1006,7 +1010,10 @@ public class RoadMap
             if (noCorners && Equals(t.type, NodeType.Corner)) continue;
             Gizmos.DrawSphere(t.GetPosition(), 0.025f);
             float prob = Mathf.Round(t.GetProbability() * 100f) * 0.01f;
+            
+#if UNITY_EDITOR
             Handles.Label(t.GetPosition(), prob.ToString());
+#endif
 
             foreach (var wp in t.GetConnections(true))
             {

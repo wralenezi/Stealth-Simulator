@@ -228,7 +228,10 @@ public class RoadMapNode
 
     public void Draw(string label)
     {
+        #if UNITY_EDITOR
         Handles.Label(GetPosition(), label);
+        #endif
+        
         Gizmos.DrawSphere(GetPosition(), 0.1f);
     }
 }

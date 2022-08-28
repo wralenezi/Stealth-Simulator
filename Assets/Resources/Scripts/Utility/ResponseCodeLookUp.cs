@@ -10,7 +10,7 @@ public class ResponseCodeLookUp : MonoBehaviour
         {
             200 => "OK",
             411 => "Roadmap for this scale is not available",
-            _ => ""
+            _ => code.ToString()
         };
 
         return meaning;

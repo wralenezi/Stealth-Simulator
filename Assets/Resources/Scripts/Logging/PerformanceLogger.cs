@@ -159,7 +159,7 @@ public class PerformanceLogger : MonoBehaviour
     {
         StartCoroutine(FileUploader.UploadData(Sa, FileType.Performance, "text/csv", GetEpisodeResults(false)));
         StartCoroutine(FileUploader.UploadData(Sa, FileType.Npcs, "text/csv", GetNpcDataJson()));
-        StartCoroutine(FileUploader.UploadScore(Sa, ScoreController.Instance.score));
+        StartCoroutine(FileUploader.UploadScore(Sa, ScoreController.Instance.Score));
     }
 
     private string GetNpcDataJson()
@@ -270,25 +270,43 @@ public struct LogSnapshot
         StalenessAverage = stalenessAverage;
         NoTimesSpotted = noTimesSpotted;
         CollectedCoin = collectedCoin;
-        Score = ScoreController.Instance.score;
+        Score = ScoreController.Instance.Score;
     }
 
     // Headers
-    public static string Headers = //NpcData.Headers +
-        "ElapseTime,TravelledDistance,State,CollectedCoin";
+    public static string Headers = "ElapseTime,TravelledDistance,AlertTime,CollectedCoin,Score";
 
     public override string ToString()
     {
-        string output = //NpcDetail + "," + 
-            ElapsedTime +
-            "," + TravelledDistance +
-            "," + State +
-            // "," + AlertTime +
-            // "," + SearchTime +
-            // "," + GuardsOverlapTime +
-            // "," + FoundHidingSpots +
-            // "," + StalenessAverage +
-            "," + CollectedCoin;
+        string sep = ",";
+        string output = "";
+
+
+        output += ElapsedTime;
+        output += sep;
+
+        output += TravelledDistance;
+        output += sep;
+
+        output += AlertTime;
+        output += sep;
+
+        output += CollectedCoin;
+        output += sep;
+        
+        output += Score;
+        // output += sep;
+        
+        //NpcDetail + "," + 
+        // ElapsedTime +
+        // "," + TravelledDistance +
+        // "," + State +
+        // "," + AlertTime +
+        // "," + SearchTime +
+        // "," + GuardsOverlapTime +
+        // "," + FoundHidingSpots +
+        // "," + StalenessAverage +
+        // "," + CollectedCoin;
         // + "," + Score;
 
         return output;

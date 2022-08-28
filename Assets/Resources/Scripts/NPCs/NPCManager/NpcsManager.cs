@@ -14,9 +14,6 @@ public class NpcsManager : MonoBehaviour
 
     [SerializeField] public StateMachine _state;
 
-    // Score 
-    private float m_score;
-
     public static NpcsManager Instance;
 
     public void Initialize(Session session, MapManager mapManager)
@@ -55,8 +52,6 @@ public class NpcsManager : MonoBehaviour
     public void Reset(List<MeshPolygon> navMesh, Session session)
     {
         Instance = this;
-        m_score = 0f;
-        AreaUIManager.Instance.UpdateScore(m_score, m_score);
         _intrudersManager.Reset(navMesh, GetIntruders(), GetGuards(), session);
         _guardsManager.Reset(navMesh, GetIntruders(), session);
         ResetState();
@@ -110,18 +105,10 @@ public class NpcsManager : MonoBehaviour
     {
         if (!(GetState() is Chase))
         {
-            IncrementScore(10f);
+            // ScoreController.Instance.IncrementScore(10f);
+            AreaUIManager.Instance.UpdateIncrementedCoin();
         }
     }
-
-    public void IncrementScore(float score)
-    {
-        float oldScore = m_score;
-        m_score += score;
-        m_score = Mathf.Max(0, m_score);
-        AreaUIManager.Instance.UpdateScore(m_score, oldScore);
-    }
-
 
     /// <summary>
     /// Change the current guard state to a new one.
@@ -140,7 +127,7 @@ public class NpcsManager : MonoBehaviour
         return _state.GetState();
     }
 
-    public void ProcessNpcsVision(Session session)
+    public void ProcessNpcsVision()
     {
         bool intruderSpotted = false;
         NPC spotter = null;
@@ -155,9 +142,6 @@ public class NpcsManager : MonoBehaviour
             spotter = guard;
         }
 
-        // if (GetState() is Patrol)
-        //     GetIntruders()[0].ModifyTimeInFOV(intruderSpotted ? Time.deltaTime : -Time.deltaTime);
-
         // Render guards if the intruder can see them
         foreach (var intruder in GetIntruders())
         {
@@ -170,11 +154,13 @@ public class NpcsManager : MonoBehaviour
         // Switch the state of the guards 
         if (intruderSpotted)
         {
-            ScoreController.Instance.UpdateScore(0f);
-
+            GetIntruders()[0].IncrementAlertTime();
+            AreaUIManager.Instance.UpdateSeenArea(Time.deltaTime);
+            // ScoreController.Instance.IncrementScore(-1f);
+            
+            // Don't change the guards behavior
             // Guards knows the intruders location
             // ChangeState<Chase>();
-            
             
             Speak(spotter, "Spot", 1f);
         }

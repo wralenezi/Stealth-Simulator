@@ -89,14 +89,15 @@ public class SAT : MonoBehaviour
         }
         catch (Exception e)
         {
-            Debug.Log("Missing Road Map file for: " + mapData.name + " " + mapData.size);
-
+            Debug.Log("Error: " + e);
+            Debug.Log("Error Road Map file for: " + mapData.name + " " + mapData.size);
+        
             // Implement SAT to get the road map
             CreateSkeletal(mapRenderer);
-
+        
             // Save the map data for future use.
             SaveMap(mapData);
-
+        
             _roadMap = m_SatRoadMap;
         }
 

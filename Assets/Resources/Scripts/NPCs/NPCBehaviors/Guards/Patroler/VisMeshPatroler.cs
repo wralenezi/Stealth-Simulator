@@ -31,7 +31,8 @@ public class VisMeshPatroler : Patroler
 
     public override void UpdatePatroler(List<Guard> guards, float speed, float timeDelta)
     {
-        _visMesh.ConstructVisMesh(guards);
+        if (IsTimeToUpdate(timeDelta))
+            _visMesh.ConstructVisMesh(guards);
     }
 
     public override void Patrol(List<Guard> guards)
@@ -76,7 +77,7 @@ public class VisMeshPatrolerParams : PatrolerParams
     {
         string output = "";
         string sep = "_";
-        
+
         output += MaxSeenRegionAreaPerGuard;
         output += sep;
 
@@ -94,8 +95,8 @@ public class VisMeshPatrolerParams : PatrolerParams
 
         output += DecisionType;
         // output += sep;
-        
-        
+
+
         return output;
     }
 }

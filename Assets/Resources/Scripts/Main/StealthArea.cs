@@ -32,7 +32,6 @@ public class StealthArea : MonoBehaviour
         SessionInfo.SetTimestamp();
 
         scoreController = UnityHelper.AddChildComponent<ScoreController>(transform, "Scores");
-        scoreController.Reset();
 
         AreaUiManager = transform.Find("Canvas").gameObject.GetComponent<AreaUIManager>();
         AreaUiManager.Initiate();
@@ -90,8 +89,9 @@ public class StealthArea : MonoBehaviour
         GameManager.MainCamera.orthographicSize = desiredHalfHeight;
 
         ColorUtility.TryParseHtmlString(SessionInfo.guardColor, out Color parsedColor);
-        GameManager.MainCamera.backgroundColor = parsedColor - new Color(0.5f, 0.5f, 0.5f, 0.1f);
+        GameManager.MainCamera.backgroundColor = parsedColor - new Color(0.3f, 0.3f, 0.3f, 0.1f);
 
+        scoreController.Reset();
         AreaUiManager.Reset();
         AreaUiManager.UpdateGuardLabel(SessionInfo.guardColor, parsedColor);
     }
@@ -133,7 +133,7 @@ public class StealthArea : MonoBehaviour
         NpcManager.CastVision();
 
         // Update the guards vision and apply the vision affects (seeing intruders,etc) 
-        NpcManager.ProcessNpcsVision(SessionInfo);
+        NpcManager.ProcessNpcsVision();
 
         // Idle NPCs make decisions
         NpcManager.MakeDecisions(GetSessionInfo().gameType);
@@ -149,7 +149,7 @@ public class StealthArea : MonoBehaviour
     void CheckGameEnd()
     {
         bool timeOver = GetElapsedTimeInSeconds() >= SessionInfo.episodeLength;
-        bool highscoreReached = scoreController.score > Mathf.Infinity;
+        bool highscoreReached = scoreController.Score > Mathf.Infinity;
         bool spotted = NpcManager.GetState() is Chase;
 
         bool finished = timeOver || highscoreReached || spotted;
@@ -171,7 +171,7 @@ public class StealthArea : MonoBehaviour
 
         if (GameManager.Instance.showSurvey)
         {
-            GameManager.SurveyManager.CreateSurvey(GameManager.GetRunId(), GetSessionInfo().surveyType, scoreController.score);
+            GameManager.SurveyManager.CreateSurvey(GameManager.GetRunId(), GetSessionInfo().surveyType, scoreController.Score);
             GameManager.SurveyManager.ShowSurvey();
         }
 

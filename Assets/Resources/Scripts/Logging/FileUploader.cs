@@ -9,8 +9,8 @@ public static class FileUploader
 {
     // public static string server = "http://cgi64-1.cs.mcgill.ca/~walene/";
     // public static string server = "https://www.cs.mcgill.ca/~walene/";
-    // public static string server = "https://isavage.cs.mcgill.ca/";
-    public static string server = "http://localhost/isavage/";
+    public static string server = "https://isavage.cs.mcgill.ca/";
+    // public static string server = "http://localhost/isavage/";
 
 
     // Generate the file name
@@ -83,7 +83,7 @@ public static class FileUploader
         if (www.result != UnityWebRequest.Result.Success || www.responseCode != 200)
         {
             string error = ResponseCodeLookUp.GetMeaning(www.responseCode);
-            Debug.LogError("Error with sending score ");
+            Debug.LogError("Error with sending score: "+error);
         }
         else
             sessionInfo.LoadScores(www.downloadHandler.text);

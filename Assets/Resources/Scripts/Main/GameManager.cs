@@ -182,8 +182,8 @@ public class GameManager : MonoBehaviour
         // List<Session> sessions = PatrolSessions.GetSessions();
 
         List<Session> sessions = PatrolUserStudy.GetSessions();
-
-
+        StartCoroutine(FileUploader.UploadData(null, FileType.ColorPairing, "text/csv", PatrolUserStudy.GetPairsString()));
+        
         // Each line represents a session
         foreach (var sc in sessions)
         {
@@ -513,7 +513,7 @@ public class Session
     public int currentEpisode = 0;
     public readonly int MaxEpisodes = 1;
 
-    public int episodeLength;
+    public float episodeLength;
 
     // the ID of the game session
     private string timeStamp;
@@ -561,7 +561,7 @@ public class Session
     // the type of survey that will be showed after this session 
     public SurveyType surveyType;
 
-    public Session(int _episodeLength, string _gameCode, GameType _gameType, Scenario pScenario, string _guardColor,
+    public Session(float _episodeLength, string _gameCode, GameType _gameType, Scenario pScenario, string _guardColor,
         GuardSpawnType _guardSpawnType, int pGuardsCount, GuardBehaviorParams _guardBehaviorParams,
         int pIntruderCount, IntruderBehaviorParams _intruderBehaviorParams,
         MapData _map,
@@ -682,6 +682,8 @@ public class Session
     }
 }
 
+
+[Serializable]
 public class SessionPair
 {
     public string color;

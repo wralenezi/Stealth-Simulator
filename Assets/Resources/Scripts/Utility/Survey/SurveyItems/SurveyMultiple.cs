@@ -9,7 +9,7 @@ public class SurveyMultiple : SurveyItem
     private GameObject BtnPrefab;
     private string btnPath = "Prefabs/UIs/Buttons/Button";
 
-    private List<string> choices;
+    private List<Choice> choices;
     private List<Button> buttons;
 
 
@@ -19,13 +19,13 @@ public class SurveyMultiple : SurveyItem
 
         BtnPrefab = (GameObject) Resources.Load(btnPath);
 
-        choices = new List<string>();
+        choices = new List<Choice>();
         buttons = new List<Button>();
     }
 
     public void AddChoice(Choice choice)
     {
-        choices.Add(choice.value);
+        choices.Add(choice);
         GameObject btnGo = Instantiate(BtnPrefab, inputPanel);
         btnGo.name = choice.value + "_btn";
         btnGo.transform.Find("Text").GetComponent<TextMeshProUGUI>().text = choice.label;
@@ -54,10 +54,22 @@ public class SurveyMultiple : SurveyItem
             string value = buttons[valueIndex].name;
             survey.UpdateName(name, value);
 
-            m_answer = _answer;
+
+            foreach (var choice in choices)
+            {
+                if(Equals(choice.label, _answer))
+                    m_answer = choice.value;        
+            }
+            
         }
         else
-            m_answer = _answer;
+        {
+            foreach (var choice in choices)
+            {
+                if(Equals(choice.label, _answer))
+                    m_answer = choice.value;        
+            }
+        }
     }
 
 
