@@ -38,6 +38,7 @@ public class SurveyMultiple : SurveyItem
         colorBlock.normalColor = choice.color - new Color(0.3f, 0.3f, 0.3f, 0f);;
         colorBlock.highlightedColor = colorBlock.normalColor - new Color(0.2f, 0.2f, 0.2f,0f);
         btn.colors = colorBlock;
+        btn.transform.GetChild(0).GetComponent<TextMeshProUGUI>().color = new Color(1 - colorBlock.normalColor.r,1 - colorBlock.normalColor.g,1 - colorBlock.normalColor.b,1);
 
 
         buttons.Add(btn);

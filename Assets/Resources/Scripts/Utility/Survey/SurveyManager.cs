@@ -501,7 +501,7 @@ public class SurveyManager : MonoBehaviour
         m_Choices.Clear();
         m_itemName = "End";
         m_itemDesc =
-            "Thank for playing," + GameManager.playerName + "!\n To play again you can press F5 on the keyboard.";
+            "Thank for playing," + GameManager.playerName + "!\n You can close the page now.";
         m_currentSurvey.AddScores(m_itemName, "", m_itemDesc, m_Choices);
     }
 }

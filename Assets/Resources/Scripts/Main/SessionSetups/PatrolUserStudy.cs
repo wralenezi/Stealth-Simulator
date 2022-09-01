@@ -67,15 +67,15 @@ public class PatrolUserStudy : MonoBehaviour
         switch (pair.variable)
         {
             case "Roadmap":
-                AddRoadMapSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode, 120f);
+                AddRoadMapSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode, 1f);
                 break;
 
             case "Vismesh":
-                AddVisMeshSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode, 120f);
+                AddVisMeshSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode, 1f);
                 break;
 
             case "Random":
-                AddRandomSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode, 120f);
+                AddRandomSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode, 1f);
                 break;
         }
     }

@@ -68,7 +68,7 @@ public class ScoresTable : MonoBehaviour
         rowOb.GetComponent<Image>().color = bgColor;
 
         rowOb.transform.Find("Rank").GetComponent<Text>().text = scoreRecord.rank.ToString().PadLeft(2, '0');
-        rowOb.transform.Find("Score").GetComponent<Text>().text = scoreRecord.score.ToString().PadLeft(6, '0');
+        rowOb.transform.Find("Score").GetComponent<Text>().text = scoreRecord.score.ToString();
         rowOb.transform.Find("Name").GetComponent<Text>().text = scoreRecord.name;
     }
 }
