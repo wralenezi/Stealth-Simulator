@@ -21,6 +21,8 @@ public static class FileUploader
         string fileName = "";
         fileName += GameManager.GetRunId();
         fileName += sep;
+        fileName += PlayerData.PlayerName;
+        fileName += sep;
         fileName += fileType;
 
         if (!Equals(sessionInfo, null))
@@ -74,7 +76,7 @@ public static class FileUploader
     public static IEnumerator UploadScore(Session? sessionInfo, float score)
     {
         string requestAddress = server + "get_scores.php?behavior=" + sessionInfo.sessionVariable + "&name=" +
-                                GameManager.playerName + "&score=" + score;
+                                PlayerData.PlayerName + "&score=" + score;
 
         UnityWebRequest www = UnityWebRequest.Get(requestAddress);
 

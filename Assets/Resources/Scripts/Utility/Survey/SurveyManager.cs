@@ -108,55 +108,79 @@ public class SurveyManager : MonoBehaviour
 
     private void CreateNewUserSurvey()
     {
-        // Consent
-        m_Choices.Clear();
-        m_Choices.Add(new Choice("Accept", "Accept", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
-        m_itemName = "consent";
-        m_itemDesc =
-            "By participating in this study, I declare that I am over 18 years of age. I consent that the data I produce by playing this game can be used by the School of Computer Science at McGill University.";
-        m_currentSurvey.AddItemMultiple(m_itemName, "", m_itemDesc, m_Choices);
+        if (Equals(PlayerData.PlayerName, ""))
+        {
+            // Consent
+            m_Choices.Clear();
+            m_Choices.Add(new Choice("Accept", "Accept", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
+            m_itemName = "consent";
+            m_itemDesc =
+                "By participating in this study, I declare that I am over 18 years of age. I consent that the data I produce by playing this game can be used by the School of Computer Science at McGill University.";
+            m_currentSurvey.AddItemMultiple(m_itemName, "", m_itemDesc, m_Choices);
 
-        // // Played before?
-        // m_Choices.Clear();
-        // m_Choices.Add(new Choice("Yes", "Yes", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
-        // m_Choices.Add(new Choice("No", "No", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
-        // m_itemName = "played before";
-        // m_itemDesc = "Have you played this game before?";
-        // m_currentSurvey.AddItemMultiple(m_itemName, "", m_itemDesc, m_Choices);
+            // // Played before?
+            // m_Choices.Clear();
+            // m_Choices.Add(new Choice("Yes", "Yes", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
+            // m_Choices.Add(new Choice("No", "No", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
+            // m_itemName = "played before";
+            // m_itemDesc = "Have you played this game before?";
+            // m_currentSurvey.AddItemMultiple(m_itemName, "", m_itemDesc, m_Choices);
 
-        // Nickname
-        m_Choices.Clear();
-        m_Choices.Add(new Choice("Ok", "Next", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
-        m_itemName = "nickname";
-        m_itemDesc = "Set the nickname (3 characters exactly)";
-        m_currentSurvey.AddTextItem(m_itemName, "name", m_itemDesc, m_Choices, true);
+            // Nickname
+            m_Choices.Clear();
+            m_Choices.Add(new Choice("Ok", "Next", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
+            m_itemName = "nickname";
+            m_itemDesc = "Set the nickname (3 characters exactly)";
+            m_currentSurvey.AddTextItem(m_itemName, "name", m_itemDesc, m_Choices, true);
 
-        // Video game skill
-        m_Choices.Clear();
-        m_Choices.Add(new Choice("None", "None", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
-        m_Choices.Add(new Choice("Beginner", "Beginner", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
-        m_Choices.Add(new Choice("Intermediate", "Intermediate", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
-        m_Choices.Add(new Choice("Advanced", "Advanced", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
-        m_itemName = "video games skill";
-        m_itemDesc = "How much are you experienced with video games?";
-        m_currentSurvey.AddItemMultiple(m_itemName, "", m_itemDesc, m_Choices);
+            // Video game skill
+            m_Choices.Clear();
+            m_Choices.Add(new Choice("None", "None", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
+            m_Choices.Add(new Choice("Beginner", "Beginner", ButtonType.Survey,
+                ColorBlock.defaultColorBlock.normalColor));
+            m_Choices.Add(new Choice("Intermediate", "Intermediate", ButtonType.Survey,
+                ColorBlock.defaultColorBlock.normalColor));
+            m_Choices.Add(new Choice("Advanced", "Advanced", ButtonType.Survey,
+                ColorBlock.defaultColorBlock.normalColor));
+            m_itemName = "video games skill";
+            m_itemDesc = "How much are you experienced with video games?";
+            m_currentSurvey.AddItemMultiple(m_itemName, "", m_itemDesc, m_Choices);
 
-        // Ask if play want to play the tutorial level
-        m_currentSurvey.AddTutorialSkip();
+            // Ask if play want to play the tutorial level
+            m_currentSurvey.AddTutorialSkip();
 
-        // // Explain the game
-        // m_Choices.Clear();
-        // m_Choices.Add(new Choice("Next", "Next", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
-        // m_itemName = "explain game";
-        // m_itemDesc =
-        //     "Avoid detection and collect as many coins as you can before time runs out.\nIf you are seen, your score will decrease with time.";
-        // m_currentSurvey.AddItemMultiple(m_itemName, "", m_itemDesc, m_Choices);
+            // // Explain the game
+            // m_Choices.Clear();
+            // m_Choices.Add(new Choice("Next", "Next", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
+            // m_itemName = "explain game";
+            // m_itemDesc =
+            //     "Avoid detection and collect as many coins as you can before time runs out.\nIf you are seen, your score will decrease with time.";
+            // m_currentSurvey.AddItemMultiple(m_itemName, "", m_itemDesc, m_Choices);
+            
+            m_Choices.Clear();
+            m_Choices.Add(new Choice("Next", "Next", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
+            m_itemName = "explain game 2 ";
+            m_itemDesc =
+                "Collect many coins as you can before the time runs out and without being detected.";
+            m_currentSurvey.AddItemMultiple(m_itemName, "", m_itemDesc, m_Choices);
+            
+            m_Choices.Clear();
+            m_Choices.Add(new Choice("Go", "Play!", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
+            m_itemName = "explain game 3 ";
+            m_itemDesc =
+                "If you are seen, guards will ignore you, but your score will decrease with time.";
+            m_currentSurvey.AddItemMultiple(m_itemName, "", m_itemDesc, m_Choices);
+        }
+        else
+        {
+            m_Choices.Clear();
+            m_Choices.Add(new Choice("Go", "Play!", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
+            m_itemName = "explain game";
+            m_itemDesc =
+                "Teams and their colors have been shuffled!\nGood Luck!";
+            m_currentSurvey.AddItemMultiple(m_itemName, "", m_itemDesc, m_Choices);
+        }
 
-        m_Choices.Clear();
-        m_Choices.Add(new Choice("Go", "Go!", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
-        m_itemName = "explain game 2 ";
-        m_itemDesc = "Collect many coins as you can before the time runs out and without being detected.\nIf you are seen, you will not be chased, but your score will decrease with time.";
-        m_currentSurvey.AddItemMultiple(m_itemName, "", m_itemDesc, m_Choices);
     }
 
 
@@ -176,7 +200,7 @@ public class SurveyManager : MonoBehaviour
         m_itemDesc =
             "Now, you will be playing 3 rounds in a new map. In each round, you will be playing against a different team.";
         m_currentSurvey.AddItemMultiple(m_itemName, "", m_itemDesc, m_Choices);
-        
+
         // Info for the next round
         m_Choices.Clear();
         m_Choices.Add(new Choice("Start", "Start Game", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
@@ -228,30 +252,32 @@ public class SurveyManager : MonoBehaviour
         // Fun
         m_Choices.Clear();
         for (int i = 0; i < 6; i++)
-            m_Choices.Add(new Choice(i.ToString(), i.ToString(), ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
+            m_Choices.Add(new Choice(i.ToString(), i.ToString(), ButtonType.Survey,
+                ColorBlock.defaultColorBlock.normalColor));
         m_itemName = "fun";
         m_itemDesc = "How much did you enjoy playing against " + m_currentSurvey.GetGuardColor() + "?";
-        m_itemDesc += "\n"+"0 as least fun and 5 as most fun";
+        m_itemDesc += "\n" + "0 as least fun and 5 as most fun";
         m_currentSurvey.AddItemMultiple(m_itemName, "", m_itemDesc, m_Choices);
 
         // Difficulty
         m_Choices.Clear();
         for (int i = 0; i < 6; i++)
-            m_Choices.Add(new Choice(i.ToString(), i.ToString(), ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
+            m_Choices.Add(new Choice(i.ToString(), i.ToString(), ButtonType.Survey,
+                ColorBlock.defaultColorBlock.normalColor));
         m_itemName = "difficulty";
         m_itemDesc = "How difficult you found " + m_currentSurvey.GetGuardColor() + " to be?";
-        m_itemDesc += "\n"+"0 as easiest and 5 as most difficult";
+        m_itemDesc += "\n" + "0 as easiest and 5 as most difficult";
         m_currentSurvey.AddItemMultiple(m_itemName, "", m_itemDesc, m_Choices);
 
         // intelligence
         m_Choices.Clear();
         for (int i = 0; i < 6; i++)
-            m_Choices.Add(new Choice(i.ToString(), i.ToString(), ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
+            m_Choices.Add(new Choice(i.ToString(), i.ToString(), ButtonType.Survey,
+                ColorBlock.defaultColorBlock.normalColor));
         m_itemName = "efficiency";
-        m_itemDesc = "How efficient you found " + m_currentSurvey.GetGuardColor() + "'s patrol behavior to be?";
-        m_itemDesc += "\n"+"0 as least efficient and 5 as most efficient";
+        m_itemDesc = "How well " + m_currentSurvey.GetGuardColor() + " team covered the area?";
+        m_itemDesc += "\n" + "0 the worst and 5 as the best";
         m_currentSurvey.AddItemMultiple(m_itemName, "", m_itemDesc, m_Choices);
-        
     }
 
     private void AddEvalBehaviorQuestions()
@@ -272,7 +298,7 @@ public class SurveyManager : MonoBehaviour
         m_itemName = "preferred enemy q1";
         m_itemDesc = "Which robot team was the most FUN?";
         m_currentSurvey.AddItemMultiple(m_itemName, "color", m_itemDesc, m_Choices);
-        
+
 
         if (SessionsSetup.GetPlayedSessions().Count > 2)
         {
@@ -304,7 +330,7 @@ public class SurveyManager : MonoBehaviour
         m_itemName = "difficult enemy q1";
         m_itemDesc = "Which robot team was the most DIFFICULT?";
         m_currentSurvey.AddItemMultiple(m_itemName, "color", m_itemDesc, m_Choices);
-        
+
 
         if (SessionsSetup.GetPlayedSessions().Count > 2)
         {
@@ -357,8 +383,8 @@ public class SurveyManager : MonoBehaviour
     private void BehaviorsQuestions()
     {
         List<Session> sessions = GameManager.Instance.GetClosedSessions();
-        
-        
+
+
         // Most enjoyable enemy
         // 1st
         m_Choices.Clear();
@@ -372,10 +398,11 @@ public class SurveyManager : MonoBehaviour
                     parsedColor));
             }
         }
+
         m_itemName = "preferred enemy q1";
-        m_itemDesc = "Which team was the most FUN?";
+        m_itemDesc = "Which team was the most fun to play against?";
         m_currentSurvey.AddItemMultiple(m_itemName, "color", m_itemDesc, m_Choices);
-        
+
         m_Choices.Clear();
         m_Choices.Add(new Choice("Ok", "Next", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
         m_itemName = "justification fun";
@@ -396,7 +423,7 @@ public class SurveyManager : MonoBehaviour
             }
 
             m_itemName = "preferred enemy q2";
-            m_itemDesc = "Which team was the second most FUN?";
+            m_itemDesc = "Which team was the second most fun to play against?";
             m_currentSurvey.AddItemMultiple(m_itemName, "color", m_itemDesc, m_Choices);
         }
 
@@ -412,9 +439,9 @@ public class SurveyManager : MonoBehaviour
         }
 
         m_itemName = "difficult enemy q1";
-        m_itemDesc = "Which team was the most DIFFICULT?";
+        m_itemDesc = "Which team was the most difficult to play against?";
         m_currentSurvey.AddItemMultiple(m_itemName, "color", m_itemDesc, m_Choices);
-        
+
         m_Choices.Clear();
         m_Choices.Add(new Choice("Ok", "Next", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
         m_itemName = "justification difficult";
@@ -435,10 +462,10 @@ public class SurveyManager : MonoBehaviour
             }
 
             m_itemName = "difficult enemy q2";
-            m_itemDesc = "Which team was the second most DIFFICULT?";
+            m_itemDesc = "Which team was the second most difficult to play against?";
             m_currentSurvey.AddItemMultiple(m_itemName, "color", m_itemDesc, m_Choices);
         }
-        
+
         // Enemy intelligent ranking
         // 1st
         m_Choices.Clear();
@@ -450,14 +477,14 @@ public class SurveyManager : MonoBehaviour
                 ButtonType.Survey, parsedColor));
         }
 
-        m_itemName = "efficient enemy q1";
-        m_itemDesc = "Which team was the most EFFICIENT?";
+        m_itemName = "effective enemy q1";
+        m_itemDesc = "Which team was the most effective in securing the area?";
         m_currentSurvey.AddItemMultiple(m_itemName, "color", m_itemDesc, m_Choices);
-        
+
         m_Choices.Clear();
         m_Choices.Add(new Choice("Ok", "Next", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
-        m_itemName = "justification efficient";
-        m_itemDesc = "Why you considered this team to be the most efficient? (optional)";
+        m_itemName = "justification effective";
+        m_itemDesc = "Why you considered this team to be the most effective? (optional)";
         m_currentSurvey.AddTextItem(m_itemName, m_itemName, m_itemDesc, m_Choices, false);
 
         if (sessions.Count > 2)
@@ -473,11 +500,10 @@ public class SurveyManager : MonoBehaviour
                     parsedColor));
             }
 
-            m_itemName = "intelligent enemy q2";
-            m_itemDesc = "Which team was the second most EFFICIENT?";
+            m_itemName = "effective enemy q2";
+            m_itemDesc = "Which team was the second most effective in securing the area?";
             m_currentSurvey.AddItemMultiple(m_itemName, "color", m_itemDesc, m_Choices);
         }
-        
     }
 
 
@@ -494,14 +520,14 @@ public class SurveyManager : MonoBehaviour
         m_Choices.Clear();
         m_Choices.Add(new Choice("Ok", "Next", ButtonType.Survey, ColorBlock.defaultColorBlock.normalColor));
         m_itemName = "comments";
-        m_itemDesc = "You can write any comments regarding this study? (optional)";
+        m_itemDesc = "Any comments regarding this study? (optional)";
         m_currentSurvey.AddTextItem(m_itemName, m_itemName, m_itemDesc, m_Choices, false);
-        
-        
+
+
         m_Choices.Clear();
         m_itemName = "End";
         m_itemDesc =
-            "Thank for playing," + GameManager.playerName + "!\n You can close the page now.";
+            "Thank for playing," + PlayerData.PlayerName + "!\n You can close the page now.";
         m_currentSurvey.AddScores(m_itemName, "", m_itemDesc, m_Choices);
     }
 }

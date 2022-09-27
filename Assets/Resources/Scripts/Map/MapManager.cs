@@ -43,7 +43,7 @@ public class MapManager : MonoBehaviour
 
         // Draw the map
         mapRenderer = gameObject.AddComponent<MapRenderer>();
-        mapRenderer.Initiate(_mapData);
+        mapRenderer.Initiate();
 
         // Create the NavMesh
         mapDecomposer = gameObject.AddComponent<MapDecomposer>();

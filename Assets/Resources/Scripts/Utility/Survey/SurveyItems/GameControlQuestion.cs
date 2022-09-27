@@ -37,6 +37,6 @@ public class GameControlQuestion : SurveyMultiple
         if(!Equals(_answer, "Yes")) return;
         
         GameManager.Instance.ClearArea();
-        survey.SetQuestionIndex(survey.GetQuestionsCount() - 2);
+        survey.SetQuestionIndex(survey.GetQuestionsCount() - 3);
     }
 }

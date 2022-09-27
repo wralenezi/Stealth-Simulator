@@ -2,29 +2,31 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// This sets up the survey session for the patrol assessment study
 public class PatrolUserStudy : MonoBehaviour
 {
-    // private static int _episodeLength = 120;
     private static int _episodeCount = 1;
 
-    private static List<string> _colors = new List<string>()
-    {
-        "blue",
-        "red",
-        "green"
-    };
+    private static List<string> _colors = new List<string>();
 
-    private static List<string> _variables = new List<string>()
-    {
-        "Roadmap",
-        "Vismesh",
-        "Random"
-    };
+    private static List<string> _variables = new List<string>();
 
     private static List<SessionPair> _pairs = new List<SessionPair>();
     
     private static void PairUpColors()
     {
+        _colors.Clear();
+        _colors.Add("blue");
+        _colors.Add("red");
+        _colors.Add("green");
+       
+        
+        _variables.Clear();
+        _variables.Add("Roadmap");
+        _variables.Add("Vismesh");
+        _variables.Add("Random");
+        
+        _pairs.Clear();
         while (_variables.Count > 0)
         {
             int indexVariables = Random.Range(0, _variables.Count);
@@ -62,20 +64,20 @@ public class PatrolUserStudy : MonoBehaviour
         return output;
     }
 
-    private static void AddSessions(ref List<Session> sessions, MapData mapData, List<int> guardCount, SessionPair pair)
+    private static void AddSessions(ref List<Session> sessions, MapData mapData, List<int> guardCount, SessionPair pair, float episodeLength)
     {
         switch (pair.variable)
         {
             case "Roadmap":
-                AddRoadMapSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode, 1f);
+                AddRoadMapSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode, episodeLength);
                 break;
 
             case "Vismesh":
-                AddVisMeshSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode, 1f);
+                AddVisMeshSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode, episodeLength);
                 break;
 
             case "Random":
-                AddRandomSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode, 1f);
+                AddRandomSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode, episodeLength);
                 break;
         }
     }
@@ -88,16 +90,18 @@ public class PatrolUserStudy : MonoBehaviour
         List<int> guardTeams = new List<int>();
         MapData mapData;
 
+        float episodeLength = 120f;
+
         guardTeams.Add(2);
         mapData = new MapData("MgsDock", 2f);
-        AddRandomSession("tutorial", ref sessions, mapData, "grey", guardTeams, SurveyType.EndTutorial, 60f);
+        AddRandomSession("tutorial", ref sessions, mapData, "grey", guardTeams, SurveyType.EndTutorial, episodeLength * 0.35f);
 
 
         guardTeams.Clear();
         guardTeams.Add(4);
         mapData = new MapData("amongUs", 0.5f);
         foreach (var pair in _pairs)
-            AddSessions(ref sessions, mapData, guardTeams, pair);
+            AddSessions(ref sessions, mapData, guardTeams, pair, episodeLength);
         
         return sessions;
     }

@@ -730,9 +730,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gameView: 0
-  showSurvey: 1
-  IsOnlineBuild: 1
-  loggingMethod: 1
+  showSurvey: 0
+  IsOnlineBuild: 0
+  loggingMethod: 2
   SimulationSpeed: 1
   Render: 0
 --- !u!4 &1776927360

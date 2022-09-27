@@ -196,7 +196,7 @@ public class Survey : MonoBehaviour
     {
         if (itemName.Contains("q1"))
         {
-            previousButtonName = answer;
+            previousButtonName = answer+"_btn";
         }
     }
 
@@ -215,6 +215,7 @@ public class Survey : MonoBehaviour
 
         if (items[currentSurveyIndex].name.Contains("q2"))
         {
+            
             items[currentSurveyIndex].DeactivateInput(previousButtonName);
         }
     }
@@ -278,7 +279,7 @@ public class Survey : MonoBehaviour
                 break;
 
             case SurveyType.End:
-                Application.Quit();
+                // Application.Quit();
                 break;
         }
 

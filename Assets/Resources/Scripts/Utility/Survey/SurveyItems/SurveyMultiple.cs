@@ -31,14 +31,16 @@ public class SurveyMultiple : SurveyItem
         btnGo.transform.Find("Text").GetComponent<TextMeshProUGUI>().text = choice.label;
         Button btn = btnGo.GetComponent<Button>();
         ButtonController btnCon = btnGo.GetComponent<ButtonController>();
-        btnCon.Initiate(this, choice.type);
+        btnCon.Initiate(this, choice);
 
         // Set the color
         ColorBlock colorBlock = ColorBlock.defaultColorBlock;
-        colorBlock.normalColor = choice.color - new Color(0.3f, 0.3f, 0.3f, 0f);;
-        colorBlock.highlightedColor = colorBlock.normalColor - new Color(0.2f, 0.2f, 0.2f,0f);
+        colorBlock.normalColor = choice.color - new Color(0.3f, 0.3f, 0.3f, 0f);
+        
+        colorBlock.highlightedColor = colorBlock.normalColor - new Color(0.2f, 0.2f, 0.2f, 0f);
         btn.colors = colorBlock;
-        btn.transform.GetChild(0).GetComponent<TextMeshProUGUI>().color = new Color(1 - colorBlock.normalColor.r,1 - colorBlock.normalColor.g,1 - colorBlock.normalColor.b,1);
+        btn.transform.GetChild(0).GetComponent<TextMeshProUGUI>().color = new Color(1 - colorBlock.normalColor.r,
+            1 - colorBlock.normalColor.g, 1 - colorBlock.normalColor.b, 1);
 
 
         buttons.Add(btn);
@@ -49,28 +51,10 @@ public class SurveyMultiple : SurveyItem
         // Check the answer and process it based on the code.
         if (Equals(m_code, "color"))
         {
-            int valueIndex = buttons.FindIndex(x =>
-                x.transform.Find("Text").GetComponent<TextMeshProUGUI>().text.Equals(_answer));
-
-            string value = buttons[valueIndex].name;
-            survey.UpdateName(name, value);
-
-
-            foreach (var choice in choices)
-            {
-                if(Equals(choice.label, _answer))
-                    m_answer = choice.value;        
-            }
-            
+            survey.UpdateName(name, _answer);
         }
-        else
-        {
-            foreach (var choice in choices)
-            {
-                if(Equals(choice.label, _answer))
-                    m_answer = choice.value;        
-            }
-        }
+
+        m_answer = _answer;
     }
 
 

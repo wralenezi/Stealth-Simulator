@@ -51,7 +51,7 @@ public class ScoresTable : MonoBehaviour
 
             float alpha = 0.05f;
 
-            if (Equals(GameManager.playerName, session._scores[i].name))
+            if (Equals(PlayerData.PlayerName, session._scores[i].name))
             {
                 ColorUtility.TryParseHtmlString(session.guardColor, out Color parsedColor);
                 color = parsedColor;

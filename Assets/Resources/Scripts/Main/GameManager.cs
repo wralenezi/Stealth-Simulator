@@ -9,7 +9,6 @@ public class GameManager : MonoBehaviour
     // Run identifier so all data can be grouped for each run
     // The time stamp the game started
     private static int _timeStamp;
-    public static string playerName;
 
     // The path to the stealth area prefab
     private const string StealthArea = "Prefabs/StealthArea";
@@ -63,6 +62,7 @@ public class GameManager : MonoBehaviour
     public static string DialogLines;
 
     // The containers variables for the current map
+    public MapData currentMap { set; get; }
     public string currentMapData { set; get; }
     public string currentRoadMapData { set; get; }
 
@@ -177,13 +177,17 @@ public class GameManager : MonoBehaviour
         // List<Session> sessions = SessionsSetup.StealthStudyProcedural01();
         // List<Session> sessions = StealthStudySessions.GetSessions();
         // List<Session> sessions = StealthUserStudySessions.GetSessions();
-        // List<Session> sessions = StealthBehavior.GetSessions();
         // List<Session> sessions = PatrolSessionsAssessment.GetSessions();
         // List<Session> sessions = PatrolSessions.GetSessions();
 
-        List<Session> sessions = PatrolUserStudy.GetSessions();
-        StartCoroutine(FileUploader.UploadData(null, FileType.ColorPairing, "text/csv", PatrolUserStudy.GetPairsString()));
-        
+        // List<Session> sessions = PatrolUserStudy.GetSessions();
+
+        List<Session> sessions = StealthBehavior.GetSessions();
+
+
+        StartCoroutine(FileUploader.UploadData(null, FileType.ColorPairing, "text/csv",
+            PatrolUserStudy.GetPairsString()));
+
         // Each line represents a session
         foreach (var sc in sessions)
         {
@@ -217,29 +221,31 @@ public class GameManager : MonoBehaviour
     /// </summary>
     /// <param name="map"> The name of the map</param>
     /// <param name="mapScale"> The scale multiplier of the map</param>
-    private void LoadMapData(MapData map)
+    // private void LoadMapData(MapData map)
+    private void LoadMapData(string mapName)
     {
         if (IsOnlineBuild)
         {
             // Load the map data
-            StartCoroutine(FileUploader.GetFile(map.name, "map"));
+            StartCoroutine(FileUploader.GetFile(mapName, "map"));
 
             // Load the road map data
-            StartCoroutine(FileUploader.GetFile(map.name, "roadMap", map.size));
+            // StartCoroutine(FileUploader.GetFile(mapName, "roadMap", map.size));
         }
         else
         {
             // Get the map data
-            currentMapData = CsvController.ReadString(GetMapPath(map.name));
-            currentRoadMapData = CsvController.ReadString(GetRoadMapPath(map.name, map.size));
+            // currentMapData = CsvController.ReadString(GetMapPath(map.name, "csv"));
+            currentMapData = CsvController.ReadString(GetMapPath(mapName, "json"));
+            // currentRoadMapData = CsvController.ReadString(GetRoadMapPath(mapName, map.size));
         }
     }
 
     // Get the path to the map
-    private static string GetMapPath(string mapName)
+    private static string GetMapPath(string mapName, string fileType)
     {
         // Gets the path to the "Assets" folder 
-        return MapsPath + mapName + ".csv";
+        return MapsPath + mapName + "." + fileType;
     }
 
     // Get the path to the map
@@ -268,6 +274,9 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator LoadGamesWhenReady()
     {
+        if (!Equals(PlayerData.PlayerName, "") && Equals(_remainingSessions[0].gameCode, "tutorial"))
+            _remainingSessions.RemoveAt(0);
+
         while (_remainingSessions.Count > 0)
         {
             // if there is an active area then skip
@@ -281,13 +290,13 @@ public class GameManager : MonoBehaviour
 
             // Get the first session
             Session currentSession = _remainingSessions[0];
-            
-            if(!Equals(currentSession.gameCode, "tutorial")) _closedSessions.Add(currentSession);
+
+            if (!Equals(currentSession.gameCode, "tutorial")) _closedSessions.Add(currentSession);
 
             // Load the map data
             currentMapData = "";
             currentRoadMapData = "";
-            LoadMapData(currentSession.GetMap());
+            LoadMapData(currentSession.GetMap().name);
 
             // wait until the map data is loaded.
             while ((Equals(currentMapData, "") || Equals(currentRoadMapData, "") ||
@@ -308,6 +317,13 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public void SkipSession()
+    {
+        Session session = _remainingSessions[0];
+        _remainingSessions.RemoveAt(0);
+        _closedSessions.Add(session);
+    }
+
     private void SetEpisodeCount(Session sa)
     {
         string episodeCountString = CsvController.ReadString(CsvController.GetPath(sa, FileType.EpisodeCount, null));
@@ -321,7 +337,7 @@ public class GameManager : MonoBehaviour
     public void StartAreaAfterSurvey()
     {
         Time.timeScale = 1f;
-        
+
         if (IsSessionsOver())
         {
             // Show the end message
@@ -629,7 +645,7 @@ public class Session
     public void LoadScores(string scoresData)
     {
         _scores.Clear();
-        
+
         // Split data by lines
         var lines = scoresData.Split('\n');
 
@@ -637,11 +653,11 @@ public class Session
         for (var lineIndex = 0; lineIndex < lines.Length; lineIndex++)
             if (lines[lineIndex].Length > 0)
             {
-                if(lineIndex == 0) continue;
-                
+                if (lineIndex == 0) continue;
+
                 var data = lines[lineIndex].Split(',');
-             
-                _scores.Add(new ScoreRecord(lineIndex,float.Parse(data[1]),data[0]));
+
+                _scores.Add(new ScoreRecord(lineIndex, float.Parse(data[1]), data[0]));
             }
     }
 
@@ -671,7 +687,7 @@ public class Session
             sessionInfo += sep;
 
             sessionInfo += IntruderBehaviorParams.ToString();
-            sessionInfo += sep;
+            // sessionInfo += sep;
         }
 
         sessionInfo += guardSpawnMethod;

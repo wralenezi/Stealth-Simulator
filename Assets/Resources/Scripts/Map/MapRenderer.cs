@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 using UnityEngine;
 
 public class MapRenderer : MonoBehaviour
@@ -19,7 +20,8 @@ public class MapRenderer : MonoBehaviour
 
 
     // Initiate the map renderer
-    public void Initiate(MapData mapData)
+    // public void Initiate(MapData mapData)
+    public void Initiate()
     {
         m_wallOGs = new List<GameObject>();
 
@@ -27,7 +29,7 @@ public class MapRenderer : MonoBehaviour
         m_walls = new List<Polygon>();
         m_interiorWalls = new List<Polygon>();
 
-        LoadMap(mapData);
+        LoadMap();
     }
 
     // Parse the map data where the map is stored in absolute coordinates 
@@ -65,6 +67,39 @@ public class MapRenderer : MonoBehaviour
             }
     }
 
+    private void RenderMap(MapData mapData)
+    {
+        
+        // Each line represents a polygon
+        for (int lineIndex = 0; lineIndex < mapData.walls.Count; lineIndex++)
+            if (mapData.walls[lineIndex].points.Count > 0)
+            {
+                List<MapPoint> wallPoints = mapData.walls[lineIndex].points;
+                
+                // Wall 
+                var wall = new Polygon();
+
+                // Add the vertices to the wall
+                for (var i = 0; i < wallPoints.Count; i++)
+                {
+                    // Vertex position
+                    var position = new Vector2(wallPoints[i].x, wallPoints[i].y);
+                    position = transform.TransformPoint(position);
+
+                    // Add the point to the current wall
+                    wall.AddPoint(position);
+                }
+
+                // if the wall is not the first then it is a hole
+                wall.EnsureWindingOrder(
+                    lineIndex != 0 ? Properties.innerPolygonWinding : Properties.outerPolygonWinding);
+
+                m_walls.Add(wall);
+            }
+    }
+
+    
+    
     // Parse the map which is inspired by SVG syntax
     private void ParseMapStringRelative(string mapData)
     {
@@ -166,20 +201,27 @@ public class MapRenderer : MonoBehaviour
     }
 
     // Load the map
-    public void LoadMap(MapData map)
+    // public void LoadMap(MapData map)
+    public void LoadMap()
     {
         string mapData = GameManager.Instance.currentMapData;
-
+        GameManager.Instance.currentMap = JsonConvert.DeserializeObject<MapData>(mapData);
+        MapData map = GameManager.Instance.currentMap;
+        
+        RenderMap(map);
+        
         // Parse the map data
         // if the file name has the world "_relative" then it is an SVG inspired coordinate system
-        if (!map.name.Contains("_relative"))
-            ParseMapStringAbsolute(mapData);
-        else
-            ParseMapStringRelative(mapData);
+        // if (!map.name.Contains("_relative"))
+        //     ParseMapStringAbsolute(mapData);
+        // else
+        //     ParseMapStringRelative(mapData);
 
         // Scale the map
         ScaleMap(map.size);
-
+        
+        GameManager.Instance.currentRoadMapData = CsvController.ReadString(GetRoadMapPath(map.name, map.size));
+        
         // Create the collider for the wall
         CreateCollider();
 
@@ -188,6 +230,12 @@ public class MapRenderer : MonoBehaviour
         SetMapMaxWidth();
     }
 
+    // Get the path to the map
+    private static string GetRoadMapPath(string mapName, float mapScale)
+    {
+        // Gets the path to the "Assets" folder 
+        return GameManager.RoadMapsPath + mapName + "_" + mapScale + ".csv";
+    }
 
     // Set the maximum with of the bounding box of the map
     public void SetMapMaxWidth()
@@ -265,5 +313,52 @@ public class MapRenderer : MonoBehaviour
     public List<Polygon> GetWalls()
     {
         return m_walls;
+    }
+}
+
+
+/// <summary>
+/// Contains the map details, like name, size
+/// </summary>
+[Serializable]
+public class MapData
+{
+    public string name;
+    public float size;
+
+    public List<WallData> walls;
+
+    public MapData(string _name, float _size)
+    {
+        name = _name;
+        size = _size;
+        
+        walls = new List<WallData>();
+    }
+    
+    
+}
+
+[Serializable]
+public class WallData
+{
+    public List<MapPoint> points;
+
+    public WallData()
+    {
+        points = new List<MapPoint>();
+    }
+}
+
+[Serializable]
+public struct MapPoint
+{
+    public float x;
+    public float y;
+
+    public MapPoint(float _x, float _y)
+    {
+        x = _x;
+        y = _y;
     }
 }

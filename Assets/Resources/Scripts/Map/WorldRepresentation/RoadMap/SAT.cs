@@ -39,7 +39,7 @@ public class SAT : MonoBehaviour
     public void Initiate(MapRenderer mapRenderer, MapData mapData)
     {
         // Import the hand drawn road map
-        ImportRoadMap(mapRenderer, mapData);
+        ImportRoadMap(mapRenderer);
 
         // Divide long edges to smaller edges
         DivideRoadMap();
@@ -71,7 +71,7 @@ public class SAT : MonoBehaviour
     }
 
 
-    private void ImportRoadMap(MapRenderer mapRenderer, MapData mapData)
+    private void ImportRoadMap(MapRenderer mapRenderer)//, MapData mapData)
     {
         _roadMap = new List<RoadMapNode>();
         m_roadMapDivided = new List<RoadMapNode>();
@@ -90,13 +90,13 @@ public class SAT : MonoBehaviour
         catch (Exception e)
         {
             Debug.Log("Error: " + e);
-            Debug.Log("Error Road Map file for: " + mapData.name + " " + mapData.size);
+            Debug.Log("Error Road Map file for: " + GameManager.Instance.currentMap.name + " " + GameManager.Instance.currentMap.size);
         
             // Implement SAT to get the road map
             CreateSkeletal(mapRenderer);
         
             // Save the map data for future use.
-            SaveMap(mapData);
+            SaveMap(GameManager.Instance.currentMap);
         
             _roadMap = m_SatRoadMap;
         }

@@ -7,12 +7,15 @@ public static class StealthBehavior
         List<Session> sessions = new List<Session>();
 
         List<int> guardTeams = new List<int>();
-        guardTeams.Add(1);
+        guardTeams.Add(2);
 
 
         MapData mapData;
+        
+        mapData = new MapData("MgsDock", 2f);
+
         // mapData = new MapData("amongUs", 0.5f);
-        mapData = new MapData("bloodstainedAngle1", 0.5f);
+        // mapData = new MapData("bloodstainedAngle1", 0.5f);
 
         AddDynamicSession(ref sessions, mapData, guardTeams);
 
@@ -21,13 +24,6 @@ public static class StealthBehavior
 
     private static void AddDynamicSession(ref List<Session> sessions, MapData mapData, List<int> guardTeams)
     {
-        List<PatrolPlanner> intruderMethods = new List<PatrolPlanner>()
-        {
-            // PatrolPlanner.iSimple,
-            PatrolPlanner.iRoadMap,
-            // PatrolPlanner.UserInput
-        };
-
         // Guard Patrol Behavior
 
         List<PatrolPlanner> guardMethods = new List<PatrolPlanner>()

@@ -6,17 +6,17 @@ using TMPro;
 public class ButtonController : MonoBehaviour
 {
     private SurveyItem m_surveyItem;
-    private ButtonType m_Type;
+    private Choice _choice;
 
-    public void Initiate(SurveyItem surveyItem, ButtonType type)
+    public void Initiate(SurveyItem surveyItem, Choice choice)
     {
         m_surveyItem = surveyItem;
-        m_Type = type;
+        _choice = choice;
     }
 
     public void OnClick()
     {
-        m_surveyItem.Answer(transform.Find("Text").GetComponent<TextMeshProUGUI>().text);
+        m_surveyItem.Answer(_choice.value);
     }
 }
 

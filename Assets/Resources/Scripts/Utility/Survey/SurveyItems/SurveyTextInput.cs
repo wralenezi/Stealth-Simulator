@@ -40,7 +40,7 @@ public class SurveyTextInput : SurveyItem
         _btnGo.transform.Find("Text").GetComponent<TextMeshProUGUI>().text = choice.label;
         _btn = _btnGo.GetComponent<Button>();
         ButtonController btnCon = _btnGo.GetComponent<ButtonController>();
-        btnCon.Initiate(this, choice.type);
+        btnCon.Initiate(this, choice);
 
         // Set the color
         ColorBlock colorBlock = ColorBlock.defaultColorBlock;
@@ -56,7 +56,7 @@ public class SurveyTextInput : SurveyItem
 
         if (Equals(m_code, "name"))
         {
-            GameManager.playerName = m_answer;
+            PlayerData.PlayerName = m_answer;
         }
     }
 
@@ -74,7 +74,7 @@ public class SurveyTextInput : SurveyItem
             }
 
 
-            GameManager.playerName = m_answer;
+            PlayerData.PlayerName = m_answer;
         }
         
         

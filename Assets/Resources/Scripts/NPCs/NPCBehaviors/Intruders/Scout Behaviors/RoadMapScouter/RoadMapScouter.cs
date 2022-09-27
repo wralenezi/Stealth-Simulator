@@ -75,7 +75,7 @@ public class RoadMapScouter : Scouter
 
         _maxSafeRisk = _rmScouterParams.maxRiskAsSafe;
 
-        showAvailableHidingSpots = true;
+        // showAvailableHidingSpots = true;
         // showRiskSpots = true;
         // showProjectedTrajectories = true;
         showRoadMapEndNodes = true;
@@ -160,6 +160,8 @@ public class RoadMapScouter : Scouter
 
         foreach (var wp in _closestWpsToDestination)
             FillAvailableSpots(wp.GetPosition());
+
+        // EditorApplication.isPaused = true;
     }
 
     private void FillAvailableSpots(Vector2 position)

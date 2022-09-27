@@ -474,17 +474,3 @@ public class SessionsSetup : MonoBehaviour
     }
 }
 
-/// <summary>
-/// Contains the map details, like name, size
-/// </summary>
-public struct MapData
-{
-    public string name;
-    public float size;
-
-    public MapData(string _name, float _size)
-    {
-        name = _name;
-        size = _size;
-    }
-}

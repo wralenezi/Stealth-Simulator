@@ -72,10 +72,10 @@ public class MapDrawer : MonoBehaviour
         MapsPath = MapsDataPath + MapsPath;
     }
 
-    string GetPath(string mapName)
+    string GetPath(string mapName, string fileType)
     {
         // Gets the path to the "Assets" folder 
-        return MapsPath + mapName + ".csv";
+        return MapsPath + mapName + "."+ fileType;
     }
 
     private void SaveCurrentLineRenders()
@@ -102,6 +102,8 @@ public class MapDrawer : MonoBehaviour
         }
 
         SaveMap();
+
+        SaveMapInJson();
     }
 
     private void LoadMap()
@@ -116,7 +118,7 @@ public class MapDrawer : MonoBehaviour
             Destroy(childTransform.gameObject);
         }
 
-        string mapData = CsvController.ReadString(GetPath(MapName.text));
+        string mapData = CsvController.ReadString(GetPath(MapName.text,"csv"));
         ParseMapString(mapData);
     }
 
@@ -283,8 +285,34 @@ public class MapDrawer : MonoBehaviour
         // Remove the last line return
         mapData = mapData.TrimEnd('\n');
 
-        CsvController.WriteString(GetPath(MapName.text), mapData, false);
+        CsvController.WriteString(GetPath(MapName.text,"csv"), mapData, false);
     }
+
+
+    private void SaveMapInJson()
+    {
+        MapData mapData = new MapData(MapName.text,1f);
+        
+        mapData.walls = new List<WallData>();
+        
+        foreach (List<Vector2> wall in m_walls)
+        {
+            WallData wallData = new WallData();
+            
+            if (wall.Count > 0)
+            {
+                for (int i = 0; i < wall.Count; i++)
+                    wallData.points.Add(new MapPoint(wall[i].x,wall[i].y));
+            }
+            
+            mapData.walls.Add(wallData);
+        }
+
+        string mapDataString = JsonUtility.ToJson(mapData);
+        CsvController.WriteString(GetPath(MapName.text,"json"), mapDataString, false);
+
+    }
+
 
 
     void Update()

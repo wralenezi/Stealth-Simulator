@@ -17,7 +17,7 @@ public class Coin : MonoBehaviour
     {
         renderer = GetComponent<Renderer>();
         audioSource = GetComponent<AudioSource>();
-        audioSource.volume = 0.4f;
+        audioSource.volume = 0.2f;
     }
 
     public void Spawn(Vector2 startPosition, List<MeshPolygon> navMesh, MapData mapData, bool isRandom)
@@ -174,7 +174,7 @@ public class Coin : MonoBehaviour
     {
         if (other.gameObject.name.Contains("Intruder"))
         {
-            // audioSource.Play();
+            audioSource.Play();
             ModifyScore();
             Spawn(gameObject.transform.position, MapManager.Instance.GetNavMesh(), MapManager.Instance.mapData, true);
             other.gameObject.GetComponent<Intruder>().AddCoin();
