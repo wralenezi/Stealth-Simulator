@@ -8,13 +8,18 @@ public abstract class RoadMapSearcher : Searcher
 
     // Road map used for the search
     protected RoadMap m_RoadMap;
+    
+    private RoadMapSearcherDecisionMaker _decisionMaker;
+
+    private RoadMapSearcherParams _params;
+    
 
     // The minimum probability for a segment to be considered by the guard
     protected float m_minSegThreshold = 0.4f;
 
-    // Variables for path finding
-    private List<RoadMapLine> open;
-    private List<RoadMapLine> closed;
+    // // Variables for path finding
+    // private List<RoadMapLine> open;
+    // private List<RoadMapLine> closed;
 
     public bool RenderExpandedPoints;
 
@@ -32,13 +37,20 @@ public abstract class RoadMapSearcher : Searcher
 
     private SearchWeights m_searchWeights;
 
-    public override void Initiate(Session session, MapManager mapManager)
+    public override void Initiate(MapManager mapManager, GuardBehaviorParams guardParams)
     {
-        base.Initiate(session, mapManager);
+        base.Initiate(mapManager, guardParams);
 
         m_RoadMap = mapManager.GetRoadMap();
-        open = new List<RoadMapLine>();
-        closed = new List<RoadMapLine>();
+
+        _params = (RoadMapSearcherParams) guardParams.searcherParams;
+
+        _decisionMaker = new RoadMapSearcherDecisionMaker();
+        _decisionMaker.Initiate();
+        
+        
+        // open = new List<RoadMapLine>();
+        // closed = new List<RoadMapLine>();
 
         m_ExpandedPoints = new List<PossiblePosition>();
 
@@ -735,5 +747,54 @@ public abstract class RoadMapSearcher : Searcher
                     Gizmos.DrawSphere(point.GetPosition().Value, 0.5f);
                 }
             }
+    }
+}
+
+
+
+public class RoadMapSearcherParams : SearcherParams
+{
+    public readonly float MaxNormalizedPathLength;
+    public readonly float StalenessWeight;
+    public readonly float PassingGuardsWeight;
+    public readonly float ConnectivityWeight;
+    public readonly RMDecision DecisionType;
+    public readonly RMPassingGuardsSenstivity PGSen;
+
+    public RoadMapSearcherParams(float _maxNormalizedPathLength, float _stalenessWeight, float _PassingGuardsWeight, float _connectivityWeight, RMDecision _decisionType, RMPassingGuardsSenstivity _pgSen)
+    {
+        MaxNormalizedPathLength = _maxNormalizedPathLength;
+        StalenessWeight = _stalenessWeight;
+        PassingGuardsWeight = _PassingGuardsWeight;
+        ConnectivityWeight = _connectivityWeight;
+        DecisionType = _decisionType;
+        PGSen = _pgSen;
+    }
+
+    public override string ToString()
+    {
+        string output = "";
+        string sep = "_";
+        
+        output += MaxNormalizedPathLength;
+        output += sep;
+
+        output += StalenessWeight;
+        output += sep;
+
+        output += PassingGuardsWeight;
+        output += sep;
+
+        output += ConnectivityWeight;
+        output += sep;
+
+        output += DecisionType;
+        output += sep;
+
+        output += PGSen;
+        // output += sep;
+        
+        
+        return output;
     }
 }

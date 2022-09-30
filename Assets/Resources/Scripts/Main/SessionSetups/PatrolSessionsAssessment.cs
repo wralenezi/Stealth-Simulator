@@ -92,7 +92,7 @@ public class PatrolSessionsAssessment
             PatrolerParams patrolParams = new VisMeshPatrolerParams(maxSeenRegionPortion, areaWeight, stalenessWeight,
                 distanceWeight, separationWeight, decisionType);
 
-            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolPlanner, patrolParams);
+            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolPlanner, patrolParams, SearchPlanner.None, null, AlertPlanner.None, null);
 
 
             Session session = new Session(_episodeLength, "", GameType.CoinCollection, Scenario.Stealth, "blue",
@@ -196,7 +196,7 @@ public class PatrolSessionsAssessment
             PatrolerParams patrolParams = new RoadMapPatrolerParams(maxNormalizedPathLength, stalenessWeight,
                 guardPassingWeight, connectivityWeight, decisionType, passingGuardsSenstivity);
 
-            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolPlanner, patrolParams);
+            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolPlanner, patrolParams, SearchPlanner.None, null, AlertPlanner.None, null);
 
 
             Session session = new Session(_episodeLength, "", GameType.CoinCollection, Scenario.Stealth, "blue",

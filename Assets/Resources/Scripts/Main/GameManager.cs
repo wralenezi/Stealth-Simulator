@@ -717,10 +717,22 @@ public class GuardBehaviorParams
     public PatrolPlanner planner;
     public PatrolerParams patrolerParams;
 
-    public GuardBehaviorParams(PatrolPlanner _planner, PatrolerParams _patrolerParams)
+    public SearchPlanner searcherPlanner;
+    public SearcherParams searcherParams;
+
+    public AlertPlanner alertPlanner;
+    public ChaseParams chaseParams; 
+
+    public GuardBehaviorParams(PatrolPlanner _planner, PatrolerParams _patrolerParams, SearchPlanner _searchPlanner, SearcherParams _searcherParams, AlertPlanner _alertPlanner, ChaseParams _chaseParams)
     {
         planner = _planner;
         patrolerParams = _patrolerParams;
+
+        searcherPlanner = _searchPlanner;
+        searcherParams = _searcherParams;
+
+        alertPlanner = _alertPlanner;
+        chaseParams = _chaseParams;
     }
 
     public override string ToString()

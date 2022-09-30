@@ -22,7 +22,7 @@ public abstract class Searcher : MonoBehaviour
     // If the searcher still know the intruder's position
     protected bool isStillCheating;
 
-    public virtual void Initiate(Session session, MapManager mapManager)
+    public virtual void Initiate(MapManager mapManager, GuardBehaviorParams guardParams)
     {
     }
 
@@ -61,4 +61,10 @@ public abstract class Searcher : MonoBehaviour
     {
         isStillCheating = true;
     }
+}
+
+
+public abstract class SearcherParams
+{
+    
 }

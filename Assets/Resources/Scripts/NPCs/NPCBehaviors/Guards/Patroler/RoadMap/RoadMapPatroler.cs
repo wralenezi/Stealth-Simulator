@@ -16,9 +16,9 @@ public class RoadMapPatroler : Patroler
 
     public override void Initiate(MapManager mapManager, GuardBehaviorParams guardParams)
     {
-        _params = (RoadMapPatrolerParams) guardParams.patrolerParams;
-        
         _RoadMap = mapManager.GetRoadMap();
+        
+        _params = (RoadMapPatrolerParams) guardParams.patrolerParams;
         
         _decisionMaker = new RoadMapPatrolerDecisionMaker();
         _decisionMaker.Initiate();

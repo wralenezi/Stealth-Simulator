@@ -296,3 +296,8 @@ public class InterceptionPoint
         // Handles.Label(position + Vector2.up, (probability).ToString());
     }
 }
+
+public abstract class ChaseParams
+{
+    
+}

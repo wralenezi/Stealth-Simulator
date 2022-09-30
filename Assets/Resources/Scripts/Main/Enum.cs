@@ -34,7 +34,8 @@ public enum PatrolPlanner
     iRoadMap,
     iPathFinding,
     Random,
-    UserInput
+    UserInput,
+    None
 }
 
 
@@ -45,7 +46,8 @@ public enum AlertPlanner
     Intercepting,
     UserInput,
     RmPropSimple,
-    iHeuristic
+    iHeuristic,
+    None
 }
 
 
@@ -68,7 +70,9 @@ public enum SearchPlanner
     // The guards know the intruder's position at all times.
     Cheating,
     
-    UserInput
+    UserInput,
+    
+    None
 }
 
 // Intruder behavior 
