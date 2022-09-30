@@ -305,7 +305,9 @@ public enum RMDecision
     // Find a complete path
     DijkstraPath,
     // Simply find a target and take the shortest path towards it.
-    EndPoint
+    EndPoint,
+    
+    HillClimbPath
 }
 
 public enum RMPassingGuardsSenstivity

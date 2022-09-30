@@ -17,7 +17,7 @@ public class OccupancyRmSearcher : RoadMapSearcher
     {
         float maxProbability = Mathf.NegativeInfinity;
 
-        foreach (var line in m_RoadMap.GetLines(false))
+        foreach (var line in _RoadMap.GetLines(false))
         {
             DiffuseProb(line);
             line.ExpandSs(speed, timeDelta);

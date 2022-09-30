@@ -7,11 +7,11 @@ public class SimpleRmPropSearcher : RoadMapSearcher
     // Properties of the simple propagation method.
     private float m_expansionMultiplier = 1f;
 
-    public override void UpdateSearcher(float speed, List<Guard> guards, float timeDelta)
+    public override void UpdateSearcher(float speed, List<Guard> guards,  float timeDelta)
     {
         if (isStillCheating) return;
         float timeBefore = Time.realtimeSinceStartup;
-        UpdateSearch(speed, guards, timeDelta);
+        UpdateSearch(speed, guards,  timeDelta);
         Updated = (Time.realtimeSinceStartup - timeBefore);
     }
 
@@ -20,7 +20,7 @@ public class SimpleRmPropSearcher : RoadMapSearcher
     {
         float maxProbability = Mathf.NegativeInfinity;
         // Spread the probability similarly to Third eye crime
-        foreach (var line in m_RoadMap.GetLines(false))
+        foreach (var line in _RoadMap.GetLines(false))
         {
             // Debug.Log("searching");
 
@@ -40,6 +40,6 @@ public class SimpleRmPropSearcher : RoadMapSearcher
             }
         }
 
-        if (maxProbability < m_minSegThreshold) NormalizeSegments(maxProbability);
+        if (maxProbability < _params.minSegThreshold) NormalizeSegments(maxProbability);
     }
 }

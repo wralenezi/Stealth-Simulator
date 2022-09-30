@@ -54,7 +54,7 @@ public abstract class Searcher : MonoBehaviour
 
     public virtual void UpdateSearcher(float speed, List<Guard> guards, float timeDelta) { }
 
-    public abstract void Search(Guard guard);
+    public abstract void Search(List<Guard> guard);
 
     // The search is over so clear the variables
     public virtual void Clear()

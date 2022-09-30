@@ -12,9 +12,10 @@ public class RandomSearcher : Searcher
     {
     }
 
-    public override void Search(Guard guard)
+    public override void Search(List<Guard> guards)
     {
-        if (!guard.IsBusy())
+        foreach (var guard in guards)
+            if (!guard.IsBusy())
         {
             Vector2 randomRoadmap = MapManager.Instance.mapDecomposer.GetRandomPolygonInNavMesh().GetRandomPosition();
             guard.SetDestination(randomRoadmap, false, false);

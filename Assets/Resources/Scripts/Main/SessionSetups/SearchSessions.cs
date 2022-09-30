@@ -2,8 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// This sets up the survey session for the patrol assessment study
-public class PatrolUserStudy : MonoBehaviour
+public class SearchSessions : MonoBehaviour
 {
     private static int _episodeCount = 1;
 
@@ -12,18 +11,17 @@ public class PatrolUserStudy : MonoBehaviour
     private static List<string> _variables = new List<string>();
 
     private static List<SessionPair> _pairs = new List<SessionPair>();
-    
+
     private static void PairUpColors()
     {
         _colors.Clear();
         _colors.Add("blue");
-        _colors.Add("red");
+        // _colors.Add("red");
         _colors.Add("green");
        
         
         _variables.Clear();
         _variables.Add("Roadmap");
-        _variables.Add("Vismesh");
         _variables.Add("Random");
         
         _pairs.Clear();
@@ -63,25 +61,7 @@ public class PatrolUserStudy : MonoBehaviour
 
         return output;
     }
-
-    private static void AddSessions(ref List<Session> sessions, MapData mapData, List<int> guardCount, SessionPair pair, float episodeLength)
-    {
-        switch (pair.variable)
-        {
-            case "Roadmap":
-                AddRoadMapSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode, episodeLength);
-                break;
-
-            case "Vismesh":
-                AddVisMeshSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode, episodeLength);
-                break;
-
-            case "Random":
-                AddRandomSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode, episodeLength);
-                break;
-        }
-    }
-
+    
     public static List<Session> GetSessions()
     {
         List<Session> sessions = new List<Session>();
@@ -105,96 +85,22 @@ public class PatrolUserStudy : MonoBehaviour
         
         return sessions;
     }
-
-    private static void AddVisMeshSession(string gameCode, ref List<Session> sessions, MapData mapData, string color,
-        List<int> guardTeams, SurveyType surveyType, float episodeLength)
+    
+    private static void AddSessions(ref List<Session> sessions, MapData mapData, List<int> guardCount, SessionPair pair, float episodeLength)
     {
-        foreach (var guardTeam in guardTeams)
+        switch (pair.variable)
         {
-            // Set the Hyperparamets for the behavior
-            PatrolerParams patrolParams = new VisMeshPatrolerParams(0.95f, 0.5f, 0f,
-                0.5f, 0.5f, VMDecision.Weighted);
+            case "Roadmap":
+                AddRoadMapSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode, episodeLength);
+                break;
 
-            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gVisMesh, patrolParams, SearchPlanner.None, null, AlertPlanner.None, null);
+            // case "Vismesh":
+            //     AddVisMeshSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode, episodeLength);
+            //     break;
 
-            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.UserInput, null);
-
-
-            Session session = new Session(episodeLength, "", GameType.CoinCollection, Scenario.Stealth, color,
-                GuardSpawnType.Separate, guardTeam, guardBehaviorParams, 1,
-                intruderBehaviorParams,
-                mapData, SpeechType.Simple, surveyType);
-
-            session.sessionVariable = "Vismesh";
-
-            // Add guards
-            for (int i = 0; i < session.guardsCount; i++)
-            {
-                Behavior behavior = new Behavior(PatrolPlanner.gVisMesh, AlertPlanner.Simple,
-                    SearchPlanner.Cheating, PlanOutput.DijkstraPath);
-
-                session.AddNpc(i + 1, NpcType.Guard, behavior, PathFindingHeursitic.EuclideanDst,
-                    PathFollowing.SimpleFunnel, null);
-            }
-
-            // Add intruders
-            for (int i = 0; i < session.intruderCount; i++)
-            {
-                Behavior behavior = new Behavior(PatrolPlanner.UserInput, AlertPlanner.UserInput,
-                    SearchPlanner.UserInput, PlanOutput.DijkstraPath);
-
-                session.AddNpc(i + 1, NpcType.Intruder, behavior, PathFindingHeursitic.EuclideanDst,
-                    PathFollowing.SimpleFunnel, null);
-            }
-
-            sessions.Add(session);
-        }
-    }
-
-
-    private static void AddRoadMapSession(string gameCode, ref List<Session> sessions, MapData mapData,
-        string guardColor,
-        List<int> guardTeams, SurveyType surveyType, float episodeLength)
-    {
-        foreach (var guardTeam in guardTeams)
-        {
-            // Set the Hyperparamets for the behavior
-            PatrolerParams patrolParams = new RoadMapPatrolerParams(1f, 1f, 0.5f,
-                0.5f, RMDecision.DijkstraPath, RMPassingGuardsSenstivity.Max);
-
-            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gRoadMap, patrolParams, SearchPlanner.None, null, AlertPlanner.None, null);
-
-            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.UserInput, null);
-
-
-            Session session = new Session(episodeLength, "", GameType.CoinCollection, Scenario.Stealth, guardColor,
-                GuardSpawnType.Separate, guardTeam, guardBehaviorParams, 1,
-                intruderBehaviorParams,
-                mapData, SpeechType.Simple, surveyType);
-
-            session.sessionVariable = "Roadmap";
-
-            // Add guards
-            for (int i = 0; i < session.guardsCount; i++)
-            {
-                Behavior behavior = new Behavior(PatrolPlanner.gRoadMap, AlertPlanner.Simple,
-                    SearchPlanner.Cheating, PlanOutput.DijkstraPath);
-
-                session.AddNpc(i + 1, NpcType.Guard, behavior, PathFindingHeursitic.EuclideanDst,
-                    PathFollowing.SimpleFunnel, null);
-            }
-
-            // Add intruders
-            for (int i = 0; i < session.intruderCount; i++)
-            {
-                Behavior behavior = new Behavior(PatrolPlanner.UserInput, AlertPlanner.UserInput,
-                    SearchPlanner.UserInput, PlanOutput.DijkstraPath);
-
-                session.AddNpc(i + 1, NpcType.Intruder, behavior, PathFindingHeursitic.EuclideanDst,
-                    PathFollowing.SimpleFunnel, null);
-            }
-
-            sessions.Add(session);
+            case "Random":
+                AddRandomSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode, episodeLength);
+                break;
         }
     }
 
@@ -242,4 +148,54 @@ public class PatrolUserStudy : MonoBehaviour
             sessions.Add(session);
         }
     }
+    
+        private static void AddRoadMapSession(string gameCode, ref List<Session> sessions, MapData mapData,
+        string guardColor,
+        List<int> guardTeams, SurveyType surveyType, float episodeLength)
+    {
+        foreach (var guardTeam in guardTeams)
+        {
+            // Set the Hyperparamets for the behavior
+            PatrolerParams patrolParams = new RoadMapPatrolerParams(1f, 1f, 0.5f,
+                0.5f, RMDecision.DijkstraPath, RMPassingGuardsSenstivity.Max);
+            
+            
+            SearcherParams searcherParams = new RoadMapSearcherParams(1f, 1f, 0.5f, 0.5f, RMDecision.DijkstraPath, RMPassingGuardsSenstivity.Max);
+
+            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gRoadMap, patrolParams, SearchPlanner.None, null, AlertPlanner.None, null);
+
+            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.UserInput, null);
+
+
+            Session session = new Session(episodeLength, "", GameType.CoinCollection, Scenario.Stealth, guardColor,
+                GuardSpawnType.Separate, guardTeam, guardBehaviorParams, 1,
+                intruderBehaviorParams,
+                mapData, SpeechType.Simple, surveyType);
+
+            session.sessionVariable = "Roadmap";
+
+            // Add guards
+            for (int i = 0; i < session.guardsCount; i++)
+            {
+                Behavior behavior = new Behavior(PatrolPlanner.gRoadMap, AlertPlanner.Simple,
+                    SearchPlanner.Cheating, PlanOutput.DijkstraPath);
+
+                session.AddNpc(i + 1, NpcType.Guard, behavior, PathFindingHeursitic.EuclideanDst,
+                    PathFollowing.SimpleFunnel, null);
+            }
+
+            // Add intruders
+            for (int i = 0; i < session.intruderCount; i++)
+            {
+                Behavior behavior = new Behavior(PatrolPlanner.UserInput, AlertPlanner.UserInput,
+                    SearchPlanner.UserInput, PlanOutput.DijkstraPath);
+
+                session.AddNpc(i + 1, NpcType.Intruder, behavior, PathFindingHeursitic.EuclideanDst,
+                    PathFollowing.SimpleFunnel, null);
+            }
+
+            sessions.Add(session);
+        }
+    }
+
 }

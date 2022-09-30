@@ -76,7 +76,7 @@ public class GuardsBehaviorController : MonoBehaviour
                 break;
         }
 
-        searcher.Initiate(session, mapManager);
+        searcher.Initiate(mapManager, session.guardBehaviorParams);
     }
 
     
@@ -162,8 +162,10 @@ public class GuardsBehaviorController : MonoBehaviour
 
 
         watch = System.Diagnostics.Stopwatch.StartNew();
-        foreach (var guard in NpcsManager.Instance.GetGuards())
-            searcher.Search(guard);
+        // foreach (var guard in NpcsManager.Instance.GetGuards())
+        //     searcher.Search(guard);
+        
+        searcher.Search(NpcsManager.Instance.GetGuards());
         watch.Stop();
         elapsedMs = watch.ElapsedMilliseconds;
         _decisionTimes.Add(new BehaviorPerformanceSnapshot(searcher.GetType().Name + " Decision", elapsedMs));
