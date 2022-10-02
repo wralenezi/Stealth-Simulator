@@ -182,7 +182,8 @@ public class GameManager : MonoBehaviour
 
         // List<Session> sessions = PatrolUserStudy.GetSessions();
 
-        List<Session> sessions = StealthBehavior.GetSessions();
+        // List<Session> sessions = StealthBehavior.GetSessions();
+        List<Session> sessions = SearchSessions.GetSessions();
 
 
         StartCoroutine(FileUploader.UploadData(null, FileType.ColorPairing, "text/csv",
@@ -473,13 +474,13 @@ public struct NpcData
     // The NPC type
     public NpcType npcType;
 
-    public Behavior behavior;
+    // public Behavior behavior;
 
     // The A* search heuristic
-    public PathFindingHeursitic npcHeuristic;
+    // public PathFindingHeursitic npcHeuristic;
 
     // NavMesh following behavior
-    public PathFollowing npcPathFollowing;
+    // public PathFollowing npcPathFollowing;
 
     // Initial position for the NPC
     public NpcLocation? location;
@@ -489,9 +490,9 @@ public struct NpcData
     {
         id = _id;
         npcType = pNpcType;
-        behavior = _behavior;
-        npcHeuristic = pPathFindingHeuristic;
-        npcPathFollowing = pNpcPathFollowing;
+        // behavior = _behavior;
+        // npcHeuristic = pPathFindingHeuristic;
+        // npcPathFollowing = pNpcPathFollowing;
         location = _location;
     }
 
@@ -502,9 +503,9 @@ public struct NpcData
         var data = "";
         data += npcType + ",";
         data += id + ",";
-        data += behavior + ",";
-        data += npcHeuristic + ",";
-        data += npcPathFollowing;
+        // data += behavior + ",";
+        // data += npcHeuristic + ",";
+        // data += npcPathFollowing;
 
         return data;
     }
@@ -680,15 +681,14 @@ public class Session
         sessionInfo += GetGuardsData().Count > 0 ? guardBehaviorParams.ToString() : "";
         sessionInfo += sep;
 
-        if (GetIntrudersData().Count > 0)
-        {
-            // intruder planner
-            sessionInfo += GetIntrudersData()[0].behavior.patrol.ToString();
-            sessionInfo += sep;
 
-            sessionInfo += IntruderBehaviorParams.ToString();
-            // sessionInfo += sep;
-        }
+        // intruder planner
+        sessionInfo += guardBehaviorParams.ToString();
+        sessionInfo += sep;
+
+        sessionInfo += IntruderBehaviorParams.ToString();
+        sessionInfo += sep;
+
 
         sessionInfo += guardSpawnMethod;
         // sessionInfo += sep;
@@ -714,18 +714,19 @@ public class SessionPair
 
 public class GuardBehaviorParams
 {
-    public PatrolPlanner planner;
+    public PatrolPlanner patrolPlanner;
     public PatrolerParams patrolerParams;
 
     public SearchPlanner searcherPlanner;
     public SearcherParams searcherParams;
 
     public AlertPlanner alertPlanner;
-    public ChaseParams chaseParams; 
+    public ChaseParams chaseParams;
 
-    public GuardBehaviorParams(PatrolPlanner _planner, PatrolerParams _patrolerParams, SearchPlanner _searchPlanner, SearcherParams _searcherParams, AlertPlanner _alertPlanner, ChaseParams _chaseParams)
+    public GuardBehaviorParams(PatrolPlanner _planner, PatrolerParams _patrolerParams, SearchPlanner _searchPlanner,
+        SearcherParams _searcherParams, AlertPlanner _alertPlanner, ChaseParams _chaseParams)
     {
-        planner = _planner;
+        patrolPlanner = _planner;
         patrolerParams = _patrolerParams;
 
         searcherPlanner = _searchPlanner;
@@ -740,7 +741,7 @@ public class GuardBehaviorParams
         string output = "";
         string sep = "_";
 
-        output += planner;
+        output += patrolPlanner;
         output += sep;
 
         output += patrolerParams;
@@ -753,13 +754,26 @@ public class GuardBehaviorParams
 
 public class IntruderBehaviorParams
 {
-    public PatrolPlanner planner;
+    public PatrolPlanner patrolPlanner;
     public ScouterParams scouterParams;
 
-    public IntruderBehaviorParams(PatrolPlanner _planner, ScouterParams _scouterParams)
+    public SearchPlanner searchPlanner;
+    public SearchEvaderParams searchEvaderParams;
+
+    public AlertPlanner alertPlanner;
+    public ChaseEvaderParams chaseEvaderParams;
+    
+    
+    public IntruderBehaviorParams(PatrolPlanner _planner, ScouterParams _scouterParams, SearchPlanner _searchPlanner, SearchEvaderParams _searchEvaderParams, AlertPlanner _alertPlanner, ChaseEvaderParams _chaseEvaderParams)
     {
-        planner = _planner;
+        patrolPlanner = _planner;
         scouterParams = _scouterParams;
+
+        searchPlanner = _searchPlanner;
+        searchEvaderParams = _searchEvaderParams;
+
+        alertPlanner = _alertPlanner;
+        chaseEvaderParams = _chaseEvaderParams;
     }
 
     public override string ToString()
@@ -767,7 +781,7 @@ public class IntruderBehaviorParams
         string output = "";
         string sep = "_";
 
-        output += planner;
+        output += patrolPlanner;
         output += sep;
 
         output += scouterParams;

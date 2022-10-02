@@ -158,9 +158,8 @@ public class NpcsManager : MonoBehaviour
             AreaUIManager.Instance.UpdateSeenArea(Time.deltaTime);
             // ScoreController.Instance.IncrementScore(-1f);
             
-            // Don't change the guards behavior
             // Guards knows the intruders location
-            // ChangeState<Chase>();
+            ChangeState<Chase>();
             
             Speak(spotter, "Spot", 1f);
         }

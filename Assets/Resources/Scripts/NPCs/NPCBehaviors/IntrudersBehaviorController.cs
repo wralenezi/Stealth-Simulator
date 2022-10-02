@@ -5,12 +5,12 @@ public class IntrudersBehaviorController : MonoBehaviour
 {
     List<BehaviorPerformanceSnapshot> _decisionTimes;
 
-    private Behavior m_behavior;
-
-    public Behavior behavior
-    {
-        get { return m_behavior; }
-    }
+    // private Behavior m_behavior;
+    //
+    // public Behavior behavior
+    // {
+    //     get { return m_behavior; }
+    // }
 
     // The controller for intruders behavior when they have never been spotted.
     private Scouter m_Scouter;
@@ -27,11 +27,11 @@ public class IntrudersBehaviorController : MonoBehaviour
 
         if (noIntruders) return;
 
-        m_behavior = session.GetIntrudersData()[0].behavior;
+        // m_behavior = session.GetIntrudersData()[0].behavior;
 
         _decisionTimes = new List<BehaviorPerformanceSnapshot>();
 
-        switch (behavior.patrol)
+        switch (session.IntruderBehaviorParams.patrolPlanner)
         {
             case PatrolPlanner.iSimple:
                 m_Scouter = gameObject.AddComponent<SimpleGreedyScouter>();
@@ -49,7 +49,7 @@ public class IntrudersBehaviorController : MonoBehaviour
                 break;
         }
 
-        switch (behavior.alert)
+        switch (session.IntruderBehaviorParams.alertPlanner)
         {
             case AlertPlanner.iHeuristic:
                 m_ChaseEvader = gameObject.AddComponent<SimpleChaseEvader>();
@@ -60,7 +60,7 @@ public class IntrudersBehaviorController : MonoBehaviour
         }
 
 
-        switch (behavior.search)
+        switch (session.IntruderBehaviorParams.searchPlanner)
         {
             case SearchPlanner.iHeuristic:
                 m_SearchEvader = gameObject.AddComponent<SimpleSearchEvader>();

@@ -20,7 +20,8 @@ public class CoinSpawner : MonoBehaviour
         m_coins = new List<Coin>();
         m_coinPrefab = (GameObject) Resources.Load("Prefabs/Coin");
 
-        _isRandom = !Equals(session.GetGuardsData()[0].behavior.patrol, PatrolPlanner.gScripted);
+        // _isRandom = !Equals(session.GetGuardsData()[0].behavior.patrol, PatrolPlanner.gScripted);
+        _isRandom = !Equals(session.guardBehaviorParams.patrolPlanner, PatrolPlanner.gScripted);
 
         Reset(session, navMesh);
     }

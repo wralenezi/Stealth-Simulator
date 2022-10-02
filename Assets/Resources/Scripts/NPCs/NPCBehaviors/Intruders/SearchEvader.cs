@@ -18,3 +18,8 @@ public abstract class SearchEvader : MonoBehaviour
 
     public abstract void Refresh();
 }
+
+public abstract class SearchEvaderParams
+{
+    
+}

@@ -21,3 +21,8 @@ public class SimpleChaseEvader : ChaseEvader
         }
     }
 }
+
+public abstract class ChaseEvaderParams
+{
+    
+}

@@ -150,9 +150,9 @@ public class StealthArea : MonoBehaviour
     {
         bool timeOver = GetElapsedTimeInSeconds() >= SessionInfo.episodeLength;
         bool highscoreReached = scoreController.Score > Mathf.Infinity;
-        bool spotted = NpcManager.GetState() is Chase;
+        // bool spotted = NpcManager.GetState() is Chase;
 
-        bool finished = timeOver || highscoreReached || spotted;
+        bool finished = timeOver || highscoreReached;// || spotted;
 
         // Log Guards progress
         performanceMonitor.Log();

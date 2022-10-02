@@ -161,8 +161,10 @@ public class SearchSessions : MonoBehaviour
             
             
             SearcherParams searcherParams = new RoadMapSearcherParams(1f, 1f, 0.5f, 0.5f, RMDecision.DijkstraPath, RMPassingGuardsSenstivity.Max);
+            
+            
 
-            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gRoadMap, patrolParams, SearchPlanner.None, null, AlertPlanner.None, null);
+            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gRoadMap, patrolParams, SearchPlanner.RmPropSimple, searcherParams, AlertPlanner.None, null);
 
             IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.UserInput, null);
 
