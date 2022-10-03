@@ -67,7 +67,7 @@ public class IntrudersBehaviorController : MonoBehaviour
                 break;
 
             case SearchPlanner.UserInput:
-                return;
+                break;
         }
 
         m_Scouter?.Initiate(mapManager, session);
@@ -118,17 +118,20 @@ public class IntrudersBehaviorController : MonoBehaviour
 
     public void StartScouter()
     {
-        if (Equals(behavior.patrol, PatrolPlanner.UserInput) || noIntruders) return;
+        // if (Equals(behavior.patrol, PatrolPlanner.UserInput) || noIntruders) return;
+        if (Equals(m_Scouter, null)) return;
 
         m_Scouter.Begin();
     }
 
     public void StayIncognito(GameType gameType)
     {
-        if (Equals(behavior.search, SearchPlanner.UserInput) || noIntruders) return;
-
+        // if (Equals(behavior.search, SearchPlanner.UserInput) || noIntruders) return;
+        if (Equals(m_Scouter, null)) return;
+        
+        
         var watch = System.Diagnostics.Stopwatch.StartNew();
-        m_Scouter?.Refresh(gameType);
+        m_Scouter.Refresh(gameType);
         watch.Stop();
         var elapsedMs = watch.ElapsedMilliseconds;
         _decisionTimes.Add(new BehaviorPerformanceSnapshot(m_Scouter.GetType().Name, elapsedMs));
@@ -136,15 +139,17 @@ public class IntrudersBehaviorController : MonoBehaviour
 
     public void StartChaseEvader()
     {
-        if (Equals(behavior.alert, AlertPlanner.UserInput) || noIntruders) return;
-
+        // if (Equals(behavior.alert, AlertPlanner.UserInput) || noIntruders) return;
+        if (Equals(m_ChaseEvader, null)) return;
+        
         m_ChaseEvader.Begin();
     }
 
     // Intruder behavior when being chased
     public void KeepRunning()
     {
-        if (Equals(behavior.alert, AlertPlanner.UserInput) || noIntruders) return;
+        // if (Equals(behavior.alert, AlertPlanner.UserInput) || noIntruders) return;
+        if (Equals(m_ChaseEvader, null)) return;
 
         var watch = System.Diagnostics.Stopwatch.StartNew();
         m_ChaseEvader.Refresh();
@@ -156,7 +161,8 @@ public class IntrudersBehaviorController : MonoBehaviour
 
     public void StartHiding()
     {
-        if (Equals(behavior.search, SearchPlanner.UserInput) || noIntruders) return;
+        // if (Equals(behavior.search, SearchPlanner.UserInput) || noIntruders) return;
+        if (Equals(m_SearchEvader, null)) return;
 
         m_SearchEvader.Begin();
     }
@@ -165,8 +171,10 @@ public class IntrudersBehaviorController : MonoBehaviour
     // Intruder behavior after escaping guards
     public void KeepHiding()
     {
-        if (Equals(behavior.search, SearchPlanner.UserInput) || noIntruders) return;
+        // if (Equals(behavior.search, SearchPlanner.UserInput) || noIntruders) return;
+        if (Equals(m_SearchEvader, null)) return;
 
+        
         var watch = System.Diagnostics.Stopwatch.StartNew();
         m_SearchEvader.Refresh();
         watch.Stop();

@@ -52,7 +52,7 @@ public class RoadMapScouter : Scouter
         Instance = this;
 
         base.Initiate(mapManager, session);
-
+        
         _rmScouterParams = (RMScouterParams) session.IntruderBehaviorParams.scouterParams;
 
         _closestWpsToDestination = new List<RoadMapNode>();
@@ -78,9 +78,9 @@ public class RoadMapScouter : Scouter
         // showAvailableHidingSpots = true;
         // showRiskSpots = true;
         // showProjectedTrajectories = true;
-        showRoadMapEndNodes = true;
+        // showRoadMapEndNodes = true;
         // showIntruderGoal = true;
-        showRoadMap = true;
+        // showRoadMap = true;
     }
 
 

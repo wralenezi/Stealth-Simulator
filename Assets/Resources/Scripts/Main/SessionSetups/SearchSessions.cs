@@ -112,11 +112,19 @@ public class SearchSessions : MonoBehaviour
         {
             // Set the Hyperparamets for the behavior
             PatrolerParams patrolParams = null;
+            
+            SearcherParams searcherParams = new RoadMapSearcherParams(1f, 1f, 0.5f, 0.5f, RMDecision.EndPoint, RMPassingGuardsSenstivity.Max, 0.5f, 0.5f,-1f,0.2f);
 
-            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gRandom, patrolParams, SearchPlanner.None, null, AlertPlanner.None, null);
+            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gRandom, patrolParams, SearchPlanner.RmPropSimple, searcherParams, AlertPlanner.None, null);
 
-            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.UserInput, null);
+            
+            ScouterParams scouterParams = new RMScouterParams(SpotsNeighbourhoods.LineOfSight, PathCanceller.DistanceCalculation, RiskThresholdType.Danger
+                , TrajectoryType.Simple , 0f, GoalPriority.Safety, SafetyPriority.ClosestWeightedSpot, 1f);
 
+            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.iRoadMap, scouterParams, SearchPlanner.UserInput, null, AlertPlanner.UserInput, null);
+
+            
+            
             Session session = new Session(episodeLength, gameCode, GameType.CoinCollection, Scenario.Stealth,
                 guardColor,
                 GuardSpawnType.Separate, guardTeam, guardBehaviorParams, 1,
@@ -159,15 +167,15 @@ public class SearchSessions : MonoBehaviour
             PatrolerParams patrolParams = new RoadMapPatrolerParams(1f, 1f, 0.5f,
                 0.5f, RMDecision.DijkstraPath, RMPassingGuardsSenstivity.Max);
             
+            SearcherParams searcherParams = new RoadMapSearcherParams(1f, 1f, 0.5f, 0.5f, RMDecision.HillClimbPath, RMPassingGuardsSenstivity.Max, 0.5f, 0.5f,-1f,0.2f);
             
-            SearcherParams searcherParams = new RoadMapSearcherParams(1f, 1f, 0.5f, 0.5f, RMDecision.DijkstraPath, RMPassingGuardsSenstivity.Max);
-            
-            
-
             GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gRoadMap, patrolParams, SearchPlanner.RmPropSimple, searcherParams, AlertPlanner.None, null);
 
-            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.UserInput, null);
+            ScouterParams scouterParams = new RMScouterParams(SpotsNeighbourhoods.LineOfSight, PathCanceller.DistanceCalculation, RiskThresholdType.Danger
+                , TrajectoryType.Simple , 0f, GoalPriority.Safety, SafetyPriority.ClosestWeightedSpot, 1f);
 
+            
+            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.iRoadMap, scouterParams, SearchPlanner.None, null, AlertPlanner.None, null);
 
             Session session = new Session(episodeLength, "", GameType.CoinCollection, Scenario.Stealth, guardColor,
                 GuardSpawnType.Separate, guardTeam, guardBehaviorParams, 1,

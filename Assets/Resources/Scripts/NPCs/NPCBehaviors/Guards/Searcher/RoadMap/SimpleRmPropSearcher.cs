@@ -19,11 +19,10 @@ public class SimpleRmPropSearcher : RoadMapSearcher
     private void UpdateSearch(float speed, List<Guard> guards, float timeDelta)
     {
         float maxProbability = Mathf.NegativeInfinity;
+        
         // Spread the probability similarly to Third eye crime
         foreach (var line in _RoadMap.GetLines(false))
         {
-            // Debug.Log("searching");
-
             line.PropagateProb();
             line.IncreaseProbability(speed, timeDelta);
             line.ExpandSs(speed * m_expansionMultiplier, timeDelta);

@@ -13,26 +13,6 @@ public abstract class RoadMapSearcher : Searcher
     protected RoadMapSearcherParams _params;
     
 
-    // // Variables for path finding
-    // private List<RoadMapLine> open;
-    // private List<RoadMapLine> closed;
-
-    // public bool RenderExpandedPoints;
-
-    // // List of projections points by expanding a projected point on the road map
-    // private List<PossiblePosition> m_ExpandedPoints;
-
-    // The probability of each guard's goal at the time of assignment
-    // The index in the array is the guard's ID number
-    // private float[] m_goalProb;
-
-    // Probability of the npc saying a line
-    // float m_BarkProb = 0.75f;
-
-    // private float m_MaxLength;
-
-    // private SearchWeights m_searchWeights;
-
     public override void Initiate(MapManager mapManager, GuardBehaviorParams guardParams)
     {
         base.Initiate(mapManager, guardParams);
@@ -44,19 +24,6 @@ public abstract class RoadMapSearcher : Searcher
         _decisionMaker = new RoadMapSearcherDecisionMaker();
         _decisionMaker.Initiate();
         
-        
-        // open = new List<RoadMapLine>();
-        // closed = new List<RoadMapLine>();
-
-        // m_ExpandedPoints = new List<PossiblePosition>();
-
-        // m_MaxLength = PathFinding.Instance.longestShortestPath;
-
-        // m_goalProb = new float[session.guardsCount];
-
-        // m_searchWeights = new SearchWeights(1f, 0f, 1f, -1f);
-
-        // RenderSearchSegments = true;
     }
 
     public override void CommenceSearch(NPC target)
@@ -726,10 +693,8 @@ public class RoadMapSearcherParams : SearcherParams
     public readonly RMPassingGuardsSenstivity PGSen;
     
     // Search Params
-    // The staleness of the search segment
-    public float probWeight;
 
-    // The search segment's age weight
+    // The search segment's age weight (How long was it last seen)
     public float ageWeight;
 
     // Path distance of the search segment to the guard
@@ -740,7 +705,7 @@ public class RoadMapSearcherParams : SearcherParams
 
     public float minSegThreshold;
 
-    public RoadMapSearcherParams(float _maxNormalizedPathLength, float _stalenessWeight, float _PassingGuardsWeight, float _connectivityWeight, RMDecision _decisionType, RMPassingGuardsSenstivity _pgSen)
+    public RoadMapSearcherParams(float _maxNormalizedPathLength, float _stalenessWeight, float _PassingGuardsWeight, float _connectivityWeight, RMDecision _decisionType, RMPassingGuardsSenstivity _pgSen, float _ageWeight, float _dstToGuardsWeight, float _dstFromOwnWeight, float _minSegThreshold)
     {
         MaxNormalizedPathLength = _maxNormalizedPathLength;
         StalenessWeight = _stalenessWeight;
@@ -748,6 +713,10 @@ public class RoadMapSearcherParams : SearcherParams
         ConnectivityWeight = _connectivityWeight;
         DecisionType = _decisionType;
         PGSen = _pgSen;
+        ageWeight = _ageWeight;
+        dstToGuardsWeight = _dstToGuardsWeight;
+        dstFromOwnWeight = _dstFromOwnWeight;
+        minSegThreshold = _minSegThreshold;
     }
 
     public override string ToString()

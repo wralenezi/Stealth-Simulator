@@ -50,7 +50,7 @@ public class GuardsBehaviorController : MonoBehaviour
                 break;
         }
 
-        patroler.Initiate(mapManager, session.guardBehaviorParams);
+        patroler?.Initiate(mapManager, session.guardBehaviorParams);
 
 
         // Interception controller
@@ -79,7 +79,7 @@ public class GuardsBehaviorController : MonoBehaviour
                 break;
         }
 
-        searcher.Initiate(mapManager, session.guardBehaviorParams);
+        searcher?.Initiate(mapManager, session.guardBehaviorParams);
     }
 
 
@@ -145,7 +145,7 @@ public class GuardsBehaviorController : MonoBehaviour
     public void StartSearch(Intruder intruder)
     {
         // Flow the probability for intruder positions
-        searcher.StartSearch(intruder);
+        searcher?.StartSearch(intruder);
 
         // Order the guards to go the intruder's last known position
         foreach (var guard in NpcsManager.Instance.GetGuards())
@@ -156,6 +156,8 @@ public class GuardsBehaviorController : MonoBehaviour
     // Keep searching for the intruder
     public void Search(Intruder intruder)
     {
+        if (Equals(searcher, null)) return;
+        
         var watch = System.Diagnostics.Stopwatch.StartNew();
         searcher.UpdateSearcher(intruder.GetNpcSpeed(), NpcsManager.Instance.GetGuards(), Time.deltaTime);
         watch.Stop();
@@ -175,7 +177,7 @@ public class GuardsBehaviorController : MonoBehaviour
 
     public void ClearSearch()
     {
-        searcher.Clear();
+        searcher?.Clear();
     }
 
     /// <summary>

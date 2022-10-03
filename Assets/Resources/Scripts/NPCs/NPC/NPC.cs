@@ -537,16 +537,18 @@ public abstract class NPC : MonoBehaviour
 
     private bool CheckIfUserInput(State state)
     {
-        if (state is Patrol)
-            return GetNpcData().behavior.patrol == PatrolPlanner.UserInput;
+        // if (state is Patrol)
+        //     return GetNpcData().behavior.patrol == PatrolPlanner.UserInput;
+        //
+        // if (state is Chase)
+        //     return GetNpcData().behavior.alert == AlertPlanner.UserInput;
+        //
+        // if (state is Search)
+        //     return GetNpcData().behavior.search == SearchPlanner.UserInput;
+        //
+        // return false;
 
-        if (state is Chase)
-            return GetNpcData().behavior.alert == AlertPlanner.UserInput;
-
-        if (state is Search)
-            return GetNpcData().behavior.search == SearchPlanner.UserInput;
-
-        return false;
+        return !IsBusy();
     }
 
 

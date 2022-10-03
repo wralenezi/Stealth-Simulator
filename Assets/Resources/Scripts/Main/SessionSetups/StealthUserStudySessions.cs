@@ -103,7 +103,12 @@ public static class StealthUserStudySessions
         foreach (var guardSpawnType in guardSpawnTypes)
         foreach (var projectionDistance in projectionDistances)
         {
-            IntruderBehaviorParams intruderBehavior = new IntruderBehaviorParams(PatrolPlanner.iRoadMap, new RMScouterParams(SpotsNeighbourhoods.All, PathCanceller.None, RiskThresholdType.None, TrajectoryType.None, 0f, GoalPriority.None, SafetyPriority.None, projectionDistance));
+
+            RMScouterParams rmScouterParams = new RMScouterParams(SpotsNeighbourhoods.All, PathCanceller.None,
+                RiskThresholdType.None, TrajectoryType.None, 0f, GoalPriority.None, SafetyPriority.None,
+                projectionDistance);
+            
+            IntruderBehaviorParams intruderBehavior = new IntruderBehaviorParams(PatrolPlanner.iRoadMap, rmScouterParams, SearchPlanner.None, null, AlertPlanner.None, null);
 
             Session session = new Session(120, "", GameType.CoinCollection, Scenario.Stealth, "blue", guardSpawnType,
                 guardTeam, null,1,

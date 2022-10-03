@@ -117,7 +117,7 @@ public class PatrolUserStudy : MonoBehaviour
 
             GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gVisMesh, patrolParams, SearchPlanner.None, null, AlertPlanner.None, null);
 
-            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.UserInput, null);
+            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.UserInput, null, SearchPlanner.UserInput, null, AlertPlanner.UserInput, null);
 
 
             Session session = new Session(episodeLength, "", GameType.CoinCollection, Scenario.Stealth, color,
@@ -164,7 +164,7 @@ public class PatrolUserStudy : MonoBehaviour
 
             GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gRoadMap, patrolParams, SearchPlanner.None, null, AlertPlanner.None, null);
 
-            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.UserInput, null);
+            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.UserInput, null, SearchPlanner.UserInput, null, AlertPlanner.UserInput, null);
 
 
             Session session = new Session(episodeLength, "", GameType.CoinCollection, Scenario.Stealth, guardColor,
@@ -209,7 +209,7 @@ public class PatrolUserStudy : MonoBehaviour
 
             GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gRandom, patrolParams, SearchPlanner.None, null, AlertPlanner.None, null);
 
-            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.UserInput, null);
+            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.UserInput, null, SearchPlanner.UserInput, null, AlertPlanner.UserInput, null);
 
             Session session = new Session(episodeLength, gameCode, GameType.CoinCollection, Scenario.Stealth,
                 guardColor,

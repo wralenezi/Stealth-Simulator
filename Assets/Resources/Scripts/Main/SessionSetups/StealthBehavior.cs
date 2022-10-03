@@ -112,7 +112,7 @@ public static class StealthBehavior
             
             ScouterParams scouterParams = new RMScouterParams(neighbour, pathCanceller, riskThresholdType , trajectoryType , maxRiskAsSafeValue, aGoalPriority, aSafetyPriority, projectionDistance);
 
-            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.iRoadMap, scouterParams);
+            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.iRoadMap, scouterParams, SearchPlanner.None, null, AlertPlanner.None, null);
             
             Session session = new Session(120, "", GameType.CoinCollection, Scenario.Stealth, "blue",
                 guardSpawnType, guardTeam, null,  1,

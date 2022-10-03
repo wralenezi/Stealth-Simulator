@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class RoadMapSearcherDecisionMaker 
+public class RoadMapSearcherDecisionMaker
 {
     private Dictionary<string, Vector2> _guardGoals;
 
@@ -12,29 +12,28 @@ public class RoadMapSearcherDecisionMaker
 
     // The minimum probability for a segment to be considered by the guard
     protected float m_minSegThreshold = 0.4f;
-    
+
     // List of projections points by expanding a projected point on the road map
     private List<PossiblePosition> m_ExpandedPoints;
-    
+
     public bool RenderExpandedPoints;
-    
+
     public bool RenderSearchSegments;
 
 
     private float m_MaxLength;
 
-    
+
     public void Initiate()
     {
         _guardGoals = new Dictionary<string, Vector2>();
-        
+
         open = new List<RoadMapLine>();
         closed = new List<RoadMapLine>();
-        
+
         m_ExpandedPoints = new List<PossiblePosition>();
 
         m_MaxLength = PathFinding.Instance.longestShortestPath;
-
     }
 
     private bool IsGoalTaken(Guard guard, Vector2 goal)
@@ -55,21 +54,21 @@ public class RoadMapSearcherDecisionMaker
 
     public void SetTarget(Guard guard, List<Guard> guards, RoadMapSearcherParams searcherParams, RoadMap roadMap)
     {
-
         if (_guardGoals.ContainsKey(guard.name)) _guardGoals.Remove(guard.name);
 
         switch (searcherParams.DecisionType)
         {
             case RMDecision.HillClimbPath:
-            GreedyPath(guard, roadMap);
-            break;
-            
+                GreedyPath(guard, roadMap);
+                break;
+
             case RMDecision.DijkstraPath:
                 SetDijkstraPath(guard, guards, searcherParams, roadMap);
                 break;
-            
+
             case RMDecision.EndPoint:
-                GetSearchGoal(guard, NpcsManager.Instance.GetIntruders()[0], NpcsManager.Instance.GetGuards(), searcherParams, roadMap);
+                GetSearchGoal(guard, NpcsManager.Instance.GetIntruders()[0], NpcsManager.Instance.GetGuards(),
+                    searcherParams, roadMap);
                 break;
         }
 
@@ -77,8 +76,8 @@ public class RoadMapSearcherDecisionMaker
         if (Equals(guard.GetGoal(), null)) return;
 
         _guardGoals[guard.name] = guard.GetGoal().Value;
-        
-        
+
+
         // // Once the chaser is idle that means that the intruder is still not seen
         // // Now Guards should start visiting the nodes with distance more than zero
         // if (!guard.IsBusy())
@@ -117,8 +116,8 @@ public class RoadMapSearcherDecisionMaker
         //     //     guard.ClearGoal();
         // }
     }
-    
-    
+
+
     // Get a complete path of no more than param@length that a guard needs to traverse to search for an intruder.
     private void SetDijkstraPath(Guard guard, List<Guard> guards, RoadMapSearcherParams _params, RoadMap roadMap)
     {
@@ -167,8 +166,9 @@ public class RoadMapSearcherDecisionMaker
             open.RemoveAt(0);
 
             // Skip if the search reach its limit
-            if(currentLine.distance / PathFinding.Instance.longestShortestPath >= _params.MaxNormalizedPathLength) continue;
-            
+            if (currentLine.distance / PathFinding.Instance.longestShortestPath >=
+                _params.MaxNormalizedPathLength) continue;
+
             foreach (var neighbor in currentLine.GetWp1Connections())
             {
                 if (!closed.Contains(neighbor) && !open.Contains(neighbor) && neighbor != currentLine)
@@ -184,7 +184,7 @@ public class RoadMapSearcherDecisionMaker
                         neighbor.pathParent = currentLine;
                     }
 
-                    
+
                     open.InsertIntoSortedList(neighbor,
                         delegate(RoadMapLine x, RoadMapLine y) { return x.pathUtility.CompareTo(y.pathUtility); },
                         Order.Dsc);
@@ -226,8 +226,8 @@ public class RoadMapSearcherDecisionMaker
 
         guard.ClearLines();
 
-        if(Equals(bestLine, null)) return;
-        
+        if (Equals(bestLine, null)) return;
+
         // Get the member of the sequence of lines the guard will be visiting
         List<RoadMapLine> linesToVisit = guard.GetLinesToPass();
 
@@ -287,16 +287,19 @@ public class RoadMapSearcherDecisionMaker
         // SimplifyPath(ref path);
     }
 
-    
-    private void GetSearchGoal(Guard guard, Intruder intruder, List<Guard> guards, RoadMapSearcherParams _params, RoadMap roadMap)
+
+    private void GetSearchGoal(Guard guard, Intruder intruder, List<Guard> guards, RoadMapSearcherParams _params,
+        RoadMap roadMap)
     {
         Vector2? newGoal = GetSearchSegment(guard, guards, _params, roadMap);
 
         if (!Equals(newGoal, null)) SwapGoal(guard, guards, newGoal.Value, false);
     }
 
-        // Get the best Search segment the guard should visit.
-    private Vector2? GetSearchSegment(Guard requestingGuard, List<Guard> guards, RoadMapSearcherParams _params, RoadMap roadMap)
+    
+    // Get the best Search segment the guard should visit.
+    private Vector2? GetSearchSegment(Guard requestingGuard, List<Guard> guards, RoadMapSearcherParams _params,
+        RoadMap roadMap)
     {
         SearchSegment bestSs = null;
         float maxFitnessValue = Mathf.NegativeInfinity;
@@ -339,10 +342,7 @@ public class RoadMapSearcherDecisionMaker
 
             // Calculate the fitness of the search segment
             // start with the probability
-            float ssFitness = sS.GetFitness();
-
-            // Calculate the overall heuristic of this search segment
-            ssFitness = ssFitness * _params.probWeight;
+            float ssFitness = sS.GetFitness() * _params.StalenessWeight;
             ssFitness += (sS.GetAge() / Properties.MaxAge) * _params.ageWeight;
             ssFitness += (minGoalDistance / PathFinding.Instance.longestShortestPath) * _params.dstToGuardsWeight;
             ssFitness += (distanceToGuard / PathFinding.Instance.longestShortestPath) * _params.dstFromOwnWeight;
@@ -359,8 +359,8 @@ public class RoadMapSearcherDecisionMaker
 
         return (bestSs.position1 + bestSs.position2) / 2f;
     }
-    
-        // Assign goal to closest guard and swap goals if needed if the guard was busy.
+
+    // Assign goal to closest guard and swap goals if needed if the guard was busy.
     public void SwapGoal(Guard assignedGuard, List<Guard> guards, Vector2 newGoal, bool isEnabled)
     {
         // Find the closest guard to the new goal
@@ -426,14 +426,14 @@ public class RoadMapSearcherDecisionMaker
         }
     }
 
-    
+
     private void SetGoal(Guard guard, List<Guard> guards, RoadMapPatrolerParams _params, RoadMap roadMap)
     {
         List<RoadMapLine> lines = roadMap.GetLines(false);
 
         RoadMapLine bestLine = null;
         float highestFitness = Mathf.NegativeInfinity;
-        
+
         foreach (var line in lines)
         {
             if (IsGoalTaken(guard, line.GetMid())) continue;
@@ -442,21 +442,20 @@ public class RoadMapSearcherDecisionMaker
 
             score += line.GetProbability() * _params.StalenessWeight;
 
-        //     score += GetAreaPortion(visPoly) * patrolerParams.AreaWeight;
-        //
-        //     // Subtracted by 1 to reverse the relation ( higher value is closer, thus more desirable)
-        //     score += (1f - GetNormalizedDistance(guard, visPoly)) * patrolerParams.DistanceWeight;
-        //
-        //     score += GetClosestGuardDistance(guard, guards, visPoly) * patrolerParams.SeparationWeight;
-        //
-        //     if (highestScore < score)
-        //     {
-        //         highestScore = score;
-        //         bestTarget = visPoly;
-        //     }
-        //     
+            //     score += GetAreaPortion(visPoly) * patrolerParams.AreaWeight;
+            //
+            //     // Subtracted by 1 to reverse the relation ( higher value is closer, thus more desirable)
+            //     score += (1f - GetNormalizedDistance(guard, visPoly)) * patrolerParams.DistanceWeight;
+            //
+            //     score += GetClosestGuardDistance(guard, guards, visPoly) * patrolerParams.SeparationWeight;
+            //
+            //     if (highestScore < score)
+            //     {
+            //         highestScore = score;
+            //         bestTarget = visPoly;
+            //     }
+            //     
         }
-
     }
 
 
@@ -476,6 +475,7 @@ public class RoadMapSearcherDecisionMaker
             case RMPassingGuardsSenstivity.Actual:
                 break;
         }
+
         utility += (1f - (float) passingGuards / guards.Count) * patrolerParams.PassingGuardsWeight;
 
         // Minus two because too ignore the edge connection itself
@@ -502,29 +502,29 @@ public class RoadMapSearcherDecisionMaker
             }
         }
     }
-    
+
     private void GreedyPath(Guard guard, RoadMap _roadMap)
     {
         m_ExpandedPoints.Clear();
-    
+
         // Get the closest point on the road map to the guard
         Vector2? point = _roadMap.GetLineToPoint(guard.GetTransform().position, null, true, out RoadMapLine startLine);
-    
+
         // if there is no intersection then abort
         if (!point.HasValue) return;
-    
+
         // Place the possible positions a guard can occupy in the future.
         _roadMap.ProjectPositionsInDirection(ref m_ExpandedPoints, point.Value, startLine, 1,
             guard.GetFovRadius() * 1.2f, guard);
-    
+
         // Find the possible starting line with the highest utility.
         float maxUtility = Mathf.NegativeInfinity;
         foreach (var expandedPoint in m_ExpandedPoints)
         {
             point = _roadMap.GetLineToPoint(expandedPoint.GetPosition().Value, null, true, out RoadMapLine tempLine);
-    
+
             if (!point.HasValue) continue;
-    
+
             float tempUtility = GetLineUtility(tempLine);
             if (maxUtility < tempUtility)
             {
@@ -532,28 +532,28 @@ public class RoadMapSearcherDecisionMaker
                 startLine = tempLine;
             }
         }
-    
+
         guard.ClearLines();
-    
+
         if (Equals(startLine, null)) return;
-    
+
         // Get the member of the sequence of lines the guard will be visiting
         List<RoadMapLine> linesToVisit = guard.GetLinesToPass();
-    
+
         linesToVisit.Add(startLine);
-    
+
         startLine.AddPassingGuard(guard);
         float totalDistance = startLine.GetLength();
-    
+
         RoadMapLine currentLine;
         RoadMapLine maxLineUtility;
         while (totalDistance < m_MaxLength)
         {
             maxUtility = Mathf.NegativeInfinity;
             maxLineUtility = null;
-    
+
             currentLine = linesToVisit[linesToVisit.Count - 1];
-    
+
             foreach (var neighbor in currentLine.GetWp1Connections())
             {
                 if (!linesToVisit.Contains(neighbor) && GetLineUtility(neighbor) > maxUtility)
@@ -562,7 +562,7 @@ public class RoadMapSearcherDecisionMaker
                     maxLineUtility = neighbor;
                 }
             }
-    
+
             foreach (var neighbor in currentLine.GetWp2Connections())
             {
                 if (!linesToVisit.Contains(neighbor) && GetLineUtility(neighbor) > maxUtility)
@@ -571,38 +571,38 @@ public class RoadMapSearcherDecisionMaker
                     maxLineUtility = neighbor;
                 }
             }
-    
+
             if (Equals(maxLineUtility, null)) break;
-    
+
             linesToVisit.Add(maxLineUtility);
             totalDistance += maxLineUtility.GetLength();
         }
-    
+
         // Get the path member variable to load it to the guard
         List<Vector2> path = guard.GetPath();
-    
+
         PathFinding.Instance.GetShortestPath(guard.GetTransform().position, startLine.GetMid(),
             ref path);
-    
+
         // path.Add(guard.GetTransform().position);
-    
+
         // Add the necessary intermediate nodes only.
         int i = 0;
         totalDistance = 0f;
         while (i < linesToVisit.Count)
         {
             RoadMapLine line = linesToVisit[i];
-    
+
             Vector2 lastPoint = path[path.Count - 1];
-    
+
             if ((line.wp1.Id != 0 && line.wp2.Id != 0) || i == linesToVisit.Count - 1)
             {
                 float wp1Distance = Vector2.Distance(lastPoint, line.wp1.GetPosition());
                 float wp2Distance = Vector2.Distance(lastPoint, line.wp2.GetPosition());
-    
+
                 totalDistance += Mathf.Min(wp1Distance, wp2Distance);
                 totalDistance += Vector2.Distance(line.wp1.GetPosition(), line.wp2.GetPosition());
-    
+
                 if (wp1Distance < wp2Distance)
                 {
                     path.Add(line.wp1.GetPosition());
@@ -624,29 +624,29 @@ public class RoadMapSearcherDecisionMaker
                 path.Add(line.wp2.GetPosition());
                 totalDistance += Vector2.Distance(lastPoint, line.wp2.GetPosition());
             }
-    
+
             if (totalDistance >= m_MaxLength)
                 break;
-    
+
             line.AddPassingGuard(guard);
             i++;
         }
-    
+
         // Increment the index
         i++;
-    
+
         while (i < linesToVisit.Count)
             linesToVisit.RemoveAt(i);
-    
-    
+
+
         // Remove the start node since it is not needed
         // path.RemoveAt(0);
-    
+
         SimplifyPath(ref path);
-    
+
         guard.ForceToReachGoal(false);
     }
-    
+
     private float GetLineUtility(RoadMapLine line)
     {
         float utility = 0f;
@@ -680,7 +680,7 @@ public class RoadMapSearcherDecisionMaker
                     Gizmos.DrawSphere(point.GetPosition().Value, 0.5f);
                 }
             }
-        
+
         if (RenderSearchSegments)
             if (_roadMap != null)
             {
@@ -694,5 +694,4 @@ public class RoadMapSearcherDecisionMaker
                 }
             }
     }
-
 }
