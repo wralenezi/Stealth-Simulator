@@ -18,7 +18,7 @@ This scenario allows us to study how guards can performe patrol routines to secu
 ### 2. Guard Search Behavior
 
 
-This scenario tests how guards can track and search for an opposing agent after the line of sight is broken. It starts with an intruder is in the field of view (FOV) of a guard. The intruder is tasked with getting out of the guards' FOV and stay hidden. However, once the intruder is out of sight, the guards start the search behavior. Their goal is regain visibility of the intruder. Example of our research 
+This scenario tests how guards can track and search for an opposing agent after the line of sight is broken. It starts with an intruder is in the field of view (FOV) of a guard. The intruder is tasked with getting out of the guards' FOV and stay hidden. However, once the intruder is out of sight, the guards start the search behavior. Their goal is regain visibility of the intruder. Example of our research can be found here: https://ieeexplore.ieee.org/abstract/document/9619054
 
 
 ### 3. Stealth Agent Pathfinding
