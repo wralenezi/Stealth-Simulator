@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
 public class GameManager : MonoBehaviour
@@ -530,7 +531,7 @@ public class Session
     public int currentEpisode = 0;
     public readonly int MaxEpisodes = 1;
 
-    public float episodeLength;
+    public float episodeLengthSec;
 
     // the ID of the game session
     private string timeStamp;
@@ -574,7 +575,6 @@ public class Session
 
     public List<ScoreRecord> _scores;
 
-
     // the type of survey that will be showed after this session 
     public SurveyType surveyType;
 
@@ -585,7 +585,7 @@ public class Session
         SpeechType _speechType,
         SurveyType _surveyType = SurveyType.End)
     {
-        episodeLength = _episodeLength;
+        episodeLengthSec = _episodeLength;
         gameCode = _gameCode;
         scenario = pScenario;
         guardColor = _guardColor;

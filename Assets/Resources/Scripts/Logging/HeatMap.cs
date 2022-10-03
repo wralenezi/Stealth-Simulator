@@ -179,7 +179,7 @@ public class HeatMap : MonoBehaviour
             if (!_heatMap.IsNodeInMap(node.position, _cellSide * 0.5f)) continue;
 
 
-            data += i + "," + j + "," + node.GetTime() + "," + StealthArea.SessionInfo.episodeLength + "," + node.heatValue + "," +
+            data += i + "," + j + "," + node.GetTime() + "," + StealthArea.SessionInfo.episodeLengthSec + "," + node.heatValue + "," +
                     StealthArea.SessionInfo.currentEpisode + "\n";
         }
 
