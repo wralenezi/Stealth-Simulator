@@ -36,9 +36,9 @@ This scenario tests the ability of an agent to navigate through an environment u
 
 ## Create custom sessions
 
-You can define custom sessions to test different behaviors. You need to load the session into the list of sessions to be loaded in the game
+You can define custom sessions to test different behaviors. You need to load the session into the list of sessions to be loaded in the game; they are loaded in GameManager.LoadSavedSessions(). 
 
-You can create a session by using its class constructor which takes:
+You can create a session to define a scenario by using its class constructor which takes:
 
 - _episodeLength: the length of the session
 - _gameCode (string) : the code of the game (for logging purposes)
@@ -55,3 +55,7 @@ You can create a session by using its class constructor which takes:
 - _surveyType (SurveyType): The survey displayed at the end of this
 
 
+### Prefined scenarios
+
+1. Dynamic Guard Patrol: Call the function "PatrolUserStudy.GetSessions()" to get the list of sessions to be used in "GameManager.LoadSavedSessions()". These sessions are mainly focused on testing guard patrol behaviors.
+  
