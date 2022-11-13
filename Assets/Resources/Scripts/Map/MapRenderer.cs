@@ -205,6 +205,7 @@ public class MapRenderer : MonoBehaviour
     public void LoadMap()
     {
         string mapData = GameManager.Instance.currentMapData;
+        float mapSize = StealthArea.SessionInfo.GetMap().size;
         GameManager.Instance.currentMap = JsonConvert.DeserializeObject<MapData>(mapData);
         MapData map = GameManager.Instance.currentMap;
         
@@ -218,7 +219,8 @@ public class MapRenderer : MonoBehaviour
         //     ParseMapStringRelative(mapData);
 
         // Scale the map
-        ScaleMap(map.size);
+        mapSize = Equals(mapSize, 0f) ? map.size: mapSize; 
+        ScaleMap(mapSize);
         
         GameManager.Instance.currentRoadMapData = CsvController.ReadString(GetRoadMapPath(map.name, map.size));
         
@@ -328,7 +330,7 @@ public class MapData
 
     public List<WallData> walls;
 
-    public MapData(string _name, float _size)
+    public MapData(string _name, float _size = 0f)
     {
         name = _name;
         size = _size;

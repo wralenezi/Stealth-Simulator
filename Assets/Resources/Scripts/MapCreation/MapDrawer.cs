@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Serialization;
@@ -118,13 +119,48 @@ public class MapDrawer : MonoBehaviour
             Destroy(childTransform.gameObject);
         }
 
-        string mapData = CsvController.ReadString(GetPath(MapName.text,"csv"));
-        ParseMapString(mapData);
+        // string mapData = CsvController.ReadString(GetPath(MapName.text,"csv"));
+        // ParseCSVMapString(mapData);
+
+        string mapData = CsvController.ReadString(GetPath(MapName.text, "json"));
+        RenderMap(JsonConvert.DeserializeObject<MapData>(mapData));
     }
 
+    private void RenderMap(MapData mapData)
+    {
+        
+        // Each line represents a polygon
+        for (int lineIndex = 0; lineIndex < mapData.walls.Count; lineIndex++)
+            if (mapData.walls[lineIndex].points.Count > 0)
+            {
+                List<MapPoint> wallPoints = mapData.walls[lineIndex].points;
+                
+                // Wall 
+                GameObject gameObject = new GameObject();
+                gameObject.transform.parent = transform;
+                LineRenderer lineRenderer = gameObject.AddComponent<LineRenderer>();
+                lineRenderer.loop = true;
+
+                lineRenderer.positionCount = wallPoints.Count;
+                int index = 0;
+
+                
+                // Add the vertices to the wall
+                for (var i = 0; i < wallPoints.Count; i++)
+                {
+                    // Vertex position
+                    var position = new Vector2(wallPoints[i].x, wallPoints[i].y);
+                    position = transform.TransformPoint(position);
+
+
+                    // Add the point to the current wall
+                    lineRenderer.SetPosition(index++, position);
+                }
+            }
+    }
 
     // Parse the map data where the map is stored in absolute coordinates 
-    private void ParseMapString(string mapData)
+    private void ParseCSVMapString(string mapData)
     {
         // Split data by lines
         var lines = mapData.Split('\n');

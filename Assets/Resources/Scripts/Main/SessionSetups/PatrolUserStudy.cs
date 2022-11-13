@@ -92,14 +92,14 @@ public class PatrolUserStudy : MonoBehaviour
 
         float episodeLength = 120f;
 
-        guardTeams.Add(2);
-        mapData = new MapData("MgsDock", 2f);
-        AddRandomSession("tutorial", ref sessions, mapData, "grey", guardTeams, SurveyType.EndTutorial, episodeLength * 0.35f);
+        // guardTeams.Add(2);
+        // mapData = new MapData("MgsDock", 2f);
+        // AddRandomSession("tutorial", ref sessions, mapData, "grey", guardTeams, SurveyType.EndTutorial, episodeLength * 0.35f);
 
 
         guardTeams.Clear();
         guardTeams.Add(4);
-        mapData = new MapData("amongUs", 0.5f);
+        mapData = new MapData("amongUs");
         foreach (var pair in _pairs)
             AddSessions(ref sessions, mapData, guardTeams, pair, episodeLength);
         
@@ -111,7 +111,7 @@ public class PatrolUserStudy : MonoBehaviour
     {
         foreach (var guardTeam in guardTeams)
         {
-            // Set the Hyperparamets for the behavior
+            // Set the Hyperparameters for the behavior
             PatrolerParams patrolParams = new VisMeshPatrolerParams(0.95f, 0.5f, 0f,
                 0.5f, 0.5f, VMDecision.Weighted);
 
@@ -158,7 +158,7 @@ public class PatrolUserStudy : MonoBehaviour
     {
         foreach (var guardTeam in guardTeams)
         {
-            // Set the Hyperparamets for the behavior
+            // Set the Hyperparameters for the behavior
             PatrolerParams patrolParams = new RoadMapPatrolerParams(1f, 1f, 0.5f,
                 0.5f, RMDecision.DijkstraPath, RMPassingGuardsSenstivity.Max);
 

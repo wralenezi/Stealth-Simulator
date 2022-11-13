@@ -181,10 +181,10 @@ public class GameManager : MonoBehaviour
         // List<Session> sessions = PatrolSessionsAssessment.GetSessions();
         // List<Session> sessions = PatrolSessions.GetSessions();
 
-        // List<Session> sessions = PatrolUserStudy.GetSessions();
+        List<Session> sessions = PatrolUserStudy.GetSessions();
 
         // List<Session> sessions = StealthBehavior.GetSessions();
-        List<Session> sessions = SearchSessions.GetSessions();
+        // List<Session> sessions = SearchSessions.GetSessions();
 
 
         StartCoroutine(FileUploader.UploadData(null, FileType.ColorPairing, "text/csv",
