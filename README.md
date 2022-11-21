@@ -23,7 +23,7 @@ This scenario tests how guards can track and search for an opposing agent after 
 
 ### 3. Stealth Agent Pathfinding
 
-This scenario tests the ability of an agent to navigate through an environment unnoticed against patroling adversaries
+This scenario tests the ability of an agent to navigate through an environment unnoticed against patroling adversaries. https://dl.acm.org/doi/abs/10.1145/3561975.3562948
 
 
 ## How to use
