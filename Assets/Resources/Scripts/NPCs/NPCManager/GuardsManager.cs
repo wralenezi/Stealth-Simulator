@@ -31,9 +31,6 @@ public class GuardsManager : Agent
     // Total time of guards overlapping each other
     public static float GuardsOverlapTime;
 
-    // The weights for deciding the heuristic
-    // public SearchWeights searchWeights;
-
 
     // Start the NPC manager
     public void Initiate(Session session, MapManager mapManager)
@@ -181,6 +178,8 @@ public class GuardsManager : Agent
 
         // 
         npc.Initiate(npcData, GameManager.Instance.GetVoice());
+        
+        npc.ControlledByUser = session.guardBehaviorParams.alertPlanner == AlertPlanner.UserInput;
 
         NpcsManager.Instance.GetIntruders();
         
@@ -273,56 +272,12 @@ public class GuardsManager : Agent
     #endregion
 
 
-    // Assign a role flag to the closest guard to the intruder's last known position.
-    // Order that guard to navigate to that position. 
-    // public void AssignGuardRoles()
-    // {
-    //     // Set the first intruder 
-    //     Intruder firstIntruder = m_SA.intrdrManager.GetIntruders()[0];
-    //
-    //     // Assign the guard closest to the intruder's last position to chase them
-    //     Guard closestGuard = null;
-    //     float minDistance = Mathf.Infinity;
-    //
-    //     foreach (var guard in m_Guards)
-    //     {
-    //         float distance = PathFinding.GetShortestPathDistance(m_SA.worldRep.GetNavMesh(),
-    //             guard.transform.position,
-    //             firstIntruder.GetLastKnownLocation());
-    //
-    //         if (distance < minDistance)
-    //         {
-    //             closestGuard = guard;
-    //             minDistance = distance;
-    //         }
-    //     }
-    //
-    //     // Set the closest guard to the position the intruder was last seen on to chase and the rest to intercept
-    //     foreach (var guard in m_Guards)
-    //         if (guard == closestGuard)
-    //         {
-    //             guard.role = GuardRole.Chase;
-    //             guard.SetGoal(firstIntruder.GetLastKnownLocation(), true);
-    //         }
-    //         else
-    //             guard.role = GuardRole.Intercept;
-    // }
-
-
     // Let NPCs cast their vision
     public void CastVision()
     {
         foreach (var guard in _guards)
             guard.CastVision();
     }
-
-    // // NPCs decide plans if idle
-    // public void MakeDecision()
-    // {
-    //     // Update the state of the guards manager
-    //     m_gCtrl.ExecuteState();
-    // }
-
 
     // Execute NPCs plans
     public void Move(State state, float deltaTime)
@@ -358,57 +313,6 @@ public class GuardsManager : Agent
         // Restrict Guards Seen Area
         // ResetGuardSeenArea(session.coveredRegionResetThreshold);
     }
-
-
-    // Update the guards FoV
-    // public void UpdateGuardVision()
-    // {
-    //     bool intruderSpotted = false;
-    //     NPC spotter = null;
-    //     foreach (var guard in m_Guards)
-    //     {
-    //         // Accumulate the Seen Area of the guard
-    //         // guard.AccumulateSeenArea(); // Disabled since it is not needed
-    //
-    //         // Check if any intruders are spotted
-    //         bool seen = guard.SpotIntruders(m_SA.intrdrManager.GetIntruders());
-    //
-    //         if (!intruderSpotted)
-    //         {
-    //             intruderSpotted = seen;
-    //             spotter = guard;
-    //         }
-    //     }
-    //
-    //     // Render guards if the intruder can see them
-    //     foreach (var intruder in m_SA.intrdrManager.GetIntruders())
-    //     {
-    //         intruder.SpotGuards(m_Guards);
-    //
-    //         if (m_SA.GetSessionInfo().gameType == GameType.CoinCollection)
-    //             intruder.SpotCoins(m_SA.coinSpawner.GetCoins());
-    //     }
-    //
-    //     // Switch the state of the guards 
-    //     if (intruderSpotted)
-    //     {
-    //         // Guards knows the intruders location
-    //         m_gCtrl.StartChase(spotter);
-    //     }
-    //     else if (GetState() is Chase)
-    //     {
-    //         // if the intruder is not seen and the guards were chasing then start searching
-    //         m_gCtrl.StartSearch();
-    //     }
-    // }
-
-    // public void ResetGuardSeenArea(float resetThreshold)
-    // {
-    //     foreach (var guard in _guards)
-    //     {
-    //         guard.RestrictSeenArea(resetThreshold);
-    //     }
-    // }
 
     public List<Guard> GetGuards()
     {

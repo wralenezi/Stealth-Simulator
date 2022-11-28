@@ -16,7 +16,6 @@ public class SearchSessions : MonoBehaviour
     {
         _colors.Clear();
         _colors.Add("blue");
-        // _colors.Add("red");
         _colors.Add("green");
        
         
@@ -94,10 +93,6 @@ public class SearchSessions : MonoBehaviour
                 AddRoadMapSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode, episodeLength);
                 break;
 
-            // case "Vismesh":
-            //     AddVisMeshSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode, episodeLength);
-            //     break;
-
             case "Random":
                 AddRandomSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode, episodeLength);
                 break;
@@ -123,8 +118,6 @@ public class SearchSessions : MonoBehaviour
 
             IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.iRoadMap, scouterParams, SearchPlanner.UserInput, null, AlertPlanner.UserInput, null);
 
-            
-            
             Session session = new Session(episodeLength, gameCode, GameType.CoinCollection, Scenario.Stealth,
                 guardColor,
                 GuardSpawnType.Separate, guardTeam, guardBehaviorParams, 1,
@@ -171,6 +164,7 @@ public class SearchSessions : MonoBehaviour
             
             GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gRoadMap, patrolParams, SearchPlanner.RmPropSimple, searcherParams, AlertPlanner.None, null);
 
+            
             ScouterParams scouterParams = new RMScouterParams(SpotsNeighbourhoods.LineOfSight, PathCanceller.DistanceCalculation, RiskThresholdType.Danger
                 , TrajectoryType.Simple , 0f, GoalPriority.Safety, SafetyPriority.ClosestWeightedSpot, 1f);
 

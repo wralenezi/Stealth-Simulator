@@ -12,30 +12,36 @@ public class PatrolUserStudy : MonoBehaviour
     private static List<string> _variables = new List<string>();
 
     private static List<SessionPair> _pairs = new List<SessionPair>();
-    
+
     private static void PairUpColors()
     {
         _colors.Clear();
         _colors.Add("blue");
-        _colors.Add("red");
-        _colors.Add("green");
-       
-        
+        _colors.Add("blue");
+        _colors.Add("blue");
+
+        // _colors.Add("red");
+        // _colors.Add("green");
+
+
         _variables.Clear();
         _variables.Add("Roadmap");
-        _variables.Add("Vismesh");
-        _variables.Add("Random");
-        
+        _variables.Add("Roadmap");
+        _variables.Add("Roadmap");
+
+        // _variables.Add("Vismesh");
+        // _variables.Add("Random");
+
         _pairs.Clear();
         while (_variables.Count > 0)
         {
             int indexVariables = Random.Range(0, _variables.Count);
-            
+
             _pairs.Add(new SessionPair(GetColor(), _variables[indexVariables]));
             _variables.RemoveAt(indexVariables);
         }
     }
-    
+
     private static string GetColor()
     {
         string output = "grey";
@@ -54,8 +60,8 @@ public class PatrolUserStudy : MonoBehaviour
     {
         string output = "";
 
-        output +=  "color,behavior\n";
-        
+        output += "color,behavior\n";
+
         foreach (var pair in _pairs)
         {
             output += pair.color + "," + pair.variable + "\n";
@@ -64,20 +70,24 @@ public class PatrolUserStudy : MonoBehaviour
         return output;
     }
 
-    private static void AddSessions(ref List<Session> sessions, MapData mapData, List<int> guardCount, SessionPair pair, float episodeLength)
+    private static void AddSessions(ref List<Session> sessions, MapData mapData, List<int> guardCount, SessionPair pair,
+        float episodeLength)
     {
         switch (pair.variable)
         {
             case "Roadmap":
-                AddRoadMapSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode, episodeLength);
+                AddRoadMapSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode,
+                    episodeLength);
                 break;
 
             case "Vismesh":
-                AddVisMeshSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode, episodeLength);
+                AddVisMeshSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode,
+                    episodeLength);
                 break;
 
             case "Random":
-                AddRandomSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode, episodeLength);
+                AddRandomSession("", ref sessions, mapData, pair.color, guardCount, SurveyType.EndEpisode,
+                    episodeLength);
                 break;
         }
     }
@@ -86,7 +96,7 @@ public class PatrolUserStudy : MonoBehaviour
     {
         List<Session> sessions = new List<Session>();
         PairUpColors();
-        
+
         List<int> guardTeams = new List<int>();
         MapData mapData;
 
@@ -102,7 +112,7 @@ public class PatrolUserStudy : MonoBehaviour
         mapData = new MapData("amongUs");
         foreach (var pair in _pairs)
             AddSessions(ref sessions, mapData, guardTeams, pair, episodeLength);
-        
+
         return sessions;
     }
 
@@ -115,17 +125,18 @@ public class PatrolUserStudy : MonoBehaviour
             PatrolerParams patrolParams = new VisMeshPatrolerParams(0.95f, 0.5f, 0f,
                 0.5f, 0.5f, VMDecision.Weighted);
 
-            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gVisMesh, patrolParams, SearchPlanner.None, null, AlertPlanner.None, null);
+            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gVisMesh, patrolParams,
+                SearchPlanner.None, null, AlertPlanner.None, null);
 
-            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.UserInput, null, SearchPlanner.UserInput, null, AlertPlanner.UserInput, null);
+            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.UserInput, null,
+                SearchPlanner.UserInput, null, AlertPlanner.UserInput, null);
 
 
             Session session = new Session(episodeLength, "", GameType.CoinCollection, Scenario.Stealth, color,
                 GuardSpawnType.Separate, guardTeam, guardBehaviorParams, 1,
                 intruderBehaviorParams,
-                mapData, SpeechType.Simple, surveyType);
+                mapData, SpeechType.Simple, surveyType) {sessionVariable = "Vismesh"};
 
-            session.sessionVariable = "Vismesh";
 
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)
@@ -162,9 +173,11 @@ public class PatrolUserStudy : MonoBehaviour
             PatrolerParams patrolParams = new RoadMapPatrolerParams(1f, 1f, 0.5f,
                 0.5f, RMDecision.DijkstraPath, RMPassingGuardsSenstivity.Max);
 
-            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gRoadMap, patrolParams, SearchPlanner.None, null, AlertPlanner.None, null);
+            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gRoadMap, patrolParams,
+                SearchPlanner.None, null, AlertPlanner.None, null);
 
-            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.UserInput, null, SearchPlanner.UserInput, null, AlertPlanner.UserInput, null);
+            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.UserInput, null,
+                SearchPlanner.UserInput, null, AlertPlanner.UserInput, null);
 
 
             Session session = new Session(episodeLength, "", GameType.CoinCollection, Scenario.Stealth, guardColor,
@@ -207,9 +220,11 @@ public class PatrolUserStudy : MonoBehaviour
             // Set the Hyperparamets for the behavior
             PatrolerParams patrolParams = null;
 
-            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gRandom, patrolParams, SearchPlanner.None, null, AlertPlanner.None, null);
+            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gRandom, patrolParams,
+                SearchPlanner.None, null, AlertPlanner.None, null);
 
-            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.UserInput, null, SearchPlanner.UserInput, null, AlertPlanner.UserInput, null);
+            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.UserInput, null,
+                SearchPlanner.UserInput, null, AlertPlanner.UserInput, null);
 
             Session session = new Session(episodeLength, gameCode, GameType.CoinCollection, Scenario.Stealth,
                 guardColor,

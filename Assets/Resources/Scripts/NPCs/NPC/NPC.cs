@@ -21,6 +21,9 @@ public abstract class NPC : MonoBehaviour
     // show the NPCs path to take
     public bool ShowPath;
 
+    // Is Controlled by user
+    public bool ControlledByUser;
+
     // The path the agent is meant to follow
     private List<Vector2> _pathToTake;
     private List<Vector2> _fullPath;
@@ -266,10 +269,6 @@ public abstract class NPC : MonoBehaviour
 
                     case GuardSpawnType.Separate:
                         // Randomly place the guards away from each other
-                        // GetTransform().position =
-                        //     GetPositionFarFromGuards(GetNpcData().id - 1, intruders, guards,
-                        //         MapManager.Instance.GetNavMesh());
-
                         GetTransform().position =
                             GetPositionFarFromGuards(GetNpcData().id - 1, intruders, guards,
                                 MapManager.Instance.GetWalls()[0]);
@@ -523,7 +522,7 @@ public abstract class NPC : MonoBehaviour
         // Update the total distance traveled
         UpdateDistance();
 
-        if (CheckIfUserInput(state))
+        if (ControlledByUser)
             MoveByInput(deltaTime);
         else if (_pathToTake.Count > 0)
             if (GoStraightTo(_pathToTake[0], deltaTime))
@@ -534,23 +533,6 @@ public abstract class NPC : MonoBehaviour
                 if (_pathToTake.Count == 0) ClearGoal();
             }
     }
-
-    private bool CheckIfUserInput(State state)
-    {
-        // if (state is Patrol)
-        //     return GetNpcData().behavior.patrol == PatrolPlanner.UserInput;
-        //
-        // if (state is Chase)
-        //     return GetNpcData().behavior.alert == AlertPlanner.UserInput;
-        //
-        // if (state is Search)
-        //     return GetNpcData().behavior.search == SearchPlanner.UserInput;
-        //
-        // return false;
-
-        return !IsBusy();
-    }
-
 
     // Rotate to a specific target and then move towards it; return a boolean if the point is reached or not
     private bool GoStraightTo(Vector3 target, float deltaTime)

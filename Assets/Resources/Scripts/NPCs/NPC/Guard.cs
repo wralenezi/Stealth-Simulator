@@ -172,11 +172,5 @@ public class Guard : NPC
     private void OnDrawGizmos()
     {
         base.OnDrawGizmos();
-
-        // if (drawSeenArea)
-        // {
-        //     foreach (var p in SeenArea)
-        //         p.Draw(p.DetermineWindingOrder().ToString());
-        // }
     }
 }

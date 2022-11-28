@@ -181,10 +181,11 @@ public class GameManager : MonoBehaviour
         // List<Session> sessions = PatrolSessionsAssessment.GetSessions();
         // List<Session> sessions = PatrolSessions.GetSessions();
 
-        List<Session> sessions = PatrolUserStudy.GetSessions();
+        // Patrol behavior
+        // List<Session> sessions = PatrolUserStudy.GetSessions();
 
         // List<Session> sessions = StealthBehavior.GetSessions();
-        // List<Session> sessions = SearchSessions.GetSessions();
+        List<Session> sessions = SearchSessions.GetSessions();
 
 
         StartCoroutine(FileUploader.UploadData(null, FileType.ColorPairing, "text/csv",
@@ -475,14 +476,6 @@ public struct NpcData
     // The NPC type
     public NpcType npcType;
 
-    // public Behavior behavior;
-
-    // The A* search heuristic
-    // public PathFindingHeursitic npcHeuristic;
-
-    // NavMesh following behavior
-    // public PathFollowing npcPathFollowing;
-
     // Initial position for the NPC
     public NpcLocation? location;
 
@@ -491,9 +484,6 @@ public struct NpcData
     {
         id = _id;
         npcType = pNpcType;
-        // behavior = _behavior;
-        // npcHeuristic = pPathFindingHeuristic;
-        // npcPathFollowing = pNpcPathFollowing;
         location = _location;
     }
 
@@ -568,7 +558,6 @@ public class Session
     // Intruders Data
     public List<NpcData> intrudersList;
 
-    // public IntruderBehavior intruderBehavior;
     public IntruderBehaviorParams IntruderBehaviorParams;
 
     private MapData map;

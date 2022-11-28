@@ -6,10 +6,6 @@ public class GuardsBehaviorController : MonoBehaviour
 {
     List<BehaviorPerformanceSnapshot> _decisionTimes;
 
-    // private Behavior m_behavior;
-
-    // public Behavior behavior => m_behavior;
-
     // Guards behavior managers
     private Patroler patroler;
 
@@ -25,8 +21,6 @@ public class GuardsBehaviorController : MonoBehaviour
     public void Initiate(Session session, MapManager mapManager)
     {
         _decisionTimes = new List<BehaviorPerformanceSnapshot>();
-
-        // m_behavior = session.GetGuardsData()[0].behavior;
 
         PatrolPlanner patrolPlanner = session.guardBehaviorParams.patrolPlanner;
 
@@ -81,7 +75,6 @@ public class GuardsBehaviorController : MonoBehaviour
 
         searcher?.Initiate(mapManager, session.guardBehaviorParams);
     }
-
 
     public void Reset()
     {
@@ -166,9 +159,6 @@ public class GuardsBehaviorController : MonoBehaviour
 
 
         watch = System.Diagnostics.Stopwatch.StartNew();
-        // foreach (var guard in NpcsManager.Instance.GetGuards())
-        //     searcher.Search(guard);
-
         searcher.Search(NpcsManager.Instance.GetGuards());
         watch.Stop();
         elapsedMs = watch.ElapsedMilliseconds;
@@ -217,14 +207,6 @@ public class GuardsBehaviorController : MonoBehaviour
         // Loop through the guards to order them
         foreach (var guard in NpcsManager.Instance.GetGuards())
         {
-            // // Decide the guard behavior in chasing based on its parameter
-            // if (behavior.alert == AlertPlanner.Intercepting)
-            // {
-            //     if (guard.role == GuardRole.Chase || !guard.IsBusy())
-            //         guard.SetDestination(intruder.GetLastKnownLocation(), true, true);
-            // }
-            // else if (guard.GetNpcData().behavior.alert == AlertPlanner.Simple)
-
             guard.SetDestination(intruder.GetLastKnownLocation(), true, true);
         }
     }

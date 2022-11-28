@@ -57,11 +57,6 @@ public class Intruder : NPC
         m_SearchedTime = 0f;
         m_CollectCoins = 0;
     }
-
-    // public void HideLabel()
-    // {
-    //     m_PlayerLabel.HideLabel();
-    // }
     
     public void UpdateMetrics(State state, float timeDelta)
     {
