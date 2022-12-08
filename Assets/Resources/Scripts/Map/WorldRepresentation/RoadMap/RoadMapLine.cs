@@ -248,18 +248,6 @@ public class RoadMapLine
 
     public void DrawLine()
     {
-        // var p1 = wp1.GetPosition();
-        // var p2 = wp2.GetPosition();
-        // var dir = (p1 - p2).normalized * 0.5f;
-        // var thickness = 3;
-        // Handles.DrawBezier(p1 - dir, p2 + dir, p1 + dir, p2 - dir, Color.red, null, thickness);
-
         Gizmos.DrawLine(wp1.GetPosition(), wp2.GetPosition());
-        // Handles.Label(wp1.GetPosition(), wp1.Id.ToString());
-        // Handles.Label(wp2.GetPosition(), wp2.Id.ToString());
-        // Handles.Label(wp2.GetPosition(), wp2.Id.ToString());
-
-        // Handles.Label((wp1.GetPosition() + wp2.GetPosition()) / 2f,
-        //     pathUtility.ToString());
     }
 }

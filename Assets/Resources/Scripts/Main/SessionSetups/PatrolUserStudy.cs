@@ -109,7 +109,8 @@ public class PatrolUserStudy : MonoBehaviour
 
         guardTeams.Clear();
         guardTeams.Add(4);
-        mapData = new MapData("amongUs");
+        // mapData = new MapData("amongUs");
+        mapData = new MapData("MgsDock");
         foreach (var pair in _pairs)
             AddSessions(ref sessions, mapData, guardTeams, pair, episodeLength);
 

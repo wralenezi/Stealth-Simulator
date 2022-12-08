@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
@@ -60,6 +61,11 @@ public abstract class Searcher : MonoBehaviour
     public virtual void Clear()
     {
         isStillCheating = true;
+    }
+
+    private void OnDrawGizmos()
+    {
+        
     }
 }
 

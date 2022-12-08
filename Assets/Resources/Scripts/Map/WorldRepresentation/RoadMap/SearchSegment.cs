@@ -217,6 +217,7 @@ public class SearchSegment
     {
         Gizmos.color = Properties.GetSegmentColor(GetProbability());
         Gizmos.DrawLine(position1, position2);
+        
 #if UNITY_EDITOR
         Handles.Label(GetMidPoint(), label);
 #endif

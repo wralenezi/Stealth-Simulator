@@ -2,10 +2,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class RoadMapPatroler : Patroler
 {
-    public bool showRoadMap = false;
+    public bool RenderSegments;
     
     // Road map of the level
     private RoadMap _RoadMap;
@@ -91,12 +92,18 @@ public class RoadMapPatroler : Patroler
         }
     }
 
-    public void OnDrawGizmos()
+    
+    private void OnDrawGizmos()
     {
-        foreach (var line in _RoadMap.GetLines(false))
-        {
-            line.DrawSearchSegment("");
-        }
+        if (RenderSegments)
+            if (_RoadMap != null)
+            {
+                foreach (var line in _RoadMap.GetLines(false))
+                {
+                    float label = Mathf.Round(line.GetUtility() * 100f) / 100f;
+                    line.DrawSearchSegment("");//label.ToString());
+                }
+            }
     }
 }
 
