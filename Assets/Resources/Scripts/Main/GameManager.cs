@@ -35,6 +35,10 @@ public class GameManager : MonoBehaviour
     [Header("Logging")] [Tooltip("Specify the logging method")]
     public Logging loggingMethod;
 
+    public bool RecordHeatMap;
+
+    public bool RecordRunningTimes;
+    
     [Header("Time")] [Tooltip("Simulation speed")] [Range(1, 100)]
     public int SimulationSpeed;
 
@@ -88,7 +92,7 @@ public class GameManager : MonoBehaviour
         // Main path
         DataPath = "Data/";
         // Logs path
-        LogsPath = "C:/LogFiles/patrol/"; // DataPath + LogsPath;
+        LogsPath = "C:/LogFiles/test/"; // DataPath + LogsPath;
         // Map related data paths
         MapsDataPath = DataPath + MapsDataPath;
         MapsPath = MapsDataPath + MapsPath;
@@ -178,13 +182,17 @@ public class GameManager : MonoBehaviour
         // List<Session> sessions = SessionsSetup.StealthStudyProcedural01();
         // List<Session> sessions = StealthStudySessions.GetSessions();
         // List<Session> sessions = StealthUserStudySessions.GetSessions();
+
+        // A session set up for evaluating the efficiency of the patrol behaviors 
         // List<Session> sessions = PatrolSessionsAssessment.GetSessions();
+        
+        
         // List<Session> sessions = PatrolSessions.GetSessions();
 
         // Patrol behavior
-        List<Session> sessions = PatrolUserStudy.GetSessions();
+        // List<Session> sessions = PatrolUserStudy.GetSessions();
 
-        // List<Session> sessions = StealthBehavior.GetSessions();
+        List<Session> sessions = StealthBehavior.GetSessions();
         // List<Session> sessions = SearchSessions.GetSessions();
 
 
@@ -519,7 +527,7 @@ public struct NpcLocation
 public class Session
 {
     public int currentEpisode = 0;
-    public readonly int MaxEpisodes = 1;
+    public int MaxEpisodes = 1;
 
     public float episodeLengthSec;
 
@@ -667,17 +675,20 @@ public class Session
         sessionInfo += sep;
 
         // Guard planner 
-        sessionInfo += GetGuardsData().Count > 0 ? guardBehaviorParams.ToString() : "";
-        sessionInfo += sep;
+        // sessionInfo += GetGuardsData().Count > 0 ? guardBehaviorParams.ToString() : "";
+        // sessionInfo += sep;
 
+        if (!Equals(guardBehaviorParams, null))
+        {
+            sessionInfo += guardBehaviorParams.ToString();
+            sessionInfo += sep;
+        }
 
-        // intruder planner
-        sessionInfo += guardBehaviorParams.ToString();
-        sessionInfo += sep;
-
-        sessionInfo += IntruderBehaviorParams.ToString();
-        sessionInfo += sep;
-
+        if (!Equals(IntruderBehaviorParams, null))
+        {
+            sessionInfo += IntruderBehaviorParams.ToString();
+            sessionInfo += sep;
+        }
 
         sessionInfo += guardSpawnMethod;
         // sessionInfo += sep;

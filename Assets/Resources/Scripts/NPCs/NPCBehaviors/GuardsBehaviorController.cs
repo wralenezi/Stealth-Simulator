@@ -78,35 +78,34 @@ public class GuardsBehaviorController : MonoBehaviour
 
     public void Reset()
     {
-        // LogResults();
+        LogResults();
         _decisionTimes.Clear();
     }
 
     private void LogResults()
     {
+        if (!GameManager.Instance.RecordRunningTimes) return;
         if (_decisionTimes.Count == 0) return;
 
         if (!Equals(GameManager.Instance.loggingMethod, Logging.None))
             CsvController.WriteString(
-                CsvController.GetPath(StealthArea.SessionInfo, FileType.RunningTimes, null),
-                GetResult(CsvController.IsFileExist(StealthArea.SessionInfo, FileType.RunningTimes, null)), true);
+                CsvController.GetPath(StealthArea.SessionInfo, FileType.RunningTimesGuard, null),
+                GetResult(CsvController.IsFileExist(StealthArea.SessionInfo, FileType.RunningTimesGuard, null)), true);
     }
 
     private string GetResult(bool isFileExist)
     {
-        if (_decisionTimes != null)
-        {
-            // Write the exploration results for this episode
-            string data = "";
+        if (_decisionTimes == null) return "";
 
-            if (!isFileExist) data += BehaviorPerformanceSnapshot.Headers + ",EpisodeID" + "\n";
+        // Write the exploration results for this episode
+        string data = "";
 
-            foreach (var decisionTime in _decisionTimes)
-                data += decisionTime + "," + +StealthArea.SessionInfo.currentEpisode + "\n";
-            return data;
-        }
+        if (!isFileExist) data += BehaviorPerformanceSnapshot.Headers + ",EpisodeID" + "\n";
 
-        return "";
+        foreach (var decisionTime in _decisionTimes)
+            data += decisionTime + "," + +StealthArea.SessionInfo.currentEpisode + "\n";
+        return data;
+
     }
 
 

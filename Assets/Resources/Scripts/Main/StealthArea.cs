@@ -17,7 +17,7 @@ public class StealthArea : MonoBehaviour
 
     // Logging manager
     public PerformanceLogger performanceMonitor { get; set; }
-    
+
     public HeatMap heatMap { set; get; }
 
     public ScoreController scoreController { get; set; }
@@ -45,16 +45,19 @@ public class StealthArea : MonoBehaviour
 
         NpcManager = UnityHelper.AddChildComponent<NpcsManager>(transform, "NPCs");
         NpcManager.Initialize(GetSessionInfo(), Map);
-        
+
         // Reference for recording the performance
         performanceMonitor = gameObject.AddComponent<PerformanceLogger>();
         performanceMonitor.SetArea(GetSessionInfo());
         performanceMonitor.Initialize();
         performanceMonitor.ResetResults();
 
-        heatMap = UnityHelper.AddChildComponent<HeatMap>(transform,"HeatMap");
-        heatMap.Initiate(Map.mapRenderer.GetMapBoundingBox());
-        
+        if (GameManager.Instance.RecordHeatMap)
+        {
+            heatMap = UnityHelper.AddChildComponent<HeatMap>(transform, "HeatMap");
+            heatMap.Initiate(Map.mapRenderer.GetMapBoundingBox());
+        }
+
         // World state variables
         WorldState.Reset();
 
@@ -70,13 +73,14 @@ public class StealthArea : MonoBehaviour
         WorldState.Set("episodeTime", _episodeStartTime.ToString());
         WorldState.Set("guardsCount", SessionInfo.guardsCount.ToString());
 
-        heatMap.Reset();
-        
+        if (GameManager.Instance.RecordHeatMap)
+            heatMap.Reset();
+
         CollectManager.Reset(SessionInfo);
 
         NpcManager.Reset(Map.GetNavMesh(), SessionInfo);
         NpcManager.ResetState();
-        
+
         performanceMonitor.ResetResults();
 
         Bounds bounds = Map.mapRenderer.GetMapBoundingBox();
@@ -111,7 +115,7 @@ public class StealthArea : MonoBehaviour
     {
         NpcManager.Done();
     }
-    
+
     private void Update()
     {
         // Update the time label
@@ -137,8 +141,9 @@ public class StealthArea : MonoBehaviour
 
         // Idle NPCs make decisions
         NpcManager.MakeDecisions(GetSessionInfo().gameType);
-        
-        heatMap.IncrementHeatMapVisibility(NpcManager.GetGuards(), Time.deltaTime);
+
+        if (GameManager.Instance.RecordHeatMap)
+            heatMap.IncrementHeatMapVisibility(NpcManager.GetGuards(), Time.deltaTime);
     }
 
     public Session GetSessionInfo()
@@ -152,18 +157,19 @@ public class StealthArea : MonoBehaviour
         bool highscoreReached = scoreController.Score > Mathf.Infinity;
         // bool spotted = NpcManager.GetState() is Chase;
 
-        bool finished = timeOver || highscoreReached;// || spotted;
+        bool finished = timeOver || highscoreReached; // || spotted;
 
         // Log Guards progress
         performanceMonitor.Log();
 
         if (!finished) return;
 
-        heatMap.End();
-        
+        if (GameManager.Instance.RecordHeatMap)
+            heatMap.End();
+
         FinishArea();
     }
-    
+
     public void FinishArea()
     {
         // End the episode
@@ -171,7 +177,8 @@ public class StealthArea : MonoBehaviour
 
         if (GameManager.Instance.showSurvey)
         {
-            GameManager.SurveyManager.CreateSurvey(GameManager.GetRunId(), GetSessionInfo().surveyType, scoreController.Score);
+            GameManager.SurveyManager.CreateSurvey(GameManager.GetRunId(), GetSessionInfo().surveyType,
+                scoreController.Score);
             GameManager.SurveyManager.ShowSurvey();
         }
 

@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class HeatMap : MonoBehaviour
 {
-    private bool isDisabled = true;
+    // private bool isDisabled = true;
 
     private bool isRenderMap = false;
 
@@ -23,7 +23,7 @@ public class HeatMap : MonoBehaviour
 
         // showHeatMap = true;
 
-        if (isDisabled) return;
+        // if (isDisabled) return;
 
         _heatMap = new MapGrid<HeatNode>(bounds, _cellSide, _cellSide);
 
@@ -48,13 +48,7 @@ public class HeatMap : MonoBehaviour
 
     public void IncrementHeatMapVisibility(List<Guard> guards, float timeDelta)
     {
-        if (isDisabled) return;
-
-        // HeatNode[,] map = _heatMap.GetGrid();
-        //
-        // for (int i = 0; i < map.GetLength(0); i++)
-        // for (int j = 0; j < map.GetLength(1); j++)
-        //     CheckIfNodeVisible(guards, timeDelta, map[i, j]);
+        // if (isDisabled) return;
 
         foreach (var node in _heatNodes)
             CheckIfNodeVisible(guards, timeDelta, node);
@@ -75,9 +69,10 @@ public class HeatMap : MonoBehaviour
     }
 
 
+    // Set the normalized heat values
     private void CalculateHeatValues()
     {
-        if (isDisabled) return;
+        // if (isDisabled) return;
 
         float minValue = Mathf.Infinity;
         float maxValue = Mathf.NegativeInfinity;
@@ -110,19 +105,11 @@ public class HeatMap : MonoBehaviour
 
     public void Reset()
     {
-        if (isDisabled) return;
-
-        // HeatNode[,] map = _heatMap.GetGrid();
-        // for (int i = 0; i < map.GetLength(0); i++)
-        // for (int j = 0; j < map.GetLength(1); j++)
-        // {
-        //     map[i, j].Reset();
-        // }
+        // if (isDisabled) return;
 
         foreach (var node in _heatNodes)
             node.Reset();
         
-
         while (_pixels.Count > 0)
         {
             GameObject pixel = _pixels[0];
@@ -134,7 +121,7 @@ public class HeatMap : MonoBehaviour
 
     private void RenderPixels()
     {
-        if (isDisabled) return;
+        // if (isDisabled) return;
 
         if (!isRenderMap) return;
 
@@ -197,7 +184,7 @@ public class HeatMap : MonoBehaviour
 
     public void End()
     {
-        if (isDisabled) return;
+        // if (isDisabled) return;
 
         CalculateHeatValues();
         RenderPixels();

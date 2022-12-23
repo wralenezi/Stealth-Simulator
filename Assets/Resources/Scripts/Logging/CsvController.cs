@@ -189,7 +189,9 @@ public enum FileType
     HeatMap,
 
     // the computation time data
-    RunningTimes,
+    RunningTimesGuard,
+    
+    RunningTimesIntruder,
 
     // the performance of the npcs 
     Performance,

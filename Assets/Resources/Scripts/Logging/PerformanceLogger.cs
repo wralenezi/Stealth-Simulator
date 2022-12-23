@@ -10,9 +10,6 @@ public class PerformanceLogger : MonoBehaviour
     // Last timestamp the game was logged.
     private float _lastLoggedTime;
 
-    // Number of episodes done
-    // private int _episodeCount;
-
     private List<LogSnapshot> _snapshots;
 
     private Dictionary<string, NPCReplay> _npcsRecording;
@@ -142,12 +139,12 @@ public class PerformanceLogger : MonoBehaviour
                 GetLastResult(CsvController.IsFileExist(Sa, FileType.Performance, null)), true);
 
             // CsvController.WriteString(
-            //     CsvController.GetPath(Sa, FileType.Performance, _episodeCount),
+            //     CsvController.GetPath(Sa, FileType.Performance, Sa.currentEpisode),
             //     GetEpisodeResults(), true);
 
-            // CsvController.WriteString(
-            //     CsvController.GetPath(Sa, FileType.Npcs, _episodeCount),
-            //     GetNpcDataJson(), true);
+            CsvController.WriteString(
+                CsvController.GetPath(Sa, FileType.Npcs, Sa.currentEpisode),
+                GetNpcDataJson(), true);
         }
 
         // Reset results

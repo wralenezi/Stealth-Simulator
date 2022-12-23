@@ -5,13 +5,6 @@ public class IntrudersBehaviorController : MonoBehaviour
 {
     List<BehaviorPerformanceSnapshot> _decisionTimes;
 
-    // private Behavior m_behavior;
-    //
-    // public Behavior behavior
-    // {
-    //     get { return m_behavior; }
-    // }
-
     // The controller for intruders behavior when they have never been spotted.
     private Scouter m_Scouter;
 
@@ -26,8 +19,6 @@ public class IntrudersBehaviorController : MonoBehaviour
         noIntruders = session.GetIntrudersData().Count == 0;
 
         if (noIntruders) return;
-
-        // m_behavior = session.GetIntrudersData()[0].behavior;
 
         _decisionTimes = new List<BehaviorPerformanceSnapshot>();
 
@@ -77,42 +68,42 @@ public class IntrudersBehaviorController : MonoBehaviour
 
     public void Reset()
     {
-        // LogResults();
+        LogResults();
+        _decisionTimes?.Clear();
     }
 
     private void LogResults()
     {
         if (!Equals(GameManager.Instance.loggingMethod, Logging.Local)) return;
-        
+        if (!GameManager.Instance.RecordRunningTimes) return;
+
         noIntruders = StealthArea.SessionInfo.GetIntrudersData().Count == 0;
 
         if (noIntruders) return;
-        
+
         if (_decisionTimes.Count == 0) return;
 
         if (!Equals(GameManager.Instance.loggingMethod, Logging.None))
             CsvController.WriteString(
-                CsvController.GetPath(StealthArea.SessionInfo, FileType.RunningTimes, null),
-                GetResult(CsvController.IsFileExist(StealthArea.SessionInfo, FileType.RunningTimes, null)), true);
-        
+                CsvController.GetPath(StealthArea.SessionInfo, FileType.RunningTimesIntruder, null),
+                GetResult(CsvController.IsFileExist(StealthArea.SessionInfo, FileType.RunningTimesIntruder, null)), true);
+
         _decisionTimes.Clear();
     }
 
     private string GetResult(bool isFileExist)
     {
-        if (_decisionTimes != null)
-        {
-            // Write the exploration results for this episode
-            string data = "";
+        if (_decisionTimes == null) return "";
+        
+        // Write the exploration results for this episode
+        string data = "";
 
-            if (!isFileExist) data += BehaviorPerformanceSnapshot.Headers + ",EpisodeID" + "\n";
+        if (!isFileExist) data += BehaviorPerformanceSnapshot.Headers + ",EpisodeID" + "\n";
 
-            foreach (var decisionTime in _decisionTimes)
-                data += decisionTime + "," +  + StealthArea.SessionInfo.currentEpisode +"\n";
-            return data;
-        }
+        foreach (var decisionTime in _decisionTimes)
+            data += decisionTime + "," + +StealthArea.SessionInfo.currentEpisode + "\n";
+        return data;
 
-        return "";
     }
 
 
@@ -128,8 +119,8 @@ public class IntrudersBehaviorController : MonoBehaviour
     {
         // if (Equals(behavior.search, SearchPlanner.UserInput) || noIntruders) return;
         if (Equals(m_Scouter, null)) return;
-        
-        
+
+
         var watch = System.Diagnostics.Stopwatch.StartNew();
         m_Scouter.Refresh(gameType);
         watch.Stop();
@@ -141,7 +132,7 @@ public class IntrudersBehaviorController : MonoBehaviour
     {
         // if (Equals(behavior.alert, AlertPlanner.UserInput) || noIntruders) return;
         if (Equals(m_ChaseEvader, null)) return;
-        
+
         m_ChaseEvader.Begin();
     }
 
@@ -174,7 +165,7 @@ public class IntrudersBehaviorController : MonoBehaviour
         // if (Equals(behavior.search, SearchPlanner.UserInput) || noIntruders) return;
         if (Equals(m_SearchEvader, null)) return;
 
-        
+
         var watch = System.Diagnostics.Stopwatch.StartNew();
         m_SearchEvader.Refresh();
         watch.Stop();

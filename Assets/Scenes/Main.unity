@@ -732,7 +732,9 @@ MonoBehaviour:
   gameView: 0
   showSurvey: 0
   IsOnlineBuild: 0
-  loggingMethod: 2
+  loggingMethod: 0
+  RecordHeatMap: 0
+  RecordRunningTimes: 1
   SimulationSpeed: 1
   Render: 0
 --- !u!4 &1776927360
