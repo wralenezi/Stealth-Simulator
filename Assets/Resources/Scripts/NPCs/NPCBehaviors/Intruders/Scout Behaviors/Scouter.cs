@@ -26,7 +26,7 @@ public abstract class Scouter : MonoBehaviour
     public abstract void Refresh(GameType gameType);
 
 
-    public void OnDrawGizmos()
+    public virtual void OnDrawGizmos()
     {
         if (ShowHidingSpots)
             _HsC?.DrawHidingSpots();

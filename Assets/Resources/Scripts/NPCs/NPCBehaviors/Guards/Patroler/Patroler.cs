@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+
 public abstract class Patroler : MonoBehaviour
 {
 
@@ -36,6 +37,7 @@ public abstract class Patroler : MonoBehaviour
 
 }
 
+[Serializable]
 public abstract class PatrolerParams
 {
     

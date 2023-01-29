@@ -11,7 +11,6 @@ public class MapGrid<T> where T : new()
     private float _cellWidth;
     private float _cellHeight;
 
-
     private int _columnCount;
     private int _rowCount;
 

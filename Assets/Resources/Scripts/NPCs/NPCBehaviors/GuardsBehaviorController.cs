@@ -42,6 +42,10 @@ public class GuardsBehaviorController : MonoBehaviour
             case PatrolPlanner.gScripted:
                 patroler = gameObject.AddComponent<ScriptedPatroler>();
                 break;
+
+            case PatrolPlanner.gGrid:
+                patroler = gameObject.AddComponent<GridPatroler>();
+                break;
         }
 
         patroler?.Initiate(mapManager, session.guardBehaviorParams);
@@ -56,6 +60,10 @@ public class GuardsBehaviorController : MonoBehaviour
         // Search Controller
         switch (searchPlanner)
         {
+            case SearchPlanner.gSimpleGrid:
+                searcher = gameObject.AddComponent<SimpleGridSearcher>();
+                break;
+
             case SearchPlanner.RmPropSimple:
                 searcher = gameObject.AddComponent<SimpleRmPropSearcher>();
                 break;
@@ -105,7 +113,6 @@ public class GuardsBehaviorController : MonoBehaviour
         foreach (var decisionTime in _decisionTimes)
             data += decisionTime + "," + +StealthArea.SessionInfo.currentEpisode + "\n";
         return data;
-
     }
 
 
@@ -149,7 +156,7 @@ public class GuardsBehaviorController : MonoBehaviour
     public void Search(Intruder intruder)
     {
         if (Equals(searcher, null)) return;
-        
+
         var watch = System.Diagnostics.Stopwatch.StartNew();
         searcher.UpdateSearcher(intruder.GetNpcSpeed(), NpcsManager.Instance.GetGuards(), Time.deltaTime);
         watch.Stop();

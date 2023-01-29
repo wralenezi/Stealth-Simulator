@@ -53,7 +53,7 @@ public abstract class Searcher : MonoBehaviour
 
     public abstract void CommenceSearch(NPC target);
 
-    public virtual void UpdateSearcher(float speed, List<Guard> guards, float timeDelta) { }
+    public abstract void UpdateSearcher(float speed, List<Guard> guards, float timeDelta);
 
     public abstract void Search(List<Guard> guard);
 
@@ -62,11 +62,7 @@ public abstract class Searcher : MonoBehaviour
     {
         isStillCheating = true;
     }
-
-    private void OnDrawGizmos()
-    {
-        
-    }
+    
 }
 
 

@@ -52,14 +52,14 @@ public class NpcsManager : MonoBehaviour
     public void Reset(List<MeshPolygon> navMesh, Session session)
     {
         Instance = this;
-        _intrudersManager.Reset(navMesh, GetIntruders(), GetGuards(), session);
         _guardsManager.Reset(navMesh, GetIntruders(), session);
+        _intrudersManager.Reset(navMesh, GetIntruders(), GetGuards(), session);
         ResetState();
     }
 
     public void Done()
     {
-        _guardsManager.Done();
+        // _guardsManager.Done();
     }
 
     public void Move(float timeDelta)

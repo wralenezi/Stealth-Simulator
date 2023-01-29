@@ -50,8 +50,6 @@ public class OccupancyRmSearcher : RoadMapSearcher
             {
                 float normalizedAge = con.GetSearchSegment().GetAge() / 10f;
                 normalizedAge = normalizedAge > 1f ? 1f : normalizedAge;
-                // float diffuseFactor = Mathf.Lerp(0f, Properties.ProbDiffFac, normalizedAge);
-                // probabilitySum += con.GetSearchSegment().GetProbability() * diffuseFactor;
                 probabilitySum += con.GetSearchSegment().GetProbability() * Properties.ProbDiffFac;
                 neighborsCount++;
             }
@@ -61,16 +59,11 @@ public class OccupancyRmSearcher : RoadMapSearcher
             {
                 float normalizedAge = con.GetSearchSegment().GetAge() / 10f;
                 normalizedAge = normalizedAge > 1f ? 1f : normalizedAge;
-                // float diffuseFactor = Mathf.Lerp(0f, Properties.ProbDiffFac, normalizedAge);
-                // probabilitySum += con.GetSearchSegment().GetProbability() * diffuseFactor;
                 probabilitySum += con.GetSearchSegment().GetProbability() * Properties.ProbDiffFac;
                 neighborsCount++;
             }
 
-
-        // float newProbability = (1f - Properties.ProbDiffFac) * sS.GetProbability() +
-        //                        (Properties.ProbDiffFac / neighborsCount) * probabilitySum;
-
+        
         float newProbability = (1f - Properties.ProbDiffFac) * sS.GetProbability() +
                                probabilitySum / neighborsCount;
 

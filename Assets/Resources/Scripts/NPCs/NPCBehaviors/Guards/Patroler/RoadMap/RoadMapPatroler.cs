@@ -7,22 +7,24 @@ using UnityEngine.Serialization;
 public class RoadMapPatroler : Patroler
 {
     public bool RenderSegments;
-    
+
     // Road map of the level
     private RoadMap _RoadMap;
 
     private RoadMapPatrolerDecisionMaker _decisionMaker;
 
-    private RoadMapPatrolerParams _params;
+    [SerializeField] private RoadMapPatrolerParams _params;
 
     public override void Initiate(MapManager mapManager, GuardBehaviorParams guardParams)
     {
         _RoadMap = mapManager.GetRoadMap();
-        
-        _params = (RoadMapPatrolerParams) guardParams.patrolerParams;
-        
+
+        _params = (RoadMapPatrolerParams)guardParams.patrolerParams;
+
         _decisionMaker = new RoadMapPatrolerDecisionMaker();
         _decisionMaker.Initiate();
+
+        // RenderSegments = true;
     }
 
     public override void Start()
@@ -92,7 +94,7 @@ public class RoadMapPatroler : Patroler
         }
     }
 
-    
+
     private void OnDrawGizmos()
     {
         if (RenderSegments)
@@ -101,22 +103,24 @@ public class RoadMapPatroler : Patroler
                 foreach (var line in _RoadMap.GetLines(false))
                 {
                     float label = Mathf.Round(line.GetUtility() * 100f) / 100f;
-                    line.DrawSearchSegment("");//label.ToString());
+                    line.DrawSearchSegment(""); //label.ToString());
                 }
             }
     }
 }
 
+[Serializable]
 public class RoadMapPatrolerParams : PatrolerParams
 {
-    public readonly float MaxNormalizedPathLength;
-    public readonly float StalenessWeight;
-    public readonly float PassingGuardsWeight;
-    public readonly float ConnectivityWeight;
-    public readonly RMDecision DecisionType;
-    public readonly RMPassingGuardsSenstivity PGSen;
+    public float MaxNormalizedPathLength;
+    public float StalenessWeight;
+    public float PassingGuardsWeight;
+    public float ConnectivityWeight;
+    public RMDecision DecisionType;
+    public RMPassingGuardsSenstivity PGSen;
 
-    public RoadMapPatrolerParams(float _maxNormalizedPathLength, float _stalenessWeight, float _PassingGuardsWeight, float _connectivityWeight, RMDecision _decisionType, RMPassingGuardsSenstivity _pgSen)
+    public RoadMapPatrolerParams(float _maxNormalizedPathLength, float _stalenessWeight, float _PassingGuardsWeight,
+        float _connectivityWeight, RMDecision _decisionType, RMPassingGuardsSenstivity _pgSen)
     {
         MaxNormalizedPathLength = _maxNormalizedPathLength;
         StalenessWeight = _stalenessWeight;
@@ -130,7 +134,7 @@ public class RoadMapPatrolerParams : PatrolerParams
     {
         string output = "";
         string sep = "_";
-        
+
         output += MaxNormalizedPathLength;
         output += sep;
 
@@ -148,8 +152,8 @@ public class RoadMapPatrolerParams : PatrolerParams
 
         output += PGSen;
         // output += sep;
-        
-        
+
+
         return output;
     }
 }

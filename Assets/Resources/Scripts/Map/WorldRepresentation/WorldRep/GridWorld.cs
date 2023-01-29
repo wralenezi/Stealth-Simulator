@@ -69,10 +69,10 @@ public class GridWorld : WorldRep
                 walkableNodesCount++;
             }
 
-            m_grid[x, y] = new Node(walkable, worldPoint, x, y, staleness);
+            // m_grid[x, y] = new Node(walkable, worldPoint, x, y, staleness);
 
-            if (m_grid[x, y].walkable)
-                NodeList.Add(m_grid[x, y]);
+            // if (m_grid[x, y].walkable)
+                // NodeList.Add(m_grid[x, y]);
         }
 
         // Render the grid
@@ -96,7 +96,7 @@ public class GridWorld : WorldRep
 
         foreach (var node in NodeList)
         {
-            node.SetStaleness(Properties.StalenessLow);
+            // node.SetStaleness(Properties.StalenessLow);
         }
 
         // SetTimestamp();

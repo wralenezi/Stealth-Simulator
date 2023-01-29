@@ -1,52 +1,52 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 public class Node
 {
-    public bool walkable;
+    public bool isExpanded;
+    private List<Node> _neighbours;
     public Vector2 worldPosition;
+    private float _spottedTime;
 
-    // Node position on the grid
-    public int gridX;
-    public int gridY;
-
-    // staleness values of a node, 1 highest and 0 lowest
-    private float m_staleness;
-    private float m_weightedStaleness;
-
-    // flag if the node is initiated
-    public bool isNodeSet = false;
-
-    public Node(bool _walkable, Vector2 _worldPos, int _gridX, int _gridY, float _staleness)
+    public float staleness;
+    public bool isSeen;
+    
+    public Node()
     {
-        walkable = _walkable;
-        worldPosition = _worldPos;
-        gridX = _gridX;
-        gridY = _gridY;
-        m_staleness = _staleness;
+        _neighbours = new List<Node>();
+        Reset();
     }
 
-    public void IncreaseStaleness(float staleness)
+    public void AddNeighbours(Node neighbour)
     {
-        m_staleness += staleness;
+        _neighbours.Add(neighbour);
     }
 
-    public void SetStaleness(float staleness)
+    public List<Node> GetNeighbors()
     {
-        m_staleness = staleness;
+        return _neighbours;
+    }
+    
+    
+
+    public void Spotted(float episodeTime)
+    {
+        isSeen = true;
+        _spottedTime = episodeTime;
+        staleness = 0f;
     }
 
-    public void SetWeightedStaleness(int walkableNodesCount)
+    public float GetLastSpottedTime()
     {
-        m_weightedStaleness = m_staleness / walkableNodesCount;
+        return _spottedTime;
     }
 
-    public float GetStaleness()
+    public void Reset()
     {
-        return m_staleness;
+        isExpanded = false;
+        _spottedTime = 0f;
+        staleness = 0f;
+        isSeen = false;
     }
 
-    public float GetWeightedStaleness()
-    {
-        return m_weightedStaleness;
-    }
 }

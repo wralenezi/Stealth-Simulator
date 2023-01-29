@@ -73,7 +73,7 @@ public class SearchSessions : MonoBehaviour
 
         guardTeams.Add(2);
         mapData = new MapData("MgsDock", 2f);
-        AddRandomSession("tutorial", ref sessions, mapData, "grey", guardTeams, SurveyType.EndTutorial, episodeLength * 0.35f);
+        // AddRandomSession("tutorial", ref sessions, mapData, "grey", guardTeams, SurveyType.EndTutorial, episodeLength * 0.35f);
 
 
         guardTeams.Clear();
@@ -111,7 +111,6 @@ public class SearchSessions : MonoBehaviour
             SearcherParams searcherParams = new RoadMapSearcherParams(1f, 1f, 0.5f, 0.5f, RMDecision.EndPoint, RMPassingGuardsSenstivity.Max, 0.5f, 0.5f,-1f,0.2f);
 
             GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gRandom, patrolParams, SearchPlanner.RmPropSimple, searcherParams, AlertPlanner.None, null);
-
             
             ScouterParams scouterParams = new RMScouterParams(SpotsNeighbourhoods.LineOfSight, PathCanceller.DistanceCalculation, RiskThresholdType.Danger
                 , TrajectoryType.Simple , 0f, GoalPriority.Safety, SafetyPriority.ClosestWeightedSpot, 1f);
@@ -149,6 +148,57 @@ public class SearchSessions : MonoBehaviour
             sessions.Add(session);
         }
     }
+    
+    
+    private static void AddRandomSession(string gameCode, ref List<Session> sessions, MapData mapData,
+        string guardColor,
+        List<int> guardTeams, float episodeLength)
+    {
+        List<GuardSpawnType> guardSpawnTypes = new List<GuardSpawnType>()
+        {
+            // GuardSpawnType.Random,
+            GuardSpawnType.Separate,
+            // GuardSpawnType.Goal
+        };
+
+        foreach (var guardSpawnType in guardSpawnTypes)
+        foreach (var guardTeam in guardTeams)
+        {
+            // Set the Hyper-parameters for the behavior
+            PatrolerParams patrolParams = null;
+
+            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gRandom, patrolParams,
+                SearchPlanner.None, null, AlertPlanner.None, null);
+
+
+            Session session = new Session(episodeLength, gameCode, GameType.CoinCollection, Scenario.Stealth,
+                guardColor,
+                guardSpawnType, guardTeam, guardBehaviorParams, 0,
+                null,
+                mapData, SpeechType.Simple, SurveyType.EndEpisode);
+
+            session.sessionVariable = "Random";
+
+            // Add guards
+            for (int i = 0; i < session.guardsCount; i++)
+            {
+                Behavior behavior = new Behavior(PatrolPlanner.gRandom, AlertPlanner.Simple,
+                    SearchPlanner.Cheating, PlanOutput.DijkstraPath);
+
+                session.AddNpc(i + 1, NpcType.Guard, behavior, PathFindingHeursitic.EuclideanDst,
+                    PathFollowing.SimpleFunnel, null);
+            }
+
+            session.MaxEpisodes = _episodeCount;
+
+            sessions.Add(session);
+        }
+    }
+
+    
+    
+    
+    
     
         private static void AddRoadMapSession(string gameCode, ref List<Session> sessions, MapData mapData,
         string guardColor,

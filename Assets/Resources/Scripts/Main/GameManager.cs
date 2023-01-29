@@ -38,7 +38,7 @@ public class GameManager : MonoBehaviour
     public bool RecordHeatMap;
 
     public bool RecordRunningTimes;
-    
+
     [Header("Time")] [Tooltip("Simulation speed")] [Range(1, 100)]
     public int SimulationSpeed;
 
@@ -142,8 +142,8 @@ public class GameManager : MonoBehaviour
     {
         m_VoiceParamses = new List<VoiceParams>();
 
-        int[] voiceIndices = {0, 1};
-        float[] pitches = {0f, 1f, 2f};
+        int[] voiceIndices = { 0, 1 };
+        float[] pitches = { 0f, 1f, 2f };
 
         foreach (var vI in voiceIndices)
         foreach (var p in pitches)
@@ -165,7 +165,7 @@ public class GameManager : MonoBehaviour
     public static int GetDateTimestamp()
     {
         DateTime epochStart = new DateTime(2022, 3, 15, 0, 0, 0, DateTimeKind.Utc);
-        return (int) (DateTime.UtcNow - epochStart).TotalSeconds;
+        return (int)(DateTime.UtcNow - epochStart).TotalSeconds;
     }
 
     public static int GetRunId()
@@ -175,6 +175,13 @@ public class GameManager : MonoBehaviour
 
     private void LoadSavedSessions()
     {
+        // Sessions set up for evaluating the efficiency of the patrol behaviors 
+        // List<Session> sessions = PatrolSessionsAssessment.GetSessions();
+
+        
+        // Sessions set up for evaluating the efficiency of the search behaviors
+        List<Session> sessions = SearchSessionAssessment.GetSessions();
+
         // var sessions = SessionsSetup.SearchTacticEvaluation();
         // List<Session> sessions = SessionsSetup.StealthStudy();
         // List<Session> sessions = SessionsSetup.StealthStudy002();
@@ -182,22 +189,18 @@ public class GameManager : MonoBehaviour
         // List<Session> sessions = SessionsSetup.StealthStudyProcedural01();
         // List<Session> sessions = StealthStudySessions.GetSessions();
         // List<Session> sessions = StealthUserStudySessions.GetSessions();
-
-        // A session set up for evaluating the efficiency of the patrol behaviors 
-        // List<Session> sessions = PatrolSessionsAssessment.GetSessions();
-        
         
         // List<Session> sessions = PatrolSessions.GetSessions();
 
         // Patrol behavior
         // List<Session> sessions = PatrolUserStudy.GetSessions();
 
-        List<Session> sessions = StealthBehavior.GetSessions();
-        // List<Session> sessions = SearchSessions.GetSessions();
+        // List<Session> sessions = StealthBehavior.GetSessions();
 
 
-        StartCoroutine(FileUploader.UploadData(null, FileType.ColorPairing, "text/csv",
-            PatrolUserStudy.GetPairsString()));
+        if (Equals(loggingMethod, Logging.Cloud))
+            StartCoroutine(FileUploader.UploadData(null, FileType.ColorPairing, "text/csv",
+                PatrolUserStudy.GetPairsString()));
 
         // Each line represents a session
         foreach (var sc in sessions)
@@ -270,7 +273,7 @@ public class GameManager : MonoBehaviour
     private void CreateArea(Session scenario)
     {
         // Get the area prefab
-        var areaPrefab = (GameObject) Resources.Load(StealthArea);
+        var areaPrefab = (GameObject)Resources.Load(StealthArea);
         GameObject activeArea = Instantiate(areaPrefab, transform, true);
 
         // Get the script
@@ -762,9 +765,10 @@ public class IntruderBehaviorParams
 
     public AlertPlanner alertPlanner;
     public ChaseEvaderParams chaseEvaderParams;
-    
-    
-    public IntruderBehaviorParams(PatrolPlanner _planner, ScouterParams _scouterParams, SearchPlanner _searchPlanner, SearchEvaderParams _searchEvaderParams, AlertPlanner _alertPlanner, ChaseEvaderParams _chaseEvaderParams)
+
+
+    public IntruderBehaviorParams(PatrolPlanner _planner, ScouterParams _scouterParams, SearchPlanner _searchPlanner,
+        SearchEvaderParams _searchEvaderParams, AlertPlanner _alertPlanner, ChaseEvaderParams _chaseEvaderParams)
     {
         patrolPlanner = _planner;
         scouterParams = _scouterParams;

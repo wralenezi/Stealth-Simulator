@@ -21,6 +21,8 @@ public class VisMeshPatroler : Patroler
 
         _decisionMaker = new VisMeshPatrolDecisionMaker();
         _decisionMaker.Initiate(_params);
+
+        ShowGuardGoals = false;
     }
 
     public override void Start()
@@ -44,7 +46,6 @@ public class VisMeshPatroler : Patroler
             _decisionMaker.SetTarget(guard, guards, _params, _visMesh.GetVisMesh());
         }
     }
-
 
     private void OnDrawGizmos()
     {

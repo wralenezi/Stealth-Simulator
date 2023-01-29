@@ -2,9 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PatrolSessionsAssessment
+public static class SearchSessionAssessment
 {
-    private static int _episodeLength = 20;
+    private static int _episodeLength = 100;
     private static int _episodeCount = 1;
 
 
@@ -20,105 +20,12 @@ public class PatrolSessionsAssessment
         // mapData = new MapData("MgsDock", 2f);
         // mapData = new MapData("bloodstainedAngle1", 0.5f);
 
-        AddVisMeshSession("", ref sessions, mapData, "blue", guardTeams, _episodeLength);
-        AddRoadMapSession("", ref sessions, mapData, "blue", guardTeams, _episodeLength);
-        AddRandomSession("", ref sessions, mapData, "blue", guardTeams, _episodeLength);
+        // AddRoadMapSession("", ref sessions, mapData, "blue", guardTeams, _episodeLength);
+        // AddRandomSession("", ref sessions, mapData, "blue", guardTeams, _episodeLength);
         AddGridSession("", ref sessions, mapData, "blue", guardTeams, _episodeLength);
         return sessions;
     }
 
-    private static void AddVisMeshSession(string gameCode, ref List<Session> sessions, MapData mapData,
-        string teamColor, List<int> guardTeams, float episodeLength)
-    {
-        // Guard Patrol Behavior
-        PatrolPlanner patrolPlanner = PatrolPlanner.gVisMesh;
-
-        List<GuardSpawnType> guardSpawnTypes = new List<GuardSpawnType>()
-        {
-            // GuardSpawnType.Random,
-            GuardSpawnType.Separate,
-            // GuardSpawnType.Goal
-        };
-
-        List<float> maxSeenRegionPortions = new List<float>()
-        {
-            // 0.5f,
-            // 0.7f,
-            1f
-        };
-
-        float max = 10f;
-        float min = 0f;
-        float increment = 5f;
-
-        List<float> areaWeights = new List<float>();
-        for (float i = min; i <= max; i += increment)
-        {
-            areaWeights.Add(i / max);
-        }
-
-        List<float> stalenessWeights = new List<float>();
-        for (float i = min; i <= max; i += increment)
-        {
-            stalenessWeights.Add(i / max);
-        }
-
-        List<float> distanceWeights = new List<float>();
-        for (float i = min; i <= max; i += increment)
-        {
-            distanceWeights.Add(i / max);
-        }
-
-        List<float> separationWeights = new List<float>();
-        for (float i = min; i <= max; i += increment)
-        {
-            separationWeights.Add(i / max);
-        }
-
-        List<VMDecision> decisionTypes = new List<VMDecision>()
-        {
-            VMDecision.Weighted
-        };
-
-        foreach (var guardSpawnType in guardSpawnTypes)
-        foreach (var areaWeight in areaWeights)
-        foreach (var stalenessWeight in stalenessWeights)
-        foreach (var distanceWeight in distanceWeights)
-        foreach (var separationWeight in separationWeights)
-        foreach (var decisionType in decisionTypes)
-        foreach (var maxSeenRegionPortion in maxSeenRegionPortions)
-        foreach (var guardTeam in guardTeams)
-        {
-            // Set the Hyper-parameters for the behavior
-            PatrolerParams patrolParams = new VisMeshPatrolerParams(maxSeenRegionPortion, areaWeight, stalenessWeight,
-                distanceWeight, separationWeight, decisionType);
-
-            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolPlanner, patrolParams,
-                SearchPlanner.None, null, AlertPlanner.None, null);
-
-            Session session = new Session(episodeLength, "", GameType.CoinCollection, Scenario.Stealth, teamColor,
-                guardSpawnType, guardTeam, guardBehaviorParams, 0,
-                null,
-                mapData, SpeechType.Simple, SurveyType.EndEpisode);
-
-            session.sessionVariable = "VisMesh";
-
-
-            // Add guards
-            for (int i = 0; i < session.guardsCount; i++)
-            {
-                Behavior behavior = new Behavior(patrolPlanner, AlertPlanner.Simple,
-                    SearchPlanner.Cheating, PlanOutput.DijkstraPath);
-
-                session.AddNpc(i + 1, NpcType.Guard, behavior, PathFindingHeursitic.EuclideanDst,
-                    PathFollowing.SimpleFunnel, null);
-            }
-
-            session.MaxEpisodes = _episodeCount;
-
-            sessions.Add(session);
-        }
-    }
 
     private static void AddRoadMapSession(string gameCode, ref List<Session> sessions, MapData mapData,
         string teamColor, List<int> guardTeams, float episodeLength)
@@ -133,7 +40,7 @@ public class PatrolSessionsAssessment
         };
 
         float max = 10f;
-        float min = 0f;
+        float min = 5f;
         float increment = 5f;
 
         List<float> maxNormalizedPathLengths = new List<float>()
@@ -187,15 +94,20 @@ public class PatrolSessionsAssessment
         foreach (var decisionType in decisionTypes)
         foreach (var guardTeam in guardTeams)
         {
-            PatrolerParams patrolParams = new RoadMapPatrolerParams(maxNormalizedPathLength, stalenessWeight,
-                guardPassingWeight, connectivityWeight, decisionType, passingGuardsSenstivity);
+            SearcherParams searchParams = new RoadMapSearcherParams(maxNormalizedPathLength, stalenessWeight,
+                guardPassingWeight, connectivityWeight, decisionType, passingGuardsSenstivity,0f,0f,0f,0f);
 
-            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolPlanner, patrolParams,
-                SearchPlanner.None, null, AlertPlanner.None, null);
+            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gRandom,null ,
+                SearchPlanner.RmPropSimple, searchParams, AlertPlanner.None, null);
+            
+            ScouterParams scouterParams = new RMScouterParams(SpotsNeighbourhoods.LineOfSight, PathCanceller.DistanceCalculation, RiskThresholdType.Danger
+                , TrajectoryType.Simple , 0f, GoalPriority.Safety, SafetyPriority.ClosestWeightedSpot, 1f);
 
-            Session session = new Session(episodeLength, "", GameType.CoinCollection, Scenario.Stealth, teamColor,
-                guardSpawnType, guardTeam, guardBehaviorParams, 0,
-                null,
+            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.iRoadMap, scouterParams, SearchPlanner.iHeuristic, null, AlertPlanner.iHeuristic, null);
+
+            Session session = new Session(episodeLength, "", GameType.CoinCollection, Scenario.Chase, teamColor,
+                guardSpawnType, guardTeam, guardBehaviorParams, 1,
+                intruderBehaviorParams,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
             session.sessionVariable = "RoadMap";
@@ -209,6 +121,28 @@ public class PatrolSessionsAssessment
                 session.AddNpc(i + 1, NpcType.Guard, behavior, PathFindingHeursitic.EuclideanDst,
                     PathFollowing.SimpleFunnel, null);
             }
+            
+            // Add intruders
+            for (int i = 0; i < session.intruderCount; i++)
+            {
+                Behavior behavior = new Behavior(PatrolPlanner.iRoadMap, AlertPlanner.iHeuristic,
+                    SearchPlanner.UserInput, PlanOutput.DijkstraPath);
+
+                session.AddNpc(i + 1, NpcType.Intruder, behavior, PathFindingHeursitic.EuclideanDst,
+                    PathFollowing.SimpleFunnel, null);
+            }
+            
+            // Add intruders
+            for (int i = 0; i < session.intruderCount; i++)
+            {
+                Behavior behavior = new Behavior(PatrolPlanner.iSimple, AlertPlanner.iHeuristic,
+                    SearchPlanner.UserInput, PlanOutput.DijkstraPath);
+
+                session.AddNpc(i + 1, NpcType.Intruder, behavior, PathFindingHeursitic.EuclideanDst,
+                    PathFollowing.SimpleFunnel, null);
+            }
+
+
 
 
             session.MaxEpisodes = _episodeCount;
@@ -221,7 +155,7 @@ public class PatrolSessionsAssessment
         string guardColor,
         List<int> guardTeams, float episodeLength)
     {
-        PatrolPlanner patrolPlanner = PatrolPlanner.gGrid;
+        PatrolPlanner patrolPlanner = PatrolPlanner.gRandom;
 
         List<GuardSpawnType> guardSpawnTypes = new List<GuardSpawnType>()
         {
@@ -229,6 +163,13 @@ public class PatrolSessionsAssessment
             GuardSpawnType.Separate,
             // GuardSpawnType.Goal
         };
+
+        List<GridStalenessMethod> methods = new List<GridStalenessMethod>()
+        {
+            GridStalenessMethod.Propagation,
+            // GridStalenessMethod.Diffuse
+        };
+
 
         float max = 10f;
         float min = 0f;
@@ -254,7 +195,8 @@ public class PatrolSessionsAssessment
 
         List<float> cellSizes = new List<float>()
         {
-            // 0.5f,
+            0.5f,
+            0.75f,
             1f
         };
 
@@ -264,18 +206,19 @@ public class PatrolSessionsAssessment
         foreach (var stalenessWeight in stalenessWeights)
         foreach (var distanceWeight in distanceWeights)
         foreach (var separationWeight in separationWeights)
+        foreach (var method in methods)
         {
-            // Set the Hyper-parameters for the behavior
-            PatrolerParams patrolParams =
-                new GridPatrolerParams(cellSize, stalenessWeight, distanceWeight, separationWeight);
+            SearcherParams searcherParams = new GridSearcherParams(cellSize, method);
 
-            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolPlanner, patrolParams,
-                SearchPlanner.None, null, AlertPlanner.None, null);
+            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolPlanner, null,
+                SearchPlanner.gSimpleGrid, searcherParams, AlertPlanner.None, null);
 
-            Session session = new Session(episodeLength, gameCode, GameType.CoinCollection, Scenario.Stealth,
+            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.iSimple, null, SearchPlanner.iHeuristic, null, AlertPlanner.iHeuristic, null);
+
+            Session session = new Session(episodeLength, gameCode, GameType.CoinCollection, Scenario.Chase,
                 guardColor,
-                guardSpawnType, guardTeam, guardBehaviorParams, 0,
-                null,
+                guardSpawnType, guardTeam, guardBehaviorParams, 1,
+                intruderBehaviorParams,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
             session.sessionVariable = "Grid";
@@ -284,11 +227,22 @@ public class PatrolSessionsAssessment
             for (int i = 0; i < session.guardsCount; i++)
             {
                 Behavior behavior = new Behavior(patrolPlanner, AlertPlanner.Simple,
-                    SearchPlanner.Cheating, PlanOutput.DijkstraPath);
+                    SearchPlanner.gSimpleGrid, PlanOutput.DijkstraPath);
 
                 session.AddNpc(i + 1, NpcType.Guard, behavior, PathFindingHeursitic.EuclideanDst,
                     PathFollowing.SimpleFunnel, null);
             }
+            
+            // Add intruders
+            for (int i = 0; i < session.intruderCount; i++)
+            {
+                Behavior behavior = new Behavior(PatrolPlanner.iSimple, AlertPlanner.iHeuristic,
+                    SearchPlanner.UserInput, PlanOutput.DijkstraPath);
+
+                session.AddNpc(i + 1, NpcType.Intruder, behavior, PathFindingHeursitic.EuclideanDst,
+                    PathFollowing.SimpleFunnel, null);
+            }
+
 
             session.MaxEpisodes = _episodeCount;
 
@@ -314,13 +268,14 @@ public class PatrolSessionsAssessment
             PatrolerParams patrolParams = null;
 
             GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gRandom, patrolParams,
-                SearchPlanner.None, null, AlertPlanner.None, null);
+                SearchPlanner.Random, null, AlertPlanner.None, null);
 
+            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.iSimple, null, SearchPlanner.iHeuristic, null, AlertPlanner.iHeuristic, null);
 
-            Session session = new Session(episodeLength, gameCode, GameType.CoinCollection, Scenario.Stealth,
+            Session session = new Session(episodeLength, gameCode, GameType.CoinCollection, Scenario.Chase,
                 guardColor,
-                guardSpawnType, guardTeam, guardBehaviorParams, 0,
-                null,
+                guardSpawnType, guardTeam, guardBehaviorParams, 1,
+                intruderBehaviorParams,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
             session.sessionVariable = "Random";
@@ -332,6 +287,15 @@ public class PatrolSessionsAssessment
                     SearchPlanner.Cheating, PlanOutput.DijkstraPath);
 
                 session.AddNpc(i + 1, NpcType.Guard, behavior, PathFindingHeursitic.EuclideanDst,
+                    PathFollowing.SimpleFunnel, null);
+            }
+            // Add intruders
+            for (int i = 0; i < session.intruderCount; i++)
+            {
+                Behavior behavior = new Behavior(PatrolPlanner.iSimple, AlertPlanner.iHeuristic,
+                    SearchPlanner.UserInput, PlanOutput.DijkstraPath);
+
+                session.AddNpc(i + 1, NpcType.Intruder, behavior, PathFindingHeursitic.EuclideanDst,
                     PathFollowing.SimpleFunnel, null);
             }
 

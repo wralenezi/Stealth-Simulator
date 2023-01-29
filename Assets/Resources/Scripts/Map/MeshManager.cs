@@ -157,7 +157,7 @@ public class FloorTileManager : MonoBehaviour
     {
         m_materials = new List<Material>();
         foreach (var node in nodes)
-            InitiateNode(node.worldPosition, node.GetStaleness());
+            InitiateNode(node.worldPosition, node.staleness);
     }
 
     public void DrawGrid(DtNode[,] nodes)
@@ -193,7 +193,7 @@ public class FloorTileManager : MonoBehaviour
 
     private void RenderNode(Node n, Material material)
     {
-        material.color = Properties.GetStalenessColor(n.GetStaleness());
+        material.color = Properties.GetStalenessColor(n.staleness);
     }
 
     public void RenderGrid(List<Node> nodes)

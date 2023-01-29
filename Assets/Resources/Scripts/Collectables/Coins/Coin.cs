@@ -6,7 +6,7 @@ using Random = UnityEngine.Random;
 
 public class Coin : MonoBehaviour
 {
-    private Renderer renderer;
+    private Renderer _renderer;
 
     // Hide coins when spawned
     private bool m_isHideCoinWhenSpawned;
@@ -15,7 +15,7 @@ public class Coin : MonoBehaviour
 
     public void Initiate()
     {
-        renderer = GetComponent<Renderer>();
+        _renderer = GetComponent<Renderer>();
         audioSource = GetComponent<AudioSource>();
         audioSource.volume = 0.2f;
     }
@@ -31,7 +31,7 @@ public class Coin : MonoBehaviour
 
 
         transform.position = Equals(chosenPos, null) ? transform.position : (Vector3) chosenPos.Value;
-        renderer.enabled = !m_isHideCoinWhenSpawned;
+        _renderer.enabled = !m_isHideCoinWhenSpawned;
         gameObject.SetActive(true);
     }
 
@@ -161,7 +161,7 @@ public class Coin : MonoBehaviour
 
     public void Render()
     {
-        renderer.enabled = true;
+        _renderer.enabled = true;
     }
 
     public void ModifyScore()

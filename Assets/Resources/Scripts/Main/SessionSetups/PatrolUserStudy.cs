@@ -132,12 +132,10 @@ public class PatrolUserStudy : MonoBehaviour
             IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.UserInput, null,
                 SearchPlanner.UserInput, null, AlertPlanner.UserInput, null);
 
-
             Session session = new Session(episodeLength, "", GameType.CoinCollection, Scenario.Stealth, color,
                 GuardSpawnType.Separate, guardTeam, guardBehaviorParams, 1,
                 intruderBehaviorParams,
                 mapData, SpeechType.Simple, surveyType) {sessionVariable = "Vismesh"};
-
 
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)

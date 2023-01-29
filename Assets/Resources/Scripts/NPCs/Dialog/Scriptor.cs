@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
 public class Scriptor : MonoBehaviour
@@ -12,7 +13,7 @@ public class Scriptor : MonoBehaviour
     [SerializeField] private bool isVerbose;
 
     // Enable The Dialog system or not
-    public bool enabled;
+    public bool isEnabled;
 
     private SpeechType m_speechClass;
 
@@ -57,12 +58,12 @@ public class Scriptor : MonoBehaviour
 
     public void Initialize<T>(List<T> speakerNpcs, SpeechType speechType) where T : NPC
     {
-        enabled = !Equals(speechType, SpeechType.None);
+        isEnabled = !Equals(speechType, SpeechType.None);
 
         // m_speechClass = speechType;
 
         // Skip if this component is not enabled
-        if (!enabled) return;
+        if (!isEnabled) return;
 
         // Load the defined dialogs 
         LineLookUp.Initiate();
@@ -117,7 +118,7 @@ public class Scriptor : MonoBehaviour
 
     private void Update()
     {
-        if (enabled) m_wrldStatLabel.gameObject.SetActive(showWorldState);
+        if (isEnabled) m_wrldStatLabel.gameObject.SetActive(showWorldState);
     }
 
 
@@ -167,7 +168,7 @@ public class Scriptor : MonoBehaviour
         float sampleNumber = Random.Range(0f, 1f);
 
         // Cancel if the scriptor is not enabled or the probability is lower than the sampled number
-        if (!enabled || prob < sampleNumber) return;
+        if (!isEnabled || prob < sampleNumber) return;
 
         // Get the dialog group of the require type
         DialogGroup dialogs = LineLookUp.GetDialogGroup(dialogType);

@@ -8,7 +8,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 
-public class GuardsManager : Agent
+public class GuardsManager : MonoBehaviour
 {
     // List of Guards
     private List<Guard> _guards;
@@ -55,75 +55,75 @@ public class GuardsManager : Agent
     // This part controls the Reinforcement Learning part of the behavior
 
     #region RL behavior
-
-    public override void OnEpisodeBegin()
-    {
-        base.OnEpisodeBegin();
-        RequestDecision();
-    }
-
-    public override void CollectObservations(VectorSensor sensor)
-    {
-        base.CollectObservations(sensor);
-
-        // // The fraction of the guards count.
-        // float guardsPresence = m_SA.GetSessionInfo().guardsCount / Properties.MaxGuardCount;
-        // sensor.AddObservation(guardsPresence);
-        //
-        // // The normalized area of the map
-        // float mapsRelativeArea = m_SA.mapDecomposer.GetNavMeshArea() / Properties.MaxWalkableArea;
-        // sensor.AddObservation(mapsRelativeArea);
-
-        // Debug.Log("  Map Area: " + m_StealthArea.mapDecomposer.GetNavMeshArea());
-    }
-
-    // Called when the action is received.
-    public override void OnActionReceived(ActionBuffers actionBuffers)
-    {
-        base.OnActionReceived(actionBuffers);
-        //
-        // float minBound = -1f;
-        // float maxBound = 1f;
-        //
-        // float scaleFactor = 10f;
-        //
-        // searchWeights.probWeight = Mathf.Clamp(actionBuffers.ContinuousActions[0], minBound, maxBound) * scaleFactor;
-        // searchWeights.ageWeight = Mathf.Clamp(actionBuffers.ContinuousActions[1], minBound, maxBound) * scaleFactor;
-        // searchWeights.dstToGuardsWeight =
-        //     Mathf.Clamp(actionBuffers.ContinuousActions[2], minBound, maxBound) * scaleFactor;
-        // searchWeights.dstFromOwnWeight =
-        //     Mathf.Clamp(actionBuffers.ContinuousActions[3], minBound, maxBound) * scaleFactor;
-    }
-
-    // What to do when there is no Learning behavior
-    public override void Heuristic(in ActionBuffers actionsOut)
-    {
-        base.Heuristic(actionsOut);
-
-        var continuousActionsOut = actionsOut.ContinuousActions;
-
-        // Default weight for the probability of the segment
-        continuousActionsOut[0] = 1f;
-        // Default weight for the age of the segment
-        continuousActionsOut[1] = 0f;
-        // Default weight for the distance to other guards' closest goal of the segment
-        continuousActionsOut[2] = 1f;
-        // Default weight for the distance of the segment
-        continuousActionsOut[3] = -1f;
-    }
-
-    // End the episode.
-    public void Done()
-    {
-        // Set the reward for how many times the intruder has been spotted.
-        // float reward = m_Intruders[0].GetPercentAlertTime();
-        // reward += m_Intruders[0].GetNumberOfTimesSpotted() * 0.01f;
-        // SetReward(reward);
-
-
-        EndEpisode();
-    }
-
+    //
+    // public override void OnEpisodeBegin()
+    // {
+    //     base.OnEpisodeBegin();
+    //     RequestDecision();
+    // }
+    //
+    // public override void CollectObservations(VectorSensor sensor)
+    // {
+    //     base.CollectObservations(sensor);
+    //
+    //     // // The fraction of the guards count.
+    //     // float guardsPresence = m_SA.GetSessionInfo().guardsCount / Properties.MaxGuardCount;
+    //     // sensor.AddObservation(guardsPresence);
+    //     //
+    //     // // The normalized area of the map
+    //     // float mapsRelativeArea = m_SA.mapDecomposer.GetNavMeshArea() / Properties.MaxWalkableArea;
+    //     // sensor.AddObservation(mapsRelativeArea);
+    //
+    //     // Debug.Log("  Map Area: " + m_StealthArea.mapDecomposer.GetNavMeshArea());
+    // }
+    //
+    // // Called when the action is received.
+    // public override void OnActionReceived(ActionBuffers actionBuffers)
+    // {
+    //     base.OnActionReceived(actionBuffers);
+    //     //
+    //     // float minBound = -1f;
+    //     // float maxBound = 1f;
+    //     //
+    //     // float scaleFactor = 10f;
+    //     //
+    //     // searchWeights.probWeight = Mathf.Clamp(actionBuffers.ContinuousActions[0], minBound, maxBound) * scaleFactor;
+    //     // searchWeights.ageWeight = Mathf.Clamp(actionBuffers.ContinuousActions[1], minBound, maxBound) * scaleFactor;
+    //     // searchWeights.dstToGuardsWeight =
+    //     //     Mathf.Clamp(actionBuffers.ContinuousActions[2], minBound, maxBound) * scaleFactor;
+    //     // searchWeights.dstFromOwnWeight =
+    //     //     Mathf.Clamp(actionBuffers.ContinuousActions[3], minBound, maxBound) * scaleFactor;
+    // }
+    //
+    // // What to do when there is no Learning behavior
+    // public override void Heuristic(in ActionBuffers actionsOut)
+    // {
+    //     base.Heuristic(actionsOut);
+    //
+    //     var continuousActionsOut = actionsOut.ContinuousActions;
+    //
+    //     // Default weight for the probability of the segment
+    //     continuousActionsOut[0] = 1f;
+    //     // Default weight for the age of the segment
+    //     continuousActionsOut[1] = 0f;
+    //     // Default weight for the distance to other guards' closest goal of the segment
+    //     continuousActionsOut[2] = 1f;
+    //     // Default weight for the distance of the segment
+    //     continuousActionsOut[3] = -1f;
+    // }
+    //
+    // // End the episode.
+    // public void Done()
+    // {
+    //     // Set the reward for how many times the intruder has been spotted.
+    //     // float reward = m_Intruders[0].GetPercentAlertTime();
+    //     // reward += m_Intruders[0].GetNumberOfTimesSpotted() * 0.01f;
+    //     // SetReward(reward);
+    //
+    //
+    //     EndEpisode();
+    // }
+    //
     #endregion
 
     #region NPC creation

@@ -20,13 +20,10 @@ public class HeatMap : MonoBehaviour
     public void Initiate(Bounds bounds)
     {
         // isDisabled = false;
-
         // showHeatMap = true;
-
         // if (isDisabled) return;
 
         _heatMap = new MapGrid<HeatNode>(bounds, _cellSide, _cellSide);
-
         _heatNodes = new List<HeatNode>();
 
         HeatNode[,] map = _heatMap.GetGrid();
@@ -195,45 +192,5 @@ public class HeatMap : MonoBehaviour
     public void OnDrawGizmos()
     {
         if (showHeatMap) _heatMap.Draw();
-    }
-}
-
-
-public class HeatNode
-{
-    public int Col;
-    public int Row;
-
-    public Vector2 position;
-    private float spottedTime;
-
-    public float heatValue;
-
-    public HeatNode()
-    {
-        spottedTime = 0f;
-    }
-
-    public void Reset()
-    {
-        spottedTime = 0f;
-    }
-
-    public void Increment(float timeDelta)
-    {
-        spottedTime += timeDelta;
-    }
-
-    public float GetTime()
-    {
-        return spottedTime;
-    }
-
-    public Color32 GetColor()
-    {
-        byte colorLevel = (byte) (heatValue * 255);
-        Color32 color = new Color32(colorLevel, colorLevel, colorLevel, 255);
-
-        return color;
     }
 }

@@ -30,6 +30,8 @@ public enum PatrolPlanner
     gRandom,
     // Create patrol routes using VisMesh method.
     gVisMesh,
+    // Create patrol behavior using grid representation.
+    gGrid,
     iSimple,
     iRoadMap,
     iPathFinding,
@@ -59,6 +61,8 @@ public enum SearchPlanner
     Random,
     
     iHeuristic,
+    
+    gSimpleGrid,
 
     // The guards search the road map while propagating the probability of the intruder's presence.
     // The probability is diffused similarly to Damian Isla's implementation

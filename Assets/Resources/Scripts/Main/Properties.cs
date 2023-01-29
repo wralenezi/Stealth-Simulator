@@ -34,7 +34,7 @@ public static class Properties
     public static Color32 GetStalenessColor(float staleness)
     {
         float cappedStaleness = Mathf.Min(staleness, StalenessHigh);
-        byte colorLevel = (byte) (StalenessHigh - cappedStaleness);
+        byte colorLevel = (byte)(StalenessHigh - cappedStaleness);
         return new Color32(colorLevel, colorLevel, colorLevel, 255);
     }
 
@@ -114,10 +114,10 @@ public static class Properties
         {
             case "Hall":
                 return 0.3f;
-            
+
             case "Corridor":
                 return 0.15f;
-            
+
             default:
                 return 0.1f;
         }
@@ -156,7 +156,7 @@ public static class Properties
 
     // Parameters of Damian Isla implementation
     // Probability Diffuse factor; it tunes how fast the probability is propagated.
-    public static readonly float ProbDiffFac = 0.1f;
+    public static readonly float ProbDiffFac = 0.95f; //0.1f;
 
     // Ratio of max length of a segment to map width. 
     private static readonly float maxEdgeRatio = 0.2f;
@@ -182,7 +182,7 @@ public static class Properties
         if (feature < 0f) feature = 0f;
 
         // In case of using the likelihood feature
-        byte opacity = (byte) Mathf.Round(feature * 255);
+        byte opacity = (byte)Mathf.Round(feature * 255);
 
         return new Color32(255, 0, 0, opacity);
     }

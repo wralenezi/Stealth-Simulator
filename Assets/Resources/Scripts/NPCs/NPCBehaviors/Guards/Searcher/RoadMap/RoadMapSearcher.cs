@@ -23,13 +23,19 @@ public abstract class RoadMapSearcher : Searcher
 
         _decisionMaker = new RoadMapSearcherDecisionMaker();
         _decisionMaker.Initiate();
-        
+        RenderSearchSegments = true;
     }
 
     public override void CommenceSearch(NPC target)
     {
         Clear();
         _RoadMap.CommenceProbabilityFlow(target.GetTransform().position, target.GetDirection());
+    }
+
+    public override void Clear()
+    {
+        base.Clear();
+        _RoadMap.ClearSearchSegments();
     }
 
     // Normalize the probabilities of the segments

@@ -169,7 +169,7 @@ public class Guard : NPC
     }
 
 
-    private void OnDrawGizmos()
+    public override void OnDrawGizmos()
     {
         base.OnDrawGizmos();
     }

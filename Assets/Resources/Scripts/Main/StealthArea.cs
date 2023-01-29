@@ -194,9 +194,16 @@ public class StealthArea : MonoBehaviour
     }
 
     // Destroy the area
-    public void EndArea()
+    private void EndArea()
     {
         if (!GameManager.Instance.showSurvey && performanceMonitor.IsDone())
+        {
+            RemoveArea();
+            return;
+        }
+
+        SessionInfo.currentEpisode++;
+        if (SessionInfo.currentEpisode >= SessionInfo.MaxEpisodes)
             RemoveArea();
     }
 

@@ -70,6 +70,8 @@ public static class FileUploader
             Debug.Log("Error");
             Debug.Log(w.error);
         }
+
+        w.Dispose();
     }
 
 
@@ -85,11 +87,12 @@ public static class FileUploader
         if (www.result != UnityWebRequest.Result.Success || www.responseCode != 200)
         {
             string error = ResponseCodeLookUp.GetMeaning(www.responseCode);
-            Debug.LogError("Error with sending score: "+error);
+            Debug.LogError("Error with sending score: " + error);
         }
         else
             sessionInfo.LoadScores(www.downloadHandler.text);
 
+        www.Dispose();
         // PatrolUserStudy.LoadScores(sessionInfo, www.downloadHandler.text);
     }
 
@@ -118,5 +121,7 @@ public static class FileUploader
             else if (type == "dialogs")
                 GameManager.DialogLines = www.downloadHandler.text;
         }
+
+        www.Dispose();
     }
 }

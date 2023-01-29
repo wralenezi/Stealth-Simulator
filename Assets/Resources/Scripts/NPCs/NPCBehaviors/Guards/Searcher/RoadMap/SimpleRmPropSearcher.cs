@@ -5,7 +5,7 @@ using UnityEngine;
 public class SimpleRmPropSearcher : RoadMapSearcher
 {
     // Properties of the simple propagation method.
-    private float m_expansionMultiplier = 1f;
+    private float _expansionMultiplier = 1f;
 
     public override void UpdateSearcher(float speed, List<Guard> guards,  float timeDelta)
     {
@@ -25,7 +25,7 @@ public class SimpleRmPropSearcher : RoadMapSearcher
         {
             line.PropagateProb();
             line.IncreaseProbability(speed, timeDelta);
-            line.ExpandSs(speed * m_expansionMultiplier, timeDelta);
+            line.ExpandSs(speed * _expansionMultiplier, timeDelta);
 
             CheckSeenSs(guards, line);
 
