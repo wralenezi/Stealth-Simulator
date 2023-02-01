@@ -3,13 +3,17 @@ using UnityEngine;
 
 public class Node
 {
-    public bool isExpanded;
     private List<Node> _neighbours;
     public Vector2 worldPosition;
     private float _spottedTime;
 
+    public float oldStaleness;
     public float staleness;
     public bool isSeen;
+
+    public bool isExpansionDone;
+    public bool isIncrementedThisRound;
+
     
     public Node()
     {
@@ -27,13 +31,12 @@ public class Node
         return _neighbours;
     }
     
-    
-
     public void Spotted(float episodeTime)
     {
-        isSeen = true;
         _spottedTime = episodeTime;
+        isSeen = true;
         staleness = 0f;
+        oldStaleness = 0f;
     }
 
     public float GetLastSpottedTime()
@@ -43,9 +46,10 @@ public class Node
 
     public void Reset()
     {
-        isExpanded = false;
+        isExpansionDone = false;
         _spottedTime = 0f;
         staleness = 0f;
+        oldStaleness = 0f;
         isSeen = false;
     }
 

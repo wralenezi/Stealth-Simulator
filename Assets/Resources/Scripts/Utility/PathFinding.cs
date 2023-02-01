@@ -528,24 +528,7 @@ public class PathFinding : MonoBehaviour
         path.Add(destinationPoint);
     }
 
-
-
-    //
-    // public float GetShortestPathDistance(List<WayPoint> roadmap, InterceptionPoint goalPh, WayPoint start)
-    // {
-    //     List<Vector2> path = GetShortestPath(roadmap, goalPh, start);
-    //
-    //     float totalDistance = 0f;
-    //
-    //     for (int i = 0; i < path.Count - 1; i++)
-    //     {
-    //         totalDistance += Vector2.Distance(path[i], path[i + 1]);
-    //     }
-    //
-    //     return totalDistance;
-    // }
-
-
+    
     public void OnDrawGizmos()
     {
         if (Equals(pathMesh, null))

@@ -148,7 +148,7 @@ public class GuardsBehaviorController : MonoBehaviour
 
         // Order the guards to go the intruder's last known position
         foreach (var guard in NpcsManager.Instance.GetGuards())
-            guard.SetDestination(intruder.GetLastKnownLocation(), true, true);
+            guard.SetDestination(intruder.GetLastKnownLocation().Value, true, true);
     }
 
 
@@ -213,7 +213,8 @@ public class GuardsBehaviorController : MonoBehaviour
         // Loop through the guards to order them
         foreach (var guard in NpcsManager.Instance.GetGuards())
         {
-            guard.SetDestination(intruder.GetLastKnownLocation(), true, true);
+            if (Equals(intruder.GetLastKnownLocation(), null)) break;
+            guard.SetDestination(intruder.GetLastKnownLocation().Value, true, true);
         }
     }
 

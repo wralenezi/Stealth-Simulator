@@ -95,9 +95,9 @@ public class Intruder : NPC
     }
 
 
-    public Vector2 GetLastKnownLocation()
+    public Vector2? GetLastKnownLocation()
     {
-        return m_lastKnownLocation.Value;
+        return m_lastKnownLocation;
     }
 
     // Render the guard and the FoV if seen by the intruder

@@ -4,7 +4,7 @@ using UnityEngine;
 
 public static class SearchSessionAssessment
 {
-    private static int _episodeLength = 100;
+    private static int _episodeLength = 200;
     private static int _episodeCount = 1;
 
 
@@ -20,9 +20,9 @@ public static class SearchSessionAssessment
         // mapData = new MapData("MgsDock", 2f);
         // mapData = new MapData("bloodstainedAngle1", 0.5f);
 
-        // AddRoadMapSession("", ref sessions, mapData, "blue", guardTeams, _episodeLength);
+        AddRoadMapSession("", ref sessions, mapData, "blue", guardTeams, _episodeLength);
         // AddRandomSession("", ref sessions, mapData, "blue", guardTeams, _episodeLength);
-        AddGridSession("", ref sessions, mapData, "blue", guardTeams, _episodeLength);
+        // AddGridSession("", ref sessions, mapData, "blue", guardTeams, _episodeLength);
         return sessions;
     }
 
@@ -85,6 +85,12 @@ public static class SearchSessionAssessment
             RMPassingGuardsSenstivity.Max
         };
 
+        List<SearchPlanner> searchPlanners = new List<SearchPlanner>()
+        {
+            // SearchPlanner.RmPropSimple,
+            SearchPlanner.RmPropOccupancyDiffusal
+        };
+
         foreach (var guardSpawnType in guardSpawnTypes)
         foreach (var maxNormalizedPathLength in maxNormalizedPathLengths)
         foreach (var guardPassingWeight in guardPassingWeights)
@@ -92,18 +98,21 @@ public static class SearchSessionAssessment
         foreach (var connectivityWeight in connectivityWeights)
         foreach (var passingGuardsSenstivity in passingGuardsSenstivities)
         foreach (var decisionType in decisionTypes)
+        foreach (var searchPlanner in searchPlanners)
         foreach (var guardTeam in guardTeams)
         {
             SearcherParams searchParams = new RoadMapSearcherParams(maxNormalizedPathLength, stalenessWeight,
-                guardPassingWeight, connectivityWeight, decisionType, passingGuardsSenstivity,0f,0f,0f,0f);
+                guardPassingWeight, connectivityWeight, decisionType, passingGuardsSenstivity, 0f, 0f, 0f, 0f);
 
-            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gRandom,null ,
-                SearchPlanner.RmPropSimple, searchParams, AlertPlanner.None, null);
-            
-            ScouterParams scouterParams = new RMScouterParams(SpotsNeighbourhoods.LineOfSight, PathCanceller.DistanceCalculation, RiskThresholdType.Danger
-                , TrajectoryType.Simple , 0f, GoalPriority.Safety, SafetyPriority.ClosestWeightedSpot, 1f);
+            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gRandom, null,
+                searchPlanner, searchParams, AlertPlanner.None, null);
 
-            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.iRoadMap, scouterParams, SearchPlanner.iHeuristic, null, AlertPlanner.iHeuristic, null);
+            ScouterParams scouterParams = new RMScouterParams(SpotsNeighbourhoods.LineOfSight,
+                PathCanceller.DistanceCalculation, RiskThresholdType.Danger
+                , TrajectoryType.Simple, 0f, GoalPriority.Safety, SafetyPriority.ClosestWeightedSpot, 1f);
+
+            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.iRoadMap,
+                scouterParams, SearchPlanner.iHeuristic, null, AlertPlanner.iHeuristic, null);
 
             Session session = new Session(episodeLength, "", GameType.CoinCollection, Scenario.Chase, teamColor,
                 guardSpawnType, guardTeam, guardBehaviorParams, 1,
@@ -115,23 +124,25 @@ public static class SearchSessionAssessment
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)
             {
-                Behavior behavior = new Behavior(patrolPlanner, AlertPlanner.Simple, SearchPlanner.Cheating,
-                    PlanOutput.DijkstraPath);
+                Behavior behavior = new Behavior(session.guardBehaviorParams.patrolPlanner,
+                    session.guardBehaviorParams.alertPlanner,
+                    session.guardBehaviorParams.searcherPlanner, PlanOutput.DijkstraPath);
 
                 session.AddNpc(i + 1, NpcType.Guard, behavior, PathFindingHeursitic.EuclideanDst,
                     PathFollowing.SimpleFunnel, null);
             }
-            
+
             // Add intruders
             for (int i = 0; i < session.intruderCount; i++)
             {
-                Behavior behavior = new Behavior(PatrolPlanner.iRoadMap, AlertPlanner.iHeuristic,
-                    SearchPlanner.UserInput, PlanOutput.DijkstraPath);
+                Behavior behavior = new Behavior(session.IntruderBehaviorParams.patrolPlanner,
+                    session.IntruderBehaviorParams.alertPlanner,
+                    session.IntruderBehaviorParams.searchPlanner, PlanOutput.DijkstraPath);
 
                 session.AddNpc(i + 1, NpcType.Intruder, behavior, PathFindingHeursitic.EuclideanDst,
                     PathFollowing.SimpleFunnel, null);
             }
-            
+
             // Add intruders
             for (int i = 0; i < session.intruderCount; i++)
             {
@@ -141,8 +152,6 @@ public static class SearchSessionAssessment
                 session.AddNpc(i + 1, NpcType.Intruder, behavior, PathFindingHeursitic.EuclideanDst,
                     PathFollowing.SimpleFunnel, null);
             }
-
-
 
 
             session.MaxEpisodes = _episodeCount;
@@ -155,8 +164,6 @@ public static class SearchSessionAssessment
         string guardColor,
         List<int> guardTeams, float episodeLength)
     {
-        PatrolPlanner patrolPlanner = PatrolPlanner.gRandom;
-
         List<GuardSpawnType> guardSpawnTypes = new List<GuardSpawnType>()
         {
             // GuardSpawnType.Random,
@@ -208,12 +215,14 @@ public static class SearchSessionAssessment
         foreach (var separationWeight in separationWeights)
         foreach (var method in methods)
         {
-            SearcherParams searcherParams = new GridSearcherParams(cellSize, method);
+            SearcherParams searcherParams =
+                new GridSearcherParams(cellSize, method, stalenessWeight, distanceWeight, separationWeight);
 
-            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolPlanner, null,
+            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gRandom, null,
                 SearchPlanner.gSimpleGrid, searcherParams, AlertPlanner.None, null);
 
-            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.iSimple, null, SearchPlanner.iHeuristic, null, AlertPlanner.iHeuristic, null);
+            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.iSimple, null,
+                SearchPlanner.iHeuristic, null, AlertPlanner.iHeuristic, null);
 
             Session session = new Session(episodeLength, gameCode, GameType.CoinCollection, Scenario.Chase,
                 guardColor,
@@ -226,26 +235,26 @@ public static class SearchSessionAssessment
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)
             {
-                Behavior behavior = new Behavior(patrolPlanner, AlertPlanner.Simple,
-                    SearchPlanner.gSimpleGrid, PlanOutput.DijkstraPath);
+                Behavior behavior = new Behavior(session.guardBehaviorParams.patrolPlanner,
+                    session.guardBehaviorParams.alertPlanner,
+                    session.guardBehaviorParams.searcherPlanner, PlanOutput.DijkstraPath);
 
                 session.AddNpc(i + 1, NpcType.Guard, behavior, PathFindingHeursitic.EuclideanDst,
                     PathFollowing.SimpleFunnel, null);
             }
-            
+
             // Add intruders
             for (int i = 0; i < session.intruderCount; i++)
             {
-                Behavior behavior = new Behavior(PatrolPlanner.iSimple, AlertPlanner.iHeuristic,
-                    SearchPlanner.UserInput, PlanOutput.DijkstraPath);
+                Behavior behavior = new Behavior(session.IntruderBehaviorParams.patrolPlanner,
+                    session.IntruderBehaviorParams.alertPlanner,
+                    session.IntruderBehaviorParams.searchPlanner, PlanOutput.DijkstraPath);
 
                 session.AddNpc(i + 1, NpcType.Intruder, behavior, PathFindingHeursitic.EuclideanDst,
                     PathFollowing.SimpleFunnel, null);
             }
 
-
             session.MaxEpisodes = _episodeCount;
-
             sessions.Add(session);
         }
     }
@@ -270,7 +279,8 @@ public static class SearchSessionAssessment
             GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gRandom, patrolParams,
                 SearchPlanner.Random, null, AlertPlanner.None, null);
 
-            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.iSimple, null, SearchPlanner.iHeuristic, null, AlertPlanner.iHeuristic, null);
+            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(PatrolPlanner.iSimple, null,
+                SearchPlanner.iHeuristic, null, AlertPlanner.iHeuristic, null);
 
             Session session = new Session(episodeLength, gameCode, GameType.CoinCollection, Scenario.Chase,
                 guardColor,
@@ -289,6 +299,7 @@ public static class SearchSessionAssessment
                 session.AddNpc(i + 1, NpcType.Guard, behavior, PathFindingHeursitic.EuclideanDst,
                     PathFollowing.SimpleFunnel, null);
             }
+
             // Add intruders
             for (int i = 0; i < session.intruderCount; i++)
             {

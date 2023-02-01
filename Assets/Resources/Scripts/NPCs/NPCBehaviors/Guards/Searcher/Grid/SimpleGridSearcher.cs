@@ -13,10 +13,11 @@ public class SimpleGridSearcher : Searcher
     private MapGrid<Node> _heatMap;
     private List<Node> _heatNodes;
 
+
     public override void Initiate(MapManager mapManager, GuardBehaviorParams guardParams)
     {
         base.Initiate(mapManager, guardParams);
-        _params = (GridSearcherParams)guardParams.searcherParams;
+        _params = (GridSearcherParams) guardParams.searcherParams;
         _nodeDimensions = new Vector3(_params.CellSide, _params.CellSide, _params.CellSide);
         SetupGrid(MapManager.Instance.mapRenderer.GetMapBoundingBox(), _params.CellSide);
         _decisionMaker = new GridSearcherDecisionMaker();
@@ -69,19 +70,19 @@ public class SimpleGridSearcher : Searcher
 
     public override void UpdateSearcher(float speed, List<Guard> guards, float timeDelta)
     {
-        CheckHeatMapSpotting(guards, timeDelta);
-
         switch (_params.updateMethod)
         {
             case GridStalenessMethod.Propagation:
-                PropagateProbability();
+                PropagateProbability(timeDelta);
                 break;
-            
+
             case GridStalenessMethod.Diffuse:
                 DiffuseProbability();
                 break;
         }
-        
+        CheckHeatMapSpotting(guards, timeDelta);
+
+        NormalizeSegments();
     }
 
     private void SetStaleness(Vector3 lastPosition)
@@ -90,7 +91,7 @@ public class SimpleGridSearcher : Searcher
         Node closestNode = null;
         foreach (var node in _heatNodes)
         {
-            float sqrMag = Vector2.SqrMagnitude((Vector2)lastPosition - node.worldPosition);
+            float sqrMag = Vector2.SqrMagnitude((Vector2) lastPosition - node.worldPosition);
             if (sqrMag < closestDistanceNode)
             {
                 closestNode = node;
@@ -101,6 +102,7 @@ public class SimpleGridSearcher : Searcher
         if (Equals(closestNode, null)) return;
 
         closestNode.staleness = 1f;
+        closestNode.oldStaleness = 1f;
     }
 
 
@@ -128,31 +130,32 @@ public class SimpleGridSearcher : Searcher
         if (isVisible) node.Spotted(StealthArea.GetElapsedTimeInSeconds());
     }
 
-
-    private void PropagateProbability()
+    private void PropagateProbability(float deltaTime)
     {
         foreach (var node in _heatNodes)
         {
-            float maxStaleness = 0f;
-            foreach (var neighbor in node.GetNeighbors())
+            if (!node.isExpansionDone)
             {
-                if (maxStaleness < neighbor.staleness && !neighbor.isSeen)
+                if (!Equals(node.staleness, 1f)) continue;
+
+                bool allExpanded = true;
+                foreach (var neighbor in node.GetNeighbors())
                 {
-                    maxStaleness = neighbor.staleness;
+                    if (neighbor.isIncrementedThisRound) continue;
+
+                    neighbor.staleness += m_Intruder.GetNpcSpeed() * 1.8f * deltaTime;
+                    neighbor.staleness = Mathf.Clamp(neighbor.staleness, 0f, 1f);
+                    if (neighbor.staleness < 1f) allExpanded = false;
+                    neighbor.isIncrementedThisRound = true;
                 }
-            }
 
-            if (maxStaleness < node.staleness) maxStaleness = node.staleness;
-
-            if (!node.isSeen)
-            {
-                node.staleness += maxStaleness * m_Intruder.GetNpcSpeed() * 0.5f * Time.deltaTime;
+                if (allExpanded) node.isExpansionDone = true;
             }
             else
             {
-                node.staleness +=  m_Intruder.GetNpcSpeed() * 0.01f * Time.deltaTime;
+                node.staleness += m_Intruder.GetNpcSpeed() * 0.001f * deltaTime;
+                node.staleness = Mathf.Clamp(node.staleness, 0f, 1f);
             }
-            node.staleness = Mathf.Clamp(node.staleness, 0f, 1f);
         }
     }
 
@@ -161,35 +164,40 @@ public class SimpleGridSearcher : Searcher
     // Source: EXPLORATION AND COMBAT IN NETHACK - Johnathan Campbell - Chapter 2.2.1
     private void DiffuseProbability()
     {
-        float maxProb = 0f;
         foreach (var node in _heatNodes)
         {
             float probabilitySum = 0f;
             int neighborsCount = 0;
             foreach (var con in node.GetNeighbors())
             {
-                probabilitySum += con.staleness;
+                probabilitySum += con.oldStaleness;
                 neighborsCount++;
             }
 
-            float newProbability = (1f - _params.ProbabilityDiffuseFactor) * node.staleness +
-                                   _params.ProbabilityDiffuseFactor * probabilitySum / neighborsCount;
-
-            node.staleness = Mathf.Clamp(newProbability, 0f, 1f);
-
-            if (maxProb < node.staleness) maxProb = node.staleness;
+            node.staleness = (1f - _params.ProbabilityDiffuseFactor) * node.oldStaleness +
+                             _params.ProbabilityDiffuseFactor * probabilitySum / neighborsCount;
         }
-
-        NormalizeSegments(Equals(maxProb, 0f) ? 1f : maxProb);
     }
 
     // Normalize the probabilities of the segments
     // if the max prob is zero, then find the max prob
-    protected void NormalizeSegments(float maxProb)
+    protected void NormalizeSegments()
     {
+        float maxStaleness = 0f;
+        float minStaleness = 1f;
         foreach (var node in _heatNodes)
         {
-            node.staleness /= maxProb;
+            if (maxStaleness < node.staleness) maxStaleness = node.staleness;
+            if (minStaleness > node.staleness) minStaleness = node.staleness;
+        }
+
+        maxStaleness = Equals(maxStaleness, 0f) ? 1f : maxStaleness;
+
+        foreach (var node in _heatNodes)
+        {
+            node.isIncrementedThisRound = false;
+            node.staleness = (node.staleness - minStaleness) / (maxStaleness - minStaleness);
+            node.oldStaleness = node.staleness;
         }
     }
 
@@ -207,7 +215,7 @@ public class SimpleGridSearcher : Searcher
         if (!RenderGrid) return;
         foreach (var node in _heatNodes)
         {
-            Gizmos.color = new Color32(0, 0, 0, (byte)(node.staleness * 255));
+            Gizmos.color = new Color32(0, 0, 0, (byte) (node.staleness * 255));
             Gizmos.DrawCube(node.worldPosition, _nodeDimensions);
         }
     }
@@ -225,12 +233,14 @@ public class GridSearcherParams : SearcherParams
     public readonly float DistanceWeight;
     public readonly float SeparationWeight;
 
-    public GridSearcherParams(float _cellSide, GridStalenessMethod _method)
+    public GridSearcherParams(float _cellSide, GridStalenessMethod _method, float _stalenessWeight, float _distanceWeight, float _separationWeight)
     {
         CellSide = _cellSide;
         updateMethod = _method;
-        ProbabilityDiffuseFactor = 0.2f;
-        StalenessWeight = 1f;
+        ProbabilityDiffuseFactor = 0.05f;
+        StalenessWeight = _stalenessWeight;
+        DistanceWeight = _distanceWeight;
+        SeparationWeight = _separationWeight;
     }
 }
 

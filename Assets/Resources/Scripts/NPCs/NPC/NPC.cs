@@ -83,7 +83,7 @@ public abstract class NPC : MonoBehaviour
 
         Data = data;
         m_NpcRb = GetComponent<Rigidbody2D>();
-        m_FovPolygon = new List<Polygon>() { new Polygon() };
+        m_FovPolygon = new List<Polygon>() {new Polygon()};
 
         AddFoV(Properties.GetFovAngle(Data.npcType), Properties.GetFovRadius(Data.npcType),
             Properties.GetFovColor(Data.npcType));
@@ -121,7 +121,7 @@ public abstract class NPC : MonoBehaviour
     {
         _velocity = Equals(_lastPosition, null)
             ? Vector2.zero
-            : (Vector2)GetTransform().position - _lastPosition.Value;
+            : (Vector2) GetTransform().position - _lastPosition.Value;
 
         _lastPosition = GetTransform().position;
     }
@@ -286,7 +286,7 @@ public abstract class NPC : MonoBehaviour
         else
         {
             // Set the agent to the specified location
-            GetTransform().position = (Vector2)Data.location.Value.position;
+            GetTransform().position = (Vector2) Data.location.Value.position;
             GetTransform().rotation = Quaternion.AngleAxis(Data.location.Value.rotation, Vector3.forward);
         }
     }
@@ -321,7 +321,7 @@ public abstract class NPC : MonoBehaviour
             float sqrMag = 0f;
             for (int i = 0; i <= index; i++)
             {
-                Vector2 offset = pos - (Vector2)guards[i].GetTransform().position;
+                Vector2 offset = pos - (Vector2) guards[i].GetTransform().position;
                 sqrMag += offset.sqrMagnitude;
             }
 
@@ -366,7 +366,7 @@ public abstract class NPC : MonoBehaviour
             float minSqrMag = Mathf.Infinity;
             for (int i = 0; i < index; i++)
             {
-                Vector2 offset = pos - (Vector2)guards[i].GetTransform().position;
+                Vector2 offset = pos - (Vector2) guards[i].GetTransform().position;
 
                 if (minSqrMag > offset.sqrMagnitude)
                     minSqrMag = offset.sqrMagnitude;
@@ -403,25 +403,37 @@ public abstract class NPC : MonoBehaviour
 
     private Vector2 GetPositionNearNpc(List<Guard> guards, List<Polygon> mapWalls)
     {
-        float distanceMultiplier = 0.2f;
+        float distanceMultiplier = 1.5f;
 
         foreach (var guard in guards)
         {
-            Vector2 place = guard.GetTransform().position + (Vector3)Vector2.up * distanceMultiplier;
+            Vector2 place = guard.GetTransform().position + (Vector3) Vector2.up * distanceMultiplier;
             if (PolygonHelper.IsPointInPolygons(mapWalls, place))
+            {
+                guard.SetOrientationTowards(place);
                 return place;
+            }
 
-            place = guard.GetTransform().position - (Vector3)Vector2.up * distanceMultiplier;
+            place = guard.GetTransform().position - (Vector3) Vector2.up * distanceMultiplier;
             if (PolygonHelper.IsPointInPolygons(mapWalls, place))
+            {
+                guard.SetOrientationTowards(place);
                 return place;
+            }
 
-            place = guard.GetTransform().position + (Vector3)Vector2.right * distanceMultiplier;
+            place = guard.GetTransform().position + (Vector3) Vector2.right * distanceMultiplier;
             if (PolygonHelper.IsPointInPolygons(mapWalls, place))
+            {
+                guard.SetOrientationTowards(place);
                 return place;
+            }
 
-            place = guard.GetTransform().position - (Vector3)Vector2.right * distanceMultiplier;
+            place = guard.GetTransform().position - (Vector3) Vector2.right * distanceMultiplier;
             if (PolygonHelper.IsPointInPolygons(mapWalls, place))
+            {
+                guard.SetOrientationTowards(place);
                 return place;
+            }
         }
 
         return transform.position;
@@ -459,7 +471,7 @@ public abstract class NPC : MonoBehaviour
                 isSeen = GeometryHelper.IsCirclesVisible(randomPosition, g.GetTransform().position,
                     Properties.NpcSpeed, "Wall");
 
-                Vector2 offset = (Vector2)g.GetTransform().position - randomPosition;
+                Vector2 offset = (Vector2) g.GetTransform().position - randomPosition;
                 float sqrMag = offset.sqrMagnitude;
 
                 if (isSeen || sqrMag < safeDistance * safeDistance)
@@ -489,6 +501,21 @@ public abstract class NPC : MonoBehaviour
 
         _pathToTake.RemoveAt(0);
     }
+
+    private void LookAt(Vector2 position)
+    {
+        Vector2 direction = position - (Vector2) GetTransform().position;
+        SetDirection(direction.normalized);
+    }
+
+    private void SetOrientationTowards(Vector2 position)
+    {
+        Vector2 direction = position - (Vector2) GetTransform().position;
+        float goalAngle = Vector2.SignedAngle(Vector2.up, direction.normalized);
+        GetTransform().rotation = Quaternion.AngleAxis(goalAngle, Vector3.forward);
+    }
+
+
 
     public void SetDirection(Vector2 direction)
     {
@@ -547,7 +574,7 @@ public abstract class NPC : MonoBehaviour
         // Find the angle needed to rotate to face the desired direction
         Vector2 rotateDir;
 
-        if (Equals(GetGoal().Value, (Vector2)target) && !Equals(FacingDirection, null) && distanceLeft <= 0.1f)
+        if (Equals(GetGoal().Value, (Vector2) target) && !Equals(FacingDirection, null) && distanceLeft <= 0.1f)
             rotateDir = FacingDirection.Value;
         else
             rotateDir = (target - currentPosition).normalized;
@@ -571,7 +598,7 @@ public abstract class NPC : MonoBehaviour
 
         // How to behavior when heading for the last way point (goal)
         // ReSharper disable once PossibleInvalidOperationException
-        if (GetGoal().Value == (Vector2)target)
+        if (GetGoal().Value == (Vector2) target)
         {
             // If the guard is in patrol, it doesn't need to visit the goal on the path. Just see it
             if (!m_hasToReach) distanceLeft -= m_FovRadius * 0.7f;
@@ -580,8 +607,8 @@ public abstract class NPC : MonoBehaviour
         if (distanceLeft > 0.1f)
         {
             float distanceToMove = Mathf.Min(NpcSpeed * deltaTime, distanceLeft);
-            m_NpcRb.MovePosition((Vector2)currentPosition +
-                                 ((Vector2)GetTransform().up * distanceToMove));
+            m_NpcRb.MovePosition((Vector2) currentPosition +
+                                 ((Vector2) GetTransform().up * distanceToMove));
 
             return false;
         }
@@ -617,7 +644,7 @@ public abstract class NPC : MonoBehaviour
                 NpcRotationSpeed * deltaTime * 10f);
         }
 
-        m_NpcRb.MovePosition((Vector2)GetTransform().position + dir.normalized * (NpcSpeed * deltaTime));
+        m_NpcRb.MovePosition((Vector2) GetTransform().position + dir.normalized * (NpcSpeed * deltaTime));
     }
 
     // Get the remaining distance to goal
@@ -646,7 +673,7 @@ public abstract class NPC : MonoBehaviour
 
         _velocity = Equals(_lastPosition, null)
             ? Vector2.zero
-            : (Vector2)position - _lastPosition.Value;
+            : (Vector2) position - _lastPosition.Value;
 
         if (!Equals(_lastPosition, null))
         {

@@ -30,9 +30,7 @@ public class OccupancyRmSearcher : RoadMapSearcher
         }
 
         // Cheat if they lost track by spreading the location
-        if (float.IsNegativeInfinity(maxProbability))
-            CommenceSearch(m_Intruder);
-
+        if (float.IsNegativeInfinity(maxProbability)) CommenceSearch(m_Intruder);
 
         NormalizeSegments(maxProbability);
     }
@@ -63,7 +61,7 @@ public class OccupancyRmSearcher : RoadMapSearcher
                 neighborsCount++;
             }
 
-        
+
         float newProbability = (1f - Properties.ProbDiffFac) * sS.GetProbability() +
                                probabilitySum / neighborsCount;
 
