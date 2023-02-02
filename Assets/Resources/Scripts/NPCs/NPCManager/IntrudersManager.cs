@@ -75,7 +75,7 @@ public class IntrudersManager : Agent
 
         npc.Initiate(npcData, GameManager.Instance.GetVoice());
 
-        npc.ControlledByUser = session.IntruderBehaviorParams.alertPlanner == AlertPlanner.UserInput;
+        // npc.ControlledByUser = session.IntruderBehaviorParams.chaseEvaderParams.GetType() == AlertPlanner.UserInput;
 
         // Allocate the NPC based on the specified scenario
         npc.ResetLocation(navMesh, _intruders, guards, session);

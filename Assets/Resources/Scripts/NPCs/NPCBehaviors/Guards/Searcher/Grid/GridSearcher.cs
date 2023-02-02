@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SimpleGridSearcher : Searcher
+public class GridSearcher : Searcher
 {
     private GridSearcherDecisionMaker _decisionMaker;
     [SerializeField] private GridSearcherParams _params;
@@ -68,18 +68,19 @@ public class SimpleGridSearcher : Searcher
         ResetGrid();
     }
 
-    public override void UpdateSearcher(float speed, List<Guard> guards, float timeDelta)
+    protected override void UpdateSearcher(float speed, List<Guard> guards, float timeDelta)
     {
         switch (_params.updateMethod)
         {
-            case GridStalenessMethod.Propagation:
+            case ProbabilityFlowMethod.Propagation:
                 PropagateProbability(timeDelta);
                 break;
 
-            case GridStalenessMethod.Diffuse:
+            case ProbabilityFlowMethod.Diffuse:
                 DiffuseProbability();
                 break;
         }
+        
         CheckHeatMapSpotting(guards, timeDelta);
 
         NormalizeSegments();
@@ -106,7 +107,7 @@ public class SimpleGridSearcher : Searcher
     }
 
 
-    public override void Search(List<Guard> guards)
+    protected override void Search(List<Guard> guards)
     {
         AssignGoals(guards);
     }
@@ -226,14 +227,14 @@ public class GridSearcherParams : SearcherParams
     // The length of the cell side
     public readonly float CellSide;
 
-    public readonly GridStalenessMethod updateMethod;
+    public readonly ProbabilityFlowMethod updateMethod;
 
     public readonly float ProbabilityDiffuseFactor;
     public readonly float StalenessWeight;
     public readonly float DistanceWeight;
     public readonly float SeparationWeight;
 
-    public GridSearcherParams(float _cellSide, GridStalenessMethod _method, float _stalenessWeight, float _distanceWeight, float _separationWeight)
+    public GridSearcherParams(float _cellSide, ProbabilityFlowMethod _method, float _stalenessWeight, float _distanceWeight, float _separationWeight)
     {
         CellSide = _cellSide;
         updateMethod = _method;
@@ -244,7 +245,7 @@ public class GridSearcherParams : SearcherParams
     }
 }
 
-public enum GridStalenessMethod
+public enum ProbabilityFlowMethod
 {
     Diffuse,
     Propagation

@@ -9,7 +9,7 @@ public class SimpleSearchEvader : SearchEvader
         // foreach (var intruder in GetSA().intrdrManager.GetIntruders())
         //     intruder.ClearIntruderGoal();
     }
-    
+
     public override void Refresh()
     {
         // foreach (var intruder in GetSA().intrdrManager.GetIntruders())
@@ -23,4 +23,8 @@ public class SimpleSearchEvader : SearchEvader
         //     // StartCoroutine(intruder.waitThenMove(m_HsC.GetBestHidingSpot().Value));
         // }
     }
+}
+
+public class SimpleSearchEvaderParams : SearchEvaderParams
+{
 }

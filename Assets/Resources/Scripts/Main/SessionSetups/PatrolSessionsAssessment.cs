@@ -31,8 +31,6 @@ public class PatrolSessionsAssessment
         string teamColor, List<int> guardTeams, float episodeLength)
     {
         // Guard Patrol Behavior
-        PatrolPlanner patrolPlanner = PatrolPlanner.gVisMesh;
-
         List<GuardSpawnType> guardSpawnTypes = new List<GuardSpawnType>()
         {
             // GuardSpawnType.Random,
@@ -93,8 +91,8 @@ public class PatrolSessionsAssessment
             PatrolerParams patrolParams = new VisMeshPatrolerParams(maxSeenRegionPortion, areaWeight, stalenessWeight,
                 distanceWeight, separationWeight, decisionType);
 
-            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolPlanner, patrolParams,
-                SearchPlanner.None, null, AlertPlanner.None, null);
+            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolParams,
+                null, null);
 
             Session session = new Session(episodeLength, "", GameType.CoinCollection, Scenario.Stealth, teamColor,
                 guardSpawnType, guardTeam, guardBehaviorParams, 0,
@@ -107,11 +105,7 @@ public class PatrolSessionsAssessment
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)
             {
-                Behavior behavior = new Behavior(patrolPlanner, AlertPlanner.Simple,
-                    SearchPlanner.Cheating, PlanOutput.DijkstraPath);
-
-                session.AddNpc(i + 1, NpcType.Guard, behavior, PathFindingHeursitic.EuclideanDst,
-                    PathFollowing.SimpleFunnel, null);
+                session.AddNpc(i + 1, NpcType.Guard, null);
             }
 
             session.MaxEpisodes = _episodeCount;
@@ -123,8 +117,6 @@ public class PatrolSessionsAssessment
     private static void AddRoadMapSession(string gameCode, ref List<Session> sessions, MapData mapData,
         string teamColor, List<int> guardTeams, float episodeLength)
     {
-        PatrolPlanner patrolPlanner = PatrolPlanner.gRoadMap;
-
         List<GuardSpawnType> guardSpawnTypes = new List<GuardSpawnType>()
         {
             // GuardSpawnType.Random,
@@ -190,8 +182,7 @@ public class PatrolSessionsAssessment
             PatrolerParams patrolParams = new RoadMapPatrolerParams(maxNormalizedPathLength, stalenessWeight,
                 guardPassingWeight, connectivityWeight, decisionType, passingGuardsSenstivity);
 
-            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolPlanner, patrolParams,
-                SearchPlanner.None, null, AlertPlanner.None, null);
+            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolParams, null, null);
 
             Session session = new Session(episodeLength, "", GameType.CoinCollection, Scenario.Stealth, teamColor,
                 guardSpawnType, guardTeam, guardBehaviorParams, 0,
@@ -203,11 +194,7 @@ public class PatrolSessionsAssessment
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)
             {
-                Behavior behavior = new Behavior(patrolPlanner, AlertPlanner.Simple, SearchPlanner.Cheating,
-                    PlanOutput.DijkstraPath);
-
-                session.AddNpc(i + 1, NpcType.Guard, behavior, PathFindingHeursitic.EuclideanDst,
-                    PathFollowing.SimpleFunnel, null);
+                session.AddNpc(i + 1, NpcType.Guard, null);
             }
 
 
@@ -221,8 +208,6 @@ public class PatrolSessionsAssessment
         string guardColor,
         List<int> guardTeams, float episodeLength)
     {
-        PatrolPlanner patrolPlanner = PatrolPlanner.gGrid;
-
         List<GuardSpawnType> guardSpawnTypes = new List<GuardSpawnType>()
         {
             // GuardSpawnType.Random,
@@ -269,8 +254,8 @@ public class PatrolSessionsAssessment
             PatrolerParams patrolParams =
                 new GridPatrolerParams(cellSize, stalenessWeight, distanceWeight, separationWeight);
 
-            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolPlanner, patrolParams,
-                SearchPlanner.None, null, AlertPlanner.None, null);
+            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolParams,
+                null, null);
 
             Session session = new Session(episodeLength, gameCode, GameType.CoinCollection, Scenario.Stealth,
                 guardColor,
@@ -283,11 +268,7 @@ public class PatrolSessionsAssessment
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)
             {
-                Behavior behavior = new Behavior(patrolPlanner, AlertPlanner.Simple,
-                    SearchPlanner.Cheating, PlanOutput.DijkstraPath);
-
-                session.AddNpc(i + 1, NpcType.Guard, behavior, PathFindingHeursitic.EuclideanDst,
-                    PathFollowing.SimpleFunnel, null);
+                session.AddNpc(i + 1, NpcType.Guard, null);
             }
 
             session.MaxEpisodes = _episodeCount;
@@ -313,8 +294,8 @@ public class PatrolSessionsAssessment
             // Set the Hyper-parameters for the behavior
             PatrolerParams patrolParams = null;
 
-            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(PatrolPlanner.gRandom, patrolParams,
-                SearchPlanner.None, null, AlertPlanner.None, null);
+            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolParams,
+                null, null);
 
 
             Session session = new Session(episodeLength, gameCode, GameType.CoinCollection, Scenario.Stealth,
@@ -328,11 +309,7 @@ public class PatrolSessionsAssessment
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)
             {
-                Behavior behavior = new Behavior(PatrolPlanner.gRandom, AlertPlanner.Simple,
-                    SearchPlanner.Cheating, PlanOutput.DijkstraPath);
-
-                session.AddNpc(i + 1, NpcType.Guard, behavior, PathFindingHeursitic.EuclideanDst,
-                    PathFollowing.SimpleFunnel, null);
+                session.AddNpc(i + 1, NpcType.Guard, null);
             }
 
             session.MaxEpisodes = _episodeCount;

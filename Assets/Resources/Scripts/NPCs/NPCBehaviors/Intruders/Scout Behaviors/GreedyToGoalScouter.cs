@@ -23,3 +23,6 @@ public class GreedyToGoalScouter : Scouter
         }
     }
 }
+public class GreedyToGoalScouterParams : ScouterParams
+{
+}

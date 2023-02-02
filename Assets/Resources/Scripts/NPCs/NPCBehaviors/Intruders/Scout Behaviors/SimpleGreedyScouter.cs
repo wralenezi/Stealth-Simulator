@@ -18,3 +18,7 @@ public class SimpleGreedyScouter : Scouter
         }
     }
 }
+
+public class SimpleGreedyScouterParams : ScouterParams
+{
+}

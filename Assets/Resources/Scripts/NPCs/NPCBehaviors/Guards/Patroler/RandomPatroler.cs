@@ -29,3 +29,8 @@ public class RandomPatroler : Patroler
             }
     }
 }
+
+public class RandomPatrolerParams : PatrolerParams
+{
+    
+}

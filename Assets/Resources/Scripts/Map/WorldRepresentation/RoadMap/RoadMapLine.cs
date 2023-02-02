@@ -100,9 +100,9 @@ public class RoadMapLine
         m_SearchSegment.SetTimestamp(timestamp);
     }
 
-    public void PropagateToSegment(Vector2 startPosition, float prob, float timeStamp)
+    public void PropagateToSegment(Vector2 startPosition1, Vector2 startPosition2, float prob, float timeStamp)
     {
-        SetSearchSegment(startPosition, startPosition, prob, timeStamp);
+        SetSearchSegment(startPosition1, startPosition2, prob, timeStamp);
         GetSearchSegment().isPropagated = true;
     }
 

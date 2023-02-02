@@ -19,9 +19,8 @@ public class CoinSpawner : MonoBehaviour
     {
         m_coins = new List<Coin>();
         m_coinPrefab = (GameObject) Resources.Load("Prefabs/Coin");
-
-        // _isRandom = !Equals(session.GetGuardsData()[0].behavior.patrol, PatrolPlanner.gScripted);
-        _isRandom = !Equals(session.guardBehaviorParams.patrolPlanner, PatrolPlanner.gScripted);
+        
+        _isRandom = session.guardBehaviorParams.patrolerParams?.GetType() != typeof(ScriptedPatroler);
 
         Reset(session, navMesh);
     }
@@ -64,7 +63,7 @@ public class CoinSpawner : MonoBehaviour
         {
             // int randIndex = Random.Range(0, navMesh.Count);
             // Vector2 coinPos = navMesh[randIndex].GetRandomPosition();
-            
+
             // Vector2 coinPos = NpcsManager.Instance.GetIntruders()[0].GetTransform().position;
 
             Vector2 coinPos = PathFinding.Instance.GetPointFromCorner(Properties.NpcRadius * 2f);

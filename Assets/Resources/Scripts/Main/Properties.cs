@@ -156,7 +156,7 @@ public static class Properties
 
     // Parameters of Damian Isla implementation
     // Probability Diffuse factor; it tunes how fast the probability is propagated.
-    public static readonly float ProbDiffFac = 0.95f; //0.1f;
+    public static readonly float ProbDiffFac = 0.05f; //0.1f;
 
     // Ratio of max length of a segment to map width. 
     private static readonly float maxEdgeRatio = 0.2f;

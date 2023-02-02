@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class CheatingSearcher : Searcher
 {
-    public override void UpdateSearcher(float speed, List<Guard> guards, float timeDelta)
+    protected override void UpdateSearcher(float speed, List<Guard> guards, float timeDelta)
     {
     }
     
@@ -12,7 +12,7 @@ public class CheatingSearcher : Searcher
     {
     }
 
-    public override void Search(List<Guard> guards)
+    protected override void Search(List<Guard> guards)
     {
         List<Intruder> intrdrs = NpcsManager.Instance.GetIntruders();
 
@@ -28,4 +28,8 @@ public class CheatingSearcher : Searcher
     public override void Clear()
     {
     }
+}
+
+public class CheatingSearcherParams : SearcherParams
+{
 }

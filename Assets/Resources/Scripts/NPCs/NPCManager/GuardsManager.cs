@@ -179,7 +179,7 @@ public class GuardsManager : MonoBehaviour
         // 
         npc.Initiate(npcData, GameManager.Instance.GetVoice());
         
-        npc.ControlledByUser = session.guardBehaviorParams.alertPlanner == AlertPlanner.UserInput;
+        // npc.ControlledByUser = session.guardBehaviorParams.alertPlanner == AlertPlanner.UserInput;
 
         NpcsManager.Instance.GetIntruders();
         

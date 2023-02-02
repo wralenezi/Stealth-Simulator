@@ -295,9 +295,11 @@ public class RoadMap
     public void CommenceProbabilityFlow(Vector2 position, Vector2 dir)
     {
         RoadMapNode closestWp = GetClosestWp(position, dir);
-
+        
+        
         foreach (var line in closestWp.GetLines(false))
-            line.PropagateToSegment(closestWp.GetPosition(), 1f, StealthArea.GetElapsedTimeInSeconds());
+            line.PropagateToSegment(line.wp1.GetPosition(),line.wp2.GetPosition(), 1f, StealthArea.GetElapsedTimeInSeconds());
+            // line.PropagateToSegment(closestWp.GetPosition(),closestWp.GetPosition(), 1f, StealthArea.GetElapsedTimeInSeconds());
     }
 
     // Create a search segment that doesn't belong to the road map. The line starts from position@param and connects to the closest roadMap node

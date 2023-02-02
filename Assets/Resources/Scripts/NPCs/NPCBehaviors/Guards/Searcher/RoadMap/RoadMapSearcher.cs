@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public abstract class RoadMapSearcher : Searcher
+public class RoadMapSearcher : Searcher
 {
     // Road map used for the search
     protected RoadMap _RoadMap;
-    
+
     private RoadMapSearcherDecisionMaker _decisionMaker;
 
     protected RoadMapSearcherParams _params;
@@ -32,6 +32,86 @@ public abstract class RoadMapSearcher : Searcher
         _RoadMap.CommenceProbabilityFlow(target.GetTransform().position, target.GetDirection());
     }
 
+    protected override void UpdateSearcher(float speed, List<Guard> guards, float timeDelta)
+    {
+        switch (_params.updateMethod)
+        {
+            case ProbabilityFlowMethod.Propagation:
+                PropagateProbability(speed, guards, timeDelta);
+                break;
+
+            case ProbabilityFlowMethod.Diffuse:
+                DiffuseProbability();
+                break;
+        }
+
+        foreach (var line in _RoadMap.GetLines(false))
+        {
+            CheckSeenSs(guards, line);
+            line.ExpandSs(speed, timeDelta);
+        }
+
+        NormalizeSegments();
+    }
+
+    private void PropagateProbability(float speed, List<Guard> guards, float timeDelta)
+    {
+        float maxProbability = Mathf.NegativeInfinity;
+
+        // Spread the probability similarly to Third eye crime
+        foreach (var line in _RoadMap.GetLines(false))
+        {
+            line.PropagateProb();
+            line.IncreaseProbability(speed, timeDelta);
+            // line.ExpandSs(speed, timeDelta);
+
+            float prob = line.GetSearchSegment().GetProbability();
+            if (maxProbability < prob) maxProbability = prob;
+
+            if (float.IsNaN(prob))
+            {
+                CommenceSearch(m_Intruder);
+                break;
+            }
+        }
+    }
+
+
+    // Diffusing the probability among neighboring segments 
+    // Source: EXPLORATION AND COMBAT IN NETHACK - Johnathan Campbell - Chapter 2.2.1
+    public void DiffuseProbability()
+    {
+        foreach (var line in _RoadMap.GetLines(false))
+        {
+            SearchSegment sS = line.GetSearchSegment();
+
+            float probabilitySum = 0f;
+            int neighborsCount = 0;
+
+            foreach (var con in line.GetWp1Connections())
+                if (line != con)
+                {
+                    probabilitySum += con.GetSearchSegment().OldProbability;
+                    neighborsCount++;
+                }
+
+            foreach (var con in line.GetWp2Connections())
+                if (line != con)
+                {
+                    probabilitySum += con.GetSearchSegment().OldProbability;
+                    neighborsCount++;
+                }
+
+
+            float newProbability = (1f - Properties.ProbDiffFac) * sS.OldProbability +
+                                   probabilitySum * Properties.ProbDiffFac / neighborsCount;
+
+
+            sS.SetProb(newProbability);
+        }
+    }
+
+
     public override void Clear()
     {
         base.Clear();
@@ -40,28 +120,36 @@ public abstract class RoadMapSearcher : Searcher
 
     // Normalize the probabilities of the segments
     // if the max prob is zero, then find the max prob
-    protected void NormalizeSegments(float maxProb)
+    protected void NormalizeSegments()
     {
+        float maxProbability = 0f;
+        float minProbability = 0f;
+        foreach (var line in _RoadMap.GetLines(false))
+        {
+            SearchSegment sS = line.GetSearchSegment();
+            if (sS.GetProbability() > maxProbability) maxProbability = sS.GetProbability();
+            if (sS.GetProbability() < minProbability) minProbability = sS.GetProbability();
+        }
+
+        maxProbability = Equals(maxProbability, 0f) ? 1f : maxProbability;
+
+
         foreach (var line in _RoadMap.GetLines(false))
         {
             SearchSegment sS = line.GetSearchSegment();
 
-            if (Math.Abs(maxProb) < 0f)
-            {
-                sS.SetProb(1f);
-                continue;
-            }
-
-            sS.SetProb(sS.GetProbability() / maxProb);
+            float normalizedProbability = (sS.GetProbability() - minProbability) / (maxProbability - minProbability);
+            sS.SetProb(normalizedProbability);
+            sS.OldProbability = sS.GetProbability();
         }
     }
 
-    public override void Search(List<Guard> guards)
+    protected override void Search(List<Guard> guards)
     {
         AssignGoals(guards);
     }
-    
-    
+
+
     private void AssignGoals(List<Guard> guards)
     {
         foreach (var guard in guards)
@@ -77,7 +165,6 @@ public abstract class RoadMapSearcher : Searcher
         }
     }
 
-    
 
     // Check for the seen search segments
     protected void CheckSeenSs(List<Guard> guards, RoadMapLine line)
@@ -88,7 +175,7 @@ public abstract class RoadMapSearcher : Searcher
             line.CheckSeenSegment(guard);
         }
     }
-    
+
     private void OnDrawGizmos()
     {
         if (RenderSearchSegments)
@@ -104,7 +191,6 @@ public abstract class RoadMapSearcher : Searcher
 }
 
 
-
 public class RoadMapSearcherParams : SearcherParams
 {
     public readonly float MaxNormalizedPathLength;
@@ -113,7 +199,9 @@ public class RoadMapSearcherParams : SearcherParams
     public readonly float ConnectivityWeight;
     public readonly RMDecision DecisionType;
     public readonly RMPassingGuardsSenstivity PGSen;
-    
+
+    public readonly ProbabilityFlowMethod updateMethod;
+
     // Search Params
 
     // The search segment's age weight (How long was it last seen)
@@ -125,9 +213,9 @@ public class RoadMapSearcherParams : SearcherParams
     // Path distance of the closest goal other guards are coming to visit
     public float dstFromOwnWeight;
 
-    public float minSegThreshold;
-
-    public RoadMapSearcherParams(float _maxNormalizedPathLength, float _stalenessWeight, float _PassingGuardsWeight, float _connectivityWeight, RMDecision _decisionType, RMPassingGuardsSenstivity _pgSen, float _ageWeight, float _dstToGuardsWeight, float _dstFromOwnWeight, float _minSegThreshold)
+    public RoadMapSearcherParams(float _maxNormalizedPathLength, float _stalenessWeight, float _PassingGuardsWeight,
+        float _connectivityWeight, RMDecision _decisionType, RMPassingGuardsSenstivity _pgSen, float _ageWeight,
+        float _dstToGuardsWeight, float _dstFromOwnWeight, ProbabilityFlowMethod _updateMethod)
     {
         MaxNormalizedPathLength = _maxNormalizedPathLength;
         StalenessWeight = _stalenessWeight;
@@ -138,14 +226,14 @@ public class RoadMapSearcherParams : SearcherParams
         ageWeight = _ageWeight;
         dstToGuardsWeight = _dstToGuardsWeight;
         dstFromOwnWeight = _dstFromOwnWeight;
-        minSegThreshold = _minSegThreshold;
+        updateMethod = _updateMethod;
     }
 
     public override string ToString()
     {
         string output = "";
         string sep = "_";
-        
+
         output += MaxNormalizedPathLength;
         output += sep;
 
@@ -163,8 +251,8 @@ public class RoadMapSearcherParams : SearcherParams
 
         output += PGSen;
         // output += sep;
-        
-        
+
+
         return output;
     }
 }

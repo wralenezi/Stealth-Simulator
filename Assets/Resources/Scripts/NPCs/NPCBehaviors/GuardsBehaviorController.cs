@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -22,64 +23,35 @@ public class GuardsBehaviorController : MonoBehaviour
     {
         _decisionTimes = new List<BehaviorPerformanceSnapshot>();
 
-        PatrolPlanner patrolPlanner = session.guardBehaviorParams.patrolPlanner;
+        Type patrolerType = session.guardBehaviorParams.patrolerParams?.GetType();
 
-        // Patroler controller
-        switch (patrolPlanner)
-        {
-            case PatrolPlanner.gRoadMap:
-                patroler = gameObject.AddComponent<RoadMapPatroler>();
-                break;
-
-            case PatrolPlanner.gVisMesh:
-                patroler = gameObject.AddComponent<VisMeshPatroler>();
-                break;
-
-            case PatrolPlanner.gRandom:
-                patroler = gameObject.AddComponent<RandomPatroler>();
-                break;
-
-            case PatrolPlanner.gScripted:
-                patroler = gameObject.AddComponent<ScriptedPatroler>();
-                break;
-
-            case PatrolPlanner.gGrid:
-                patroler = gameObject.AddComponent<GridPatroler>();
-                break;
-        }
+        if (patrolerType == typeof(RoadMapPatrolerParams))
+            patroler = gameObject.AddComponent<RoadMapPatroler>();
+        else if (patrolerType == typeof(VisMeshPatrolerParams))
+            patroler = gameObject.AddComponent<VisMeshPatroler>();
+        else if (patrolerType == typeof(GridPatrolerParams))
+            patroler = gameObject.AddComponent<GridPatroler>();
+        else if (patrolerType == typeof(RandomPatrolerParams))
+            patroler = gameObject.AddComponent<RandomPatroler>();
+        else if (patrolerType == typeof(ScriptedPatrolerParams))
+            patroler = gameObject.AddComponent<ScriptedPatroler>();
 
         patroler?.Initiate(mapManager, session.guardBehaviorParams);
-
 
         // Interception controller
         interceptor = gameObject.AddComponent<Interceptor>();
         interceptor.Initiate(mapManager);
 
-        SearchPlanner searchPlanner = session.guardBehaviorParams.searcherPlanner;
+        Type searcherType = session.guardBehaviorParams.searcherParams?.GetType();
 
-        // Search Controller
-        switch (searchPlanner)
-        {
-            case SearchPlanner.gSimpleGrid:
-                searcher = gameObject.AddComponent<SimpleGridSearcher>();
-                break;
-
-            case SearchPlanner.RmPropSimple:
-                searcher = gameObject.AddComponent<SimpleRmPropSearcher>();
-                break;
-
-            case SearchPlanner.RmPropOccupancyDiffusal:
-                searcher = gameObject.AddComponent<OccupancyRmSearcher>();
-                break;
-
-            case SearchPlanner.Cheating:
-                searcher = gameObject.AddComponent<CheatingSearcher>();
-                break;
-
-            case SearchPlanner.Random:
-                searcher = gameObject.AddComponent<RandomSearcher>();
-                break;
-        }
+        if (searcherType == typeof(GridSearcherParams))
+            searcher = gameObject.AddComponent<GridSearcher>();
+        else if (searcherType == typeof(RoadMapSearcherParams))
+            searcher = gameObject.AddComponent<RoadMapSearcher>();
+        else if (searcherType == typeof(CheatingSearcherParams))
+            searcher = gameObject.AddComponent<CheatingSearcher>();
+        else if (searcherType == typeof(RandomSearcherParams))
+            searcher = gameObject.AddComponent<RandomSearcher>();
 
         searcher?.Initiate(mapManager, session.guardBehaviorParams);
     }
@@ -119,12 +91,14 @@ public class GuardsBehaviorController : MonoBehaviour
     // Start patrol shift
     public void StartShift()
     {
-        patroler.Start();
+        patroler?.Start();
     }
 
     // Order Guards to patrol
     public void Patrol()
     {
+        if (Equals(patroler, null)) return;
+
         var watch = System.Diagnostics.Stopwatch.StartNew();
         patroler.UpdatePatroler(NpcsManager.Instance.GetGuards(), 0.3f, Time.deltaTime);
         watch.Stop();
@@ -158,14 +132,14 @@ public class GuardsBehaviorController : MonoBehaviour
         if (Equals(searcher, null)) return;
 
         var watch = System.Diagnostics.Stopwatch.StartNew();
-        searcher.UpdateSearcher(intruder.GetNpcSpeed(), NpcsManager.Instance.GetGuards(), Time.deltaTime);
+        searcher.UpdateRepresentation(intruder.GetNpcSpeed(), NpcsManager.Instance.GetGuards(), Time.deltaTime);
         watch.Stop();
         var elapsedMs = watch.ElapsedMilliseconds;
-        _decisionTimes.Add(new BehaviorPerformanceSnapshot(patroler.GetType().Name + " Update", elapsedMs));
+        _decisionTimes.Add(new BehaviorPerformanceSnapshot(searcher.GetType().Name + " Update", elapsedMs));
 
 
         watch = System.Diagnostics.Stopwatch.StartNew();
-        searcher.Search(NpcsManager.Instance.GetGuards());
+        searcher.Decide(NpcsManager.Instance.GetGuards());
         watch.Stop();
         elapsedMs = watch.ElapsedMilliseconds;
         _decisionTimes.Add(new BehaviorPerformanceSnapshot(searcher.GetType().Name + " Decision", elapsedMs));
@@ -186,7 +160,7 @@ public class GuardsBehaviorController : MonoBehaviour
         // Move and propagate the possible intruder position (phantoms)
         if (GetState() is Search)
         {
-            searcher.UpdateSearcher(intruder.GetNpcSpeed(), NpcsManager.Instance.GetGuards(), timeDelta);
+            searcher.UpdateRepresentation(intruder.GetNpcSpeed(), NpcsManager.Instance.GetGuards(), timeDelta);
         }
     }
 

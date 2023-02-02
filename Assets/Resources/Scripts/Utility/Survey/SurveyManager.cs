@@ -282,102 +282,102 @@ public class SurveyManager : MonoBehaviour
 
     private void AddEvalBehaviorQuestions()
     {
-        // Most enjoyable enemy
-        // 1st
-        m_Choices.Clear();
-        for (int i = 0; i < SessionsSetup.GetPlayedSessions().Count; i++)
-        {
-            string color = SessionsSetup.GetPlayedSessions()[i];
-            {
-                ColorUtility.TryParseHtmlString(color, out Color parsedColor);
-                m_Choices.Add(new Choice(color, "Team " + (i + 1) + " (" + color + ")", ButtonType.Survey,
-                    parsedColor));
-            }
-        }
-
-        m_itemName = "preferred enemy q1";
-        m_itemDesc = "Which robot team was the most FUN?";
-        m_currentSurvey.AddItemMultiple(m_itemName, "color", m_itemDesc, m_Choices);
-
-
-        if (SessionsSetup.GetPlayedSessions().Count > 2)
-        {
-            // 2nd
-            m_Choices.Clear();
-            for (int i = 0; i < SessionsSetup.GetPlayedSessions().Count; i++)
-            {
-                string color = SessionsSetup.GetPlayedSessions()[i];
-                ColorUtility.TryParseHtmlString(color, out Color parsedColor);
-                m_Choices.Add(new Choice(color, "Team " + (i + 1) + " (" + color + ")", ButtonType.Survey,
-                    parsedColor));
-            }
-
-            m_itemName = "preferred enemy q2";
-            m_itemDesc = "Which robot team was the second most FUN?";
-            m_currentSurvey.AddItemMultiple(m_itemName, "color", m_itemDesc, m_Choices);
-        }
-
-        // Enemy Difficulty ranking
-        // 1st
-        m_Choices.Clear();
-        for (int i = 0; i < SessionsSetup.GetPlayedSessions().Count; i++)
-        {
-            string color = SessionsSetup.GetPlayedSessions()[i];
-            ColorUtility.TryParseHtmlString(color, out Color parsedColor);
-            m_Choices.Add(new Choice(color, "Team " + (i + 1) + " (" + color + ")", ButtonType.Survey, parsedColor));
-        }
-
-        m_itemName = "difficult enemy q1";
-        m_itemDesc = "Which robot team was the most DIFFICULT?";
-        m_currentSurvey.AddItemMultiple(m_itemName, "color", m_itemDesc, m_Choices);
-
-
-        if (SessionsSetup.GetPlayedSessions().Count > 2)
-        {
-            // 2nd
-            m_Choices.Clear();
-            for (int i = 0; i < SessionsSetup.GetPlayedSessions().Count; i++)
-            {
-                string color = SessionsSetup.GetPlayedSessions()[i];
-                ColorUtility.TryParseHtmlString(color, out Color parsedColor);
-                m_Choices.Add(new Choice(color, "Team " + (i + 1) + " (" + color + ")", ButtonType.Survey,
-                    parsedColor));
-            }
-
-            m_itemName = "difficult enemy q2";
-            m_itemDesc = "Which robot team was the second most DIFFICULT?";
-            m_currentSurvey.AddItemMultiple(m_itemName, "color", m_itemDesc, m_Choices);
-        }
+        // // Most enjoyable enemy
+        // // 1st
+        // m_Choices.Clear();
+        // for (int i = 0; i < SessionsSetup.GetPlayedSessions().Count; i++)
+        // {
+        //     string color = SessionsSetup.GetPlayedSessions()[i];
+        //     {
+        //         ColorUtility.TryParseHtmlString(color, out Color parsedColor);
+        //         m_Choices.Add(new Choice(color, "Team " + (i + 1) + " (" + color + ")", ButtonType.Survey,
+        //             parsedColor));
+        //     }
+        // }
+        //
+        // m_itemName = "preferred enemy q1";
+        // m_itemDesc = "Which robot team was the most FUN?";
+        // m_currentSurvey.AddItemMultiple(m_itemName, "color", m_itemDesc, m_Choices);
+        //
+        //
+        // if (SessionsSetup.GetPlayedSessions().Count > 2)
+        // {
+        //     // 2nd
+        //     m_Choices.Clear();
+        //     for (int i = 0; i < SessionsSetup.GetPlayedSessions().Count; i++)
+        //     {
+        //         string color = SessionsSetup.GetPlayedSessions()[i];
+        //         ColorUtility.TryParseHtmlString(color, out Color parsedColor);
+        //         m_Choices.Add(new Choice(color, "Team " + (i + 1) + " (" + color + ")", ButtonType.Survey,
+        //             parsedColor));
+        //     }
+        //
+        //     m_itemName = "preferred enemy q2";
+        //     m_itemDesc = "Which robot team was the second most FUN?";
+        //     m_currentSurvey.AddItemMultiple(m_itemName, "color", m_itemDesc, m_Choices);
+        // }
+        //
+        // // Enemy Difficulty ranking
+        // // 1st
+        // m_Choices.Clear();
+        // for (int i = 0; i < SessionsSetup.GetPlayedSessions().Count; i++)
+        // {
+        //     string color = SessionsSetup.GetPlayedSessions()[i];
+        //     ColorUtility.TryParseHtmlString(color, out Color parsedColor);
+        //     m_Choices.Add(new Choice(color, "Team " + (i + 1) + " (" + color + ")", ButtonType.Survey, parsedColor));
+        // }
+        //
+        // m_itemName = "difficult enemy q1";
+        // m_itemDesc = "Which robot team was the most DIFFICULT?";
+        // m_currentSurvey.AddItemMultiple(m_itemName, "color", m_itemDesc, m_Choices);
+        //
+        //
+        // if (SessionsSetup.GetPlayedSessions().Count > 2)
+        // {
+        //     // 2nd
+        //     m_Choices.Clear();
+        //     for (int i = 0; i < SessionsSetup.GetPlayedSessions().Count; i++)
+        //     {
+        //         string color = SessionsSetup.GetPlayedSessions()[i];
+        //         ColorUtility.TryParseHtmlString(color, out Color parsedColor);
+        //         m_Choices.Add(new Choice(color, "Team " + (i + 1) + " (" + color + ")", ButtonType.Survey,
+        //             parsedColor));
+        //     }
+        //
+        //     m_itemName = "difficult enemy q2";
+        //     m_itemDesc = "Which robot team was the second most DIFFICULT?";
+        //     m_currentSurvey.AddItemMultiple(m_itemName, "color", m_itemDesc, m_Choices);
+        // }
     }
 
     private void AddEvalSpeechQuestions()
     {
-        // Consent
-        m_Choices.Clear();
-        for (int i = 0; i < SessionsSetup.speechColors.Count; i++)
-        {
-            string color = SessionsSetup.speechColors[i];
-            ColorUtility.TryParseHtmlString(color, out Color parsedColor);
-            m_Choices.Add(new Choice(color, "Team " + (i + 1) + " (" + color + ")", ButtonType.Survey, parsedColor));
-        }
-
-        m_itemName = "preferred enemy";
-        m_itemDesc = "Which robot team was the most FUN?";
-        m_currentSurvey.AddItemMultiple(m_itemName, "color", m_itemDesc, m_Choices);
-
-
-        m_Choices.Clear();
-        for (int i = 0; i < SessionsSetup.speechColors.Count; i++)
-        {
-            string color = SessionsSetup.speechColors[i];
-            ColorUtility.TryParseHtmlString(color, out Color parsedColor);
-
-            m_Choices.Add(new Choice(color, "Team " + (i + 1) + " (" + color + ")", ButtonType.Survey, parsedColor));
-        }
-
-        m_itemName = "preferred enemy";
-        m_itemDesc = "Which robot team was the most DIFFICULT?";
-        m_currentSurvey.AddItemMultiple(m_itemName, "color", m_itemDesc, m_Choices);
+        // // Consent
+        // m_Choices.Clear();
+        // for (int i = 0; i < SessionsSetup.speechColors.Count; i++)
+        // {
+        //     string color = SessionsSetup.speechColors[i];
+        //     ColorUtility.TryParseHtmlString(color, out Color parsedColor);
+        //     m_Choices.Add(new Choice(color, "Team " + (i + 1) + " (" + color + ")", ButtonType.Survey, parsedColor));
+        // }
+        //
+        // m_itemName = "preferred enemy";
+        // m_itemDesc = "Which robot team was the most FUN?";
+        // m_currentSurvey.AddItemMultiple(m_itemName, "color", m_itemDesc, m_Choices);
+        //
+        //
+        // m_Choices.Clear();
+        // for (int i = 0; i < SessionsSetup.speechColors.Count; i++)
+        // {
+        //     string color = SessionsSetup.speechColors[i];
+        //     ColorUtility.TryParseHtmlString(color, out Color parsedColor);
+        //
+        //     m_Choices.Add(new Choice(color, "Team " + (i + 1) + " (" + color + ")", ButtonType.Survey, parsedColor));
+        // }
+        //
+        // m_itemName = "preferred enemy";
+        // m_itemDesc = "Which robot team was the most DIFFICULT?";
+        // m_currentSurvey.AddItemMultiple(m_itemName, "color", m_itemDesc, m_Choices);
     }
 
     private void BehaviorsQuestions()

@@ -41,9 +41,6 @@ public abstract class NPC : MonoBehaviour
     protected float NpcSpeed = Properties.NpcSpeed;
     protected float NpcRotationSpeed = Properties.NpcRotationSpeed;
 
-    // Plan form the npc use
-    private PlanOutput m_planForm;
-
     // The game perspective
     protected GameView GameView;
 

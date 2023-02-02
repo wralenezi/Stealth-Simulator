@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -22,44 +23,24 @@ public class IntrudersBehaviorController : MonoBehaviour
 
         _decisionTimes = new List<BehaviorPerformanceSnapshot>();
 
-        switch (session.IntruderBehaviorParams.patrolPlanner)
-        {
-            case PatrolPlanner.iSimple:
-                m_Scouter = gameObject.AddComponent<SimpleGreedyScouter>();
-                break;
+        Type scouterType = session.IntruderBehaviorParams.scouterParams?.GetType();
 
-            case PatrolPlanner.iRoadMap:
-                m_Scouter = gameObject.AddComponent<RoadMapScouter>();
-                break;
+        if (scouterType == typeof(SimpleGreedyScouterParams))
+            m_Scouter = gameObject.AddComponent<SimpleGreedyScouter>();
+        else if (scouterType == typeof(RoadMapScouterParams))
+            m_Scouter = gameObject.AddComponent<RoadMapScouter>();
+        else if (scouterType == typeof(GreedyToGoalScouterParams))
+            m_Scouter = gameObject.AddComponent<GreedyToGoalScouter>();
 
-            case PatrolPlanner.iPathFinding:
-                m_Scouter = gameObject.AddComponent<GreedyToGoalScouter>();
-                break;
+        Type chaseEvaderType = session.IntruderBehaviorParams.chaseEvaderParams?.GetType();
 
-            case PatrolPlanner.UserInput:
-                break;
-        }
+        if (chaseEvaderType == typeof(ChaseEvaderParams))
+            m_ChaseEvader = gameObject.AddComponent<SimpleChaseEvader>();
 
-        switch (session.IntruderBehaviorParams.alertPlanner)
-        {
-            case AlertPlanner.iHeuristic:
-                m_ChaseEvader = gameObject.AddComponent<SimpleChaseEvader>();
-                break;
+        Type searchEvaderType = session.IntruderBehaviorParams.searchEvaderParams?.GetType();
 
-            case AlertPlanner.UserInput:
-                break;
-        }
-
-
-        switch (session.IntruderBehaviorParams.searchPlanner)
-        {
-            case SearchPlanner.iHeuristic:
-                m_SearchEvader = gameObject.AddComponent<SimpleSearchEvader>();
-                break;
-
-            case SearchPlanner.UserInput:
-                break;
-        }
+        if (searchEvaderType == typeof(SimpleSearchEvaderParams))
+            m_SearchEvader = gameObject.AddComponent<SimpleSearchEvader>();
 
         m_Scouter?.Initiate(mapManager, session);
         m_ChaseEvader?.Initiate(mapManager);
@@ -86,7 +67,8 @@ public class IntrudersBehaviorController : MonoBehaviour
         if (!Equals(GameManager.Instance.loggingMethod, Logging.None))
             CsvController.WriteString(
                 CsvController.GetPath(StealthArea.SessionInfo, FileType.RunningTimesIntruder, null),
-                GetResult(CsvController.IsFileExist(StealthArea.SessionInfo, FileType.RunningTimesIntruder, null)), true);
+                GetResult(CsvController.IsFileExist(StealthArea.SessionInfo, FileType.RunningTimesIntruder, null)),
+                true);
 
         _decisionTimes.Clear();
     }
@@ -94,7 +76,7 @@ public class IntrudersBehaviorController : MonoBehaviour
     private string GetResult(bool isFileExist)
     {
         if (_decisionTimes == null) return "";
-        
+
         // Write the exploration results for this episode
         string data = "";
 
@@ -103,23 +85,17 @@ public class IntrudersBehaviorController : MonoBehaviour
         foreach (var decisionTime in _decisionTimes)
             data += decisionTime + "," + +StealthArea.SessionInfo.currentEpisode + "\n";
         return data;
-
     }
 
 
     public void StartScouter()
     {
-        // if (Equals(behavior.patrol, PatrolPlanner.UserInput) || noIntruders) return;
-        if (Equals(m_Scouter, null)) return;
-
-        m_Scouter.Begin();
+        m_Scouter?.Begin();
     }
 
     public void StayIncognito(GameType gameType)
     {
-        // if (Equals(behavior.search, SearchPlanner.UserInput) || noIntruders) return;
         if (Equals(m_Scouter, null)) return;
-
 
         var watch = System.Diagnostics.Stopwatch.StartNew();
         m_Scouter.Refresh(gameType);
@@ -130,16 +106,12 @@ public class IntrudersBehaviorController : MonoBehaviour
 
     public void StartChaseEvader()
     {
-        // if (Equals(behavior.alert, AlertPlanner.UserInput) || noIntruders) return;
-        if (Equals(m_ChaseEvader, null)) return;
-
-        m_ChaseEvader.Begin();
+        m_ChaseEvader?.Begin();
     }
 
     // Intruder behavior when being chased
     public void KeepRunning()
     {
-        // if (Equals(behavior.alert, AlertPlanner.UserInput) || noIntruders) return;
         if (Equals(m_ChaseEvader, null)) return;
 
         var watch = System.Diagnostics.Stopwatch.StartNew();
@@ -152,19 +124,14 @@ public class IntrudersBehaviorController : MonoBehaviour
 
     public void StartHiding()
     {
-        // if (Equals(behavior.search, SearchPlanner.UserInput) || noIntruders) return;
-        if (Equals(m_SearchEvader, null)) return;
-
-        m_SearchEvader.Begin();
+        m_SearchEvader?.Begin();
     }
 
 
     // Intruder behavior after escaping guards
     public void KeepHiding()
     {
-        // if (Equals(behavior.search, SearchPlanner.UserInput) || noIntruders) return;
         if (Equals(m_SearchEvader, null)) return;
-
 
         var watch = System.Diagnostics.Stopwatch.StartNew();
         m_SearchEvader.Refresh();

@@ -142,8 +142,8 @@ public class GameManager : MonoBehaviour
     {
         m_VoiceParamses = new List<VoiceParams>();
 
-        int[] voiceIndices = { 0, 1 };
-        float[] pitches = { 0f, 1f, 2f };
+        int[] voiceIndices = {0, 1};
+        float[] pitches = {0f, 1f, 2f};
 
         foreach (var vI in voiceIndices)
         foreach (var p in pitches)
@@ -165,7 +165,7 @@ public class GameManager : MonoBehaviour
     public static int GetDateTimestamp()
     {
         DateTime epochStart = new DateTime(2022, 3, 15, 0, 0, 0, DateTimeKind.Utc);
-        return (int)(DateTime.UtcNow - epochStart).TotalSeconds;
+        return (int) (DateTime.UtcNow - epochStart).TotalSeconds;
     }
 
     public static int GetRunId()
@@ -178,7 +178,7 @@ public class GameManager : MonoBehaviour
         // Sessions set up for evaluating the efficiency of the patrol behaviors 
         // List<Session> sessions = PatrolSessionsAssessment.GetSessions();
 
-        
+
         // Sessions set up for evaluating the efficiency of the search behaviors
         List<Session> sessions = SearchSessionAssessment.GetSessions();
 
@@ -189,7 +189,7 @@ public class GameManager : MonoBehaviour
         // List<Session> sessions = SessionsSetup.StealthStudyProcedural01();
         // List<Session> sessions = StealthStudySessions.GetSessions();
         // List<Session> sessions = StealthUserStudySessions.GetSessions();
-        
+
         // List<Session> sessions = PatrolSessions.GetSessions();
 
         // Patrol behavior
@@ -198,9 +198,9 @@ public class GameManager : MonoBehaviour
         // List<Session> sessions = StealthBehavior.GetSessions();
 
 
-        if (Equals(loggingMethod, Logging.Cloud))
-            StartCoroutine(FileUploader.UploadData(null, FileType.ColorPairing, "text/csv",
-                PatrolUserStudy.GetPairsString()));
+        // if (Equals(loggingMethod, Logging.Cloud))
+        //     StartCoroutine(FileUploader.UploadData(null, FileType.ColorPairing, "text/csv",
+        //         PatrolUserStudy.GetPairsString()));
 
         // Each line represents a session
         foreach (var sc in sessions)
@@ -273,7 +273,7 @@ public class GameManager : MonoBehaviour
     private void CreateArea(Session scenario)
     {
         // Get the area prefab
-        var areaPrefab = (GameObject)Resources.Load(StealthArea);
+        var areaPrefab = (GameObject) Resources.Load(StealthArea);
         GameObject activeArea = Instantiate(areaPrefab, transform, true);
 
         // Get the script
@@ -490,24 +490,20 @@ public struct NpcData
     // Initial position for the NPC
     public NpcLocation? location;
 
-    public NpcData(int _id, NpcType pNpcType, Behavior _behavior,
-        PathFindingHeursitic pPathFindingHeuristic, PathFollowing pNpcPathFollowing, NpcLocation? _location)
+    public NpcData(int _id, NpcType pNpcType, NpcLocation? _location)
     {
         id = _id;
         npcType = pNpcType;
         location = _location;
     }
 
-    public static string Headers = "NpcType,ID,NpcPlanner,NpcHeurisitic,NpcPathFollowing";
+    public static string Headers = "NpcType,ID";
 
     public override string ToString()
     {
         var data = "";
         data += npcType + ",";
         data += id + ",";
-        // data += behavior + ",";
-        // data += npcHeuristic + ",";
-        // data += npcPathFollowing;
 
         return data;
     }
@@ -532,6 +528,9 @@ public class Session
     public int currentEpisode = 0;
     public int MaxEpisodes = 1;
 
+    public float MinScore;
+    public float MaxScore;
+    
     public float episodeLengthSec;
 
     // the ID of the game session
@@ -604,6 +603,12 @@ public class Session
         _scores = new List<ScoreRecord>();
     }
 
+    public void SetGameCondition(float _minScore, float _maxScore)
+    {
+        MinScore = _minScore;
+        MaxScore = _maxScore;
+    }
+
     public void SetTimestamp()
     {
         timeStamp = GameManager.GetDateTimestamp().ToString();
@@ -615,19 +620,16 @@ public class Session
     }
 
     // Add a NPC to the list
-    public void AddNpc(int id, NpcType _type, Behavior _planner,
-        PathFindingHeursitic pathFindingHeuristic, PathFollowing pathFollowing, NpcLocation? npcLocation)
+    public void AddNpc(int id, NpcType _type, NpcLocation? npcLocation)
     {
         switch (_type)
         {
             case NpcType.Guard:
-                guardsList.Add(new NpcData(id, _type, _planner, pathFindingHeuristic, pathFollowing,
-                    npcLocation));
+                guardsList.Add(new NpcData(id, _type, npcLocation));
                 break;
 
             case NpcType.Intruder:
-                intrudersList.Add(new NpcData(id, _type, _planner, pathFindingHeuristic, pathFollowing,
-                    npcLocation));
+                intrudersList.Add(new NpcData(id, _type, npcLocation));
                 break;
         }
     }
@@ -717,25 +719,14 @@ public class SessionPair
 
 public class GuardBehaviorParams
 {
-    public PatrolPlanner patrolPlanner;
     public PatrolerParams patrolerParams;
-
-    public SearchPlanner searcherPlanner;
     public SearcherParams searcherParams;
-
-    public AlertPlanner alertPlanner;
     public ChaseParams chaseParams;
 
-    public GuardBehaviorParams(PatrolPlanner _planner, PatrolerParams _patrolerParams, SearchPlanner _searchPlanner,
-        SearcherParams _searcherParams, AlertPlanner _alertPlanner, ChaseParams _chaseParams)
+    public GuardBehaviorParams(PatrolerParams _patrolerParams, SearcherParams _searcherParams, ChaseParams _chaseParams)
     {
-        patrolPlanner = _planner;
         patrolerParams = _patrolerParams;
-
-        searcherPlanner = _searchPlanner;
         searcherParams = _searcherParams;
-
-        alertPlanner = _alertPlanner;
         chaseParams = _chaseParams;
     }
 
@@ -744,7 +735,7 @@ public class GuardBehaviorParams
         string output = "";
         string sep = "_";
 
-        output += patrolPlanner;
+        output += patrolerParams;
         output += sep;
 
         output += patrolerParams;
@@ -757,26 +748,16 @@ public class GuardBehaviorParams
 
 public class IntruderBehaviorParams
 {
-    public PatrolPlanner patrolPlanner;
     public ScouterParams scouterParams;
-
-    public SearchPlanner searchPlanner;
     public SearchEvaderParams searchEvaderParams;
-
-    public AlertPlanner alertPlanner;
     public ChaseEvaderParams chaseEvaderParams;
 
 
-    public IntruderBehaviorParams(PatrolPlanner _planner, ScouterParams _scouterParams, SearchPlanner _searchPlanner,
-        SearchEvaderParams _searchEvaderParams, AlertPlanner _alertPlanner, ChaseEvaderParams _chaseEvaderParams)
+    public IntruderBehaviorParams(ScouterParams _scouterParams, SearchEvaderParams _searchEvaderParams,
+        ChaseEvaderParams _chaseEvaderParams)
     {
-        patrolPlanner = _planner;
         scouterParams = _scouterParams;
-
-        searchPlanner = _searchPlanner;
         searchEvaderParams = _searchEvaderParams;
-
-        alertPlanner = _alertPlanner;
         chaseEvaderParams = _chaseEvaderParams;
     }
 
@@ -784,10 +765,7 @@ public class IntruderBehaviorParams
     {
         string output = "";
         string sep = "_";
-
-        output += patrolPlanner;
-        output += sep;
-
+        
         output += scouterParams;
         // output += sep;
 

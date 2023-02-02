@@ -90,7 +90,7 @@ public class RoadMapPatroler : Patroler
     {
         foreach (var line in _RoadMap.GetLines(false))
         {
-            line.PropagateToSegment(line.GetMid(), 1f, StealthArea.GetElapsedTimeInSeconds());
+            line.PropagateToSegment(line.GetMid(), line.GetMid(), 1f, StealthArea.GetElapsedTimeInSeconds());
         }
     }
 

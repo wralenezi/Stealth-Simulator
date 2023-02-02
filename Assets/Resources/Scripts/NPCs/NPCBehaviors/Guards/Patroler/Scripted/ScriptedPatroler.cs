@@ -46,6 +46,11 @@ public class ScriptedPatroler : Patroler
     }
 }
 
+public class ScriptedPatrolerParams : PatrolerParams
+{
+}
+
+
 [Serializable]
 public class PatrolPlan
 {
@@ -63,7 +68,7 @@ public class PatrolPath
 
     // timestamp when the current step was chosen
     private float _timestampCurrentStep;
-    
+
 
     public PatrolStep GetCurrentPatrolStep(Guard guard)
     {
@@ -83,7 +88,7 @@ public class PatrolPath
             }
 
             float elapsedTime = GameManager.GetDateTimestamp() - _timestampCurrentStep;
-            
+
             if (elapsedTime < _currentStep.duration)
                 return null;
 

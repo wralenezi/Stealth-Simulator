@@ -67,7 +67,7 @@ public class RoadMapSearcherDecisionMaker
                 break;
 
             case RMDecision.EndPoint:
-                GetSearchGoal(guard, NpcsManager.Instance.GetIntruders()[0], NpcsManager.Instance.GetGuards(),
+                GetSearchGoal(guard, NpcsManager.Instance.GetGuards(),
                     searcherParams, roadMap);
                 break;
         }
@@ -76,45 +76,6 @@ public class RoadMapSearcherDecisionMaker
         if (Equals(guard.GetGoal(), null)) return;
 
         _guardGoals[guard.name] = guard.GetGoal().Value;
-
-
-        // // Once the chaser is idle that means that the intruder is still not seen
-        // // Now Guards should start visiting the nodes with distance more than zero
-        // if (!guard.IsBusy())
-        // {
-        //     // Get a new goal and swap it with the closest guard to that goal and take their goals instead.
-        //     switch (guard.GetNpcData().behavior.searchFormat)
-        //     {
-        //         case PlanOutput.HillClimbPath:
-        //             GreedyPath(guard);
-        //             break;
-        //
-        //         case PlanOutput.DijkstraPath:
-        //             BuildDijkstraPath(guard, false);
-        //             break;
-        //
-        //         case PlanOutput.DijkstraPathMax:
-        //             BuildDijkstraPath(guard, true);
-        //             break;
-        //
-        //         case PlanOutput.Point:
-        //             GetSearchGoal(guard, m_Intruder, NpcsManager.Instance.GetGuards());
-        //             break;
-        //     }
-        //
-        //     if (guard.GetLinesToPass().Count == 0) return;
-        //
-        //     // m_goalProb[guard.GetNpcData().id] = guard.GetLinesToPass()[guard.GetLinesToPass().Count - 1]
-        //     //     .GetSearchSegment().GetProbability();
-        // }
-        // else
-        // {
-        //     // if (guard.GetLinesToPass().Count == 0) return;
-        //     // SearchSegment sS = guard.GetLinesToPass()[guard.GetLinesToPass().Count - 1].GetSearchSegment();
-        //     // float prob = sS.GetProbability();
-        //     // if (prob < m_goalProb[guard.GetNpcData().id])
-        //     //     guard.ClearGoal();
-        // }
     }
 
 
@@ -288,7 +249,7 @@ public class RoadMapSearcherDecisionMaker
     }
 
 
-    private void GetSearchGoal(Guard guard, Intruder intruder, List<Guard> guards, RoadMapSearcherParams _params,
+    private void GetSearchGoal(Guard guard, List<Guard> guards, RoadMapSearcherParams _params,
         RoadMap roadMap)
     {
         Vector2? newGoal = GetSearchSegment(guard, guards, _params, roadMap);
@@ -296,7 +257,7 @@ public class RoadMapSearcherDecisionMaker
         if (!Equals(newGoal, null)) SwapGoal(guard, guards, newGoal.Value, false);
     }
 
-    
+
     // Get the best Search segment the guard should visit.
     private Vector2? GetSearchSegment(Guard requestingGuard, List<Guard> guards, RoadMapSearcherParams _params,
         RoadMap roadMap)
@@ -584,7 +545,6 @@ public class RoadMapSearcherDecisionMaker
         PathFinding.Instance.GetShortestPath(guard.GetTransform().position, startLine.GetMid(),
             ref path);
 
-        // path.Add(guard.GetTransform().position);
 
         // Add the necessary intermediate nodes only.
         int i = 0;
@@ -638,10 +598,6 @@ public class RoadMapSearcherDecisionMaker
         while (i < linesToVisit.Count)
             linesToVisit.RemoveAt(i);
 
-
-        // Remove the start node since it is not needed
-        // path.RemoveAt(0);
-
         SimplifyPath(ref path);
 
         guard.ForceToReachGoal(false);
@@ -655,11 +611,6 @@ public class RoadMapSearcherDecisionMaker
         float fitness = line.GetSearchSegment().GetProbability();
         float fitnessWeight = 1f;
         utility += Mathf.Clamp(fitness * fitnessWeight, 0f, fitnessWeight);
-
-        // Normalized value of when the segment was last seen.
-        // float lastSeenPortion = line.GetSearchSegment().GetAge() / GetSearchTime();
-        // float lastSeenWeight = 0.2f;
-        // utility += Mathf.Clamp(lastSeenPortion * lastSeenWeight, 0f, lastSeenWeight);
 
         // Portions of guards planning to pass through this line. The value will be 0 to 1.
         float guardsPassingPortions = line.GetPassingGuardsCount() / StealthArea.SessionInfo.guardsCount;

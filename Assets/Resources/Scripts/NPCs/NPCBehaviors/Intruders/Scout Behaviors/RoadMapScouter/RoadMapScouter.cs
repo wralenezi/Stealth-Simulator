@@ -7,7 +7,7 @@ using Vector2 = UnityEngine.Vector2;
 public class RoadMapScouter : Scouter
 {
     private Intruder _intruder;
-    private RMScouterParams _rmScouterParams;
+    private RoadMapScouterParams _params;
 
     public bool showIntruderGoal;
     private HidingSpot _currentGoalHs;
@@ -31,8 +31,6 @@ public class RoadMapScouter : Scouter
     private List<HidingSpot> _availableSpots;
     private SpotsNeighbourhoods _neighbourhoodType;
 
-    private float _maxSafeRisk;
-
     // A dictionary of the riskiest spots by each guard on the intruders current path
     public bool showRiskSpots;
     private RMRiskEvaluator _riskEvaluator;
@@ -41,29 +39,25 @@ public class RoadMapScouter : Scouter
 
     private RMSDecisionMaker _decisionMaker;
 
-    public static RoadMapScouter Instance;
-
     // The total distance the intruder crossed
     [SerializeField] private float _crossedDistance;
 
 
     public override void Initiate(MapManager mapManager, Session session)
     {
-        Instance = this;
-
         base.Initiate(mapManager, session);
         
-        _rmScouterParams = (RMScouterParams) session.IntruderBehaviorParams.scouterParams;
+        _params = (RoadMapScouterParams) session.IntruderBehaviorParams.scouterParams;
 
         _closestWpsToDestination = new List<RoadMapNode>();
         _availableSpots = new List<HidingSpot>();
 
         _trajectoryProjector = new RMTrajectoryProjector();
-        _trajectoryProjector.Initiate(_rmScouterParams.trajectoryType,
-            _rmScouterParams.fovProjectionMultiplier);
+        _trajectoryProjector.Initiate(_params.trajectoryType,
+            _params.fovProjectionMultiplier);
 
         _roadMap = mapManager.GetRoadMap();
-        _neighbourhoodType = _rmScouterParams.spotsNeighbourhood;
+        _neighbourhoodType = _params.spotsNeighbourhood;
 
         _riskEvaluator = gameObject.AddComponent<RMRiskEvaluator>();
         _riskEvaluator.Initiate();
@@ -71,9 +65,7 @@ public class RoadMapScouter : Scouter
         _pathFinder = new RMScoutPathFinder();
 
         _decisionMaker = new RMSDecisionMaker();
-        _decisionMaker.Initiate(_rmScouterParams.goalPriority, _rmScouterParams.safetyPriority);
-
-        _maxSafeRisk = _rmScouterParams.maxRiskAsSafe;
+        _decisionMaker.Initiate(_params.goalPriority, _params.safetyPriority);
 
         // showAvailableHidingSpots = true;
         // showRiskSpots = true;
@@ -82,7 +74,6 @@ public class RoadMapScouter : Scouter
         // showIntruderGoal = true;
         // showRoadMap = true;
     }
-
 
     public override void Begin()
     {
@@ -104,7 +95,7 @@ public class RoadMapScouter : Scouter
         if (!intruder.IsBusy()) PlanPath(intruder, gameType);
 
         // Abort the current path if it is too risky
-        _riskEvaluator.CheckPathRisk(_rmScouterParams.pathCancel, _roadMap, intruder, guards, ref _availableSpots,
+        _riskEvaluator.CheckPathRisk(_params.pathCancel, _roadMap, intruder, guards, ref _availableSpots,
             ref _currentGoalHs);
     }
 
@@ -113,7 +104,7 @@ public class RoadMapScouter : Scouter
         Vector2? goal = GetDestination(gameType);
 
         _availableSpots.Clear();
-        PathFindToDestination(goal, _maxSafeRisk);
+        PathFindToDestination(goal, _params.maxRiskAsSafe);
 
         EvaluateSpots(intruder, goal);
 
@@ -122,12 +113,12 @@ public class RoadMapScouter : Scouter
         while (!intruder.IsBusy() && _availableSpots.Count > 0)
         {
             bestHs =
-                _decisionMaker.GetBestSpot(_availableSpots, _riskEvaluator.GetRisk(), _maxSafeRisk);
+                _decisionMaker.GetBestSpot(_availableSpots, _riskEvaluator.GetRisk(), _params.maxRiskAsSafe);
 
             if (Equals(bestHs, null)) break;
 
             List<Vector2> path = intruder.GetPath();
-            float maxPathRisk = RMThresholds.GetMaxPathRisk(_rmScouterParams.thresholdType);
+            float maxPathRisk = RMThresholds.GetMaxPathRisk(_params.thresholdType);
 
             _pathFinder.GetShortestPath(_roadMap, intruder.GetTransform().position, bestHs, ref path,
                 maxPathRisk);
@@ -147,7 +138,7 @@ public class RoadMapScouter : Scouter
     {
         float maxDistance = PathFinding.Instance.longestShortestPath * 0.3f;
         int numOfPossibleRmNodes = 8;
-        float maxSearchRisk = RMThresholds.GetMaxSearchRisk(_rmScouterParams.thresholdType);
+        float maxSearchRisk = RMThresholds.GetMaxSearchRisk(_params.thresholdType);
         bool doAstar = _riskEvaluator.GetRisk() <= minSafeRisk && !Equals(destination, null);
 
         List<Vector2> path = _intruder.GetPath();
@@ -160,8 +151,6 @@ public class RoadMapScouter : Scouter
 
         foreach (var wp in _closestWpsToDestination)
             FillAvailableSpots(wp.GetPosition());
-
-        // EditorApplication.isPaused = true;
     }
 
     private void FillAvailableSpots(Vector2 position)
@@ -178,7 +167,7 @@ public class RoadMapScouter : Scouter
                 break;
 
             case SpotsNeighbourhoods.Grid:
-                int numberOfAdjacentCell = RMThresholds.GetSearchDepth(_rmScouterParams.thresholdType);
+                int numberOfAdjacentCell = RMThresholds.GetSearchDepth(_params.thresholdType);
                 _HsC.AddHidingSpots(ref _availableSpots, position, numberOfAdjacentCell);
                 break;
         }
@@ -405,7 +394,7 @@ public class RoadMapScouter : Scouter
     }
 }
 
-public class RMScouterParams : ScouterParams
+public class RoadMapScouterParams : ScouterParams
 {
     public readonly SpotsNeighbourhoods spotsNeighbourhood;
 
@@ -426,7 +415,7 @@ public class RMScouterParams : ScouterParams
 
     public readonly float fovProjectionMultiplier;
 
-    public RMScouterParams(SpotsNeighbourhoods spotsNeighbourhood, PathCanceller pathCancel, RiskThresholdType thresholdType, TrajectoryType trajectoryType, float maxRiskAsSafe, GoalPriority goalPriority, SafetyPriority safetyPriority, float fovProjectionMultiplier)
+    public RoadMapScouterParams(SpotsNeighbourhoods spotsNeighbourhood, PathCanceller pathCancel, RiskThresholdType thresholdType, TrajectoryType trajectoryType, float maxRiskAsSafe, GoalPriority goalPriority, SafetyPriority safetyPriority, float fovProjectionMultiplier)
     {
         this.spotsNeighbourhood = spotsNeighbourhood;
         this.pathCancel = pathCancel;

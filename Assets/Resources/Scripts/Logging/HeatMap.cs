@@ -76,20 +76,15 @@ public class HeatMap : MonoBehaviour
 
         HeatNode[,] map = _heatMap.GetGrid();
 
-        for (int i = 0; i < map.GetLength(0); i++)
-        for (int j = 0; j < map.GetLength(1); j++)
+        foreach (var node in _heatNodes)
         {
-            HeatNode node = map[i, j];
-
-            if (!_heatMap.IsNodeInMap(node.position, _cellSide * 0.5f)) continue;
-
             float spottedTime = node.GetTime();
 
             if (spottedTime < minValue) minValue = spottedTime;
 
             if (spottedTime > maxValue) maxValue = spottedTime;
         }
-        
+
         for (int i = 0; i < map.GetLength(0); i++)
         for (int j = 0; j < map.GetLength(1); j++)
         {
@@ -106,7 +101,7 @@ public class HeatMap : MonoBehaviour
 
         foreach (var node in _heatNodes)
             node.Reset();
-        
+
         while (_pixels.Count > 0)
         {
             GameObject pixel = _pixels[0];
@@ -163,7 +158,8 @@ public class HeatMap : MonoBehaviour
             if (!_heatMap.IsNodeInMap(node.position, _cellSide * 0.5f)) continue;
 
 
-            data += i + "," + j + "," + node.GetTime() + "," + StealthArea.SessionInfo.episodeLengthSec + "," + node.heatValue + "," +
+            data += i + "," + j + "," + node.GetTime() + "," + StealthArea.SessionInfo.episodeLengthSec + "," +
+                    node.heatValue + "," +
                     StealthArea.SessionInfo.currentEpisode + "\n";
         }
 

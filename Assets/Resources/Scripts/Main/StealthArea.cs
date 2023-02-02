@@ -154,18 +154,17 @@ public class StealthArea : MonoBehaviour
     void CheckGameEnd()
     {
         bool timeOver = GetElapsedTimeInSeconds() >= SessionInfo.episodeLengthSec;
-        bool highscoreReached = scoreController.Score > Mathf.Infinity;
-        // bool spotted = NpcManager.GetState() is Chase;
+        bool maxReached = scoreController.Score > SessionInfo.MaxScore;
+        bool minReached = scoreController.Score < SessionInfo.MinScore;
 
-        bool finished = timeOver || highscoreReached; // || spotted;
+        bool finished = timeOver || maxReached || minReached;
 
         // Log Guards progress
         performanceMonitor.Log();
 
         if (!finished) return;
 
-        if (GameManager.Instance.RecordHeatMap)
-            heatMap.End();
+        if (GameManager.Instance.RecordHeatMap) heatMap.End();
 
         FinishArea();
     }
