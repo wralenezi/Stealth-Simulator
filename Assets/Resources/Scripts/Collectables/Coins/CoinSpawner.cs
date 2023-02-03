@@ -22,6 +22,7 @@ public class CoinSpawner : MonoBehaviour
         
         _isRandom = session.guardBehaviorParams.patrolerParams?.GetType() != typeof(ScriptedPatroler);
 
+        concurrentCoinCount = session.coinCount;
         Reset(session, navMesh);
     }
 

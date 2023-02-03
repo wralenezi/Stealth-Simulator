@@ -17,3 +17,7 @@ public abstract class ChaseEvader : MonoBehaviour
 
     public abstract void Refresh();
 }
+
+public abstract class ChaseEvaderParams
+{
+}

@@ -175,12 +175,19 @@ public class GameManager : MonoBehaviour
 
     private void LoadSavedSessions()
     {
-        // Sessions set up for evaluating the efficiency of the patrol behaviors 
+        // Sessions set up for evaluating the hyper parameters  of the patrol behaviors 
         // List<Session> sessions = PatrolSessionsAssessment.GetSessions();
+        
+        // Sessions set up for evaluating the patrol behaviors
+        // List<Session> sessions = ComparePatrolMethods.GetSessions();
 
-
+        // Sessions set up for evaluating the search behaviors
+        // List<Session> sessions = CompareSearchMethods.GetSessions();
+        
+        List<Session> sessions = CompareScouterMethods.GetSessions();
+        
         // Sessions set up for evaluating the efficiency of the search behaviors
-        List<Session> sessions = SearchSessionAssessment.GetSessions();
+        // List<Session> sessions = SearchSessionAssessment.GetSessions();
 
         // var sessions = SessionsSetup.SearchTacticEvaluation();
         // List<Session> sessions = SessionsSetup.StealthStudy();
@@ -530,6 +537,8 @@ public class Session
 
     public float MinScore;
     public float MaxScore;
+
+    public int coinCount;
     
     public float episodeLengthSec;
 

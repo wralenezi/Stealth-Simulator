@@ -6,22 +6,22 @@ public class SimpleSearchEvader : SearchEvader
 {
     public override void Begin()
     {
-        // foreach (var intruder in GetSA().intrdrManager.GetIntruders())
-        //     intruder.ClearIntruderGoal();
+        foreach (var intruder in NpcsManager.Instance.GetIntruders())
+            intruder.ClearIntruderGoal();
     }
 
     public override void Refresh()
     {
-        // foreach (var intruder in GetSA().intrdrManager.GetIntruders())
-        // {
-        //     // if (intruder.GetNpcData().intruderPlanner == IntruderPlanner.UserInput) return;
-        //     
-        //     if(intruder.IsBusy()) return;
-        //     
-        //     m_HsC.AssignHidingSpotsFitness(GetSA().guardsManager.GetGuards(), GetSA().mapDecomposer.GetNavMesh());
-        //     intruder.SetDestination(m_HsC.GetBestHidingSpot().Value, true, false);
-        //     // StartCoroutine(intruder.waitThenMove(m_HsC.GetBestHidingSpot().Value));
-        // }
+        foreach (var intruder in NpcsManager.Instance.GetIntruders())
+        {
+            // if (intruder.GetNpcData().intruderPlanner == IntruderPlanner.UserInput) return;
+            
+            if(intruder.IsBusy()) return;
+            
+            m_HsC.AssignHidingSpotsFitness(NpcsManager.Instance.GetGuards());//, MapManager.Instance.mapDecomposer.GetNavMesh());
+            intruder.SetDestination(m_HsC.GetBestHidingSpot().Value, true, false);
+            // StartCoroutine(intruder.waitThenMove(m_HsC.GetBestHidingSpot().Value));
+        }
     }
 }
 

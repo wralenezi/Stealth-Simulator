@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -103,22 +104,25 @@ public static class SearchSessionAssessment
                 PathCanceller.DistanceCalculation, RiskThresholdType.Danger
                 , TrajectoryType.Simple, 0f, GoalPriority.Safety, SafetyPriority.ClosestWeightedSpot, 1f);
 
-            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(scouterParams, null, null);
+            SearchEvaderParams searchEvaderParams = new SimpleSearchEvaderParams();
+            
+            ChaseEvaderParams chaseEvaderParams = new SimpleChaseEvaderParams();
 
-            Session session = new Session(episodeLength, "", GameType.CoinCollection, Scenario.Stealth, teamColor,
+            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(scouterParams, searchEvaderParams, chaseEvaderParams);
+
+            Session session = new Session(episodeLength, "", GameType.CoinCollection, Scenario.Chase, teamColor,
                 guardSpawnType, guardTeam, guardBehaviorParams, 1,
                 intruderBehaviorParams,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
-            session.SetGameCondition(0f, Mathf.Infinity);
+            session.SetGameCondition(Mathf.NegativeInfinity, Mathf.Infinity);
 
             session.sessionVariable = "RoadMap";
 
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)
                 session.AddNpc(i + 1, NpcType.Guard, null);
-
-
+            
             // Add intruders
             for (int i = 0; i < session.intruderCount; i++)
                 session.AddNpc(i + 1, NpcType.Intruder, null);

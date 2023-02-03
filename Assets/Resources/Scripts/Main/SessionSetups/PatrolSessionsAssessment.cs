@@ -20,9 +20,8 @@ public class PatrolSessionsAssessment
         // mapData = new MapData("MgsDock", 2f);
         // mapData = new MapData("bloodstainedAngle1", 0.5f);
 
-        AddVisMeshSession("", ref sessions, mapData, "blue", guardTeams, _episodeLength);
-        AddRoadMapSession("", ref sessions, mapData, "blue", guardTeams, _episodeLength);
-        AddRandomSession("", ref sessions, mapData, "blue", guardTeams, _episodeLength);
+        // AddVisMeshSession("", ref sessions, mapData, "blue", guardTeams, _episodeLength);
+        // AddRoadMapSession("", ref sessions, mapData, "blue", guardTeams, _episodeLength);
         AddGridSession("", ref sessions, mapData, "blue", guardTeams, _episodeLength);
         return sessions;
     }
@@ -42,7 +41,7 @@ public class PatrolSessionsAssessment
         {
             // 0.5f,
             // 0.7f,
-            1f
+            0.95f
         };
 
         float max = 10f;
@@ -100,7 +99,7 @@ public class PatrolSessionsAssessment
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
             session.sessionVariable = "VisMesh";
-
+            session.coinCount = 0;
 
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)
@@ -130,7 +129,7 @@ public class PatrolSessionsAssessment
 
         List<float> maxNormalizedPathLengths = new List<float>()
         {
-            0.5f,
+            0.75f,
             1f
         };
 
@@ -160,8 +159,7 @@ public class PatrolSessionsAssessment
 
         List<RMDecision> decisionTypes = new List<RMDecision>()
         {
-            RMDecision.DijkstraPath,
-            // RMDecision.EndPoint
+            RMDecision.DijkstraPath
         };
 
         List<RMPassingGuardsSenstivity> passingGuardsSenstivities = new List<RMPassingGuardsSenstivity>()
@@ -190,6 +188,7 @@ public class PatrolSessionsAssessment
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
             session.sessionVariable = "RoadMap";
+            session.coinCount = 0;
 
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)
@@ -264,47 +263,7 @@ public class PatrolSessionsAssessment
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
             session.sessionVariable = "Grid";
-
-            // Add guards
-            for (int i = 0; i < session.guardsCount; i++)
-            {
-                session.AddNpc(i + 1, NpcType.Guard, null);
-            }
-
-            session.MaxEpisodes = _episodeCount;
-
-            sessions.Add(session);
-        }
-    }
-
-    private static void AddRandomSession(string gameCode, ref List<Session> sessions, MapData mapData,
-        string guardColor,
-        List<int> guardTeams, float episodeLength)
-    {
-        List<GuardSpawnType> guardSpawnTypes = new List<GuardSpawnType>()
-        {
-            // GuardSpawnType.Random,
-            GuardSpawnType.Separate,
-            // GuardSpawnType.Goal
-        };
-
-        foreach (var guardSpawnType in guardSpawnTypes)
-        foreach (var guardTeam in guardTeams)
-        {
-            // Set the Hyper-parameters for the behavior
-            PatrolerParams patrolParams = null;
-
-            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolParams,
-                null, null);
-
-
-            Session session = new Session(episodeLength, gameCode, GameType.CoinCollection, Scenario.Stealth,
-                guardColor,
-                guardSpawnType, guardTeam, guardBehaviorParams, 0,
-                null,
-                mapData, SpeechType.Simple, SurveyType.EndEpisode);
-
-            session.sessionVariable = "Random";
+            session.coinCount = 0;
 
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)

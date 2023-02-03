@@ -34,7 +34,7 @@ public class IntrudersBehaviorController : MonoBehaviour
 
         Type chaseEvaderType = session.IntruderBehaviorParams.chaseEvaderParams?.GetType();
 
-        if (chaseEvaderType == typeof(ChaseEvaderParams))
+        if (chaseEvaderType == typeof(SimpleChaseEvaderParams))
             m_ChaseEvader = gameObject.AddComponent<SimpleChaseEvader>();
 
         Type searchEvaderType = session.IntruderBehaviorParams.searchEvaderParams?.GetType();
