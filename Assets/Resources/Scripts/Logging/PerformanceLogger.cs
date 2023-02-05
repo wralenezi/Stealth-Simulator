@@ -14,8 +14,6 @@ public class PerformanceLogger : MonoBehaviour
 
     private Dictionary<string, NPCReplay> _npcsRecording;
 
-    public static PerformanceLogger Instance;
-
     public void Initialize()
     {
         _snapshots = new List<LogSnapshot>();
@@ -24,17 +22,15 @@ public class PerformanceLogger : MonoBehaviour
 
     public void ResetResults()
     {
-        Instance = this;
-
         _lastLoggedTime = 0f;
 
         _snapshots.Clear();
-        _npcsRecording.Clear();
 
+        if (!GameManager.Instance.RecordNpcLocations) return;
+
+        _npcsRecording.Clear();
         foreach (var guard in NpcsManager.Instance.GetGuards())
             _npcsRecording[guard.name] = new NPCReplay(guard.GetNpcData().id, guard.GetNpcData().npcType);
-
-
         foreach (var intruder in NpcsManager.Instance.GetIntruders())
             _npcsRecording[intruder.name] = new NPCReplay(intruder.GetNpcData().id, intruder.GetNpcData().npcType);
     }
@@ -99,17 +95,20 @@ public class PerformanceLogger : MonoBehaviour
     {
         float timeElapsed = StealthArea.GetElapsedTimeInSeconds();
 
-        // foreach (var guard in NpcsManager.Instance.GetGuards())
-        // {
-        //     _snapshots.Add(guard.LogNpcProgress());
-        //     _npcsRecording[guard.name].AddSnapshot(new ReplaySnapshot(timeElapsed,
-        //         new Position2D(guard.GetTransform().position.x, guard.GetTransform().position.y)));
-        // }
+        foreach (var guard in NpcsManager.Instance.GetGuards())
+        {
+            _snapshots.Add(guard.LogNpcProgress());
+
+            if (!GameManager.Instance.RecordNpcLocations) continue;
+            _npcsRecording[guard.name].AddSnapshot(new ReplaySnapshot(timeElapsed,
+                new Position2D(guard.GetTransform().position.x, guard.GetTransform().position.y)));
+        }
 
         foreach (var intruder in NpcsManager.Instance.GetIntruders())
         {
             _snapshots.Add(intruder.LogNpcProgress());
 
+            if (!GameManager.Instance.RecordNpcLocations) continue;
             _npcsRecording[intruder.name]
                 .AddSnapshot(new ReplaySnapshot(timeElapsed,
                     new Position2D(intruder.GetTransform().position.x, intruder.GetTransform().position.y)));
@@ -133,19 +132,16 @@ public class PerformanceLogger : MonoBehaviour
 
         // make sure the data list is non empty
         if (_snapshots.Count > 0)
-        {
             CsvController.WriteString(
                 CsvController.GetPath(Sa, FileType.Performance, null),
                 GetLastResult(CsvController.IsFileExist(Sa, FileType.Performance, null)), true);
 
-            // CsvController.WriteString(
-            //     CsvController.GetPath(Sa, FileType.Performance, Sa.currentEpisode),
-            //     GetEpisodeResults(), true);
 
+        if (GameManager.Instance.RecordNpcLocations && _npcsRecording.Count > 0)
             CsvController.WriteString(
                 CsvController.GetPath(Sa, FileType.Npcs, Sa.currentEpisode),
                 GetNpcDataJson(), true);
-        }
+
 
         // Reset results
         ResetResults();
@@ -202,7 +198,11 @@ public class PerformanceLogger : MonoBehaviour
             if (!isFileExist)
                 data += "episodeId," + LogSnapshot.Headers + "\n";
 
-            data += Sa.currentEpisode + "," + _snapshots[_snapshots.Count - 1] + "\n";
+            int npcsCount = NpcsManager.Instance.GetGuards().Count + NpcsManager.Instance.GetIntruders().Count;
+
+            for (int i = 1; i <= npcsCount; i++)
+                data += Sa.currentEpisode + "," + _snapshots[_snapshots.Count - i] + "\n";
+
 
             return data;
         }
@@ -271,13 +271,16 @@ public struct LogSnapshot
     }
 
     // Headers
-    public static string Headers = "ElapseTime,TravelledDistance,AlertTime,CollectedCoin,Score";
+    public static string Headers = NpcData.Headers +
+                                   ",ElapseTime,TravelledDistance,AlertTime,SearchTime,GuardsOverlapTime,CollectedCoin,Score";
 
     public override string ToString()
     {
         string sep = ",";
         string output = "";
 
+        output += NpcDetail;
+        output += sep;
 
         output += ElapsedTime;
         output += sep;
@@ -288,23 +291,16 @@ public struct LogSnapshot
         output += AlertTime;
         output += sep;
 
+        output += SearchTime;
+        output += sep;
+
+        output += GuardsOverlapTime;
+        output += sep;
+
         output += CollectedCoin;
         output += sep;
-        
+
         output += Score;
-        // output += sep;
-        
-        //NpcDetail + "," + 
-        // ElapsedTime +
-        // "," + TravelledDistance +
-        // "," + State +
-        // "," + AlertTime +
-        // "," + SearchTime +
-        // "," + GuardsOverlapTime +
-        // "," + FoundHidingSpots +
-        // "," + StalenessAverage +
-        // "," + CollectedCoin;
-        // + "," + Score;
 
         return output;
     }

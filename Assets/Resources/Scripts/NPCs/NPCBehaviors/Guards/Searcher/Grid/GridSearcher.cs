@@ -243,6 +243,32 @@ public class GridSearcherParams : SearcherParams
         DistanceWeight = _distanceWeight;
         SeparationWeight = _separationWeight;
     }
+    
+    public override string ToString()
+    {
+        string output = "";
+        string sep = "_";
+
+        output += GetType();
+        output += sep;
+        
+        output += CellSide;
+        output += sep;
+
+        output += updateMethod;
+        output += sep;
+
+        output += StalenessWeight;
+        output += sep;
+
+        output += DistanceWeight;
+        output += sep;
+
+        output += SeparationWeight;
+
+        return output;
+    }
+
 }
 
 public enum ProbabilityFlowMethod

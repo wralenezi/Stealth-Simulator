@@ -33,4 +33,14 @@ public class RandomSearcher : Searcher
 
 public class RandomSearcherParams : SearcherParams
 {
+    public override string ToString()
+    {
+        string output = "";
+        string sep = "_";
+
+        output += GetType();
+        
+        return output;
+    }
+
 }

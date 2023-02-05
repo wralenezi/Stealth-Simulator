@@ -432,6 +432,9 @@ public class RoadMapScouterParams : ScouterParams
         string output = "";
         string sep = "_";
 
+        output += GetType();
+        output += sep;
+
         output += spotsNeighbourhood;
         output += sep;
 

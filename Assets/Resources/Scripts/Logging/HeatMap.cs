@@ -19,10 +19,6 @@ public class HeatMap : MonoBehaviour
 
     public void Initiate(Bounds bounds)
     {
-        // isDisabled = false;
-        // showHeatMap = true;
-        // if (isDisabled) return;
-
         _heatMap = new MapGrid<HeatNode>(bounds, _cellSide, _cellSide);
         _heatNodes = new List<HeatNode>();
 
@@ -45,8 +41,6 @@ public class HeatMap : MonoBehaviour
 
     public void IncrementHeatMapVisibility(List<Guard> guards, float timeDelta)
     {
-        // if (isDisabled) return;
-
         foreach (var node in _heatNodes)
             CheckIfNodeVisible(guards, timeDelta, node);
     }
@@ -74,8 +68,6 @@ public class HeatMap : MonoBehaviour
         float minValue = Mathf.Infinity;
         float maxValue = Mathf.NegativeInfinity;
 
-        HeatNode[,] map = _heatMap.GetGrid();
-
         foreach (var node in _heatNodes)
         {
             float spottedTime = node.GetTime();
@@ -85,20 +77,15 @@ public class HeatMap : MonoBehaviour
             if (spottedTime > maxValue) maxValue = spottedTime;
         }
 
-        for (int i = 0; i < map.GetLength(0); i++)
-        for (int j = 0; j < map.GetLength(1); j++)
+        foreach (var node in _heatNodes)
         {
-            HeatNode node = map[i, j];
             float spottedTime = node.GetTime();
-
             node.heatValue = (spottedTime - minValue) / (maxValue - minValue);
         }
     }
 
     public void Reset()
     {
-        // if (isDisabled) return;
-
         foreach (var node in _heatNodes)
             node.Reset();
 
@@ -113,19 +100,10 @@ public class HeatMap : MonoBehaviour
 
     private void RenderPixels()
     {
-        // if (isDisabled) return;
-
         if (!isRenderMap) return;
 
-        HeatNode[,] map = _heatMap.GetGrid();
-
-        for (int i = 0; i < map.GetLength(0); i++)
-        for (int j = 0; j < map.GetLength(1); j++)
+        foreach (var node in _heatNodes)
         {
-            HeatNode node = map[i, j];
-
-            if (!_heatMap.IsNodeInMap(node.position, _cellSide * 0.5f)) continue;
-
             GameObject pixel = new GameObject();
             pixel.transform.parent = transform;
             pixel.transform.position = node.position;
@@ -149,16 +127,10 @@ public class HeatMap : MonoBehaviour
 
         if (!isFileExist) data += "Col,Row,Time,EpisodeTime,heatValue,EpisodeID" + "\n";
 
-        HeatNode[,] map = _heatMap.GetGrid();
-
-        for (int i = 0; i < map.GetLength(0); i++)
-        for (int j = 0; j < map.GetLength(1); j++)
+        foreach (var node in _heatNodes)
         {
-            HeatNode node = map[i, j];
-            if (!_heatMap.IsNodeInMap(node.position, _cellSide * 0.5f)) continue;
 
-
-            data += i + "," + j + "," + node.GetTime() + "," + StealthArea.SessionInfo.episodeLengthSec + "," +
+            data += node.Col + "," + node.Row + "," + node.GetTime() + "," + StealthArea.SessionInfo.episodeLengthSec + "," +
                     node.heatValue + "," +
                     StealthArea.SessionInfo.currentEpisode + "\n";
         }

@@ -39,6 +39,8 @@ public class GameManager : MonoBehaviour
 
     public bool RecordRunningTimes;
 
+    public bool RecordNpcLocations;
+
     [Header("Time")] [Tooltip("Simulation speed")] [Range(1, 100)]
     public int SimulationSpeed;
 
@@ -48,7 +50,7 @@ public class GameManager : MonoBehaviour
 
     // Location of the data for the game
     public static string DataPath;
-    public static string LogsPath = "../../../Logs/";
+    public static string LogsPath = "PerformanceLogs/";
     public static string MapsDataPath = "MapsData/";
     public static string MapsPath = "Maps/";
     public static string RoadMapsPath = "RoadMaps/";
@@ -91,8 +93,6 @@ public class GameManager : MonoBehaviour
         // Define the hierarchy of the paths for the game
         // Main path
         DataPath = "Data/";
-        // Logs path
-        LogsPath = "C:/LogFiles/test/"; // DataPath + LogsPath;
         // Map related data paths
         MapsDataPath = DataPath + MapsDataPath;
         MapsPath = MapsDataPath + MapsPath;
@@ -142,8 +142,8 @@ public class GameManager : MonoBehaviour
     {
         m_VoiceParamses = new List<VoiceParams>();
 
-        int[] voiceIndices = {0, 1};
-        float[] pitches = {0f, 1f, 2f};
+        int[] voiceIndices = { 0, 1 };
+        float[] pitches = { 0f, 1f, 2f };
 
         foreach (var vI in voiceIndices)
         foreach (var p in pitches)
@@ -165,7 +165,7 @@ public class GameManager : MonoBehaviour
     public static int GetDateTimestamp()
     {
         DateTime epochStart = new DateTime(2022, 3, 15, 0, 0, 0, DateTimeKind.Utc);
-        return (int) (DateTime.UtcNow - epochStart).TotalSeconds;
+        return (int)(DateTime.UtcNow - epochStart).TotalSeconds;
     }
 
     public static int GetRunId()
@@ -177,15 +177,15 @@ public class GameManager : MonoBehaviour
     {
         // Sessions set up for evaluating the hyper parameters  of the patrol behaviors 
         // List<Session> sessions = PatrolSessionsAssessment.GetSessions();
-        
+
         // Sessions set up for evaluating the patrol behaviors
         // List<Session> sessions = ComparePatrolMethods.GetSessions();
 
         // Sessions set up for evaluating the search behaviors
         // List<Session> sessions = CompareSearchMethods.GetSessions();
-        
+
         List<Session> sessions = CompareScouterMethods.GetSessions();
-        
+
         // Sessions set up for evaluating the efficiency of the search behaviors
         // List<Session> sessions = SearchSessionAssessment.GetSessions();
 
@@ -280,7 +280,7 @@ public class GameManager : MonoBehaviour
     private void CreateArea(Session scenario)
     {
         // Get the area prefab
-        var areaPrefab = (GameObject) Resources.Load(StealthArea);
+        var areaPrefab = (GameObject)Resources.Load(StealthArea);
         GameObject activeArea = Instantiate(areaPrefab, transform, true);
 
         // Get the script
@@ -509,8 +509,9 @@ public struct NpcData
     public override string ToString()
     {
         var data = "";
+
         data += npcType + ",";
-        data += id + ",";
+        data += id;
 
         return data;
     }
@@ -539,7 +540,7 @@ public class Session
     public float MaxScore;
 
     public int coinCount;
-    
+
     public float episodeLengthSec;
 
     // the ID of the game session
@@ -688,10 +689,6 @@ public class Session
         sessionInfo += guardsCount;
         sessionInfo += sep;
 
-        // Guard planner 
-        // sessionInfo += GetGuardsData().Count > 0 ? guardBehaviorParams.ToString() : "";
-        // sessionInfo += sep;
-
         if (!Equals(guardBehaviorParams, null))
         {
             sessionInfo += guardBehaviorParams.ToString();
@@ -705,8 +702,6 @@ public class Session
         }
 
         sessionInfo += guardSpawnMethod;
-        // sessionInfo += sep;
-
 
         return sessionInfo;
     }
@@ -744,11 +739,17 @@ public class GuardBehaviorParams
         string output = "";
         string sep = "_";
 
-        output += patrolerParams;
-        output += sep;
+        if (!Equals(patrolerParams, null))
+        {
+            output += patrolerParams;
+        }
 
-        output += patrolerParams;
-        // output += sep;
+        if (!Equals(searcherParams, null))
+        {
+            if (!Equals(output, "")) output += sep;
+            output += searcherParams;
+        }
+
 
         return output;
     }
@@ -774,10 +775,18 @@ public class IntruderBehaviorParams
     {
         string output = "";
         string sep = "_";
-        
-        output += scouterParams;
-        // output += sep;
 
+        if (!Equals(scouterParams, null))
+        {
+            output += scouterParams;
+        }
+
+        if (!Equals(searchEvaderParams, null))
+        {
+            if (!Equals(output, "")) output += sep;
+            output += searchEvaderParams;
+        }
+        
         return output;
     }
 }

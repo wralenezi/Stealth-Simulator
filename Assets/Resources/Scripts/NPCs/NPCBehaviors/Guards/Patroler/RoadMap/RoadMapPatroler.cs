@@ -119,8 +119,18 @@ public class RoadMapPatrolerParams : PatrolerParams
     public RMDecision DecisionType;
     public RMPassingGuardsSenstivity PGSen;
 
+    // The search segment's age weight (How long was it last seen)
+    public float ageWeight;
+
+    // Path distance of the search segment to the guard
+    public float dstToGuardsWeight;
+
+    // Path distance of the closest goal other guards are coming to visit
+    public float dstFromOwnWeight;
+
     public RoadMapPatrolerParams(float _maxNormalizedPathLength, float _stalenessWeight, float _PassingGuardsWeight,
-        float _connectivityWeight, RMDecision _decisionType, RMPassingGuardsSenstivity _pgSen)
+        float _connectivityWeight, RMDecision _decisionType, RMPassingGuardsSenstivity _pgSen, float _ageWeight,
+        float _dstToGuardsWeight, float _dstFromOwnWeight)
     {
         MaxNormalizedPathLength = _maxNormalizedPathLength;
         StalenessWeight = _stalenessWeight;
@@ -128,6 +138,10 @@ public class RoadMapPatrolerParams : PatrolerParams
         ConnectivityWeight = _connectivityWeight;
         DecisionType = _decisionType;
         PGSen = _pgSen;
+        
+        ageWeight = _ageWeight;
+        dstToGuardsWeight = _dstToGuardsWeight;
+        dstFromOwnWeight = _dstFromOwnWeight;
     }
 
     public override string ToString()
@@ -135,24 +149,41 @@ public class RoadMapPatrolerParams : PatrolerParams
         string output = "";
         string sep = "_";
 
-        output += MaxNormalizedPathLength;
+        output += GetType();
         output += sep;
-
-        output += StalenessWeight;
-        output += sep;
-
-        output += PassingGuardsWeight;
-        output += sep;
-
-        output += ConnectivityWeight;
-        output += sep;
-
+        
         output += DecisionType;
         output += sep;
 
-        output += PGSen;
-        // output += sep;
+        if (DecisionType == RMDecision.DijkstraPath)
+        {
+            output += MaxNormalizedPathLength;
+            output += sep;
 
+            output += StalenessWeight;
+            output += sep;
+
+            output += PassingGuardsWeight;
+            output += sep;
+
+            output += ConnectivityWeight;
+            output += sep;
+
+            output += PGSen;
+        }
+        else
+        {
+            output += StalenessWeight;
+            output += sep;
+
+            output += ageWeight;
+            output += sep;
+
+            output += dstFromOwnWeight;
+            output += sep;
+
+            output += dstToGuardsWeight;
+        }
 
         return output;
     }

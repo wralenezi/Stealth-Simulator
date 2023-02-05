@@ -4,7 +4,7 @@ using UnityEngine;
 
 public static class ComparePatrolMethods
 {
-    private static int _episodeLength = 50;
+    private static int _episodeLength = 20;
     private static int _episodeCount = 1;
 
 
@@ -23,7 +23,7 @@ public static class ComparePatrolMethods
         PatrolerParams patrolParams = new VisMeshPatrolerParams(0.9f, 1f, 1f,
             1f, 1f, VMDecision.Weighted);
         patrolerMethods.Add(patrolParams);
-
+        
         patrolParams =
             new GridPatrolerParams(0.5f, 1f, 1f, 1f);
         patrolerMethods.Add(patrolParams);
@@ -32,7 +32,7 @@ public static class ComparePatrolMethods
         patrolerMethods.Add(patrolParams);
 
         patrolParams = new RoadMapPatrolerParams(1f, 1f, 1f, 1f, RMDecision.DijkstraPath,
-            RMPassingGuardsSenstivity.Max);
+            RMPassingGuardsSenstivity.Max,0f,0f,0f);
         patrolerMethods.Add(patrolParams);
 
         AddPatrolSessions("", ref sessions, maps, patrolerMethods, "blue", guardTeams);

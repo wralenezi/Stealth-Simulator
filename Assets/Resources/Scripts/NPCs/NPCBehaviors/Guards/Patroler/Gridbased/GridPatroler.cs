@@ -146,6 +146,9 @@ public class GridPatrolerParams : PatrolerParams
         string output = "";
         string sep = "_";
 
+        output += GetType();
+        output += sep;
+
         output += CellSide;
         output += sep;
 
@@ -156,7 +159,6 @@ public class GridPatrolerParams : PatrolerParams
         output += sep;
 
         output += SeparationWeight;
-        output += sep;
 
         return output;
     }

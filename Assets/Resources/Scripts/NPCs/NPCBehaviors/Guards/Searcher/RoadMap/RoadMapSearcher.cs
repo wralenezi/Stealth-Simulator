@@ -234,24 +234,41 @@ public class RoadMapSearcherParams : SearcherParams
         string output = "";
         string sep = "_";
 
-        output += MaxNormalizedPathLength;
+        output += GetType();
         output += sep;
-
-        output += StalenessWeight;
-        output += sep;
-
-        output += PassingGuardsWeight;
-        output += sep;
-
-        output += ConnectivityWeight;
-        output += sep;
-
+        
         output += DecisionType;
         output += sep;
 
-        output += PGSen;
-        // output += sep;
+        if (DecisionType == RMDecision.DijkstraPath)
+        {
+            output += MaxNormalizedPathLength;
+            output += sep;
 
+            output += StalenessWeight;
+            output += sep;
+
+            output += PassingGuardsWeight;
+            output += sep;
+
+            output += ConnectivityWeight;
+            output += sep;
+
+            output += PGSen;
+        }
+        else
+        {
+            output += StalenessWeight;
+            output += sep;
+
+            output += ageWeight;
+            output += sep;
+
+            output += dstFromOwnWeight;
+            output += sep;
+
+            output += dstToGuardsWeight;
+        }
 
         return output;
     }

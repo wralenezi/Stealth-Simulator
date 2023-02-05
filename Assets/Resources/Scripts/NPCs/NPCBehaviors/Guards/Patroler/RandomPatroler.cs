@@ -32,5 +32,15 @@ public class RandomPatroler : Patroler
 
 public class RandomPatrolerParams : PatrolerParams
 {
+    public override string ToString()
+    {
+        string output = "";
+        string sep = "_";
+
+        output += GetType();
+        
+        return output;
+    }
+
     
 }

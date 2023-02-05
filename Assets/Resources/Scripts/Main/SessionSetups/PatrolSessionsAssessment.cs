@@ -20,8 +20,8 @@ public class PatrolSessionsAssessment
         // mapData = new MapData("MgsDock", 2f);
         // mapData = new MapData("bloodstainedAngle1", 0.5f);
 
-        // AddVisMeshSession("", ref sessions, mapData, "blue", guardTeams, _episodeLength);
-        // AddRoadMapSession("", ref sessions, mapData, "blue", guardTeams, _episodeLength);
+        AddVisMeshSession("", ref sessions, mapData, "blue", guardTeams, _episodeLength);
+        AddRoadMapSession("", ref sessions, mapData, "blue", guardTeams, _episodeLength);
         AddGridSession("", ref sessions, mapData, "blue", guardTeams, _episodeLength);
         return sessions;
     }
@@ -178,7 +178,7 @@ public class PatrolSessionsAssessment
         foreach (var guardTeam in guardTeams)
         {
             PatrolerParams patrolParams = new RoadMapPatrolerParams(maxNormalizedPathLength, stalenessWeight,
-                guardPassingWeight, connectivityWeight, decisionType, passingGuardsSenstivity);
+                guardPassingWeight, connectivityWeight, decisionType, passingGuardsSenstivity,0f,0f,0f);
 
             GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolParams, null, null);
 

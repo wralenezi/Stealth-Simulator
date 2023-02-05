@@ -4,7 +4,7 @@ using UnityEngine;
 
 public static class CompareScouterMethods
 {
-    private static int _episodeLength = 50;
+    private static int _episodeLength = 20;
     private static int _episodeCount = 1;
 
 
@@ -32,7 +32,7 @@ public static class CompareScouterMethods
         patrolerMethods.Add(patrolParams);
 
         patrolParams = new RoadMapPatrolerParams(1f, 1f, 1f, 1f, RMDecision.DijkstraPath,
-            RMPassingGuardsSenstivity.Max);
+            RMPassingGuardsSenstivity.Max,0f,0f,0f);
         patrolerMethods.Add(patrolParams);
 
 
@@ -43,7 +43,7 @@ public static class CompareScouterMethods
         ScouterParams scouterMethod = new RoadMapScouterParams(SpotsNeighbourhoods.All, PathCanceller.RiskComparison,
             RiskThresholdType.Attempts, TrajectoryType.Simple, 0.1f, GoalPriority.None, SafetyPriority.WeightedSpot,
             1.2f);
-        scouterMethods.Add(scouterMethod);
+        // scouterMethods.Add(scouterMethod);
 
         scouterMethod = new GreedyToGoalScouterParams();
         scouterMethods.Add(scouterMethod);

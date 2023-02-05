@@ -21,4 +21,12 @@ public class SimpleGreedyScouter : Scouter
 
 public class SimpleGreedyScouterParams : ScouterParams
 {
+    public override string ToString()
+    {
+        string output = "";
+
+        output += GetType();
+
+        return output;
+    }
 }

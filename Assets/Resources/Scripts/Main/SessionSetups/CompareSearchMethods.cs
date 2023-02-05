@@ -4,7 +4,7 @@ using UnityEngine;
 
 public static class CompareSearchMethods
 {
-    private static int _episodeLength = 50;
+    private static int _episodeLength = 30;
     private static int _episodeCount = 1;
 
 
@@ -24,18 +24,18 @@ public static class CompareSearchMethods
         SearcherParams searcherMethod =
             new GridSearcherParams(0.5f, ProbabilityFlowMethod.Diffuse, 1f, 1f, 1f);
         // searcherMethods.Add(searcherMethod);
-
-        searcherMethod =
-            new GridSearcherParams(0.5f, ProbabilityFlowMethod.Propagation, 1f, 1f, 1f);
-        searcherMethods.Add(searcherMethod);
-
-        searcherMethod = new RoadMapSearcherParams(1f, 1f, 1f, 1f, RMDecision.DijkstraPath,
-            RMPassingGuardsSenstivity.Max, 0f, 0f, 0f, ProbabilityFlowMethod.Diffuse);
-        searcherMethods.Add(searcherMethod);
-
-        searcherMethod = new RoadMapSearcherParams(1f, 1f, 1f, 1f, RMDecision.DijkstraPath,
-            RMPassingGuardsSenstivity.Max, 0f, 0f, 0f, ProbabilityFlowMethod.Propagation);
-        searcherMethods.Add(searcherMethod);
+        //
+        // searcherMethod =
+        //     new GridSearcherParams(0.5f, ProbabilityFlowMethod.Propagation, 1f, 1f, 1f);
+        // searcherMethods.Add(searcherMethod);
+        //
+        // searcherMethod = new RoadMapSearcherParams(1f, 1f, 1f, 1f, RMDecision.DijkstraPath,
+        //     RMPassingGuardsSenstivity.Max, 0f, 0f, 0f, ProbabilityFlowMethod.Diffuse);
+        // searcherMethods.Add(searcherMethod);
+        //
+        // searcherMethod = new RoadMapSearcherParams(1f, 1f, 1f, 1f, RMDecision.DijkstraPath,
+        //     RMPassingGuardsSenstivity.Max, 0f, 0f, 0f, ProbabilityFlowMethod.Propagation);
+        // searcherMethods.Add(searcherMethod);
 
         searcherMethod = new RandomSearcherParams();
         searcherMethods.Add(searcherMethod);
@@ -48,8 +48,7 @@ public static class CompareSearchMethods
 
         SearchEvaderParams searchEvader = new SimpleSearchEvaderParams();
         searchEvaders.Add(searchEvader);
-
-
+        
         AddPatrolSessions("", ref sessions, maps, searcherMethods, searchEvaders, "blue", guardTeams);
 
         return sessions;

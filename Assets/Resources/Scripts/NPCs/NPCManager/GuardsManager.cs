@@ -55,6 +55,7 @@ public class GuardsManager : MonoBehaviour
     // This part controls the Reinforcement Learning part of the behavior
 
     #region RL behavior
+
     //
     // public override void OnEpisodeBegin()
     // {
@@ -124,6 +125,7 @@ public class GuardsManager : MonoBehaviour
     //     EndEpisode();
     // }
     //
+
     #endregion
 
     #region NPC creation
@@ -154,7 +156,7 @@ public class GuardsManager : MonoBehaviour
         // Add Collider to the NPC
         CircleCollider2D cd = npcGameObject.AddComponent<CircleCollider2D>();
         cd.radius = Properties.NpcRadius;
-        
+
         NPC npc;
         // Add the appropriate script according to the NPC type
         switch (npcData.npcType)
@@ -168,7 +170,7 @@ public class GuardsManager : MonoBehaviour
                 spriteRenderer.color = color;
 
                 // m_SA.AreaUiManager.UpdateGuardLabel(session.guardColor, spriteRenderer.color);
-                _guards.Add((Guard) npc);
+                _guards.Add((Guard)npc);
                 break;
 
             default:
@@ -178,11 +180,11 @@ public class GuardsManager : MonoBehaviour
 
         // 
         npc.Initiate(npcData, GameManager.Instance.GetVoice());
-        
+
         // npc.ControlledByUser = session.guardBehaviorParams.alertPlanner == AlertPlanner.UserInput;
 
         NpcsManager.Instance.GetIntruders();
-        
+
         // Allocate the NPC based on the specified scenario
         npc.ResetLocation(navMesh, NpcsManager.Instance.GetIntruders(), _guards, session);
 
@@ -203,7 +205,7 @@ public class GuardsManager : MonoBehaviour
     public void Reset(List<MeshPolygon> navMesh, List<Intruder> intruders, Session session)
     {
         m_gCtrl.Reset();
-            
+
         GuardsOverlapTime = 0f;
         // Reset guards
         foreach (var guard in _guards)
@@ -283,7 +285,10 @@ public class GuardsManager : MonoBehaviour
     public void Move(State state, float deltaTime)
     {
         foreach (var guard in _guards)
+        {
             guard.ExecutePlan(state, deltaTime);
+            guard.UpdateMetrics(deltaTime);
+        }
     }
 
 

@@ -27,4 +27,8 @@ public class SimpleSearchEvader : SearchEvader
 
 public class SimpleSearchEvaderParams : SearchEvaderParams
 {
+    public override string ToString()
+    {
+        return GetType().ToString();
+    }
 }

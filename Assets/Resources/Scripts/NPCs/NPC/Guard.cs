@@ -5,6 +5,9 @@ using UnityEngine;
 
 public class Guard : NPC
 {
+    private float _overlapTime;
+    private float _overlapDistance = 1f;
+
     private GameObject m_excMarkPrefab;
     private GameObject m_excMarkGo;
 
@@ -12,7 +15,7 @@ public class Guard : NPC
     public GuardRole role = GuardRole.Patrol;
 
     //************ Guard's Vision *****************//
-    
+
     // time spent in a guard's FOV to be discovered
     public float _timeInFov;
     private const float _maxTimeInFov = 0.2f;
@@ -22,13 +25,13 @@ public class Guard : NPC
     // if this is one then the intruder is spotted
     private float _spottedFactor;
     private Color32 _spottedColor;
-    
+
     // Initialize the guard
     public override void Initiate(NpcData data, VoiceParams _voice)
     {
         base.Initiate(data, _voice);
 
-        m_excMarkPrefab = (GameObject) Resources.Load("Prefabs/exclamation_mark");
+        m_excMarkPrefab = (GameObject)Resources.Load("Prefabs/exclamation_mark");
         m_excMarkGo = Instantiate(m_excMarkPrefab, transform);
         m_excMarkGo.AddComponent<SeparateRotator>();
         m_excMarkGo.SetActive(false);
@@ -38,7 +41,7 @@ public class Guard : NPC
         _spottedCurve.AddKey(0f, 0f);
         _spottedCurve.AddKey(1f, 1f);
         _spottedColor = new Color32(255, 0, 0, 100);
-        
+
         // Add guard label
         GameObject labelOg = new GameObject();
 
@@ -56,6 +59,7 @@ public class Guard : NPC
     public override void ResetNpc()
     {
         base.ResetNpc();
+        _overlapTime = 0f;
         ClearGoal();
     }
 
@@ -69,7 +73,7 @@ public class Guard : NPC
             LinesToPassThrough.RemoveAt(0);
         }
     }
-    
+
     // Check if any intruder is spotted, return true if at least one is spotted
     public bool SpotIntruders(List<Intruder> intruders)
     {
@@ -119,11 +123,18 @@ public class Guard : NPC
         return value == 1f;
     }
 
+    public override void UpdateMetrics(float timeDelta)
+    {
+        if (IsGuardOverlapping())
+        {
+            _overlapTime += timeDelta;
+        }
+    }
 
     private void ShowExclamation()
     {
         m_excMarkGo.SetActive(true);
-        m_excMarkGo.transform.position = (Vector2) GetTransform().position + Vector2.up * 0.7f;
+        m_excMarkGo.transform.position = (Vector2)GetTransform().position + Vector2.up * 0.7f;
     }
 
 
@@ -154,7 +165,7 @@ public class Guard : NPC
         Renderer.enabled = isSeen;
         FovRenderer.enabled = isSeen;
     }
-    
+
     // Check if a point is in the FoV
     public bool IsPointInFoV(Vector2 point)
     {
@@ -162,9 +173,26 @@ public class Guard : NPC
         return isIn;
     }
 
+    private bool IsGuardOverlapping()
+    {
+        float closestGuardDistance = Mathf.Infinity;
+        foreach (var guard in NpcsManager.Instance.GetGuards())
+        {
+            if (Equals(guard, this)) continue;
+
+            // float distance = PathFinding.Instance.GetShortestPathDistance(GetTransform().position, guard.GetTransform().position);
+            float sqrMag = Vector2.SqrMagnitude(GetTransform().position - guard.GetTransform().position);
+
+            if (sqrMag < closestGuardDistance) closestGuardDistance = sqrMag;
+        }
+
+        return closestGuardDistance <= _overlapDistance;
+    }
+
     public override LogSnapshot LogNpcProgress()
     {
-        return new LogSnapshot(GetTravelledDistance(), StealthArea.GetElapsedTimeInSeconds(), Data, "", 0, 0f, 0f, 0f,
+        return new LogSnapshot(GetTravelledDistance(), StealthArea.GetElapsedTimeInSeconds(), Data, "", 0, _overlapTime,
+            0f, 0f,
             0, 0f, 0);
     }
 

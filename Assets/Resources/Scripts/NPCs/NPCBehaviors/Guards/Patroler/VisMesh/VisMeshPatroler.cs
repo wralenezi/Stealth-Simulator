@@ -79,6 +79,9 @@ public class VisMeshPatrolerParams : PatrolerParams
         string output = "";
         string sep = "_";
 
+        output += GetType();
+        output += sep;
+
         output += MaxSeenRegionAreaPerGuard;
         output += sep;
 
@@ -95,8 +98,6 @@ public class VisMeshPatrolerParams : PatrolerParams
         output += sep;
 
         output += DecisionType;
-        // output += sep;
-
 
         return output;
     }

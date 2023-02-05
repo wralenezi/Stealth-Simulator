@@ -25,4 +25,12 @@ public class GreedyToGoalScouter : Scouter
 }
 public class GreedyToGoalScouterParams : ScouterParams
 {
+    public override string ToString()
+    {
+        string output = "";
+
+        output += GetType();
+
+        return output;
+    }
 }

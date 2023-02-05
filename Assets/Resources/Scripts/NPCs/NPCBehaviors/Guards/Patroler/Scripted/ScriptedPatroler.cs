@@ -48,6 +48,16 @@ public class ScriptedPatroler : Patroler
 
 public class ScriptedPatrolerParams : PatrolerParams
 {
+    public override string ToString()
+    {
+        string output = "";
+        string sep = "_";
+
+        output += GetType();
+        
+        return output;
+    }
+
 }
 
 

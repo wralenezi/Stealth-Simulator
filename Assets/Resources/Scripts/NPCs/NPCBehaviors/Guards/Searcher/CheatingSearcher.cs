@@ -32,4 +32,14 @@ public class CheatingSearcher : Searcher
 
 public class CheatingSearcherParams : SearcherParams
 {
+    public override string ToString()
+    {
+        string output = "";
+        string sep = "_";
+
+        output += GetType();
+        
+        return output;
+    }
+
 }
