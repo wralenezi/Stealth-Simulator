@@ -9,7 +9,6 @@
 /[Bb]uilds/
 /[Ll]ogs/
 /[Mm]emoryCaptures/
-/[Pp]erformanceLogs/
 
 
 # Stealth Simulator ignore list
@@ -17,6 +16,9 @@
 
 # Never ignore Asset meta data
 !/[Aa]ssets/**/*.meta
+
+# Igonre the log files from the gameplay
+/[Pp]erformanceLogs/*
 
 # Uncomment this line if you wish to ignore the asset store tools plugin
 # /[Aa]ssets/AssetStoreTools*
