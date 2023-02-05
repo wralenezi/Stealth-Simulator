@@ -5,7 +5,7 @@ using UnityEngine;
 public static class CompareScouterMethods
 {
     private static int _episodeLength = 20;
-    private static int _episodeCount = 1;
+    private static int _episodeCount = 10;
 
 
     public static List<Session> GetSessions()
@@ -17,6 +17,7 @@ public static class CompareScouterMethods
 
         List<MapData> maps = new List<MapData>();
         maps.Add(new MapData("amongUs"));
+        maps.Add(new MapData("MgsDock"));
 
         List<PatrolerParams> patrolerMethods = new List<PatrolerParams>();
 
@@ -40,10 +41,10 @@ public static class CompareScouterMethods
 
         List<ScouterParams> scouterMethods = new List<ScouterParams>();
 
-        ScouterParams scouterMethod = new RoadMapScouterParams(SpotsNeighbourhoods.All, PathCanceller.RiskComparison,
-            RiskThresholdType.Attempts, TrajectoryType.Simple, 0.1f, GoalPriority.None, SafetyPriority.WeightedSpot,
-            1.2f);
-        // scouterMethods.Add(scouterMethod);
+        ScouterParams scouterMethod = new RoadMapScouterParams(SpotsNeighbourhoods.LineOfSight, PathCanceller.DistanceCalculation,
+            RiskThresholdType.Fixed, TrajectoryType.Simple, 0.8f, GoalPriority.None, SafetyPriority.WeightedSpot,
+            0.75f);
+        scouterMethods.Add(scouterMethod);
 
         scouterMethod = new GreedyToGoalScouterParams();
         scouterMethods.Add(scouterMethod);

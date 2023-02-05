@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class PatrolSessionsAssessment
 {
-    private static int _episodeLength = 20;
-    private static int _episodeCount = 1;
+    private static int _episodeLength = 120;
+    private static int _episodeCount = 10;
 
 
     public static List<Session> GetSessions()
@@ -15,18 +15,21 @@ public class PatrolSessionsAssessment
         List<int> guardTeams = new List<int>();
         guardTeams.Add(4);
 
-        MapData mapData;
-        mapData = new MapData("amongUs");
-        // mapData = new MapData("MgsDock", 2f);
-        // mapData = new MapData("bloodstainedAngle1", 0.5f);
+        List<MapData> maps = new List<MapData>();
+        maps.Add(new MapData("amongUs"));
+        maps.Add(new MapData("MgsDock"));
+        maps.Add(new MapData("dragonAgeBrc202d"));
+        maps.Add(new MapData("Boxes"));
+        maps.Add(new MapData("bloodstainedAngle"));
+        
 
-        AddVisMeshSession("", ref sessions, mapData, "blue", guardTeams, _episodeLength);
-        AddRoadMapSession("", ref sessions, mapData, "blue", guardTeams, _episodeLength);
-        AddGridSession("", ref sessions, mapData, "blue", guardTeams, _episodeLength);
+        AddVisMeshSession("", ref sessions, maps, "blue", guardTeams, _episodeLength);
+        AddRoadMapSession("", ref sessions, maps, "blue", guardTeams, _episodeLength);
+        AddGridSession("", ref sessions, maps, "blue", guardTeams, _episodeLength);
         return sessions;
     }
 
-    private static void AddVisMeshSession(string gameCode, ref List<Session> sessions, MapData mapData,
+    private static void AddVisMeshSession(string gameCode, ref List<Session> sessions, List<MapData> maps,
         string teamColor, List<int> guardTeams, float episodeLength)
     {
         // Guard Patrol Behavior
@@ -39,9 +42,9 @@ public class PatrolSessionsAssessment
 
         List<float> maxSeenRegionPortions = new List<float>()
         {
-            // 0.5f,
+            0.5f,
             // 0.7f,
-            0.95f
+            0.9f
         };
 
         float max = 10f;
@@ -85,6 +88,7 @@ public class PatrolSessionsAssessment
         foreach (var decisionType in decisionTypes)
         foreach (var maxSeenRegionPortion in maxSeenRegionPortions)
         foreach (var guardTeam in guardTeams)
+        foreach (var mapData in maps)
         {
             // Set the Hyper-parameters for the behavior
             PatrolerParams patrolParams = new VisMeshPatrolerParams(maxSeenRegionPortion, areaWeight, stalenessWeight,
@@ -103,9 +107,7 @@ public class PatrolSessionsAssessment
 
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)
-            {
                 session.AddNpc(i + 1, NpcType.Guard, null);
-            }
 
             session.MaxEpisodes = _episodeCount;
 
@@ -113,7 +115,7 @@ public class PatrolSessionsAssessment
         }
     }
 
-    private static void AddRoadMapSession(string gameCode, ref List<Session> sessions, MapData mapData,
+    private static void AddRoadMapSession(string gameCode, ref List<Session> sessions, List<MapData> maps,
         string teamColor, List<int> guardTeams, float episodeLength)
     {
         List<GuardSpawnType> guardSpawnTypes = new List<GuardSpawnType>()
@@ -129,7 +131,7 @@ public class PatrolSessionsAssessment
 
         List<float> maxNormalizedPathLengths = new List<float>()
         {
-            0.75f,
+            0.25f,
             1f
         };
 
@@ -157,10 +159,6 @@ public class PatrolSessionsAssessment
             separationWeights.Add(i / max);
         }
 
-        List<RMDecision> decisionTypes = new List<RMDecision>()
-        {
-            RMDecision.DijkstraPath
-        };
 
         List<RMPassingGuardsSenstivity> passingGuardsSenstivities = new List<RMPassingGuardsSenstivity>()
         {
@@ -174,11 +172,62 @@ public class PatrolSessionsAssessment
         foreach (var stalenessWeight in stalenessWeights)
         foreach (var connectivityWeight in connectivityWeights)
         foreach (var passingGuardsSenstivity in passingGuardsSenstivities)
-        foreach (var decisionType in decisionTypes)
         foreach (var guardTeam in guardTeams)
+        foreach (var mapData in maps)
         {
             PatrolerParams patrolParams = new RoadMapPatrolerParams(maxNormalizedPathLength, stalenessWeight,
-                guardPassingWeight, connectivityWeight, decisionType, passingGuardsSenstivity,0f,0f,0f);
+                guardPassingWeight, connectivityWeight, RMDecision.DijkstraPath, passingGuardsSenstivity, 0f, 0f, 0f);
+
+            GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolParams, null, null);
+
+            Session session = new Session(episodeLength, "", GameType.CoinCollection, Scenario.Stealth, teamColor,
+                guardSpawnType, guardTeam, guardBehaviorParams, 0,
+                null,
+                mapData, SpeechType.Simple, SurveyType.EndEpisode);
+
+            session.sessionVariable = "RoadMap";
+            session.coinCount = 0;
+
+            // Add guards
+            for (int i = 0; i < session.guardsCount; i++)
+            {
+                session.AddNpc(i + 1, NpcType.Guard, null);
+            }
+
+
+            session.MaxEpisodes = _episodeCount;
+
+            sessions.Add(session);
+        }
+
+        List<float> ageWeights = new List<float>();
+        for (float i = min; i <= max; i += increment)
+        {
+            ageWeights.Add(i / max);
+        }
+
+        List<float> dtsToGuardWeights = new List<float>();
+        for (float i = min; i <= max; i += increment)
+        {
+            dtsToGuardWeights.Add(i / max);
+        }
+
+        List<float> dtsFromOwnWeights = new List<float>();
+        for (float i = min; i <= max; i += increment)
+        {
+            dtsFromOwnWeights.Add(i / max);
+        }
+
+        foreach (var dtsFromOwnWeight in dtsFromOwnWeights)
+        foreach (var dtsToGuardWeight in dtsToGuardWeights)
+        foreach (var ageWeight in ageWeights)
+        foreach (var stalenessWeight in stalenessWeights)
+        foreach (var guardSpawnType in guardSpawnTypes)
+        foreach (var guardTeam in guardTeams)
+        foreach (var mapData in maps)
+        {
+            PatrolerParams patrolParams = new RoadMapPatrolerParams(0f, stalenessWeight,
+                0f, 0f, RMDecision.EndPoint, 0f, ageWeight, dtsToGuardWeight, dtsFromOwnWeight);
 
             GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolParams, null, null);
 
@@ -203,7 +252,7 @@ public class PatrolSessionsAssessment
         }
     }
 
-    private static void AddGridSession(string gameCode, ref List<Session> sessions, MapData mapData,
+    private static void AddGridSession(string gameCode, ref List<Session> sessions, List<MapData> maps,
         string guardColor,
         List<int> guardTeams, float episodeLength)
     {
@@ -238,7 +287,7 @@ public class PatrolSessionsAssessment
 
         List<float> cellSizes = new List<float>()
         {
-            // 0.5f,
+            0.75f,
             1f
         };
 
@@ -248,6 +297,7 @@ public class PatrolSessionsAssessment
         foreach (var stalenessWeight in stalenessWeights)
         foreach (var distanceWeight in distanceWeights)
         foreach (var separationWeight in separationWeights)
+        foreach (var mapData in maps)
         {
             // Set the Hyper-parameters for the behavior
             PatrolerParams patrolParams =

@@ -45,6 +45,8 @@ public class RoadMapPatrolerDecisionMaker
                 break;
             
             case RMDecision.EndPoint:
+                GetSearchGoal(guard, NpcsManager.Instance.GetGuards(),
+                    patrolerParams, roadMap);
                 break;
         }
 
@@ -54,6 +56,139 @@ public class RoadMapPatrolerDecisionMaker
         _guardGoals[guard.name] = guard.GetGoal().Value;
     }
     
+        private void GetSearchGoal(Guard guard, List<Guard> guards, RoadMapPatrolerParams _params,
+        RoadMap roadMap)
+    {
+        Vector2? newGoal = GetSearchSegment(guard, guards, _params, roadMap);
+
+        if (!Equals(newGoal, null)) SwapGoal(guard, guards, newGoal.Value, false);
+    }
+
+
+    // Get the best Search segment the guard should visit.
+    private Vector2? GetSearchSegment(Guard requestingGuard, List<Guard> guards, RoadMapPatrolerParams _params,
+        RoadMap roadMap)
+    {
+        SearchSegment bestSs = null;
+        float maxFitnessValue = Mathf.NegativeInfinity;
+        float maxProbability = Mathf.NegativeInfinity;
+
+        // Loop through the search segments in the lines
+        foreach (var line in roadMap.GetLines(false))
+        {
+            SearchSegment sS = line.GetSearchSegment();
+
+            if (maxProbability < sS.GetProbability())
+                maxProbability = sS.GetProbability();
+
+            // Get the distance of the closest goal other guards are coming to visit
+            float minGoalDistance = Mathf.Infinity;
+
+            foreach (var guard in guards)
+            {
+                // Skip the busy guards
+                if (!guard.IsBusy())
+                    continue;
+
+                float distanceToGuardGoal =
+                    PathFinding.Instance.GetShortestPathDistance(sS.GetMidPoint(), guard.GetGoal().Value);
+
+                if (minGoalDistance > distanceToGuardGoal)
+                    minGoalDistance = distanceToGuardGoal;
+            }
+
+            minGoalDistance = float.IsPositiveInfinity(minGoalDistance) ? 0f : minGoalDistance;
+
+            // Get the distance from the requesting guard
+            float distanceToGuard = PathFinding.Instance.GetShortestPathDistance((sS.position1 + sS.position2) / 2f,
+                requestingGuard.transform.position);
+
+            // Calculate the fitness of the search segment
+            // start with the probability
+            float ssFitness = sS.GetFitness() * _params.StalenessWeight;
+            ssFitness += (sS.GetAge() / StealthArea.GetElapsedTimeInSeconds()) * _params.ageWeight;
+            ssFitness += (minGoalDistance / PathFinding.Instance.longestShortestPath) * _params.dstToGuardsWeight;
+            ssFitness += (distanceToGuard / PathFinding.Instance.longestShortestPath) * _params.dstFromOwnWeight;
+
+            if (maxFitnessValue < ssFitness)
+            {
+                maxFitnessValue = ssFitness;
+                bestSs = sS;
+            }
+        }
+
+        if (bestSs == null)
+            return null;
+
+        return (bestSs.position1 + bestSs.position2) / 2f;
+    }
+
+    // Assign goal to closest guard and swap goals if needed if the guard was busy.
+    public void SwapGoal(Guard assignedGuard, List<Guard> guards, Vector2 newGoal, bool isEnabled)
+    {
+        // Find the closest guard to the new goal
+        float minDistance = Vector2.Distance(assignedGuard.transform.position, newGoal);
+        Guard closestGuard = null;
+        foreach (var curGuard in guards)
+        {
+            // float dstToOldGuard = Vector2.Distance(curGuard.transform.position, newGoal);
+            float dstToOldGuard = PathFinding.Instance.GetShortestPathDistance(curGuard.transform.position, newGoal);
+
+            // Check if the other guard is closer
+            if (minDistance > dstToOldGuard)
+            {
+                minDistance = dstToOldGuard;
+                closestGuard = curGuard;
+            }
+        }
+
+        string heading = "";
+
+        // Sort out the guard assignment
+        if (isEnabled && !Equals(closestGuard, assignedGuard) && !Equals(closestGuard, null))
+        {
+            // Swap the goals between the closer guard
+            if (closestGuard.IsBusy())
+            {
+                Vector2 tempGoal = closestGuard.GetGoal().Value;
+                assignedGuard.SetDestination(tempGoal, false, true);
+
+                // // Update the guards heading
+                // heading = WorldState.GetHeading(assignedGuard.GetTransform().position, tempGoal);
+                // WorldState.Set(assignedGuard.name + "_goal", heading);
+
+                // m_SA.guardsManager.UpdateWldStNpcs();
+
+                // guard announce to go instead 
+                // scriptor.ChooseDialog(assignedGuard, closestGuard, "Plan", m_SA.GetSessionInfo().speechType,
+                //     m_BarkProb);
+            }
+
+            // Assign the new goal to the other idle guard
+            closestGuard.SetDestination(newGoal, false, true);
+
+            // // Update the guards heading
+            // heading = WorldState.GetHeading(closestGuard.GetTransform().position, newGoal);
+            // WorldState.Set(assignedGuard.name + "_goal", heading);
+
+            // m_SA.guardsManager.UpdateWldStNpcs();
+
+            // scriptor.ChooseDialog(closestGuard, null, "Plan", m_SA.GetSessionInfo().speechType, m_BarkProb);
+        }
+        else // since no guards are closer then simply assign it to the one who chose it
+        {
+            assignedGuard.SetDestination(newGoal, false, false);
+
+            // // Update the guards heading
+            // heading = WorldState.GetHeading(assignedGuard.GetTransform().position, newGoal);
+            // WorldState.Set(assignedGuard.name + "_goal", heading);
+
+            // m_SA.guardsManager.UpdateWldStNpcs();
+
+            // scriptor.ChooseDialog(assignedGuard, null, "Plan", m_SA.GetSessionInfo().speechType, m_BarkProb);
+        }
+    }
+
     
     // Get a complete path of no more than param@length that a guard needs to traverse to search for an intruder.
     private void SetDijkstraPath(Guard guard, List<Guard> guards, RoadMapPatrolerParams _params, RoadMap roadMap)

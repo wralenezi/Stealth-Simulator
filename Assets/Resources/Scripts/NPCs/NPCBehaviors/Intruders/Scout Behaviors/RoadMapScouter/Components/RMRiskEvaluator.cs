@@ -65,7 +65,6 @@ public class RMRiskEvaluator : MonoBehaviour
             }
 
 
-        // foreach (var riskSpot in _riskSpots)
         for (int i = 0; i < _riskSpots.Count; i++)
         {
             RiskyPosition risk = _riskSpots[i];
@@ -199,9 +198,9 @@ public class RMRiskEvaluator : MonoBehaviour
             float guardPathDistanceToSpot = PathFinding.Instance.GetShortestPathDistance(
                 spot.npc.GetTransform().position,
                 spot.position.Value);
+
             guardPathDistanceToSpot -= Properties.GetFovRadius(NpcType.Guard);
             guardPathDistanceToSpot = Mathf.Clamp(guardPathDistanceToSpot, 0f, guardPathDistanceToSpot);
-
 
             float arrivalTimeIntruder =
                 intruderPathDistanceToSpot / (Properties.IntruderSpeedMulti * Properties.NpcSpeed);
@@ -213,15 +212,16 @@ public class RMRiskEvaluator : MonoBehaviour
         return false;
     }
 
-    public void CheckPathRisk(PathCanceller pathCancelType, RoadMap roadMap, Intruder intruder, List<Guard> guards,
+    public void CheckPathRisk(RoadMapScouterParams scouterparams, RoadMap roadMap, Intruder intruder,
+        List<Guard> guards,
         ref List<HidingSpot> availableSpots,
         ref HidingSpot goalHs)
     {
         // if (_isTrajectoryInterceptionCoRunning && !intruder.IsBusy()) return;
         // StartCoroutine(TrajectoryInterceptionCO(pathCancelType, roadMap, intruder, guards, goalHs));
-        
+
         if (!intruder.IsBusy()) return;
-        TrajectoryInterception(pathCancelType, roadMap, intruder, guards, ref availableSpots, ref goalHs);
+        TrajectoryInterception(scouterparams, roadMap, intruder, guards, ref availableSpots, ref goalHs);
     }
 
 
@@ -259,14 +259,14 @@ public class RMRiskEvaluator : MonoBehaviour
         _isTrajectoryInterceptionCoRunning = false;
     }
 
-    private void TrajectoryInterception(PathCanceller pathCancelType, RoadMap roadMap, Intruder intruder,
+    private void TrajectoryInterception(RoadMapScouterParams scouterparams, RoadMap roadMap, Intruder intruder,
         List<Guard> guards, ref List<HidingSpot> availableSpots, ref HidingSpot goalHs)
     {
-        float maxPathRisk = RMThresholds.GetMaxPathRisk(RiskThresholdType.Danger);
+        float maxPathRisk = RMThresholds.GetMaxPathRisk(scouterparams.thresholdType);
 
         bool isPathRisky = false;
 
-        switch (pathCancelType)
+        switch (scouterparams.pathCancel)
         {
             case PathCanceller.DistanceCalculation:
                 isPathRisky = IsRiskyMeetUp(roadMap, intruder, guards, maxPathRisk);

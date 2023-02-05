@@ -18,12 +18,10 @@ public class GridPatroler : Patroler
     public override void Initiate(MapManager mapManager, GuardBehaviorParams patrolParams)
     {
         _params = (GridPatrolerParams)patrolParams.patrolerParams;
-        _nodeDimensions = new Vector3(_params.CellSide, _params.CellSide, _params.CellSide) * 0.95f;
+        _nodeDimensions = new Vector3(_params.CellSide, _params.CellSide, _params.CellSide);
 
         _decisionMaker = new GridPatrolerDecisionMaker();
         SetupGrid(MapManager.Instance.mapRenderer.GetMapBoundingBox(), _params.CellSide);
-
-        RenderGrid = true;
     }
 
     private void SetupGrid(Bounds bounds, float cellSide)

@@ -90,25 +90,39 @@ public class PathFinding : MonoBehaviour
     {
         Polygon wall = MapManager.Instance.mapRenderer.GetInteriorWalls()[0];
 
+        float minSafeDistanceFromGuard = 4f;
+
         float maxDistance = Mathf.NegativeInfinity;
         Vector2? corner = null;
-        
+
         for (int i = 0; i < wall.GetVerticesCount(); i++)
         {
             Vector2 cornerWall = -wall.GetAngelNormal(i) * radius + wall.GetPoint(i);
             float distance = GetShortestPathDistance(point, cornerWall);
 
-            if (distance > maxDistance)
+            bool isSafe = true;
+            foreach (var guard in NpcsManager.Instance.GetGuards())
+            {
+                float distanceFromGuard =
+                    GetShortestPathDistance(cornerWall, guard.GetTransform().position);
+
+                if (distanceFromGuard < minSafeDistanceFromGuard)
+                {
+                    isSafe = false;
+                    break;
+                }
+            }
+
+
+            if (distance > maxDistance && isSafe)
             {
                 maxDistance = distance;
                 corner = cornerWall;
             }
-
         }
 
         return corner.Value;
     }
-
 
 
     // Return the shortest path as a sequence of points
@@ -139,7 +153,7 @@ public class PathFinding : MonoBehaviour
 
         // Insert the first point to the path
         shortestPath.Insert(0, startPoint);
-        
+
         float totalDistance = 0f;
 
         for (int i = 0; i < shortestPath.Count - 1; i++)
@@ -284,7 +298,6 @@ public class PathFinding : MonoBehaviour
         return costValue;
     }
 
-    
 
     // Get heuristic value for mesh polygons
     static float GetHeuristicValue(MeshPolygon currentPolygon, MeshPolygon goal)
@@ -293,7 +306,6 @@ public class PathFinding : MonoBehaviour
 
         return heuristicValue;
     }
-
 
 
     // Get the polygon that contains the specified point
@@ -528,7 +540,7 @@ public class PathFinding : MonoBehaviour
         path.Add(destinationPoint);
     }
 
-    
+
     public void OnDrawGizmos()
     {
         if (Equals(pathMesh, null))

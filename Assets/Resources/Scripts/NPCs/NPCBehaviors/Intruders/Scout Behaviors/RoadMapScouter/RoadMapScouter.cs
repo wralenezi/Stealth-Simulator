@@ -46,8 +46,9 @@ public class RoadMapScouter : Scouter
     public override void Initiate(MapManager mapManager, Session session)
     {
         base.Initiate(mapManager, session);
-        
+
         _params = (RoadMapScouterParams) session.IntruderBehaviorParams.scouterParams;
+        RMThresholds.SetMaxSafeRisk(_params.maxRiskAsSafe);
 
         _closestWpsToDestination = new List<RoadMapNode>();
         _availableSpots = new List<HidingSpot>();
@@ -95,7 +96,7 @@ public class RoadMapScouter : Scouter
         if (!intruder.IsBusy()) PlanPath(intruder, gameType);
 
         // Abort the current path if it is too risky
-        _riskEvaluator.CheckPathRisk(_params.pathCancel, _roadMap, intruder, guards, ref _availableSpots,
+        _riskEvaluator.CheckPathRisk(_params, _roadMap, intruder, guards, ref _availableSpots,
             ref _currentGoalHs);
     }
 
@@ -104,7 +105,13 @@ public class RoadMapScouter : Scouter
         Vector2? goal = GetDestination(gameType);
 
         _availableSpots.Clear();
-        PathFindToDestination(goal, _params.maxRiskAsSafe);
+        PathFindToDestination(goal);
+
+        if (_intruder.IsBusy()) return;
+
+        // If there is no path to the goal, then check the populate possible hiding spots
+        foreach (var wp in _closestWpsToDestination)
+            FillAvailableSpots(wp.GetPosition());
 
         EvaluateSpots(intruder, goal);
 
@@ -134,23 +141,16 @@ public class RoadMapScouter : Scouter
     /// </summary>
     /// <param name="destination"></param>
     /// <param name="minSafeRisk"></param>
-    private void PathFindToDestination(Vector2? destination, float minSafeRisk)
+    private void PathFindToDestination(Vector2? destination)
     {
-        float maxDistance = PathFinding.Instance.longestShortestPath * 0.3f;
         int numOfPossibleRmNodes = 8;
-        float maxSearchRisk = RMThresholds.GetMaxSearchRisk(_params.thresholdType);
-        bool doAstar = _riskEvaluator.GetRisk() <= minSafeRisk && !Equals(destination, null);
+        bool doAstar = _riskEvaluator.GetRisk() <= _params.maxRiskAsSafe && !Equals(destination, null);
 
         List<Vector2> path = _intruder.GetPath();
+
         _pathFinder.GetClosestPointToGoal(_roadMap, _intruder.GetTransform().position,
             destination.Value, numOfPossibleRmNodes, ref _closestWpsToDestination,
-            ref path, maxSearchRisk, doAstar, maxDistance);
-
-        // If there is no path to the goal, then check the populate possible hiding spots
-        if (_intruder.IsBusy()) return;
-
-        foreach (var wp in _closestWpsToDestination)
-            FillAvailableSpots(wp.GetPosition());
+            ref path, doAstar);
     }
 
     private void FillAvailableSpots(Vector2 position)
@@ -408,14 +408,16 @@ public class RoadMapScouterParams : ScouterParams
     public readonly TrajectoryType trajectoryType;
 
     public readonly float maxRiskAsSafe;
-    
+
     public readonly GoalPriority goalPriority;
 
     public readonly SafetyPriority safetyPriority;
 
     public readonly float fovProjectionMultiplier;
 
-    public RoadMapScouterParams(SpotsNeighbourhoods spotsNeighbourhood, PathCanceller pathCancel, RiskThresholdType thresholdType, TrajectoryType trajectoryType, float maxRiskAsSafe, GoalPriority goalPriority, SafetyPriority safetyPriority, float fovProjectionMultiplier)
+    public RoadMapScouterParams(SpotsNeighbourhoods spotsNeighbourhood, PathCanceller pathCancel,
+        RiskThresholdType thresholdType, TrajectoryType trajectoryType, float maxRiskAsSafe, GoalPriority goalPriority,
+        SafetyPriority safetyPriority, float fovProjectionMultiplier)
     {
         this.spotsNeighbourhood = spotsNeighbourhood;
         this.pathCancel = pathCancel;
@@ -443,10 +445,10 @@ public class RoadMapScouterParams : ScouterParams
 
         output += thresholdType;
         output += sep;
-        
+
         output += fovProjectionMultiplier;
-        output += sep;            
-            
+        output += sep;
+
         output += trajectoryType;
         output += sep;
 
@@ -457,7 +459,7 @@ public class RoadMapScouterParams : ScouterParams
         output += sep;
 
         output += maxRiskAsSafe;
-        
+
         return output;
     }
 }

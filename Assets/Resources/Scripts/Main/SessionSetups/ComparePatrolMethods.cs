@@ -4,7 +4,7 @@ using UnityEngine;
 
 public static class ComparePatrolMethods
 {
-    private static int _episodeLength = 20;
+    private static int _episodeLength = 50;
     private static int _episodeCount = 1;
 
 
@@ -25,7 +25,7 @@ public static class ComparePatrolMethods
         patrolerMethods.Add(patrolParams);
         
         patrolParams =
-            new GridPatrolerParams(0.5f, 1f, 1f, 1f);
+            new GridPatrolerParams(1f, 1f, 1f, 1f);
         patrolerMethods.Add(patrolParams);
 
         patrolParams = new RandomPatrolerParams();

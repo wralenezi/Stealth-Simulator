@@ -601,7 +601,9 @@ public class RoadMap
         RoadMapNode sourceWp =
             GetGuardRoadMapNode(source, npc,
                 GetProbabilityValue(npc, source, null, 0, fov, totalDistance));
+        
         InsertWpInLine(wp1, wp2, sourceWp);
+        
         sourceWp.distanceFromGuard = 0f;
         _tempWpsActual.Add(sourceWp);
 

@@ -20,23 +20,38 @@ public static class CompareSearchMethods
 
         // Add the search methods
         List<SearcherParams> searcherMethods = new List<SearcherParams>();
+        SearcherParams searcherMethod = null;
 
-        SearcherParams searcherMethod =
+        // Grid searchers
+        
+         searcherMethod =
             new GridSearcherParams(0.5f, ProbabilityFlowMethod.Diffuse, 1f, 1f, 1f);
-        // searcherMethods.Add(searcherMethod);
-        //
-        // searcherMethod =
-        //     new GridSearcherParams(0.5f, ProbabilityFlowMethod.Propagation, 1f, 1f, 1f);
-        // searcherMethods.Add(searcherMethod);
-        //
-        // searcherMethod = new RoadMapSearcherParams(1f, 1f, 1f, 1f, RMDecision.DijkstraPath,
-        //     RMPassingGuardsSenstivity.Max, 0f, 0f, 0f, ProbabilityFlowMethod.Diffuse);
-        // searcherMethods.Add(searcherMethod);
-        //
-        // searcherMethod = new RoadMapSearcherParams(1f, 1f, 1f, 1f, RMDecision.DijkstraPath,
-        //     RMPassingGuardsSenstivity.Max, 0f, 0f, 0f, ProbabilityFlowMethod.Propagation);
-        // searcherMethods.Add(searcherMethod);
+        searcherMethods.Add(searcherMethod);
+        
+        searcherMethod =
+            new GridSearcherParams(0.5f, ProbabilityFlowMethod.Propagation, 1f, 1f, 1f);
+        searcherMethods.Add(searcherMethod);
 
+        // Road Map Searchers
+        searcherMethod = new RoadMapSearcherParams(1f, 1f, 1f, 1f, RMDecision.DijkstraPath,
+            RMPassingGuardsSenstivity.Max, 0f, 0f, 0f, ProbabilityFlowMethod.Diffuse);
+        searcherMethods.Add(searcherMethod);
+       
+        searcherMethod = new RoadMapSearcherParams(1f, 1f, 1f, 1f, RMDecision.DijkstraPath,
+            RMPassingGuardsSenstivity.Max, 0f, 0f, 0f, ProbabilityFlowMethod.Propagation);
+        searcherMethods.Add(searcherMethod);
+
+        
+        searcherMethod = new RoadMapSearcherParams(1f, 1f, 1f, 1f, RMDecision.EndPoint,
+            RMPassingGuardsSenstivity.Max, 0f, 0f, 0f, ProbabilityFlowMethod.Diffuse);
+        searcherMethods.Add(searcherMethod);
+        
+        searcherMethod = new RoadMapSearcherParams(1f, 1f, 1f, 1f, RMDecision.EndPoint,
+            RMPassingGuardsSenstivity.Max, 0f, 0f, 0f, ProbabilityFlowMethod.Propagation);
+        searcherMethods.Add(searcherMethod);
+
+        // Basic searchers
+        
         searcherMethod = new RandomSearcherParams();
         searcherMethods.Add(searcherMethod);
 

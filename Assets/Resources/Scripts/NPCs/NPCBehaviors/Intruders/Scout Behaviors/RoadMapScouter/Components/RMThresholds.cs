@@ -4,16 +4,24 @@ using UnityEngine;
 
 public static class RMThresholds
 {
+    private static float _maxSafeRisk;
+
     private static int _currentAttemptsCount;
     private static int maxAttempts = 10;
 
     private static int _maxDepth = 1;
-    
+
     private static float _minSearchRisk = 0.7f;
-    private static float _maxSearchRisk = 0.9f;
+    private static float _maxSearchRisk = 0.99f;
 
     private static float _minPathRisk = 0.5f;
-    private static float _maxPathRisk = 0.9f;
+    private static float _maxPathRisk = 0.99f;
+
+    public static void SetMaxSafeRisk(float maxSafeRisk)
+    {
+        _maxSafeRisk = maxSafeRisk;
+    }
+
 
     public static float GetMaxRisk()
     {
@@ -29,14 +37,14 @@ public static class RMThresholds
     {
         _currentAttemptsCount = Mathf.Min(_currentAttemptsCount + 1, maxAttempts);
     }
-    
-    
+
+
     public static int GetMaxAttempts()
     {
         return maxAttempts;
     }
-    
-    
+
+
     public static int GetSearchDepth(RiskThresholdType type)
     {
         switch (type)
@@ -73,7 +81,6 @@ public static class RMThresholds
     }
 
 
-
     public static float GetMaxSearchRisk(RiskThresholdType type)
     {
         switch (type)
@@ -91,7 +98,7 @@ public static class RMThresholds
                     return _minSearchRisk;
 
             case RiskThresholdType.Fixed:
-                return 0.5f;
+                return _maxSafeRisk;
         }
 
         return 0.5f;
@@ -114,7 +121,7 @@ public static class RMThresholds
                     return _minPathRisk;
 
             case RiskThresholdType.Fixed:
-                return 0.5f;
+                return _maxSafeRisk;
         }
 
         return 0.5f;
@@ -154,6 +161,6 @@ public enum RiskThresholdType
     Attempts,
 
     Binary,
-    
+
     None
 }

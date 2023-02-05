@@ -167,9 +167,6 @@ public static class Properties
         return 2f;
     }
 
-    // Max age a search segment can have
-    public static float MaxAge = 255f;
-
     // The maximum walkable area; This acts as a denominator for normalizing the map size.
     public static float MaxWalkableArea = 5000f;
 

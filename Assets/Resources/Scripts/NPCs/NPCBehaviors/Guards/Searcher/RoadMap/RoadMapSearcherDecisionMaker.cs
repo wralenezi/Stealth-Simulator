@@ -10,9 +10,6 @@ public class RoadMapSearcherDecisionMaker
     private List<RoadMapLine> open;
     private List<RoadMapLine> closed;
 
-    // The minimum probability for a segment to be considered by the guard
-    protected float m_minSegThreshold = 0.4f;
-
     // List of projections points by expanding a projected point on the road map
     private List<PossiblePosition> m_ExpandedPoints;
 
@@ -274,11 +271,6 @@ public class RoadMapSearcherDecisionMaker
             if (maxProbability < sS.GetProbability())
                 maxProbability = sS.GetProbability();
 
-
-            // Skip the segment if it has a probability of zero or less
-            if (sS.GetProbability() <= m_minSegThreshold) continue;
-
-
             // Get the distance of the closest goal other guards are coming to visit
             float minGoalDistance = Mathf.Infinity;
 
@@ -304,7 +296,7 @@ public class RoadMapSearcherDecisionMaker
             // Calculate the fitness of the search segment
             // start with the probability
             float ssFitness = sS.GetFitness() * _params.StalenessWeight;
-            ssFitness += (sS.GetAge() / Properties.MaxAge) * _params.ageWeight;
+            ssFitness += (sS.GetAge() / StealthArea.GetElapsedTimeInSeconds()) * _params.ageWeight;
             ssFitness += (minGoalDistance / PathFinding.Instance.longestShortestPath) * _params.dstToGuardsWeight;
             ssFitness += (distanceToGuard / PathFinding.Instance.longestShortestPath) * _params.dstFromOwnWeight;
 

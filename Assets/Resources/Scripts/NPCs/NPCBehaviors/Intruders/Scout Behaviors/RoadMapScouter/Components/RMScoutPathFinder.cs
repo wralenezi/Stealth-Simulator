@@ -18,9 +18,8 @@ public class RMScoutPathFinder
     // Get the path to the goal, if it is not reachable then return the closest reachable node
     public void GetClosestPointToGoal(RoadMap roadMap, Vector2 start, Vector2 goal, int numberOfWPs,
         ref List<RoadMapNode> closestWps, ref List<Vector2> path,
-        float highestRiskThreshold, bool isSafe, float maxDistance)
+        bool isSafe)
     {
-        // bool isOriginal = true;
         RoadMapNode startWp = roadMap.GetClosestNodes(start, true, NodeType.RoadMap, Properties.NpcRadius);
         RoadMapNode goalWp = roadMap.GetClosestNodes(goal, true, NodeType.RoadMap, Properties.NpcRadius);
 
@@ -55,7 +54,6 @@ public class RMScoutPathFinder
             RoadMapNode current = openListRoadMap[0];
             openListRoadMap.RemoveAt(0);
 
-            //if (highestRiskThreshold >= current.GetProbability())
             if (RMThresholds.GetMaxRisk() >= current.GetProbability())
                 foreach (RoadMapNode p in current.GetConnections(true))
                 {
@@ -72,10 +70,8 @@ public class RMScoutPathFinder
                         p.parent = current;
                     }
 
-                    // Place a limit on the search
-                    if (current.gDistance < maxDistance)
-                        openListRoadMap.InsertIntoSortedList(p,
-                            (x, y) => x.GetFvalue().CompareTo(y.GetFvalue()), Order.Asc);
+                    openListRoadMap.InsertIntoSortedList(p,
+                        (x, y) => x.GetFvalue().CompareTo(y.GetFvalue()), Order.Asc);
                 }
 
             closedListRoadMap.Add(current);
@@ -107,7 +103,7 @@ public class RMScoutPathFinder
 
                 if (Equals(closedListRoadMap[i].hDistance, Mathf.Infinity)) continue;
 
-                RoadMapNode node = closedListRoadMap[i]; // GetAncestor(closedListRoadMap[i], 20f);
+                RoadMapNode node = closedListRoadMap[i];
                 if (IsSpotTooCloseRestSpots(node, closestWps, 1f)) continue;
 
                 closestWps.Add(node);
@@ -247,8 +243,8 @@ public class RMScoutPathFinder
             RoadMapNode current = openListRoadMap[0];
             openListRoadMap.RemoveAt(0);
 
-            // if (highestRiskThreshold >= current.GetProbability())
-            if (RMThresholds.GetMaxRisk() >= current.GetProbability())
+            if (highestRiskThreshold >= current.GetProbability())
+            // if (RMThresholds.GetMaxRisk() >= current.GetProbability())
                 foreach (RoadMapNode p in current.GetConnections(true))
                 {
                     if (closedListRoadMap.Contains(p) || Equals(p.type, NodeType.Corner)) continue;

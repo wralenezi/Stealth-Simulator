@@ -176,7 +176,7 @@ public class GameManager : MonoBehaviour
     private void LoadSavedSessions()
     {
         // Sessions set up for evaluating the hyper parameters  of the patrol behaviors 
-        // List<Session> sessions = PatrolSessionsAssessment.GetSessions();
+        List<Session> sessions = PatrolSessionsAssessment.GetSessions();
 
         // Sessions set up for evaluating the patrol behaviors
         // List<Session> sessions = ComparePatrolMethods.GetSessions();
@@ -184,7 +184,7 @@ public class GameManager : MonoBehaviour
         // Sessions set up for evaluating the search behaviors
         // List<Session> sessions = CompareSearchMethods.GetSessions();
 
-        List<Session> sessions = CompareScouterMethods.GetSessions();
+        // List<Session> sessions = CompareScouterMethods.GetSessions();
 
         // Sessions set up for evaluating the efficiency of the search behaviors
         // List<Session> sessions = SearchSessionAssessment.GetSessions();
@@ -687,6 +687,9 @@ public class Session
 
         // Guards count 
         sessionInfo += guardsCount;
+        sessionInfo += sep;
+        
+        sessionInfo += episodeLengthSec;
         sessionInfo += sep;
 
         if (!Equals(guardBehaviorParams, null))
