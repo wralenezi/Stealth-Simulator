@@ -13,19 +13,19 @@ public class PatrolSessionsAssessment
         List<Session> sessions = new List<Session>();
 
         List<int> guardTeams = new List<int>();
-        guardTeams.Add(4);
+        guardTeams.Add(2);
 
         List<MapData> maps = new List<MapData>();
-        maps.Add(new MapData("amongUs"));
+        // maps.Add(new MapData("amongUs"));
         maps.Add(new MapData("MgsDock"));
-        maps.Add(new MapData("dragonAgeBrc202d"));
-        maps.Add(new MapData("Boxes"));
-        maps.Add(new MapData("bloodstainedAngle"));
+        // maps.Add(new MapData("dragonAgeBrc202d"));
+        // maps.Add(new MapData("Boxes"));
+        // maps.Add(new MapData("bloodstainedAngle"));
         
 
-        AddVisMeshSession("", ref sessions, maps, "blue", guardTeams, _episodeLength);
-        AddRoadMapSession("", ref sessions, maps, "blue", guardTeams, _episodeLength);
-        AddGridSession("", ref sessions, maps, "blue", guardTeams, _episodeLength);
+        AddVisMeshSession("", ref sessions, maps, "black", guardTeams, _episodeLength);
+        AddRoadMapSession("", ref sessions, maps, "black", guardTeams, _episodeLength);
+        AddGridSession("", ref sessions, maps, "black", guardTeams, _episodeLength);
         return sessions;
     }
 
