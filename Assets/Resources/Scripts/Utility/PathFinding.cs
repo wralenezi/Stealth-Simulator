@@ -9,7 +9,6 @@ public class PathFinding : MonoBehaviour
 {
     [SerializeField] private float m_longestPathInMap;
 
-
     public float longestShortestPath => m_longestPathInMap;
 
     // Simple Funnel Offset
@@ -59,14 +58,23 @@ public class PathFinding : MonoBehaviour
     // Calculate the longest possible path in the map
     private void CalculateLongestPathLength(List<Polygon> walls)
     {
-        float lengthFromPoint = 0.1f;
+        float lengthFromPoint = 1f;
         float maxDistance = Mathf.NegativeInfinity;
         for (int j = 0; j < walls[0].GetVerticesCount(); j++)
         for (int k = j + 1; k < walls[0].GetVerticesCount(); k++)
         {
+            // print(walls[0].GetPoint(j) - walls[0].GetAngelNormal(j) * lengthFromPoint + " - " +
+            //       (walls[0].GetPoint(k) - walls[0].GetAngelNormal(k) * lengthFromPoint));
+            //
+            // float distance = GetShortestPathDistance(
+            //     walls[0].GetPoint(j) - walls[0].GetAngelNormal(j) * lengthFromPoint,
+            //     walls[0].GetPoint(k) - walls[0].GetAngelNormal(k) * lengthFromPoint);
+
+
             float distance = GetShortestPathDistance(
-                walls[0].GetAngelNormal(j) * lengthFromPoint + walls[0].GetPoint(j),
-                walls[0].GetAngelNormal(k) * lengthFromPoint + walls[0].GetPoint(k));
+                walls[0].GetCorner(j),
+                walls[0].GetCorner(k));
+
 
             if (maxDistance < distance)
                 maxDistance = distance;
@@ -172,6 +180,7 @@ public class PathFinding : MonoBehaviour
 
         if (Equals(startPolygon, null) || Equals(destinationPolygon, null))
         {
+            return;
             throw new Exception();
         }
 
@@ -313,7 +322,7 @@ public class PathFinding : MonoBehaviour
     {
         // Check all polygons in the NavMesh if they contain the point 
         foreach (var p in navMesh)
-            if (p.IsPointInPolygon(point, true))
+            if (p.IsPointInPolygon(point, false))
                 return p;
 
         // In case the point is out of all polygons 

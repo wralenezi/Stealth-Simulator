@@ -5,7 +5,7 @@ using UnityEngine;
 public class PatrolSessionsAssessment
 {
     private static int _episodeLength = 120;
-    private static int _episodeCount = 10;
+    private static int _episodeCount = 20;
 
 
     public static List<Session> GetSessions()
@@ -13,13 +13,13 @@ public class PatrolSessionsAssessment
         List<Session> sessions = new List<Session>();
 
         List<int> guardTeams = new List<int>();
-        guardTeams.Add(2);
+        guardTeams.Add(4);
 
         List<MapData> maps = new List<MapData>();
-        // maps.Add(new MapData("amongUs"));
+        maps.Add(new MapData("amongUs"));
         maps.Add(new MapData("MgsDock"));
         // maps.Add(new MapData("dragonAgeBrc202d"));
-        // maps.Add(new MapData("Boxes"));
+        maps.Add(new MapData("Boxes"));
         // maps.Add(new MapData("bloodstainedAngle"));
         
 

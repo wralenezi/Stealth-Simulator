@@ -19,7 +19,7 @@ public class RoadMapPatroler : Patroler
     {
         _RoadMap = mapManager.GetRoadMap();
 
-        _params = (RoadMapPatrolerParams)guardParams.patrolerParams;
+        _params = (RoadMapPatrolerParams) guardParams.patrolerParams;
 
         _decisionMaker = new RoadMapPatrolerDecisionMaker();
         _decisionMaker.Initiate();
@@ -45,8 +45,7 @@ public class RoadMapPatroler : Patroler
 
             // Get the max probability
             float prob = line.GetSearchSegment().GetProbability();
-            if (maxProbability < prob)
-                maxProbability = prob;
+            if (maxProbability < prob) maxProbability = prob;
         }
 
         foreach (var line in _RoadMap.GetLines(false))
@@ -54,10 +53,8 @@ public class RoadMapPatroler : Patroler
             CheckSeenSs(guards, line);
 
             SearchSegment sS = line.GetSearchSegment();
-            if (Math.Abs(maxProbability) > 0.0001f)
-                sS.SetProb(sS.GetProbability() / maxProbability);
-            else
-                sS.SetProb(sS.GetProbability());
+            if (Math.Abs(maxProbability) > 0.0001f) sS.SetProb(sS.GetProbability() / maxProbability);
+            else sS.SetProb(sS.GetProbability());
         }
     }
 
@@ -138,7 +135,7 @@ public class RoadMapPatrolerParams : PatrolerParams
         ConnectivityWeight = _connectivityWeight;
         DecisionType = _decisionType;
         PGSen = _pgSen;
-        
+
         ageWeight = _ageWeight;
         dstToGuardsWeight = _dstToGuardsWeight;
         dstFromOwnWeight = _dstFromOwnWeight;
@@ -151,7 +148,7 @@ public class RoadMapPatrolerParams : PatrolerParams
 
         output += GetType();
         output += sep;
-        
+
         output += DecisionType;
         output += sep;
 

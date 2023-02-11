@@ -86,9 +86,8 @@ public class RoadMapPatrolerDecisionMaker
 
             foreach (var guard in guards)
             {
-                // Skip the busy guards
-                if (!guard.IsBusy())
-                    continue;
+                // Skip the idle guards
+                if (!guard.IsBusy()) continue;
 
                 float distanceToGuardGoal =
                     PathFinding.Instance.GetShortestPathDistance(sS.GetMidPoint(), guard.GetGoal().Value);
@@ -106,7 +105,7 @@ public class RoadMapPatrolerDecisionMaker
             // Calculate the fitness of the search segment
             // start with the probability
             float ssFitness = sS.GetFitness() * _params.StalenessWeight;
-            ssFitness += (sS.GetAge() / StealthArea.GetElapsedTimeInSeconds()) * _params.ageWeight;
+            // ssFitness += (sS.GetAge() / StealthArea.GetElapsedTimeInSeconds()) * _params.ageWeight;
             ssFitness += (minGoalDistance / PathFinding.Instance.longestShortestPath) * _params.dstToGuardsWeight;
             ssFitness += (distanceToGuard / PathFinding.Instance.longestShortestPath) * _params.dstFromOwnWeight;
 

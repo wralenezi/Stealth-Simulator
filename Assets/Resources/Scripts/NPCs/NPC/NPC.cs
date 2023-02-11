@@ -9,6 +9,9 @@ using Random = UnityEngine.Random;
 // Abstract class of an NPC
 public abstract class NPC : MonoBehaviour
 {
+    private float _timeoutPeriodSeconds = 10f;
+    private float _timeoutCounter = 0f;
+
     // NPC data
     protected NpcData Data;
 
@@ -493,6 +496,8 @@ public abstract class NPC : MonoBehaviour
 
         m_hasToReach = hasToReach;
 
+        _timeoutCounter = _timeoutPeriodSeconds;
+
         // Get the shortest path to the goal
         PathFinding.Instance.GetShortestPath(GetTransform().position, _goal, ref _pathToTake);
 
@@ -511,7 +516,6 @@ public abstract class NPC : MonoBehaviour
         float goalAngle = Vector2.SignedAngle(Vector2.up, direction.normalized);
         GetTransform().rotation = Quaternion.AngleAxis(goalAngle, Vector3.forward);
     }
-
 
 
     public void SetDirection(Vector2 direction)
@@ -544,6 +548,14 @@ public abstract class NPC : MonoBehaviour
     // Move the NPC through it's path
     public void ExecutePlan(State state, float deltaTime)
     {
+        _timeoutCounter -= deltaTime;
+
+        if (_timeoutCounter <= 0f)
+        {
+            ClearGoal();
+            return;
+        }
+
         // Update the total distance traveled
         UpdateDistance();
 

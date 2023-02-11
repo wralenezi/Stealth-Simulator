@@ -38,7 +38,7 @@ public class PerformanceLogger : MonoBehaviour
     public void SetArea(Session sa)
     {
         Sa = sa;
-        sa.currentEpisode++;
+        // sa.currentEpisode++;
     }
 
     private bool IsTimeToLog()
@@ -67,7 +67,7 @@ public class PerformanceLogger : MonoBehaviour
             // Log the overall performance in case of local logging.
             case Logging.Local:
                 LogEpisodeFinish();
-                IncrementEpisode();
+                // IncrementEpisode();
                 break;
 
             // Log the performance of this episode and upload it to the server.

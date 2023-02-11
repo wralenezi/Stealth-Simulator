@@ -22,19 +22,6 @@ public class HeatMap : MonoBehaviour
         _heatMap = new MapGrid<HeatNode>(bounds, _cellSide, _cellSide);
         _heatNodes = new List<HeatNode>();
 
-        HeatNode[,] map = _heatMap.GetGrid();
-
-        for (int i = 0; i < map.GetLength(0); i++)
-        for (int j = 0; j < map.GetLength(1); j++)
-        {
-            map[i, j].position = _heatMap.GetWorldPosition(i, j);
-            map[i, j].Col = i;
-            map[i, j].Row = j;
-
-            if (_heatMap.IsNodeInMap(map[i, j].position, _cellSide * 0.5f))
-                _heatNodes.Add(map[i, j]);
-        }
-
         _whitePixelSprite = Resources.Load<Sprite>("Sprites/white_pixel");
         _pixels = new List<GameObject>();
     }
@@ -89,6 +76,20 @@ public class HeatMap : MonoBehaviour
         foreach (var node in _heatNodes)
             node.Reset();
 
+        _heatNodes.Clear();
+
+        HeatNode[,] map = _heatMap.GetGrid();
+
+        for (int i = 0; i < map.GetLength(0); i++)
+        for (int j = 0; j < map.GetLength(1); j++)
+        {
+            map[i, j].position = _heatMap.GetWorldPosition(i, j);
+            map[i, j].Col = i;
+            map[i, j].Row = j;
+
+            if (_heatMap.IsNodeInMap(map[i, j].position, _cellSide)) _heatNodes.Add(map[i, j]);
+        }
+
         while (_pixels.Count > 0)
         {
             GameObject pixel = _pixels[0];
@@ -129,8 +130,8 @@ public class HeatMap : MonoBehaviour
 
         foreach (var node in _heatNodes)
         {
-
-            data += node.Col + "," + node.Row + "," + node.GetTime() + "," + StealthArea.SessionInfo.episodeLengthSec + "," +
+            data += node.Col + "," + node.Row + "," + node.GetTime() + "," + StealthArea.SessionInfo.episodeLengthSec +
+                    "," +
                     node.heatValue + "," +
                     StealthArea.SessionInfo.currentEpisode + "\n";
         }

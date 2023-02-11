@@ -4,8 +4,8 @@ using UnityEngine;
 
 public static class AdHocMethods
 {
-    private static int _episodeLength = 20;
-    private static int _episodeCount = 10;
+    private static int _episodeLength = 120;
+    private static int _episodeCount = 2;
 
 
     public static List<Session> GetSessions()
@@ -16,24 +16,25 @@ public static class AdHocMethods
         guardTeams.Add(4);
 
         List<MapData> maps = new List<MapData>();
-        maps.Add(new MapData("amongUs"));
-        // maps.Add(new MapData("MgsDock"));
+        // maps.Add(new MapData("amongUs"));
+        maps.Add(new MapData("MgsDock"));
         // maps.Add(new MapData("dragonAgeBrc202d"));
         // maps.Add(new MapData("Boxes"));
         // maps.Add(new MapData("bloodstainedAngle"));
 
         List<PatrolerParams> patrolerMethods = new List<PatrolerParams>();
+        PatrolerParams patrolParams;
 
-        PatrolerParams patrolParams = new VisMeshPatrolerParams(0.9f, 1f, 1f,
+        patrolParams = new VisMeshPatrolerParams(0.5f, 1f, 1f,
             1f, 1f, VMDecision.Weighted);
+        patrolerMethods.Add(patrolParams);
+        //
+        // patrolParams =
+        //     new GridPatrolerParams(0.5f, 1f, 1f, 1f);
         // patrolerMethods.Add(patrolParams);
-
-        patrolParams =
-            new GridPatrolerParams(0.5f, 1f, 1f, 1f);
-        patrolerMethods.Add(patrolParams);
-
-        patrolParams = new RandomPatrolerParams();
-        patrolerMethods.Add(patrolParams);
+        //
+        // patrolParams = new RandomPatrolerParams();
+        // patrolerMethods.Add(patrolParams);
 
         patrolParams = new RoadMapPatrolerParams(1f, 1f, 1f, 1f, RMDecision.DijkstraPath,
             RMPassingGuardsSenstivity.Max,0f,0f,0f);

@@ -19,7 +19,7 @@ public class Guard : NPC
     // time spent in a guard's FOV to be discovered
     public float _timeInFov;
     private const float _maxTimeInFov = 0.2f;
-
+    
     public AnimationCurve _spottedCurve;
 
     // if this is one then the intruder is spotted
