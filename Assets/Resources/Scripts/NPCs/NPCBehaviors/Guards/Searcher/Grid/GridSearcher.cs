@@ -216,7 +216,7 @@ public class GridSearcher : Searcher
         if (!RenderGrid) return;
         foreach (var node in _heatNodes)
         {
-            Gizmos.color = new Color32(0, 0, 0, (byte) (node.staleness * 255));
+            Gizmos.color = new Color32(255, 0, 0, (byte) (node.staleness * 200));
             Gizmos.DrawCube(node.worldPosition, _nodeDimensions);
         }
     }

@@ -13,7 +13,7 @@ public class PatrolSessionsAssessment
         List<Session> sessions = new List<Session>();
 
         List<int> guardTeams = new List<int>();
-        guardTeams.Add(1);
+        guardTeams.Add(4);
 
         List<MapData> maps = new List<MapData>();
         maps.Add(new MapData("amongUs"));

@@ -314,7 +314,7 @@ public class GameManager : MonoBehaviour
 
             // Get the first session
             Session currentSession = _remainingSessions[0];
-
+            
             if (!Equals(currentSession.gameCode, "tutorial")) _closedSessions.Add(currentSession);
 
             // Load the map data

@@ -744,7 +744,7 @@ MonoBehaviour:
   RecordHeatMap: 1
   RecordRunningTimes: 0
   RecordNpcLocations: 0
-  SimulationSpeed: 1
+  SimulationSpeed: 20
   Render: 1
 --- !u!4 &1776927360
 Transform:

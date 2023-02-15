@@ -29,6 +29,7 @@ public class StealthArea : MonoBehaviour
     public void InitiateArea(Session session)
     {
         SessionInfo = session;
+        SessionInfo.currentEpisode++;
         SessionInfo.SetTimestamp();
 
         scoreController = UnityHelper.AddChildComponent<ScoreController>(transform, "Scores");
@@ -73,8 +74,7 @@ public class StealthArea : MonoBehaviour
         WorldState.Set("episodeTime", _episodeStartTime.ToString());
         WorldState.Set("guardsCount", SessionInfo.guardsCount.ToString());
 
-        if (GameManager.Instance.RecordHeatMap)
-            heatMap.Reset();
+        if (GameManager.Instance.RecordHeatMap) heatMap.Reset();
 
         CollectManager.Reset(SessionInfo);
 
@@ -202,7 +202,7 @@ public class StealthArea : MonoBehaviour
         }
 
         SessionInfo.currentEpisode++;
-        if (SessionInfo.currentEpisode >= SessionInfo.MaxEpisodes)
+        if (SessionInfo.currentEpisode > SessionInfo.MaxEpisodes)
             RemoveArea();
     }
 

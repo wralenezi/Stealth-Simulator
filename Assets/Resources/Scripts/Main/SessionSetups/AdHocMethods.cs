@@ -4,7 +4,7 @@ using UnityEngine;
 
 public static class AdHocMethods
 {
-    private static int _episodeLength = 120;
+    private static int _episodeLength = 220;
     private static int _episodeCount = 2;
 
 
@@ -17,17 +17,17 @@ public static class AdHocMethods
 
         List<MapData> maps = new List<MapData>();
         // maps.Add(new MapData("amongUs"));
-        maps.Add(new MapData("MgsDock"));
+        // maps.Add(new MapData("MgsDock"));
         // maps.Add(new MapData("dragonAgeBrc202d"));
         // maps.Add(new MapData("Boxes"));
-        // maps.Add(new MapData("bloodstainedAngle"));
+        maps.Add(new MapData("bloodstainedAngle"));
 
         List<PatrolerParams> patrolerMethods = new List<PatrolerParams>();
         PatrolerParams patrolParams;
 
         patrolParams = new VisMeshPatrolerParams(0.5f, 1f, 1f,
             1f, 1f, VMDecision.Weighted);
-        patrolerMethods.Add(patrolParams);
+        // patrolerMethods.Add(patrolParams);
         //
         // patrolParams =
         //     new GridPatrolerParams(0.5f, 1f, 1f, 1f);
@@ -37,15 +37,30 @@ public static class AdHocMethods
         // patrolerMethods.Add(patrolParams);
 
         patrolParams = new RoadMapPatrolerParams(1f, 1f, 1f, 1f, RMDecision.DijkstraPath,
-            RMPassingGuardsSenstivity.Max,0f,0f,0f);
+            RMPassingGuardsSenstivity.Max, 0f, 0f, 0f);
         patrolerMethods.Add(patrolParams);
 
+        // Add the search methods
+        List<SearcherParams> searcherMethods = new List<SearcherParams>();
+        SearcherParams searcherMethod = null;
+
+        // Road Map Searchers
+        searcherMethod = new RoadMapSearcherParams(1f, 1f, 1f, 1f, RMDecision.DijkstraPath,
+            RMPassingGuardsSenstivity.Max, 0f, 0f, 0f, ProbabilityFlowMethod.Propagation);
+        // searcherMethods.Add(searcherMethod);
+
+        
+        searcherMethod =
+            new GridSearcherParams(0.5f, ProbabilityFlowMethod.Diffuse, 1f, 1f, 1f);
+        searcherMethods.Add(searcherMethod);
+        
 
         // Add scouter methods
-
         List<ScouterParams> scouterMethods = new List<ScouterParams>();
+        ScouterParams scouterMethod;
 
-        ScouterParams scouterMethod = new RoadMapScouterParams(SpotsNeighbourhoods.LineOfSight, PathCanceller.DistanceCalculation,
+        scouterMethod = new RoadMapScouterParams(SpotsNeighbourhoods.LineOfSight,
+            PathCanceller.DistanceCalculation,
             RiskThresholdType.Fixed, TrajectoryType.Simple, 0.8f, GoalPriority.None, SafetyPriority.WeightedSpot,
             0.75f);
         scouterMethods.Add(scouterMethod);
@@ -56,32 +71,45 @@ public static class AdHocMethods
         scouterMethod = new SimpleGreedyScouterParams();
         scouterMethods.Add(scouterMethod);
 
+        // Add search evader
+        List<SearchEvaderParams> searchEvaders = new List<SearchEvaderParams>();
+        SearchEvaderParams searchEvader;
 
-        AddPatrolSessions("", ref sessions, maps, patrolerMethods, scouterMethods, "blue", guardTeams);
+        searchEvader = new SimpleSearchEvaderParams();
+        searchEvaders.Add(searchEvader);
+
+
+        AddPatrolSessions("", ref sessions, maps, patrolerMethods, scouterMethods, searcherMethods, searchEvaders, "blue", guardTeams);
 
         return sessions;
     }
 
     private static void AddPatrolSessions(string gameCode, ref List<Session> sessions, List<MapData> maps,
-        List<PatrolerParams> patrolMethods, List<ScouterParams> scouterMethods,
+        List<PatrolerParams> patrolMethods, List<ScouterParams> scouterMethods, List<SearcherParams> searcherMethods, List<SearchEvaderParams> searchEvaders,
         string teamColor, List<int> guardTeams)
     {
         foreach (var map in maps)
         foreach (var guardTeam in guardTeams)
         foreach (var patrolMethod in patrolMethods)
         foreach (var scouterMethod in scouterMethods)
+        foreach (var searcherMethod in searcherMethods)
+        foreach (var searchEvader in searchEvaders)
         {
             GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolMethod,
-                null, null);
-            
+                searcherMethod, null);
+
+            ChaseEvaderParams chaseEvaderParams = new SimpleChaseEvaderParams();
+
             IntruderBehaviorParams intruderBehaviorParams =
-                new IntruderBehaviorParams(scouterMethod, null, null);
-            
+                new IntruderBehaviorParams(scouterMethod, searchEvader, chaseEvaderParams);
+
             Session session = new Session(_episodeLength, gameCode, GameType.CoinCollection, Scenario.Chase,
                 teamColor,
                 GuardSpawnType.Separate, guardTeam, guardBehaviorParams, 1,
                 intruderBehaviorParams,
                 map, SpeechType.Simple, SurveyType.EndEpisode);
+
+            session.SetGameCondition(Mathf.NegativeInfinity, Mathf.Infinity);
 
             session.sessionVariable = "";
             session.coinCount = 1;
@@ -89,7 +117,7 @@ public static class AdHocMethods
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)
                 session.AddNpc(i + 1, NpcType.Guard, null);
-            
+
             // Add intruders
             for (int i = 0; i < session.intruderCount; i++)
                 session.AddNpc(i + 1, NpcType.Intruder, null);

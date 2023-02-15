@@ -38,7 +38,6 @@ public class PerformanceLogger : MonoBehaviour
     public void SetArea(Session sa)
     {
         Sa = sa;
-        // sa.currentEpisode++;
     }
 
     private bool IsTimeToLog()
@@ -114,14 +113,7 @@ public class PerformanceLogger : MonoBehaviour
                     new Position2D(intruder.GetTransform().position.x, intruder.GetTransform().position.y)));
         }
     }
-
-
-    public void IncrementEpisode()
-    {
-        // Increment the episode counter
-        Sa.currentEpisode++;
-    }
-
+    
     // Append the Episode performance to the log
     private void LogEpisodeFinish()
     {
