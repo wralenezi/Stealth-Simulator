@@ -13,7 +13,7 @@ public class RoadMapPatrolerDecisionMaker
     public void Initiate()
     {
         _guardGoals = new Dictionary<string, Vector2>();
-        
+
         open = new List<RoadMapLine>();
         closed = new List<RoadMapLine>();
     }
@@ -43,10 +43,9 @@ public class RoadMapPatrolerDecisionMaker
             case RMDecision.DijkstraPath:
                 SetDijkstraPath(guard, guards, patrolerParams, roadMap);
                 break;
-            
+
             case RMDecision.EndPoint:
-                GetSearchGoal(guard, NpcsManager.Instance.GetGuards(),
-                    patrolerParams, roadMap);
+                GetSearchGoal(guard, guards, patrolerParams, roadMap);
                 break;
         }
 
@@ -55,8 +54,8 @@ public class RoadMapPatrolerDecisionMaker
 
         _guardGoals[guard.name] = guard.GetGoal().Value;
     }
-    
-        private void GetSearchGoal(Guard guard, List<Guard> guards, RoadMapPatrolerParams _params,
+
+    private void GetSearchGoal(Guard guard, List<Guard> guards, RoadMapPatrolerParams _params,
         RoadMap roadMap)
     {
         Vector2? newGoal = GetSearchSegment(guard, guards, _params, roadMap);
@@ -188,7 +187,7 @@ public class RoadMapPatrolerDecisionMaker
         }
     }
 
-    
+
     // Get a complete path of no more than param@length that a guard needs to traverse to search for an intruder.
     private void SetDijkstraPath(Guard guard, List<Guard> guards, RoadMapPatrolerParams _params, RoadMap roadMap)
     {
@@ -237,8 +236,9 @@ public class RoadMapPatrolerDecisionMaker
             open.RemoveAt(0);
 
             // Skip if the search reach its limit
-            if(currentLine.distance / PathFinding.Instance.longestShortestPath >= _params.MaxNormalizedPathLength) continue;
-            
+            if (currentLine.distance >
+                PathFinding.Instance.longestShortestPath * _params.MaxNormalizedPathLength) continue;
+
             foreach (var neighbor in currentLine.GetWp1Connections())
             {
                 if (!closed.Contains(neighbor) && !open.Contains(neighbor) && neighbor != currentLine)
@@ -254,7 +254,7 @@ public class RoadMapPatrolerDecisionMaker
                         neighbor.pathParent = currentLine;
                     }
 
-                    
+
                     open.InsertIntoSortedList(neighbor,
                         delegate(RoadMapLine x, RoadMapLine y) { return x.pathUtility.CompareTo(y.pathUtility); },
                         Order.Dsc);
@@ -296,8 +296,9 @@ public class RoadMapPatrolerDecisionMaker
 
         guard.ClearLines();
 
-        if(Equals(bestLine, null)) return;
-        
+        if (Equals(bestLine, null)) return;
+
+
         // Get the member of the sequence of lines the guard will be visiting
         List<RoadMapLine> linesToVisit = guard.GetLinesToPass();
 
@@ -354,7 +355,7 @@ public class RoadMapPatrolerDecisionMaker
         // Remove the start node since it is not needed
         path.RemoveAt(0);
 
-        // SimplifyPath(ref path);
+       // SimplifyPath(ref path);
     }
 
     private void SetGoal(Guard guard, List<Guard> guards, RoadMapPatrolerParams _params, RoadMap roadMap)
@@ -363,7 +364,7 @@ public class RoadMapPatrolerDecisionMaker
 
         RoadMapLine bestLine = null;
         float highestFitness = Mathf.NegativeInfinity;
-        
+
         foreach (var line in lines)
         {
             if (IsGoalTaken(guard, line.GetMid())) continue;
@@ -372,21 +373,20 @@ public class RoadMapPatrolerDecisionMaker
 
             score += line.GetProbability() * _params.StalenessWeight;
 
-        //     score += GetAreaPortion(visPoly) * patrolerParams.AreaWeight;
-        //
-        //     // Subtracted by 1 to reverse the relation ( higher value is closer, thus more desirable)
-        //     score += (1f - GetNormalizedDistance(guard, visPoly)) * patrolerParams.DistanceWeight;
-        //
-        //     score += GetClosestGuardDistance(guard, guards, visPoly) * patrolerParams.SeparationWeight;
-        //
-        //     if (highestScore < score)
-        //     {
-        //         highestScore = score;
-        //         bestTarget = visPoly;
-        //     }
-        //     
+            //     score += GetAreaPortion(visPoly) * patrolerParams.AreaWeight;
+            //
+            //     // Subtracted by 1 to reverse the relation ( higher value is closer, thus more desirable)
+            //     score += (1f - GetNormalizedDistance(guard, visPoly)) * patrolerParams.DistanceWeight;
+            //
+            //     score += GetClosestGuardDistance(guard, guards, visPoly) * patrolerParams.SeparationWeight;
+            //
+            //     if (highestScore < score)
+            //     {
+            //         highestScore = score;
+            //         bestTarget = visPoly;
+            //     }
+            //     
         }
-
     }
 
 
@@ -406,6 +406,7 @@ public class RoadMapPatrolerDecisionMaker
             case RMPassingGuardsSenstivity.Actual:
                 break;
         }
+
         utility += (1f - (float) passingGuards / guards.Count) * patrolerParams.PassingGuardsWeight;
 
         // Minus two because too ignore the edge connection itself
@@ -438,9 +439,10 @@ public enum RMDecision
 {
     // Find a complete path
     DijkstraPath,
+
     // Simply find a target and take the shortest path towards it.
     EndPoint,
-    
+
     HillClimbPath
 }
 

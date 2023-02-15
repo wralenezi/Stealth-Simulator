@@ -744,8 +744,8 @@ MonoBehaviour:
   RecordHeatMap: 1
   RecordRunningTimes: 0
   RecordNpcLocations: 0
-  SimulationSpeed: 28
-  Render: 0
+  SimulationSpeed: 1
+  Render: 1
 --- !u!4 &1776927360
 Transform:
   m_ObjectHideFlags: 0

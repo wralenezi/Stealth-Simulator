@@ -4,7 +4,7 @@ using UnityEngine;
 
 public static class CompareSearchMethods
 {
-    private static int _episodeLength = 30;
+    private static int _episodeLength = 120;
     private static int _episodeCount = 1;
 
 
@@ -16,15 +16,16 @@ public static class CompareSearchMethods
         guardTeams.Add(4);
 
         List<MapData> maps = new List<MapData>();
-        maps.Add(new MapData("amongUs"));
+        // maps.Add(new MapData("amongUs"));
+        maps.Add(new MapData("AlienIsolation"));
+        
 
         // Add the search methods
         List<SearcherParams> searcherMethods = new List<SearcherParams>();
         SearcherParams searcherMethod = null;
 
         // Grid searchers
-        
-         searcherMethod =
+        searcherMethod =
             new GridSearcherParams(0.5f, ProbabilityFlowMethod.Diffuse, 1f, 1f, 1f);
         searcherMethods.Add(searcherMethod);
         
@@ -51,7 +52,6 @@ public static class CompareSearchMethods
         searcherMethods.Add(searcherMethod);
 
         // Basic searchers
-        
         searcherMethod = new RandomSearcherParams();
         searcherMethods.Add(searcherMethod);
 
@@ -93,8 +93,8 @@ public static class CompareSearchMethods
                 map, SpeechType.Simple, SurveyType.EndEpisode);
 
             session.SetGameCondition(Mathf.NegativeInfinity, Mathf.Infinity);
-            session.sessionVariable = "VisMesh";
-            session.coinCount = 0;
+            session.sessionVariable = "Search";
+            session.coinCount = 1;
 
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)

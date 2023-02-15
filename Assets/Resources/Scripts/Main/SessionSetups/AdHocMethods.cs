@@ -77,14 +77,14 @@ public static class AdHocMethods
             IntruderBehaviorParams intruderBehaviorParams =
                 new IntruderBehaviorParams(scouterMethod, null, null);
             
-            Session session = new Session(_episodeLength, gameCode, GameType.CoinCollection, Scenario.Stealth,
+            Session session = new Session(_episodeLength, gameCode, GameType.CoinCollection, Scenario.Chase,
                 teamColor,
-                GuardSpawnType.Separate, guardTeam, guardBehaviorParams, 0,
+                GuardSpawnType.Separate, guardTeam, guardBehaviorParams, 1,
                 intruderBehaviorParams,
                 map, SpeechType.Simple, SurveyType.EndEpisode);
 
             session.sessionVariable = "";
-            session.coinCount = 0;
+            session.coinCount = 1;
 
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)

@@ -9,7 +9,7 @@ using Random = UnityEngine.Random;
 // Abstract class of an NPC
 public abstract class NPC : MonoBehaviour
 {
-    private float _timeoutPeriodSeconds = 10f;
+    private float _timeoutPeriodSeconds = 20f;
     private float _timeoutCounter = 0f;
 
     // NPC data
@@ -552,6 +552,7 @@ public abstract class NPC : MonoBehaviour
 
         if (_timeoutCounter <= 0f)
         {
+            _timeoutCounter = _timeoutPeriodSeconds;
             ClearGoal();
             return;
         }

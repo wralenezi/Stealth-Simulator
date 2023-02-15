@@ -13,7 +13,7 @@ public class PatrolSessionsAssessment
         List<Session> sessions = new List<Session>();
 
         List<int> guardTeams = new List<int>();
-        guardTeams.Add(4);
+        guardTeams.Add(1);
 
         List<MapData> maps = new List<MapData>();
         maps.Add(new MapData("amongUs"));
@@ -23,9 +23,9 @@ public class PatrolSessionsAssessment
         // maps.Add(new MapData("bloodstainedAngle"));
         
 
-        AddVisMeshSession("", ref sessions, maps, "black", guardTeams, _episodeLength);
+        // AddVisMeshSession("", ref sessions, maps, "black", guardTeams, _episodeLength);
         AddRoadMapSession("", ref sessions, maps, "black", guardTeams, _episodeLength);
-        AddGridSession("", ref sessions, maps, "black", guardTeams, _episodeLength);
+        // AddGridSession("", ref sessions, maps, "black", guardTeams, _episodeLength);
         return sessions;
     }
 
@@ -126,7 +126,7 @@ public class PatrolSessionsAssessment
         };
 
         float max = 10f;
-        float min = 0f;
+        float min = 5f;
         float increment = 5f;
 
         List<float> maxNormalizedPathLengths = new List<float>()
