@@ -13,14 +13,14 @@ public static class AdHocMethods
         List<Session> sessions = new List<Session>();
 
         List<int> guardTeams = new List<int>();
-        guardTeams.Add(4);
+        guardTeams.Add(1);
 
         List<MapData> maps = new List<MapData>();
         // maps.Add(new MapData("amongUs"));
         // maps.Add(new MapData("MgsDock"));
         // maps.Add(new MapData("dragonAgeBrc202d"));
-        // maps.Add(new MapData("Boxes"));
-        maps.Add(new MapData("bloodstainedAngle"));
+        maps.Add(new MapData("Boxes"));
+        // maps.Add(new MapData("bloodstainedAngle"));
 
         List<PatrolerParams> patrolerMethods = new List<PatrolerParams>();
         PatrolerParams patrolParams;
@@ -47,7 +47,7 @@ public static class AdHocMethods
         // Road Map Searchers
         searcherMethod = new RoadMapSearcherParams(1f, 1f, 1f, 1f, RMDecision.DijkstraPath,
             RMPassingGuardsSenstivity.Max, 0f, 0f, 0f, ProbabilityFlowMethod.Propagation);
-        // searcherMethods.Add(searcherMethod);
+        searcherMethods.Add(searcherMethod);
 
         
         searcherMethod =
@@ -105,14 +105,14 @@ public static class AdHocMethods
 
             Session session = new Session(_episodeLength, gameCode, GameType.CoinCollection, Scenario.Chase,
                 teamColor,
-                GuardSpawnType.Separate, guardTeam, guardBehaviorParams, 1,
+                GuardSpawnType.Separate, guardTeam, guardBehaviorParams, 0,
                 intruderBehaviorParams,
                 map, SpeechType.Simple, SurveyType.EndEpisode);
 
             session.SetGameCondition(Mathf.NegativeInfinity, Mathf.Infinity);
 
             session.sessionVariable = "";
-            session.coinCount = 1;
+            session.coinCount = 0;
 
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)

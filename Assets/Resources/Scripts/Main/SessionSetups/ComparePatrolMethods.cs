@@ -4,7 +4,7 @@ using UnityEngine;
 
 public static class ComparePatrolMethods
 {
-    private static int _episodeLength = 50;
+    private static int _episodeLength = 120;
     private static int _episodeCount = 1;
 
 
@@ -13,26 +13,39 @@ public static class ComparePatrolMethods
         List<Session> sessions = new List<Session>();
 
         List<int> guardTeams = new List<int>();
+        guardTeams.Add(3);
         guardTeams.Add(4);
-
+        guardTeams.Add(5);
+        guardTeams.Add(6);
+        
         List<MapData> maps = new List<MapData>();
         maps.Add(new MapData("amongUs"));
+        maps.Add(new MapData("valorantAscent"));
+        maps.Add(new MapData("amongUs"));
+        maps.Add(new MapData("MgsDock"));
+        maps.Add(new MapData("bloodstainedAngle"));
+        maps.Add(new MapData("Arkham"));
+        maps.Add(new MapData("Boxes"));
+        maps.Add(new MapData("AlienIsolation"));
+        
 
         List<PatrolerParams> patrolerMethods = new List<PatrolerParams>();
+        PatrolerParams patrolParams = null;
+        
+        patrolParams =
+            new GridPatrolerParams(0.5f, 1f, 0.5f, 0.5f);
+        patrolerMethods.Add(patrolParams);
+        
+        patrolParams = new RoadMapPatrolerParams(1f, 1f, 1f, 0.5f, RMDecision.DijkstraPath,
+            RMPassingGuardsSenstivity.Max,0f,0f,0f);
+        patrolerMethods.Add(patrolParams);
 
-        PatrolerParams patrolParams = new VisMeshPatrolerParams(0.9f, 1f, 1f,
+
+        patrolParams = new VisMeshPatrolerParams(0.9f, 1f, 1f,
             1f, 1f, VMDecision.Weighted);
         patrolerMethods.Add(patrolParams);
         
-        patrolParams =
-            new GridPatrolerParams(1f, 1f, 1f, 1f);
-        patrolerMethods.Add(patrolParams);
-
         patrolParams = new RandomPatrolerParams();
-        patrolerMethods.Add(patrolParams);
-
-        patrolParams = new RoadMapPatrolerParams(1f, 1f, 1f, 1f, RMDecision.DijkstraPath,
-            RMPassingGuardsSenstivity.Max,0f,0f,0f);
         patrolerMethods.Add(patrolParams);
 
         AddPatrolSessions("", ref sessions, maps, patrolerMethods, "blue", guardTeams);

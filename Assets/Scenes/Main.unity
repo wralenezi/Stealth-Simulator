@@ -741,8 +741,8 @@ MonoBehaviour:
   showSurvey: 0
   IsOnlineBuild: 0
   loggingMethod: 0
-  RecordHeatMap: 1
-  RecordRunningTimes: 0
+  RecordHeatMap: 0
+  RecordRunningTimes: 1
   RecordNpcLocations: 0
   SimulationSpeed: 20
   Render: 1

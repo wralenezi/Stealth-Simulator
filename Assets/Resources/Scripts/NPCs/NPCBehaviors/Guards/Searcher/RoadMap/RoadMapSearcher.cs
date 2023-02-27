@@ -63,7 +63,6 @@ public class RoadMapSearcher : Searcher
         {
             line.PropagateProb();
             line.IncreaseProbability(speed, timeDelta);
-            // line.ExpandSs(speed, timeDelta);
 
             float prob = line.GetSearchSegment().GetProbability();
             if (maxProbability < prob) maxProbability = prob;
@@ -184,7 +183,7 @@ public class RoadMapSearcher : Searcher
                 foreach (var line in _RoadMap.GetLines(false))
                 {
                     float label = Mathf.Round(line.GetUtility() * 100f) / 100f;
-                    line.DrawSearchSegment(label.ToString());
+                    line.DrawSearchSegment("");
                 }
             }
     }

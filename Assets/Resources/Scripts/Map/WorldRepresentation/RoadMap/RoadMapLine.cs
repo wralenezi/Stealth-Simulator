@@ -88,7 +88,7 @@ public class RoadMapLine
         float guardsPassingUtility = GetPassingGuardsCount() > 0 ? 1f : 0f;
 
         float utility = Mathf.Clamp(prob - guardsPassingUtility, 0f, 1f);
-        
+
         return utility;
     }
 
@@ -124,7 +124,6 @@ public class RoadMapLine
 
         bool isValidToIncrement = false;
 
-        float maxProb = Mathf.NegativeInfinity;
 
         foreach (var wp1Line in GetWp1Connections())
         {
@@ -135,8 +134,6 @@ public class RoadMapLine
                 isValidToIncrement = true;
                 break;
             }
-
-            if (maxProb < wp1Ss.GetProbability()) maxProb = wp1Ss.GetProbability();
         }
 
         if (!isValidToIncrement)
@@ -149,8 +146,6 @@ public class RoadMapLine
                     isValidToIncrement = true;
                     break;
                 }
-
-                if (maxProb < wp1Ss.GetProbability()) maxProb = wp1Ss.GetProbability();
             }
 
 

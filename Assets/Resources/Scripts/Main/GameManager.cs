@@ -179,10 +179,10 @@ public class GameManager : MonoBehaviour
         // List<Session> sessions = AdHocMethods.GetSessions();
         
         // Sessions set up for evaluating the hyper parameters  of the patrol behaviors 
-        List<Session> sessions = PatrolSessionsAssessment.GetSessions();
+        // List<Session> sessions = PatrolSessionsAssessment.GetSessions();
 
         // Sessions set up for evaluating the patrol behaviors
-        // List<Session> sessions = ComparePatrolMethods.GetSessions();
+        List<Session> sessions = ComparePatrolMethods.GetSessions();
 
         // Sessions set up for evaluating the search behaviors
         // List<Session> sessions = CompareSearchMethods.GetSessions();
