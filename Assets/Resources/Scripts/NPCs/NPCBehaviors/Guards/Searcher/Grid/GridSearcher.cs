@@ -80,7 +80,7 @@ public class GridSearcher : Searcher
                 DiffuseProbability();
                 break;
         }
-        
+
         CheckHeatMapSpotting(guards, timeDelta);
 
         NormalizeSegments();
@@ -104,6 +104,15 @@ public class GridSearcher : Searcher
 
         closestNode.staleness = 1f;
         closestNode.oldStaleness = 1f;
+
+        if (Equals(_params.updateMethod, ProbabilityFlowMethod.Propagation))
+        {
+            foreach (var n in closestNode.GetNeighbors())
+            {
+                n.staleness = 1f;
+                n.oldStaleness = 1f;
+            }
+        }
     }
 
 
@@ -144,7 +153,7 @@ public class GridSearcher : Searcher
                 {
                     if (neighbor.isIncrementedThisRound) continue;
 
-                    neighbor.staleness += m_Intruder.GetNpcSpeed() * 1.8f * deltaTime;
+                    neighbor.staleness += m_Intruder.GetNpcSpeed() * 2f * deltaTime;
                     neighbor.staleness = Mathf.Clamp(neighbor.staleness, 0f, 1f);
                     if (neighbor.staleness < 1f) allExpanded = false;
                     neighbor.isIncrementedThisRound = true;
@@ -152,11 +161,10 @@ public class GridSearcher : Searcher
 
                 if (allExpanded) node.isExpansionDone = true;
             }
-            else
-            {
-                node.staleness += m_Intruder.GetNpcSpeed() * 0.001f * deltaTime;
-                node.staleness = Mathf.Clamp(node.staleness, 0f, 1f);
-            }
+
+
+            node.staleness += m_Intruder.GetNpcSpeed() * 0.001f * deltaTime;
+            node.staleness = Mathf.Clamp(node.staleness, 0f, 1f);
         }
     }
 
@@ -234,7 +242,8 @@ public class GridSearcherParams : SearcherParams
     public readonly float DistanceWeight;
     public readonly float SeparationWeight;
 
-    public GridSearcherParams(float _cellSide, ProbabilityFlowMethod _method, float _stalenessWeight, float _distanceWeight, float _separationWeight)
+    public GridSearcherParams(float _cellSide, ProbabilityFlowMethod _method, float _stalenessWeight,
+        float _distanceWeight, float _separationWeight)
     {
         CellSide = _cellSide;
         updateMethod = _method;
@@ -243,7 +252,7 @@ public class GridSearcherParams : SearcherParams
         DistanceWeight = _distanceWeight;
         SeparationWeight = _separationWeight;
     }
-    
+
     public override string ToString()
     {
         string output = "";
@@ -251,11 +260,11 @@ public class GridSearcherParams : SearcherParams
 
         output += GetType();
         output += sep;
-        
-        output += CellSide;
-        output += sep;
 
         output += updateMethod;
+        output += sep;
+
+        output += CellSide;
         output += sep;
 
         output += StalenessWeight;
@@ -268,7 +277,6 @@ public class GridSearcherParams : SearcherParams
 
         return output;
     }
-
 }
 
 public enum ProbabilityFlowMethod

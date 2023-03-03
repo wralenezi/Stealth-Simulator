@@ -742,10 +742,10 @@ MonoBehaviour:
   IsOnlineBuild: 0
   loggingMethod: 0
   RecordHeatMap: 0
-  RecordRunningTimes: 1
+  RecordRunningTimes: 0
   RecordNpcLocations: 0
-  SimulationSpeed: 20
-  Render: 1
+  SimulationSpeed: 1
+  Render: 0
 --- !u!4 &1776927360
 Transform:
   m_ObjectHideFlags: 0

@@ -182,10 +182,10 @@ public class GameManager : MonoBehaviour
         // List<Session> sessions = PatrolSessionsAssessment.GetSessions();
 
         // Sessions set up for evaluating the patrol behaviors
-        List<Session> sessions = ComparePatrolMethods.GetSessions();
+        // List<Session> sessions = ComparePatrolMethods.GetSessions();
 
         // Sessions set up for evaluating the search behaviors
-        // List<Session> sessions = CompareSearchMethods.GetSessions();
+        List<Session> sessions = CompareSearchMethods.GetSessions();
 
         // List<Session> sessions = CompareScouterMethods.GetSessions();
 

@@ -44,7 +44,7 @@ public class IntrudersBehaviorController : MonoBehaviour
 
         m_Scouter?.Initiate(mapManager, session);
         m_ChaseEvader?.Initiate(mapManager);
-        m_SearchEvader?.Initiate(mapManager);
+        m_SearchEvader?.Initiate(mapManager, session);
     }
 
     public void Reset()

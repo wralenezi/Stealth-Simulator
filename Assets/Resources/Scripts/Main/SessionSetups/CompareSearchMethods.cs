@@ -4,8 +4,8 @@ using UnityEngine;
 
 public static class CompareSearchMethods
 {
-    private static int _episodeLength = 120;
-    private static int _episodeCount = 1;
+    private static int _episodeLength = 99;
+    private static int _episodeCount = 20;
 
 
     public static List<Session> GetSessions()
@@ -13,38 +13,54 @@ public static class CompareSearchMethods
         List<Session> sessions = new List<Session>();
 
         List<int> guardTeams = new List<int>();
+        guardTeams.Add(3);
         guardTeams.Add(4);
+        guardTeams.Add(5);
+        guardTeams.Add(6);
+        guardTeams.Add(7);
 
         List<MapData> maps = new List<MapData>();
-        // maps.Add(new MapData("amongUs"));
         maps.Add(new MapData("AlienIsolation"));
+        maps.Add(new MapData("amongUs"));
+        maps.Add(new MapData("valorantAscent"));
+        maps.Add(new MapData("MgsDock"));
+        maps.Add(new MapData("Arkham"));
+        maps.Add(new MapData("Boxes"));
         
-
         // Add the search methods
         List<SearcherParams> searcherMethods = new List<SearcherParams>();
         SearcherParams searcherMethod = null;
 
         // Grid searchers
         searcherMethod =
-            new GridSearcherParams(0.5f, ProbabilityFlowMethod.Diffuse, 1f, 1f, 1f);
+            new GridSearcherParams(0.5f, ProbabilityFlowMethod.Diffuse, 1f, 0.5f, 0.5f);
         searcherMethods.Add(searcherMethod);
         
         searcherMethod =
-            new GridSearcherParams(0.5f, ProbabilityFlowMethod.Propagation, 1f, 1f, 1f);
+            new GridSearcherParams(0.5f, ProbabilityFlowMethod.Propagation, 1f, 0.5f, 0.5f);
         searcherMethods.Add(searcherMethod);
 
         // Road Map Searchers
-        searcherMethod = new RoadMapSearcherParams(1f, 1f, 1f, 1f, RMDecision.DijkstraPath,
+        searcherMethod = new RoadMapSearcherParams(0.5f, 1f, 1f, 0.5f, RMDecision.DijkstraPath,
             RMPassingGuardsSenstivity.Max, 0f, 0f, 0f, ProbabilityFlowMethod.Diffuse);
         searcherMethods.Add(searcherMethod);
        
-        searcherMethod = new RoadMapSearcherParams(1f, 1f, 1f, 1f, RMDecision.DijkstraPath,
-            RMPassingGuardsSenstivity.Max, 0f, 0f, 0f, ProbabilityFlowMethod.Propagation);
+        searcherMethod = new RoadMapSearcherParams(0.5f, 1f, 1f, 0.5f, RMDecision.DijkstraPath,
+            RMPassingGuardsSenstivity.Max, 0f, 0.5f, 0.5f, ProbabilityFlowMethod.Propagation);
+        searcherMethods.Add(searcherMethod);
+
+        
+        searcherMethod = new RoadMapSearcherParams(1f, 1f, 1f, 0.5f, RMDecision.DijkstraPath,
+            RMPassingGuardsSenstivity.Max, 0f, 0f, 0f, ProbabilityFlowMethod.Diffuse);
+        searcherMethods.Add(searcherMethod);
+       
+        searcherMethod = new RoadMapSearcherParams(1f, 1f, 1f, 0.5f, RMDecision.DijkstraPath,
+            RMPassingGuardsSenstivity.Max, 0f, 0.5f, 0.5f, ProbabilityFlowMethod.Propagation);
         searcherMethods.Add(searcherMethod);
 
         
         searcherMethod = new RoadMapSearcherParams(1f, 1f, 1f, 1f, RMDecision.EndPoint,
-            RMPassingGuardsSenstivity.Max, 0f, 0f, 0f, ProbabilityFlowMethod.Diffuse);
+            RMPassingGuardsSenstivity.Max, 0f, 0.5f, 0.5f, ProbabilityFlowMethod.Diffuse);
         searcherMethods.Add(searcherMethod);
         
         searcherMethod = new RoadMapSearcherParams(1f, 1f, 1f, 1f, RMDecision.EndPoint,
@@ -60,8 +76,15 @@ public static class CompareSearchMethods
 
         // Add the hiding methods
         List<SearchEvaderParams> searchEvaders = new List<SearchEvaderParams>();
+        SearchEvaderParams searchEvader;
 
-        SearchEvaderParams searchEvader = new SimpleSearchEvaderParams();
+        searchEvader = new SimpleSearchEvaderParams(DestinationType.Heurisitic,Mathf.Infinity,Mathf.Infinity);
+        searchEvaders.Add(searchEvader);
+        
+        searchEvader = new SimpleSearchEvaderParams(DestinationType.Random,5f,10f);
+        searchEvaders.Add(searchEvader);
+
+        searchEvader = new SimpleSearchEvaderParams(DestinationType.Heurisitic,5f,10f);
         searchEvaders.Add(searchEvader);
         
         AddPatrolSessions("", ref sessions, maps, searcherMethods, searchEvaders, "blue", guardTeams);
@@ -94,7 +117,7 @@ public static class CompareSearchMethods
 
             session.SetGameCondition(Mathf.NegativeInfinity, Mathf.Infinity);
             session.sessionVariable = "Search";
-            session.coinCount = 1;
+            session.coinCount = 0;
 
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)

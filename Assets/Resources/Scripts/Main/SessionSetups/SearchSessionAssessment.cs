@@ -104,11 +104,12 @@ public static class SearchSessionAssessment
                 PathCanceller.DistanceCalculation, RiskThresholdType.Danger
                 , TrajectoryType.Simple, 0f, GoalPriority.Safety, SafetyPriority.ClosestWeightedSpot, 1f);
 
-            SearchEvaderParams searchEvaderParams = new SimpleSearchEvaderParams();
-            
+            SearchEvaderParams searchEvaderParams = new SimpleSearchEvaderParams(DestinationType.Random,0f, 0f);
+
             ChaseEvaderParams chaseEvaderParams = new SimpleChaseEvaderParams();
 
-            IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(scouterParams, searchEvaderParams, chaseEvaderParams);
+            IntruderBehaviorParams intruderBehaviorParams =
+                new IntruderBehaviorParams(scouterParams, searchEvaderParams, chaseEvaderParams);
 
             Session session = new Session(episodeLength, "", GameType.CoinCollection, Scenario.Chase, teamColor,
                 guardSpawnType, guardTeam, guardBehaviorParams, 1,
@@ -122,7 +123,7 @@ public static class SearchSessionAssessment
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)
                 session.AddNpc(i + 1, NpcType.Guard, null);
-            
+
             // Add intruders
             for (int i = 0; i < session.intruderCount; i++)
                 session.AddNpc(i + 1, NpcType.Intruder, null);

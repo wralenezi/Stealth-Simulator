@@ -236,6 +236,9 @@ public class RoadMapSearcherParams : SearcherParams
         output += GetType();
         output += sep;
         
+        output += updateMethod;
+        output += sep;
+        
         output += DecisionType;
         output += sep;
 

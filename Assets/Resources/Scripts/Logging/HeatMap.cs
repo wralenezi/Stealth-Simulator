@@ -15,7 +15,7 @@ public class HeatMap : MonoBehaviour
     private Sprite _whitePixelSprite;
 
     private List<GameObject> _pixels;
-    float _cellSide = 0.25f;
+    float _cellSide = 0.5f;
 
     public void Initiate(Bounds bounds)
     {
@@ -70,6 +70,8 @@ public class HeatMap : MonoBehaviour
             node.heatValue = (spottedTime - minValue) / (maxValue - minValue);
         }
     }
+    
+    
 
     public void Reset()
     {
@@ -155,6 +157,9 @@ public class HeatMap : MonoBehaviour
         CalculateHeatValues();
         RenderPixels();
         WriteResults();
+        foreach (var node in _heatNodes)
+            node.Reset();
+        _heatNodes.Clear();
     }
 
 

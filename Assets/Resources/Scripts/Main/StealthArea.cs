@@ -141,9 +141,8 @@ public class StealthArea : MonoBehaviour
 
         // Idle NPCs make decisions
         NpcManager.MakeDecisions(GetSessionInfo().gameType);
-
-        if (GameManager.Instance.RecordHeatMap)
-            heatMap.IncrementHeatMapVisibility(NpcManager.GetGuards(), Time.deltaTime);
+        
+        heatMap?.IncrementHeatMapVisibility(NpcManager.GetGuards(), Time.deltaTime);
     }
 
     public Session GetSessionInfo()

@@ -242,7 +242,7 @@ public class RoadMapSearcherDecisionMaker
         // Remove the start node since it is not needed
         path.RemoveAt(0);
 
-        // SimplifyPath(ref path);
+        SimplifyPath(ref path);
     }
 
 
@@ -268,26 +268,21 @@ public class RoadMapSearcherDecisionMaker
         {
             SearchSegment sS = line.GetSearchSegment();
 
-            if (maxProbability < sS.GetProbability())
-                maxProbability = sS.GetProbability();
+            if (maxProbability < sS.GetProbability()) maxProbability = sS.GetProbability();
 
             // Get the distance of the closest goal other guards are coming to visit
-            float minGoalDistance = Mathf.Infinity;
+            float minGoalDistance = PathFinding.Instance.longestShortestPath;
 
             foreach (var guard in guards)
             {
                 // Skip the busy guards
-                if (!guard.IsBusy())
-                    continue;
+                if (!guard.IsBusy()) continue;
 
                 float distanceToGuardGoal =
                     PathFinding.Instance.GetShortestPathDistance(sS.GetMidPoint(), guard.GetGoal().Value);
 
-                if (minGoalDistance > distanceToGuardGoal)
-                    minGoalDistance = distanceToGuardGoal;
+                if (minGoalDistance > distanceToGuardGoal) minGoalDistance = distanceToGuardGoal;
             }
-
-            minGoalDistance = float.IsPositiveInfinity(minGoalDistance) ? 0f : minGoalDistance;
 
             // Get the distance from the requesting guard
             float distanceToGuard = PathFinding.Instance.GetShortestPathDistance((sS.position1 + sS.position2) / 2f,
@@ -296,9 +291,9 @@ public class RoadMapSearcherDecisionMaker
             // Calculate the fitness of the search segment
             // start with the probability
             float ssFitness = sS.GetFitness() * _params.StalenessWeight;
-            ssFitness += (sS.GetAge() / StealthArea.GetElapsedTimeInSeconds()) * _params.ageWeight;
+            // ssFitness += (sS.GetAge() / StealthArea.GetElapsedTimeInSeconds()) * _params.ageWeight;
             ssFitness += (minGoalDistance / PathFinding.Instance.longestShortestPath) * _params.dstToGuardsWeight;
-            ssFitness += (distanceToGuard / PathFinding.Instance.longestShortestPath) * _params.dstFromOwnWeight;
+            ssFitness += 1f - (distanceToGuard / PathFinding.Instance.longestShortestPath) * _params.dstFromOwnWeight;
 
             if (maxFitnessValue < ssFitness)
             {

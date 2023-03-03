@@ -23,11 +23,6 @@ public class HidingSpotsCtrlr
 
         CreateHidingSpots(false, mapManager);
         PairHidingSpots();
-
-        foreach (var spot in _allSpots)
-        {
-            // SetDeadEndProximity(spot, mapManager.GetRoadMap(), mapManager.mapRenderer);
-        }
     }
 
 
@@ -290,6 +285,12 @@ public class HidingSpotsCtrlr
         return bestHidingSpot.Position;
     }
 
+    public Vector2? GetRandomSpot()
+    {
+        Vector2? spot = null;
+        spot = _allSpots[Random.Range(0, _allSpots.Count)].Position;
+        return spot;
+    }
 
     public void DrawHidingSpots()
     {

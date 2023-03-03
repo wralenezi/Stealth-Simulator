@@ -8,7 +8,7 @@ public abstract class SearchEvader : MonoBehaviour
     public bool ShowHidingSpots;
     protected HidingSpotsCtrlr m_HsC;
 
-    public virtual void Initiate(MapManager mapManager)
+    public virtual void Initiate(MapManager mapManager, Session session)
     {
         m_HsC = new HidingSpotsCtrlr(mapManager, mapManager.mapRenderer.GetMapBoundingBox(),10,10);
     }

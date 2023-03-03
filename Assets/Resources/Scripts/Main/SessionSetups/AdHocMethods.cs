@@ -75,7 +75,7 @@ public static class AdHocMethods
         List<SearchEvaderParams> searchEvaders = new List<SearchEvaderParams>();
         SearchEvaderParams searchEvader;
 
-        searchEvader = new SimpleSearchEvaderParams();
+        searchEvader = new SimpleSearchEvaderParams(DestinationType.Random,0f,0f);
         searchEvaders.Add(searchEvader);
 
 
