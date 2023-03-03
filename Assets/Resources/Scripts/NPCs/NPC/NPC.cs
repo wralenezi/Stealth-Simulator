@@ -353,7 +353,7 @@ public abstract class NPC : MonoBehaviour
             attempts--;
 
             int vertexIndex = Random.Range(0, outerWall.GetVerticesCount());
-            Vector2 pos = outerWall.GetCorner(vertexIndex);
+            Vector2 pos = outerWall.GetCorner(vertexIndex, 0.35f);
 
             if (intruders.Count > 0)
             {
