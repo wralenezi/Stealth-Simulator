@@ -21,7 +21,7 @@ public abstract class State //: IState
     {
     }
 
-    public virtual void Execute(GameType gameType)
+    public virtual void Execute(GameType gameType, float deltaTime)
     {
     }
 

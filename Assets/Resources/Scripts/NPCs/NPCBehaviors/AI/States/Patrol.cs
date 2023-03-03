@@ -16,7 +16,7 @@ public class Patrol : State
         m_IC.StartScouter();
     }
 
-    public override void Execute(GameType gameType)
+    public override void Execute(GameType gameType, float deltaTime)
     {
         m_GC.Patrol();
         m_IC.StayIncognito(gameType);

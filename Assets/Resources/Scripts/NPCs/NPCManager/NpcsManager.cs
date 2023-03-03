@@ -74,9 +74,9 @@ public class NpcsManager : MonoBehaviour
         _intrudersManager.CastVision();
     }
 
-    public void MakeDecisions(GameType gameType)
+    public void MakeDecisions(GameType gameType, float deltaTime)
     {
-        _state.UpdateState(gameType);
+        _state.UpdateState(gameType, deltaTime);
     }
 
     public List<Guard> GetGuards()
@@ -95,11 +95,10 @@ public class NpcsManager : MonoBehaviour
             _guardsManager.Speak(speaker, lineType, prob);
     }
 
-
-    public void ExecuteState(GameType gameType)
-    {
-        _state.UpdateState(gameType);
-    }
+    // public void ExecuteState(GameType gameType)
+    // {
+    //     _state.UpdateState(gameType);
+    // }
 
     public void CoinPicked()
     {

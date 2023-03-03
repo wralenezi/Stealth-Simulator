@@ -28,8 +28,8 @@ public class StateMachine
         WorldState.Set("guard_state", GetState().ToString());
     }
 
-    public void UpdateState(GameType gameType)
+    public void UpdateState(GameType gameType, float deltaTime)
     {
-        m_CurrentState?.Execute(gameType);
+        m_CurrentState?.Execute(gameType, deltaTime);
     }
 }

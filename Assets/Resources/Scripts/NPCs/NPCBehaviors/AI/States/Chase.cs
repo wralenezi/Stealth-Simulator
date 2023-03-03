@@ -16,7 +16,7 @@ public class Chase : State
         m_IC.StartChaseEvader();
     }
 
-    public override void Execute(GameType gameType)
+    public override void Execute(GameType gameType, float deltaTime)
     {
         m_GC.Chase(NpcsManager.Instance.GetIntruders()[0]);
         m_IC.KeepRunning();

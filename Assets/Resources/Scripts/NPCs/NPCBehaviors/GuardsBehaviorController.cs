@@ -127,12 +127,12 @@ public class GuardsBehaviorController : MonoBehaviour
 
 
     // Keep searching for the intruder
-    public void Search(Intruder intruder)
+    public void Search(Intruder intruder, float deltaTime)
     {
         if (Equals(searcher, null)) return;
 
         var watch = System.Diagnostics.Stopwatch.StartNew();
-        searcher.UpdateRepresentation(intruder.GetNpcSpeed(), NpcsManager.Instance.GetGuards(), Time.deltaTime);
+        searcher.UpdateRepresentation(intruder.GetNpcSpeed(), NpcsManager.Instance.GetGuards(), deltaTime);
         watch.Stop();
         var elapsedMs = watch.ElapsedMilliseconds;
         _decisionTimes.Add(new BehaviorPerformanceSnapshot(searcher.GetType().Name + " Update", elapsedMs));
