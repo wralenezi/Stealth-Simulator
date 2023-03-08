@@ -118,16 +118,10 @@ public class StealthArea : MonoBehaviour
 
     private void Update()
     {
+        float deltaTime = Time.deltaTime;
+
         // Update the time label
         AreaUiManager.UpdateTime(GetRemainingTime());
-        
-        // Check for game end
-        CheckGameEnd();
-    }
-
-    private void FixedUpdate()
-    {
-        float deltaTime = Time.deltaTime;
         
         // Let the agents cast their visions
         NpcManager.CastVision();
@@ -137,10 +131,29 @@ public class StealthArea : MonoBehaviour
 
         // Idle NPCs make decisions
         NpcManager.MakeDecisions(GetSessionInfo().gameType, deltaTime);
-
-        NpcManager.Move(deltaTime);
         
         heatMap?.IncrementHeatMapVisibility(NpcManager.GetGuards(), deltaTime);
+        
+        // Check for game end
+        CheckGameEnd();
+    }
+
+    private void FixedUpdate()
+    {
+        float deltaTime = Time.deltaTime;
+        
+        // // Let the agents cast their visions
+        // NpcManager.CastVision();
+        //
+        // // Update the guards vision and apply the vision affects (seeing intruders,etc) 
+        // NpcManager.ProcessNpcsVision();
+        //
+        // // Idle NPCs make decisions
+        // NpcManager.MakeDecisions(GetSessionInfo().gameType, deltaTime);
+        //
+        NpcManager.Move(deltaTime);
+        //
+        // heatMap?.IncrementHeatMapVisibility(NpcManager.GetGuards(), deltaTime);
 
     }
 

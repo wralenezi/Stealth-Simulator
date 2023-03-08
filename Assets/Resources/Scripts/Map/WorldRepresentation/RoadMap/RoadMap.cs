@@ -983,13 +983,12 @@ public class RoadMap
             if (t.GetProbability() >= 0.5f) continue;
 
             Gizmos.DrawSphere(t.GetPosition(), 0.025f);
-            float prob = Mathf.Round(t.GetProbability() * 100f) * 0.01f;
+            // float prob = Mathf.Round(t.GetProbability() * 100f) * 0.01f;
 
 #if UNITY_EDITOR
-            Handles.Label(t.GetPosition(), prob.ToString());
+            // Handles.Label(t.GetPosition(), prob.ToString());
 #endif
             
-
 
             foreach (var wp in t.GetConnections(true))
             {

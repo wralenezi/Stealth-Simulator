@@ -16,9 +16,10 @@ public static class CompareScouterMethods
         guardTeams.Add(4);
 
         List<MapData> maps = new List<MapData>();
+        maps.Add(new MapData("bloodstainedAngle"));
         maps.Add(new MapData("amongUs"));
         maps.Add(new MapData("MgsDock"));
-
+        
         List<PatrolerParams> patrolerMethods = new List<PatrolerParams>();
 
         PatrolerParams patrolParams = new VisMeshPatrolerParams(0.9f, 1f, 1f,
@@ -38,11 +39,11 @@ public static class CompareScouterMethods
 
 
         // Add scouter methods
-
         List<ScouterParams> scouterMethods = new List<ScouterParams>();
+        ScouterParams scouterMethod = null;
 
-        ScouterParams scouterMethod = new RoadMapScouterParams(SpotsNeighbourhoods.LineOfSight, PathCanceller.DistanceCalculation,
-            RiskThresholdType.Fixed, TrajectoryType.Simple, 0.8f, GoalPriority.None, SafetyPriority.WeightedSpot,
+        scouterMethod = new RoadMapScouterParams(SpotsNeighbourhoods.LineOfSight, PathCanceller.DistanceCalculation,
+            RiskThresholdType.Fixed, TrajectoryType.Simple, 0.5f, GoalPriority.Safety, SafetyPriority.Goal,
             0.75f);
         scouterMethods.Add(scouterMethod);
 

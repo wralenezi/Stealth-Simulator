@@ -89,7 +89,7 @@ public static class StealthUserStudySessions
         foreach (var projectionDistance in projectionDistances)
         {
             RoadMapScouterParams rmScouterParams = new RoadMapScouterParams(SpotsNeighbourhoods.All, PathCanceller.None,
-                RiskThresholdType.None, TrajectoryType.None, 0f, GoalPriority.None, SafetyPriority.None,
+                RiskThresholdType.None, TrajectoryType.None, 0f, GoalPriority.Safety, SafetyPriority.Random,
                 projectionDistance);
 
             IntruderBehaviorParams intruderBehavior = new IntruderBehaviorParams(rmScouterParams, null, null);

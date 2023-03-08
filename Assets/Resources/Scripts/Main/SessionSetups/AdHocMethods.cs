@@ -61,7 +61,7 @@ public static class AdHocMethods
 
         scouterMethod = new RoadMapScouterParams(SpotsNeighbourhoods.LineOfSight,
             PathCanceller.DistanceCalculation,
-            RiskThresholdType.Fixed, TrajectoryType.Simple, 0.8f, GoalPriority.None, SafetyPriority.WeightedSpot,
+            RiskThresholdType.Fixed, TrajectoryType.Simple, 0.8f, GoalPriority.Safety, SafetyPriority.WeightedSpot,
             0.75f);
         scouterMethods.Add(scouterMethod);
 

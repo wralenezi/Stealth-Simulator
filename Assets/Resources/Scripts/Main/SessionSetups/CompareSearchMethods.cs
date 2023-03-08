@@ -20,7 +20,7 @@ public static class CompareSearchMethods
         guardTeams.Add(7);
 
         List<MapData> maps = new List<MapData>();
-        maps.Add(new MapData("AlienIsolation"));
+        // maps.Add(new MapData("AlienIsolation"));
         maps.Add(new MapData("amongUs"));
         maps.Add(new MapData("valorantAscent"));
         maps.Add(new MapData("MgsDock"));

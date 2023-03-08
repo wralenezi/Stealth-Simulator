@@ -102,7 +102,7 @@ public class MapDrawer : MonoBehaviour
             m_walls.Add(wall);
         }
 
-        SaveMap();
+        // SaveMap();
 
         SaveMapInJson();
     }

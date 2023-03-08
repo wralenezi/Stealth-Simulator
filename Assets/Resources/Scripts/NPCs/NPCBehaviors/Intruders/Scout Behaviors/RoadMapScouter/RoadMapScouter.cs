@@ -73,7 +73,7 @@ public class RoadMapScouter : Scouter
         // showProjectedTrajectories = true;
         // showRoadMapEndNodes = true;
         // showIntruderGoal = true;
-        // showRoadMap = true;
+        showRoadMap = true;
     }
 
     public override void Begin()
