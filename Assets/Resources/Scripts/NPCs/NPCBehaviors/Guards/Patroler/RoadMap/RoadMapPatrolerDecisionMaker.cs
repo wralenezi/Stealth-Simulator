@@ -449,5 +449,6 @@ public enum RMDecision
 public enum RMPassingGuardsSenstivity
 {
     Max,
-    Actual
+    Actual,
+    Likelihood
 }

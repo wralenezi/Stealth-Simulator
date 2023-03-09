@@ -44,26 +44,31 @@ public static class CompareSearchMethods
         // searcherMethod = new RoadMapSearcherParams(0.5f, 1f, 1f, 0.5f, RMDecision.DijkstraPath,
         //     RMPassingGuardsSenstivity.Max, 0f, 0f, 0f, ProbabilityFlowMethod.Diffuse);
         // searcherMethods.Add(searcherMethod);
-       
-        searcherMethod = new RoadMapSearcherParams(0.5f, 1f, 0.5f, 0f, RMDecision.DijkstraPath,
+
+        // searcherMethod = new RoadMapSearcherParams(0.5f, 1f, 1f, 0f, RMDecision.HillClimbPath,
+        //     RMPassingGuardsSenstivity.Max, 0f, 0.5f, 0.5f, ProbabilityFlowMethod.Propagation);
+        // searcherMethods.Add(searcherMethod);
+
+        
+        searcherMethod = new RoadMapSearcherParams(0.5f, 1f, 0.1f, 0f, RMDecision.DijkstraPath,
             RMPassingGuardsSenstivity.Max, 0f, 0.5f, 0.5f, ProbabilityFlowMethod.Propagation);
         searcherMethods.Add(searcherMethod);
 
         
-        searcherMethod = new RoadMapSearcherParams(1f, 1f, 1f, 0.5f, RMDecision.DijkstraPath,
+        searcherMethod = new RoadMapSearcherParams(1f, 1f, 0.1f, 0f, RMDecision.DijkstraPath,
             RMPassingGuardsSenstivity.Max, 0f, 0f, 0f, ProbabilityFlowMethod.Diffuse);
         searcherMethods.Add(searcherMethod);
        
-        searcherMethod = new RoadMapSearcherParams(1f, 1f, 1f, 0.5f, RMDecision.DijkstraPath,
+        searcherMethod = new RoadMapSearcherParams(1f, 1f, 0.1f, 0f, RMDecision.DijkstraPath,
             RMPassingGuardsSenstivity.Max, 0f, 0.5f, 0.5f, ProbabilityFlowMethod.Propagation);
         searcherMethods.Add(searcherMethod);
 
         
-        searcherMethod = new RoadMapSearcherParams(1f, 1f, 1f, 1f, RMDecision.EndPoint,
+        searcherMethod = new RoadMapSearcherParams(1f, 1f, 0.1f, 0f, RMDecision.EndPoint,
             RMPassingGuardsSenstivity.Max, 0f, 0.5f, 0.5f, ProbabilityFlowMethod.Diffuse);
         searcherMethods.Add(searcherMethod);
         
-        searcherMethod = new RoadMapSearcherParams(1f, 1f, 1f, 1f, RMDecision.EndPoint,
+        searcherMethod = new RoadMapSearcherParams(1f, 1f, 0.1f, 0f, RMDecision.EndPoint,
             RMPassingGuardsSenstivity.Max, 0f, 0.5f, 0.5f, ProbabilityFlowMethod.Propagation);
         searcherMethods.Add(searcherMethod);
 

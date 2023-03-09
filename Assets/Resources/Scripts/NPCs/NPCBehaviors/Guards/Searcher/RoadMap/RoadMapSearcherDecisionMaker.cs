@@ -56,7 +56,8 @@ public class RoadMapSearcherDecisionMaker
         switch (searcherParams.DecisionType)
         {
             case RMDecision.HillClimbPath:
-                GreedyPath(guard, roadMap);
+                // GreedyPath(guard, roadMap);
+                SetDijkstraPath(guard, guards, searcherParams, roadMap);
                 break;
 
             case RMDecision.DijkstraPath:
@@ -134,12 +135,29 @@ public class RoadMapSearcherDecisionMaker
                     // Update the distance
                     neighbor.distance = currentLine.distance + neighbor.GetLength();
 
-                    float utilityTotal = currentLine.pathUtility + GetUtility(guards, _params, neighbor);
 
-                    if (neighbor.pathUtility < utilityTotal)
+                    float utilityTotal = 0f;
+                    switch (_params.DecisionType)
                     {
-                        neighbor.pathUtility = utilityTotal;
-                        neighbor.pathParent = currentLine;
+                        case RMDecision.DijkstraPath:
+                            utilityTotal = currentLine.pathUtility + GetUtility(guards, _params, neighbor);
+                            if (neighbor.pathUtility < utilityTotal)
+                            {
+                                neighbor.pathUtility = utilityTotal;
+                                neighbor.pathParent = currentLine;
+                            }
+
+                            break;
+
+                        case RMDecision.HillClimbPath:
+                            utilityTotal = Mathf.Max(currentLine.pathUtility, GetUtility(guards, _params, neighbor));
+                            if (neighbor.pathUtility * 0.75f <= utilityTotal)
+                            {
+                                neighbor.pathUtility = utilityTotal;
+                                neighbor.pathParent = currentLine;
+                            }
+
+                            break;
                     }
 
 
@@ -156,13 +174,30 @@ public class RoadMapSearcherDecisionMaker
                     // Update the distance
                     neighbor.distance = currentLine.distance + neighbor.GetLength();
 
-                    float utilityTotal = currentLine.pathUtility + GetUtility(guards, _params, neighbor);
-
-                    if (neighbor.pathUtility < utilityTotal)
+                    float utilityTotal = 0f;
+                    switch (_params.DecisionType)
                     {
-                        neighbor.pathUtility = utilityTotal;
-                        neighbor.pathParent = currentLine;
+                        case RMDecision.DijkstraPath:
+                            utilityTotal = currentLine.pathUtility + GetUtility(guards, _params, neighbor);
+                            if (neighbor.pathUtility < utilityTotal)
+                            {
+                                neighbor.pathUtility = utilityTotal;
+                                neighbor.pathParent = currentLine;
+                            }
+
+                            break;
+
+                        case RMDecision.HillClimbPath:
+                            utilityTotal = Mathf.Max(currentLine.pathUtility, GetUtility(guards, _params, neighbor));
+                            if (neighbor.pathUtility <= utilityTotal)
+                            {
+                                neighbor.pathUtility = utilityTotal;
+                                neighbor.pathParent = currentLine;
+                            }
+
+                            break;
                     }
+
 
                     open.InsertIntoSortedList(neighbor,
                         delegate(RoadMapLine x, RoadMapLine y) { return x.pathUtility.CompareTo(y.pathUtility); },
@@ -418,13 +453,19 @@ public class RoadMapSearcherDecisionMaker
         {
             case RMPassingGuardsSenstivity.Max:
                 passingGuards = passingGuards > 0 ? guards.Count : 0;
+                utility += (1f - (float)passingGuards / guards.Count) * patrolerParams.PassingGuardsWeight;
                 break;
 
             case RMPassingGuardsSenstivity.Actual:
+                utility += (1f - (float)passingGuards / guards.Count) * patrolerParams.PassingGuardsWeight;
+                break;
+
+            case RMPassingGuardsSenstivity.Likelihood:
+                if (rmLine.GetProbability() > 0.5f)
+                    utility += (1f - (float)passingGuards / guards.Count) * patrolerParams.PassingGuardsWeight;
                 break;
         }
 
-        utility += (1f - (float) passingGuards / guards.Count) * patrolerParams.PassingGuardsWeight;
 
         // Minus two because too ignore the edge connection itself
         int connectionsCount = rmLine.GetWp1Connections().Count + rmLine.GetWp2Connections().Count - 2;
