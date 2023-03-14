@@ -98,10 +98,13 @@ public class PathFinding : MonoBehaviour
     {
         Polygon wall = MapManager.Instance.mapRenderer.GetInteriorWalls()[0];
 
-        float minSafeDistanceFromGuard = 10f;
+        float minSafeDistanceFromGuard = 7f;
 
         float maxDistance = Mathf.NegativeInfinity;
         Vector2? corner = null;
+
+        float maxSafeDistance = Mathf.NegativeInfinity;
+        Vector2? safeCorner = null;
 
         for (int i = 0; i < wall.GetVerticesCount(); i++)
         {
@@ -122,14 +125,20 @@ public class PathFinding : MonoBehaviour
             }
 
 
-            if (distance > maxDistance && isSafe)
+            if (distance > maxDistance)
             {
                 maxDistance = distance;
                 corner = cornerWall;
             }
+
+            if (distance > maxSafeDistance && isSafe)
+            {
+                maxSafeDistance = distance;
+                safeCorner = cornerWall;
+            }
         }
 
-        return corner.Value;
+        return Equals(safeCorner, null) ? corner.Value : safeCorner.Value;
     }
 
 

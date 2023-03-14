@@ -16,9 +16,11 @@ public static class CompareScouterMethods
         guardTeams.Add(4);
 
         List<MapData> maps = new List<MapData>();
-        // maps.Add(new MapData("amongUs"));
+        maps.Add(new MapData("amongUs"));
         maps.Add(new MapData("bloodstainedAngle"));
         maps.Add(new MapData("MgsDock"));
+        maps.Add(new MapData("Boxes"));
+        maps.Add(new MapData("AlienIsolation"));
 
         List<PatrolerParams> patrolerMethods = new List<PatrolerParams>();
 
