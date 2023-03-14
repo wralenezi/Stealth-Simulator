@@ -102,7 +102,7 @@ public static class SearchSessionAssessment
 
             ScouterParams scouterParams = new RoadMapScouterParams(SpotsNeighbourhoods.LineOfSight,
                 PathCanceller.DistanceCalculation, RiskThresholdType.Danger
-                , TrajectoryType.Simple, 0f, GoalPriority.Safety, SafetyPriority.ClosestWeightedSpot, 1f);
+                , TrajectoryType.Simple, 0f, GoalPriority.Safety,null, SafetyPriority.ClosestWeightedSpot,null, 1f);
 
             SearchEvaderParams searchEvaderParams = new SimpleSearchEvaderParams(DestinationType.Random,0f, 0f);
 
@@ -112,8 +112,8 @@ public static class SearchSessionAssessment
                 new IntruderBehaviorParams(scouterParams, searchEvaderParams, chaseEvaderParams);
 
             Session session = new Session(episodeLength, "", GameType.CoinCollection, Scenario.Chase, teamColor,
-                guardSpawnType, guardTeam, guardBehaviorParams, 1,
-                intruderBehaviorParams,
+                guardSpawnType, guardTeam, 0.1f, guardBehaviorParams, 1,
+                0.1f, intruderBehaviorParams,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
             session.SetGameCondition(Mathf.NegativeInfinity, Mathf.Infinity);
@@ -199,8 +199,8 @@ public static class SearchSessionAssessment
 
             Session session = new Session(episodeLength, gameCode, GameType.CoinCollection, Scenario.Chase,
                 guardColor,
-                guardSpawnType, guardTeam, guardBehaviorParams, 1,
-                intruderBehaviorParams,
+                guardSpawnType, guardTeam, 0.1f, guardBehaviorParams, 1,
+                0.1f, intruderBehaviorParams,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
             session.sessionVariable = "Grid";
@@ -247,8 +247,8 @@ public static class SearchSessionAssessment
 
             Session session = new Session(episodeLength, gameCode, GameType.CoinCollection, Scenario.Chase,
                 guardColor,
-                guardSpawnType, guardTeam, guardBehaviorParams, 1,
-                intruderBehaviorParams,
+                guardSpawnType, guardTeam, 0.1f, guardBehaviorParams, 1,
+                0.1f, intruderBehaviorParams,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
             session.sessionVariable = "Random";

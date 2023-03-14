@@ -4,8 +4,8 @@ using UnityEngine;
 
 public static class CompareScouterMethods
 {
-    private static int _episodeLength = 20;
-    private static int _episodeCount = 10;
+    private static int _episodeLength = 120;
+    private static int _episodeCount = 15;
 
 
     public static List<Session> GetSessions()
@@ -16,42 +16,81 @@ public static class CompareScouterMethods
         guardTeams.Add(4);
 
         List<MapData> maps = new List<MapData>();
+        // maps.Add(new MapData("amongUs"));
         maps.Add(new MapData("bloodstainedAngle"));
-        maps.Add(new MapData("amongUs"));
         maps.Add(new MapData("MgsDock"));
-        
+
         List<PatrolerParams> patrolerMethods = new List<PatrolerParams>();
 
         PatrolerParams patrolParams = new VisMeshPatrolerParams(0.9f, 1f, 1f,
             1f, 1f, VMDecision.Weighted);
         patrolerMethods.Add(patrolParams);
 
-        patrolParams =
-            new GridPatrolerParams(0.5f, 1f, 1f, 1f);
+        patrolParams = new RoadMapPatrolerParams(1f, 1f, 1f, 0.5f, RMDecision.DijkstraPath,
+            RMPassingGuardsSenstivity.Max,0f,0f,0f);
         patrolerMethods.Add(patrolParams);
 
         patrolParams = new RandomPatrolerParams();
         patrolerMethods.Add(patrolParams);
 
-        patrolParams = new RoadMapPatrolerParams(1f, 1f, 1f, 1f, RMDecision.DijkstraPath,
-            RMPassingGuardsSenstivity.Max,0f,0f,0f);
-        patrolerMethods.Add(patrolParams);
-
-
         // Add scouter methods
         List<ScouterParams> scouterMethods = new List<ScouterParams>();
         ScouterParams scouterMethod = null;
 
-        scouterMethod = new RoadMapScouterParams(SpotsNeighbourhoods.LineOfSight, PathCanceller.DistanceCalculation,
-            RiskThresholdType.Fixed, TrajectoryType.Simple, 0.5f, GoalPriority.Safety, SafetyPriority.Goal,
-            0.75f);
-        scouterMethods.Add(scouterMethod);
+        List<float> weights = new List<float>()
+        {
+            0f,1f
+        };
+        
+        List<float> safetyThresholds = new List<float>()
+        {
+            0f,0.5f
+        };        
 
-        scouterMethod = new GreedyToGoalScouterParams();
-        scouterMethods.Add(scouterMethod);
+        List<float> projectionMulitpliers = new List<float>()
+        {
+            0.25f,0.75f
+        }; 
+        
+        
+        List<RiskThresholdType> thresholdTypes = new List<RiskThresholdType>()
+        {
+            RiskThresholdType.Fixed,
+            RiskThresholdType.Danger
+        };
 
-        scouterMethod = new SimpleGreedyScouterParams();
-        scouterMethods.Add(scouterMethod);
+        foreach (var goalWeight in weights)
+        foreach (var costWeight in weights)
+        foreach (var coverWeight in weights)
+        foreach (var occlusionWeight in weights)
+        foreach (var proximityWeight in weights)
+        foreach (var goalWeight1 in weights)
+        foreach (var costWeight1 in weights)
+        foreach (var coverWeight1 in weights)
+        foreach (var occlusionWeight1 in weights)
+        foreach (var proximityWeight1 in weights)
+        foreach (var safetyThreshold in safetyThresholds)
+        foreach (var projectionMulitplier in projectionMulitpliers)
+        foreach (var thresholdType in thresholdTypes)
+        {
+            RoadMapScouterWeights safeWeights = new RoadMapScouterWeights(goalWeight, costWeight, coverWeight, occlusionWeight, proximityWeight);    
+            
+            RoadMapScouterWeights unsafeWeights = new RoadMapScouterWeights(goalWeight1, costWeight1, coverWeight1, occlusionWeight1, proximityWeight1);
+
+            scouterMethod = new RoadMapScouterParams(SpotsNeighbourhoods.LineOfSight, PathCanceller.DistanceCalculation,
+                thresholdType, TrajectoryType.Simple, safetyThreshold, GoalPriority.Weighted, safeWeights, SafetyPriority.Weighted,
+                unsafeWeights,
+                projectionMulitplier);
+            
+            scouterMethods.Add(scouterMethod);
+        }
+        
+
+        // scouterMethod = new GreedyToGoalScouterParams();
+        // scouterMethods.Add(scouterMethod);
+        //
+        // scouterMethod = new SimpleGreedyScouterParams();
+        // scouterMethods.Add(scouterMethod);
 
 
         AddPatrolSessions("", ref sessions, maps, patrolerMethods, scouterMethods, "blue", guardTeams);
@@ -70,14 +109,14 @@ public static class CompareScouterMethods
         {
             GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolMethod,
                 null, null);
-            
+
             IntruderBehaviorParams intruderBehaviorParams =
                 new IntruderBehaviorParams(scouterMethod, null, null);
-            
+
             Session session = new Session(_episodeLength, gameCode, GameType.CoinCollection, Scenario.Stealth,
                 teamColor,
-                GuardSpawnType.Separate, guardTeam, guardBehaviorParams, 1,
-                intruderBehaviorParams,
+                GuardSpawnType.Separate, guardTeam, 0.1f, guardBehaviorParams, 1,
+                0f, intruderBehaviorParams,
                 map, SpeechType.Simple, SurveyType.EndEpisode);
 
             session.sessionVariable = "VisMesh";
@@ -86,7 +125,7 @@ public static class CompareScouterMethods
             // Add guards
             for (int i = 0; i < session.guardsCount; i++)
                 session.AddNpc(i + 1, NpcType.Guard, null);
-            
+
             // Add intruders
             for (int i = 0; i < session.intruderCount; i++)
                 session.AddNpc(i + 1, NpcType.Intruder, null);

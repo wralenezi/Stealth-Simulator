@@ -408,14 +408,21 @@ public class HidingSpot
         spot.AddNeighbour(this);
     }
 
-    public float WeightedFitness()
+    public float WeightedFitness(RoadMapScouterWeights weights)
     {
-        float occlusionWeight = 0.1f;
-        float guardApproxWeight = 0.4f;
-        float coverWeight = 1f - (occlusionWeight + guardApproxWeight);
+        float fitness = 0f;
 
-        return OcclusionUtility * occlusionWeight + GuardProximityUtility * guardApproxWeight +
-               CoverUtility * coverWeight;
+        fitness += weights.Goal * GoalUtility;
+        
+        fitness += weights.Cost * CostUtility;
+        
+        fitness += weights.Cover * CoverUtility;
+        
+        fitness += weights.Occlusion * OcclusionUtility;
+        
+        fitness += weights.GuardProximity * GuardProximityUtility;
+        
+        return fitness;
     }
 
     public float WeightedOcclusion()

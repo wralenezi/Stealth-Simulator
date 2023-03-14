@@ -28,23 +28,6 @@ public static class RMThresholds
         return _maxSearchRisk;
     }
 
-    public static void ResetAttempts()
-    {
-        _currentAttemptsCount = 0;
-    }
-
-    public static void IncrementAttempts()
-    {
-        _currentAttemptsCount = Mathf.Min(_currentAttemptsCount + 1, maxAttempts);
-    }
-
-
-    public static int GetMaxAttempts()
-    {
-        return maxAttempts;
-    }
-
-
     public static int GetSearchDepth(RiskThresholdType type)
     {
         switch (type)
@@ -52,8 +35,6 @@ public static class RMThresholds
             case RiskThresholdType.Danger:
                 return GetSearchDepth(RMRiskEvaluator.Instance.GetRisk());
 
-            case RiskThresholdType.Attempts:
-                return GetSearchDepth(_currentAttemptsCount);
 
             case RiskThresholdType.Binary:
                 if (RMRiskEvaluator.Instance.GetRisk() > 0f)
@@ -88,8 +69,6 @@ public static class RMThresholds
             case RiskThresholdType.Danger:
                 return GetMaxSearchRisk(RMRiskEvaluator.Instance.GetRisk());
 
-            case RiskThresholdType.Attempts:
-                return GetMaxSearchRisk(_currentAttemptsCount);
 
             case RiskThresholdType.Binary:
                 if (RMRiskEvaluator.Instance.GetRisk() > 0f)
@@ -110,9 +89,6 @@ public static class RMThresholds
         {
             case RiskThresholdType.Danger:
                 return GetMaxPathRisk(RMRiskEvaluator.Instance.GetRisk());
-
-            case RiskThresholdType.Attempts:
-                return GetMaxPathRisk(_currentAttemptsCount);
 
             case RiskThresholdType.Binary:
                 if (RMRiskEvaluator.Instance.GetRisk() > 0f)
@@ -157,8 +133,6 @@ public enum RiskThresholdType
     Fixed,
 
     Danger,
-
-    Attempts,
 
     Binary,
 

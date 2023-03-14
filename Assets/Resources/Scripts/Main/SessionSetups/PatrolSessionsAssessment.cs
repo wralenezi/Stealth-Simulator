@@ -98,8 +98,8 @@ public class PatrolSessionsAssessment
                 null, null);
 
             Session session = new Session(episodeLength, "", GameType.CoinCollection, Scenario.Stealth, teamColor,
-                guardSpawnType, guardTeam, guardBehaviorParams, 0,
-                null,
+                guardSpawnType, guardTeam, 0.1f, guardBehaviorParams, 0,
+                0.1f, null,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
             session.sessionVariable = "VisMesh";
@@ -181,8 +181,8 @@ public class PatrolSessionsAssessment
             GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolParams, null, null);
 
             Session session = new Session(episodeLength, "", GameType.CoinCollection, Scenario.Stealth, teamColor,
-                guardSpawnType, guardTeam, guardBehaviorParams, 0,
-                null,
+                guardSpawnType, guardTeam, 0.1f, guardBehaviorParams, 0,
+                0.1f, null,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
             session.sessionVariable = "RoadMap";
@@ -232,8 +232,8 @@ public class PatrolSessionsAssessment
             GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolParams, null, null);
 
             Session session = new Session(episodeLength, "", GameType.CoinCollection, Scenario.Stealth, teamColor,
-                guardSpawnType, guardTeam, guardBehaviorParams, 0,
-                null,
+                guardSpawnType, guardTeam, 0.1f, guardBehaviorParams, 0,
+                0.1f, null,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
             session.sessionVariable = "RoadMap";
@@ -308,8 +308,8 @@ public class PatrolSessionsAssessment
 
             Session session = new Session(episodeLength, gameCode, GameType.CoinCollection, Scenario.Stealth,
                 guardColor,
-                guardSpawnType, guardTeam, guardBehaviorParams, 0,
-                null,
+                guardSpawnType, guardTeam, 0.1f, guardBehaviorParams, 0,
+                0.1f, null,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
             session.sessionVariable = "Grid";

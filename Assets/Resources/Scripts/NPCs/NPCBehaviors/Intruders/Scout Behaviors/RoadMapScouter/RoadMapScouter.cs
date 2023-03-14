@@ -66,14 +66,14 @@ public class RoadMapScouter : Scouter
         _pathFinder = new RMScoutPathFinder();
 
         _decisionMaker = new RMSDecisionMaker();
-        _decisionMaker.Initiate(_params.goalPriority, _params.safetyPriority);
+        _decisionMaker.Initiate(_params);
 
         // showAvailableHidingSpots = true;
         // showRiskSpots = true;
         // showProjectedTrajectories = true;
         // showRoadMapEndNodes = true;
         // showIntruderGoal = true;
-        showRoadMap = true;
+        // showRoadMap = true;
     }
 
     public override void Begin()
@@ -188,7 +188,8 @@ public class RoadMapScouter : Scouter
 
     private void SetRiskValue(HidingSpot hs)
     {
-        float RANGE = Properties.GetFovRadius(NpcType.Guard);
+        List<Guard> guards = NpcsManager.Instance.GetGuards();
+        float RANGE = (guards.Count == 0) ? 0f : guards[0].GetFovRadius();
 
         float minSqrMag = Mathf.Infinity;
         RoadMapNode closestPossibleGuardPos = null;
@@ -297,8 +298,7 @@ public class RoadMapScouter : Scouter
 
             float normalizedDistance = distanceToHidingspot / denominator;
 
-            if (proximityUtility < normalizedDistance)
-                proximityUtility = normalizedDistance;
+            if (proximityUtility < normalizedDistance) proximityUtility = normalizedDistance;
         }
 
         hs.GuardProximityUtility = proximityUtility;
@@ -306,7 +306,7 @@ public class RoadMapScouter : Scouter
 
     private void SetOcclusionUtility(HidingSpot hs, List<Guard> guards)
     {
-        float fovRadius = Properties.GetFovRadius(NpcType.Guard);
+        float fovRadius = (guards.Count == 0) ? 0f : guards[0].GetFovRadius();
 
         float utility = 0f;
 
@@ -411,13 +411,17 @@ public class RoadMapScouterParams : ScouterParams
 
     public readonly GoalPriority goalPriority;
 
+    public readonly RoadMapScouterWeights safeWeights;
+
     public readonly SafetyPriority safetyPriority;
+    
+    public readonly RoadMapScouterWeights unsafeWeights;
 
     public readonly float fovProjectionMultiplier;
 
     public RoadMapScouterParams(SpotsNeighbourhoods spotsNeighbourhood, PathCanceller pathCancel,
-        RiskThresholdType thresholdType, TrajectoryType trajectoryType, float maxRiskAsSafe, GoalPriority goalPriority,
-        SafetyPriority safetyPriority, float fovProjectionMultiplier)
+        RiskThresholdType thresholdType, TrajectoryType trajectoryType, float maxRiskAsSafe, GoalPriority goalPriority, RoadMapScouterWeights safeWeights,
+        SafetyPriority safetyPriority, RoadMapScouterWeights unsafeWeights, float fovProjectionMultiplier)
     {
         this.spotsNeighbourhood = spotsNeighbourhood;
         this.pathCancel = pathCancel;
@@ -426,6 +430,8 @@ public class RoadMapScouterParams : ScouterParams
         this.maxRiskAsSafe = maxRiskAsSafe;
         this.goalPriority = goalPriority;
         this.safetyPriority = safetyPriority;
+        this.safeWeights = safeWeights;
+        this.unsafeWeights = unsafeWeights;
         this.fovProjectionMultiplier = fovProjectionMultiplier;
     }
 
@@ -440,8 +446,8 @@ public class RoadMapScouterParams : ScouterParams
         output += spotsNeighbourhood;
         output += sep;
 
-        output += pathCancel;
-        output += sep;
+        // output += pathCancel;
+        // output += sep;
 
         output += thresholdType;
         output += sep;
@@ -449,20 +455,71 @@ public class RoadMapScouterParams : ScouterParams
         output += fovProjectionMultiplier;
         output += sep;
 
-        output += trajectoryType;
+        // output += trajectoryType;
+        // output += sep;
+
+        // output += goalPriority;
+        // output += sep;
+
+        output += safeWeights;
         output += sep;
 
-        output += goalPriority;
-        output += sep;
+        // output += safetyPriority;
+        // output += sep;
 
-        output += safetyPriority;
+        output += unsafeWeights;
         output += sep;
-
+        
         output += maxRiskAsSafe;
 
         return output;
     }
 }
+
+public class RoadMapScouterWeights
+{
+    public float Goal;
+
+    public float Cost;
+    
+    public float Cover;
+
+    public float Occlusion;
+
+    public float GuardProximity;
+
+    public RoadMapScouterWeights(float _goal, float _cost, float _cover, float _occlusion, float _guardProximity)
+    {
+        Goal = _goal;
+        Cost = _cost;
+        Cover = _cover;
+        Occlusion = _occlusion;
+        GuardProximity = _guardProximity;
+    }
+    
+    public override string ToString()
+    {
+        string output = "";
+        string sep = "_";
+
+        output += Goal;
+        output += sep;
+
+        output += Cost;
+        output += sep;
+
+        output += Cover;
+        output += sep;
+
+        output += Occlusion;
+        output += sep;
+
+        output += GuardProximity;
+
+        return output;
+    }
+}
+
 
 public class PossiblePosition
 {
@@ -538,6 +595,7 @@ public enum SpotsNeighbourhoods
 
     // Add hiding spots based on a grid
     Grid,
+    
     All
 }
 

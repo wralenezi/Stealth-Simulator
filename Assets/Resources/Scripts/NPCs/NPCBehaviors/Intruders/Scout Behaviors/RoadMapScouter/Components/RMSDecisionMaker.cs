@@ -4,13 +4,11 @@ using UnityEngine.UIElements;
 
 public class RMSDecisionMaker
 {
-    private GoalPriority _goalPriority;
-    private SafetyPriority _safetyPriority;
+    private RoadMapScouterParams _params;
 
-    public void Initiate(GoalPriority goalPriority, SafetyPriority safetyPriority)
+    public void Initiate(RoadMapScouterParams _params)
     {
-        _goalPriority = goalPriority;
-        _safetyPriority = safetyPriority;
+        this._params = _params;
     }
 
     public HidingSpot GetBestSpot(List<HidingSpot> spots, float currentRisk, float maxSafeRisk)
@@ -18,17 +16,22 @@ public class RMSDecisionMaker
         bool isSafe = currentRisk <= maxSafeRisk;
 
         if (isSafe)
-            switch (_goalPriority)
+            switch (_params.goalPriority)
             {
                 case GoalPriority.Safety:
                     SortGreedyGoalSpot(ref spots);
                     break;
+                
+                case GoalPriority.Weighted:
+                    SortByWeight(ref spots, _params.safeWeights);
+                    break;
+
             }
         else
-            switch (_safetyPriority)
+            switch (_params.safetyPriority)
             {
-                case SafetyPriority.WeightedSpot:
-                    GreedySafeSpot(ref spots);
+                case SafetyPriority.Weighted:
+                    SortByWeight(ref spots, _params.unsafeWeights);
                     break;
 
                 case SafetyPriority.ClosestWeightedSpot:
@@ -71,7 +74,7 @@ public class RMSDecisionMaker
         switch (randomValue)
         {
             case 0:
-                GreedySafeSpot(ref spots);
+                SortByWeight(ref spots, _params.unsafeWeights);
                 break;
 
             case 1:
@@ -105,13 +108,13 @@ public class RMSDecisionMaker
 
 
     // Safety oriented methods
-    private void GreedySafeSpot(ref List<HidingSpot> spots)
+    private void SortByWeight(ref List<HidingSpot> spots, RoadMapScouterWeights weights)
     {
         spots.Sort((x, y) =>
         {
             int ret = x.Risk.CompareTo(y.Risk);
             if (ret != 0) return ret;
-            ret = y.WeightedFitness().CompareTo(x.WeightedFitness());
+            ret = y.WeightedFitness(weights).CompareTo(x.WeightedFitness(weights));
             return ret;
         });
     }
@@ -123,8 +126,6 @@ public class RMSDecisionMaker
             int ret = x.Risk.CompareTo(y.Risk);
             if (ret != 0) return ret;
             ret = y.CostUtility.CompareTo(x.CostUtility);
-            if (ret != 0) return ret;
-            ret = y.WeightedFitness().CompareTo(x.WeightedFitness());
             return ret;
         });
     }
@@ -155,7 +156,8 @@ public class RMSDecisionMaker
 
 public enum GoalPriority
 {
-    Safety
+    Safety,
+    Weighted
 }
 
 
@@ -163,7 +165,7 @@ public enum SafetyPriority
 {
     Occlusion,
     GuardProximity,
-    WeightedSpot,
+    Weighted,
     ClosestWeightedSpot,
     Goal,
     Random

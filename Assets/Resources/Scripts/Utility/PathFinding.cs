@@ -98,7 +98,7 @@ public class PathFinding : MonoBehaviour
     {
         Polygon wall = MapManager.Instance.mapRenderer.GetInteriorWalls()[0];
 
-        float minSafeDistanceFromGuard = 4f;
+        float minSafeDistanceFromGuard = 10f;
 
         float maxDistance = Mathf.NegativeInfinity;
         Vector2? corner = null;

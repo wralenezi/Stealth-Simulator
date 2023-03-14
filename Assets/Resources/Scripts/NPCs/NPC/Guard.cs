@@ -27,9 +27,12 @@ public class Guard : NPC
     private Color32 _spottedColor;
 
     // Initialize the guard
-    public override void Initiate(NpcData data, VoiceParams _voice)
+    public override void Initiate(Session session, NpcData data, VoiceParams _voice)
     {
-        base.Initiate(data, _voice);
+        base.Initiate(session, data, _voice);
+
+        AddFoV(Properties.GetFovAngle(Data.npcType), session.guardFov,
+            Properties.GetFovColor(Data.npcType));
 
         m_excMarkPrefab = (GameObject)Resources.Load("Prefabs/exclamation_mark");
         m_excMarkGo = Instantiate(m_excMarkPrefab, transform);

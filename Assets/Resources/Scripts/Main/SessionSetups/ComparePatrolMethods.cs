@@ -65,7 +65,7 @@ public static class ComparePatrolMethods
 
             Session session = new Session(_episodeLength, gameCode, GameType.CoinCollection, Scenario.Stealth,
                 teamColor,
-                GuardSpawnType.Separate, guardTeam, guardBehaviorParams, 0,
+                GuardSpawnType.Separate, guardTeam, 0.1f ,guardBehaviorParams, 0,0.1f,
                 null,
                 map, SpeechType.Simple, SurveyType.EndEpisode);
 

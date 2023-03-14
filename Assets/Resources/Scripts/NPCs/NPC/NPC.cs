@@ -71,7 +71,7 @@ public abstract class NPC : MonoBehaviour
     private VoiceParams m_voiceParam;
 
     // Called when the agent is first created
-    public virtual void Initiate(NpcData data, VoiceParams _voice)
+    public virtual void Initiate(Session session, NpcData data, VoiceParams _voice)
     {
         m_voiceParam = _voice;
         _pathToTake = new List<Vector2>();
@@ -84,10 +84,7 @@ public abstract class NPC : MonoBehaviour
         Data = data;
         m_NpcRb = GetComponent<Rigidbody2D>();
         m_FovPolygon = new List<Polygon>() {new Polygon()};
-
-        AddFoV(Properties.GetFovAngle(Data.npcType), Properties.GetFovRadius(Data.npcType),
-            Properties.GetFovColor(Data.npcType));
-
+        
         // ShowPath = true;
     }
 
@@ -127,7 +124,7 @@ public abstract class NPC : MonoBehaviour
     }
 
     // Add a field of view component to the NPC
-    private void AddFoV(float angle, float radius, Color color)
+    protected void AddFoV(float angle, float radiusPortion, Color color)
     {
         // The game object that contains the field of view
         GameObject fovGameObject = new GameObject("FoV");
@@ -137,10 +134,10 @@ public abstract class NPC : MonoBehaviour
         fovGameObject.transform.parent = transform1;
         fovGameObject.transform.position = transform1.position;
 
-        m_FovRadius = Properties.GetFovRadius(Data.npcType);
+        m_FovRadius = GameManager.Instance.GetActiveArea().Map.mapRenderer.GetMaxWidthBoundingBox() * radiusPortion;
 
         Fov = fovGameObject.AddComponent<FieldOfView>();
-        Fov.Initiate(angle, radius, color);
+        Fov.Initiate(angle, m_FovRadius, color);
     }
 
     public void SetFovColor(Color32 color)
@@ -546,7 +543,7 @@ public abstract class NPC : MonoBehaviour
     }
 
     // Move the NPC through it's path
-    public void ExecutePlan(State state, float deltaTime)
+    public void ExecutePlan(float deltaTime)
     {
         _timeoutCounter -= deltaTime;
 
@@ -608,9 +605,8 @@ public abstract class NPC : MonoBehaviour
 
         // How to behavior when heading for the last way point (goal)
         // ReSharper disable once PossibleInvalidOperationException
-        if (GetGoal().Value == (Vector2) target)
+        if ( (GetGoal().Value == (Vector2) target) && (Equals(GetType(), typeof(Guard))))
         {
-            // If the guard is in patrol, it doesn't need to visit the goal on the path. Just see it
             if (!m_hasToReach) distanceLeft -= m_FovRadius * 0.7f;
         }
 
@@ -625,7 +621,6 @@ public abstract class NPC : MonoBehaviour
 
         // This is to set the default value to false.
         m_hasToReach = false;
-
         FacingDirection = null;
 
         // Since no changes were needed to the position then the agent reached the goal

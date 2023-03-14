@@ -185,9 +185,9 @@ public class GameManager : MonoBehaviour
         // List<Session> sessions = ComparePatrolMethods.GetSessions();
 
         // Sessions set up for evaluating the search behaviors
-        List<Session> sessions = CompareSearchMethods.GetSessions();
+        // List<Session> sessions = CompareSearchMethods.GetSessions();
 
-        // List<Session> sessions = CompareScouterMethods.GetSessions();
+        List<Session> sessions = CompareScouterMethods.GetSessions();
 
         // Sessions set up for evaluating the efficiency of the search behaviors
         // List<Session> sessions = SearchSessionAssessment.GetSessions();
@@ -500,6 +500,7 @@ public struct NpcData
     // Initial position for the NPC
     public NpcLocation? location;
 
+
     public NpcData(int _id, NpcType pNpcType, NpcLocation? _location)
     {
         id = _id;
@@ -566,6 +567,8 @@ public class Session
     // Number of guards
     public int guardsCount;
 
+    public float guardFov;
+    
     // Guards Data
     public List<NpcData> guardsList;
 
@@ -575,6 +578,8 @@ public class Session
     // Number of Intruders
     public int intruderCount;
 
+    public float intruderFov;
+    
     // dialog flag if enabled
     public SpeechType speechType;
 
@@ -591,8 +596,8 @@ public class Session
     public SurveyType surveyType;
 
     public Session(float _episodeLength, string _gameCode, GameType _gameType, Scenario pScenario, string _guardColor,
-        GuardSpawnType _guardSpawnType, int pGuardsCount, GuardBehaviorParams _guardBehaviorParams,
-        int pIntruderCount, IntruderBehaviorParams _intruderBehaviorParams,
+        GuardSpawnType _guardSpawnType, int pGuardsCount, float _guardFov, GuardBehaviorParams _guardBehaviorParams,
+        int pIntruderCount, float _intruderFov, IntruderBehaviorParams _intruderBehaviorParams,
         MapData _map,
         SpeechType _speechType,
         SurveyType _surveyType = SurveyType.End)
@@ -603,8 +608,10 @@ public class Session
         guardColor = _guardColor;
         guardSpawnMethod = _guardSpawnType;
         guardsCount = pGuardsCount;
+        guardFov = _guardFov;
         guardBehaviorParams = _guardBehaviorParams;
         intruderCount = pIntruderCount;
+        intruderFov = _intruderFov;
         map = _map;
         guardsList = new List<NpcData>();
         intrudersList = new List<NpcData>();
@@ -698,6 +705,9 @@ public class Session
         if (!Equals(guardBehaviorParams, null))
         {
             sessionInfo += guardBehaviorParams.ToString();
+            sessionInfo += sep;
+            
+            sessionInfo += (guardFov * 100f).ToString();
             sessionInfo += sep;
         }
 

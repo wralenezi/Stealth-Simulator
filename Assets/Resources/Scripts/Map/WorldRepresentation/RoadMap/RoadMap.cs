@@ -596,7 +596,7 @@ public class RoadMap
         Vector2 source = pointOnRoadMap;
 
         // Add a temporary way point to mark the guard's position on the road map
-        float fov = Properties.GetFovRadius(NpcType.Guard);
+        float fov = npc.GetFovRadius();
 
         RoadMapNode sourceWp =
             GetGuardRoadMapNode(source, npc,
@@ -724,7 +724,7 @@ public class RoadMap
         Vector2 source = pointOnRoadMap;
 
         // Add a temporary way point to mark the guard's position on the road map
-        float fov = Properties.GetFovRadius(NpcType.Guard);
+        float fov = npc.GetFovRadius();
 
         RoadMapNode sourceWp =
             GetGuardRoadMapNode(source, npc,

@@ -61,7 +61,7 @@ public static class AdHocMethods
 
         scouterMethod = new RoadMapScouterParams(SpotsNeighbourhoods.LineOfSight,
             PathCanceller.DistanceCalculation,
-            RiskThresholdType.Fixed, TrajectoryType.Simple, 0.8f, GoalPriority.Safety, SafetyPriority.WeightedSpot,
+            RiskThresholdType.Fixed, TrajectoryType.Simple, 0.8f, GoalPriority.Safety, null, SafetyPriority.Weighted,null,
             0.75f);
         scouterMethods.Add(scouterMethod);
 
@@ -105,8 +105,8 @@ public static class AdHocMethods
 
             Session session = new Session(_episodeLength, gameCode, GameType.CoinCollection, Scenario.Chase,
                 teamColor,
-                GuardSpawnType.Separate, guardTeam, guardBehaviorParams, 0,
-                intruderBehaviorParams,
+                GuardSpawnType.Separate, guardTeam, 0.1f,guardBehaviorParams, 0,
+                0.1f, intruderBehaviorParams,
                 map, SpeechType.Simple, SurveyType.EndEpisode);
 
             session.SetGameCondition(Mathf.NegativeInfinity, Mathf.Infinity);

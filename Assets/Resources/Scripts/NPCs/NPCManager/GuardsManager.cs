@@ -179,7 +179,7 @@ public class GuardsManager : MonoBehaviour
         }
 
         // 
-        npc.Initiate(npcData, GameManager.Instance.GetVoice());
+        npc.Initiate(session, npcData, GameManager.Instance.GetVoice());
 
         // npc.ControlledByUser = session.guardBehaviorParams.alertPlanner == AlertPlanner.UserInput;
 
@@ -286,7 +286,7 @@ public class GuardsManager : MonoBehaviour
     {
         foreach (var guard in _guards)
         {
-            guard.ExecutePlan(state, deltaTime);
+            guard.ExecutePlan(deltaTime);
             guard.UpdateMetrics(deltaTime);
         }
     }

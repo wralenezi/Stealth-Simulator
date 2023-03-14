@@ -95,9 +95,9 @@ public class VisMeshPatrolerParams : PatrolerParams
         output += sep;
 
         output += SeparationWeight;
-        output += sep;
-
-        output += DecisionType;
+        // output += sep;
+        //
+        // output += DecisionType;
 
         return output;
     }

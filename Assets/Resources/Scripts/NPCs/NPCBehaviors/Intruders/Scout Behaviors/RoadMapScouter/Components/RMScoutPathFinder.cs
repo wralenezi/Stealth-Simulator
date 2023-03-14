@@ -94,7 +94,6 @@ public class RMScoutPathFinder
                 }
             );
 
-
             int addedNodes = 0;
             int i = -1;
             while (addedNodes < numberOfWPs && i < closedListRoadMap.Count - 1)

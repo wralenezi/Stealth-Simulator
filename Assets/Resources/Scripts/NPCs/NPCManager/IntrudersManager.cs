@@ -73,7 +73,7 @@ public class IntrudersManager : Agent
 
         _intruders.Add((Intruder) npc);
 
-        npc.Initiate(npcData, GameManager.Instance.GetVoice());
+        npc.Initiate(session, npcData, GameManager.Instance.GetVoice());
 
         // npc.ControlledByUser = session.IntruderBehaviorParams.chaseEvaderParams.GetType() == AlertPlanner.UserInput;
 
@@ -105,8 +105,8 @@ public class IntrudersManager : Agent
     {
         foreach (var intruder in _intruders)
         {
-            intruder.ExecutePlan(state, deltaTime);
-            intruder.UpdateMetrics(state, deltaTime);
+            intruder.ExecutePlan( deltaTime);
+            intruder.UpdateMetrics( deltaTime);
         }
     }
 

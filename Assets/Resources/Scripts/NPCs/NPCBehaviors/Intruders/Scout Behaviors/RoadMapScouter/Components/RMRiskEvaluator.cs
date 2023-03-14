@@ -41,7 +41,8 @@ public class RMRiskEvaluator : MonoBehaviour
 
     public void UpdateCurrentRisk(RoadMap roadMap)
     {
-        float RISK_RANGE = Properties.GetFovRadius(NpcType.Guard);
+        List<Guard> guards = NpcsManager.Instance.GetGuards();
+        float RISK_RANGE = (guards.Count == 0) ? 0f : guards[0].GetFovRadius();
         Intruder intruder = NpcsManager.Instance.GetIntruders()[0];
 
         _intruderRiskSpot ??= new RiskyPosition();
@@ -54,7 +55,7 @@ public class RMRiskEvaluator : MonoBehaviour
 
     private void SetRiskyPositions(RoadMap roadMap, List<Guard> guards, Intruder intruder)
     {
-        float RISK_RANGE = Properties.GetFovRadius(NpcType.Guard);
+        float RISK_RANGE = (guards.Count == 0) ? 0f : guards[0].GetFovRadius();
 
         if (_riskSpots.Count == 0)
             // Insert a risk spot for each guard
@@ -189,8 +190,7 @@ public class RMRiskEvaluator : MonoBehaviour
         foreach (var spot in _riskSpots)
         {
             if (spot.risk <= maxPathRisk) continue;
-
-
+            
             float intruderPathDistanceToSpot = PathFinding.Instance.GetShortestPathDistance(
                 intruder.GetTransform().position,
                 spot.position.Value);
@@ -199,7 +199,7 @@ public class RMRiskEvaluator : MonoBehaviour
                 spot.npc.GetTransform().position,
                 spot.position.Value);
 
-            guardPathDistanceToSpot -= Properties.GetFovRadius(NpcType.Guard);
+            guardPathDistanceToSpot -= (guards.Count == 0) ? 0f : guards[0].GetFovRadius();
             guardPathDistanceToSpot = Mathf.Clamp(guardPathDistanceToSpot, 0f, guardPathDistanceToSpot);
 
             float arrivalTimeIntruder =

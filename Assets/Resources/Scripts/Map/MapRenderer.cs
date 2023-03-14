@@ -98,8 +98,12 @@ public class MapRenderer : MonoBehaviour
             }
     }
 
-    
-    
+    public float GetMaxWidthBoundingBox()
+    {
+        return m_MapBoundingBoxMaxWith;
+    }
+
+
     // Parse the map which is inspired by SVG syntax
     private void ParseMapStringRelative(string mapData)
     {
@@ -249,8 +253,6 @@ public class MapRenderer : MonoBehaviour
             : Mathf.Abs(bounds.max.y - bounds.min.y);
 
         m_MapBoundingBoxMaxWith = maxWidth;
-
-        Properties.SetMapMaxWidth(maxWidth);
     }
 
     public Bounds GetMapBoundingBox()

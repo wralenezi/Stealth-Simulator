@@ -56,7 +56,7 @@ public static class StealthUserStudySessions
         {
             // SafetyPriority.Occlusion,
             // SafetyPriority.GuardProximity,
-            SafetyPriority.WeightedSpot,
+            SafetyPriority.Weighted,
             // SafetyPriority.Random
         };
 
@@ -89,14 +89,14 @@ public static class StealthUserStudySessions
         foreach (var projectionDistance in projectionDistances)
         {
             RoadMapScouterParams rmScouterParams = new RoadMapScouterParams(SpotsNeighbourhoods.All, PathCanceller.None,
-                RiskThresholdType.None, TrajectoryType.None, 0f, GoalPriority.Safety, SafetyPriority.Random,
+                RiskThresholdType.None, TrajectoryType.None, 0f, GoalPriority.Safety, null, SafetyPriority.Random, null,
                 projectionDistance);
 
             IntruderBehaviorParams intruderBehavior = new IntruderBehaviorParams(rmScouterParams, null, null);
 
             Session session = new Session(120, "", GameType.CoinCollection, Scenario.Stealth, "blue", guardSpawnType,
-                guardTeam, null, 1,
-                intruderBehavior,
+                guardTeam, 0.1f, null, 1,
+                0.1f, intruderBehavior,
                 mapData, SpeechType.Simple, SurveyType.EndEpisode);
 
             // Add guards

@@ -29,9 +29,12 @@ public class Intruder : NPC
     private bool isWaiting = false;
 
 
-    public override void Initiate(NpcData data, VoiceParams _voice)
+    public override void Initiate(Session session,NpcData data, VoiceParams _voice)
     {
-        base.Initiate(data, _voice);
+        base.Initiate(session, data, _voice);
+
+        AddFoV(Properties.GetFovAngle(Data.npcType), session.guardFov,
+            Properties.GetFovColor(Data.npcType));
 
         // Multiply the intruder's speed
         NpcSpeed *= Properties.IntruderSpeedMulti;

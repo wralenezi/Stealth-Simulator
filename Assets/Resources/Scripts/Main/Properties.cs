@@ -23,7 +23,6 @@ public static class Properties
     public static readonly int GridDefaultSizeY = 10 * GridMultiplier;
     public static readonly float NodeRadius = 0.15f;
 
-
     //---------------------------------------------------//
     // Staleness Properties
     // Staleness range
@@ -37,12 +36,6 @@ public static class Properties
         byte colorLevel = (byte)(StalenessHigh - cappedStaleness);
         return new Color32(colorLevel, colorLevel, colorLevel, 255);
     }
-
-    // Staleness rate per second
-    public const float StalenessRate = 16f;
-
-    // Time required to cover one distance unit in seconds
-    public static float TimeRequiredToCoverOneUnit = 3f;
 
     // Hiding Spots
     // Number of static hiding spots
@@ -71,55 +64,6 @@ public static class Properties
 
             default:
                 return new Color32(100, 100, 100, 100);
-        }
-    }
-
-    private static float maxWidth;
-
-    public static void SetMapMaxWidth(float _maxWidth)
-    {
-        maxWidth = _maxWidth;
-    }
-
-    public static float GuardsFovRadiusPercentage = 0.1f;
-
-    // Get the default value for view radius for the Npcs as a portion of a value
-    public static float GetFovRadius(NpcType npcType)
-    {
-        // Field of View Properties
-        float viewRadiusFractionOfMap;
-
-        switch (npcType)
-        {
-            case NpcType.Guard:
-                // viewRadiusFractionOfMap = GuardsFovRadiusPercentage;
-                viewRadiusFractionOfMap = GetGuardFovForMap(MapManager.Instance.mapData.name);
-                break;
-
-            case NpcType.Intruder:
-                viewRadiusFractionOfMap = 0f;
-                break;
-
-            default:
-                viewRadiusFractionOfMap = 0.1f;
-                break;
-        }
-
-        return maxWidth * viewRadiusFractionOfMap;
-    }
-
-    private static float GetGuardFovForMap(string mapName)
-    {
-        switch (mapName)
-        {
-            case "Hall":
-                return 0.3f;
-
-            case "Corridor":
-                return 0.15f;
-
-            default:
-                return 0.1f;
         }
     }
 

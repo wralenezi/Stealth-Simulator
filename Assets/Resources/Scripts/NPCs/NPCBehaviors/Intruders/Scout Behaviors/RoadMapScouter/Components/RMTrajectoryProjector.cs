@@ -56,13 +56,13 @@ public class RMTrajectoryProjector
 
     private float GetGuardProjectionDistance(NPC npc)
     {
-        float fov = Properties.GetFovRadius(NpcType.Guard);
+        float fov = npc.GetFovRadius();
         return fov + GetGuardProjectionOffset(npc);
     }
 
     private float GetGuardProjectionOffset(NPC npc)
     {
-        float fov = Properties.GetFovRadius(NpcType.Guard);
+        float fov = npc.GetFovRadius();
         float projectionMultiplier = 33f;
 
         float speed = Equals(npc, null) ? Properties.NpcSpeed : npc.GetCurrentSpeed();
