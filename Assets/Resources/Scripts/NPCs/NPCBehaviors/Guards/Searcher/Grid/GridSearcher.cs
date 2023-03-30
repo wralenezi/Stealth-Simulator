@@ -146,20 +146,21 @@ public class GridSearcher : Searcher
         {
             if (!node.isExpansionDone)
             {
-                if (!Equals(node.staleness, 1f)) continue;
-
-                bool allExpanded = true;
-                foreach (var neighbor in node.GetNeighbors())
+                if (Equals(node.staleness, 1f))
                 {
-                    if (neighbor.isIncrementedThisRound) continue;
+                    bool allExpanded = true;
+                    foreach (var neighbor in node.GetNeighbors())
+                    {
+                        if (neighbor.isIncrementedThisRound) continue;
 
-                    neighbor.staleness += m_Intruder.GetNpcSpeed() * 2f * deltaTime;
-                    neighbor.staleness = Mathf.Clamp(neighbor.staleness, 0f, 1f);
-                    if (neighbor.staleness < 1f) allExpanded = false;
-                    neighbor.isIncrementedThisRound = true;
+                        neighbor.staleness += m_Intruder.GetNpcSpeed() * 2f * deltaTime;
+                        neighbor.staleness = Mathf.Clamp(neighbor.staleness, 0f, 1f);
+                        if (neighbor.staleness < 1f) allExpanded = false;
+                        neighbor.isIncrementedThisRound = true;
+                    }
+
+                    if (allExpanded) node.isExpansionDone = true;
                 }
-
-                if (allExpanded) node.isExpansionDone = true;
             }
 
 

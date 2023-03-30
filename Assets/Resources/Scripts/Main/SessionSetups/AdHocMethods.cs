@@ -13,13 +13,15 @@ public static class AdHocMethods
         List<Session> sessions = new List<Session>();
 
         List<int> guardTeams = new List<int>();
-        guardTeams.Add(1);
+        guardTeams.Add(3);
 
         List<MapData> maps = new List<MapData>();
         // maps.Add(new MapData("amongUs"));
         // maps.Add(new MapData("MgsDock"));
         // maps.Add(new MapData("dragonAgeBrc202d"));
-        maps.Add(new MapData("Boxes"));
+        // maps.Add(new MapData("Boxes"));
+        // maps.Add(new MapData("CoD"));
+        maps.Add(new MapData("dragon_age2"));
         // maps.Add(new MapData("bloodstainedAngle"));
 
         List<PatrolerParams> patrolerMethods = new List<PatrolerParams>();

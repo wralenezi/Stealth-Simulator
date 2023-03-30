@@ -121,6 +121,7 @@ public class MapDrawer : MonoBehaviour
 
         // string mapData = CsvController.ReadString(GetPath(MapName.text,"csv"));
         // ParseCSVMapString(mapData);
+        // ParseMapStringRelative(mapData);
 
         string mapData = CsvController.ReadString(GetPath(MapName.text, "json"));
         RenderMap(JsonConvert.DeserializeObject<MapData>(mapData));
@@ -158,6 +159,58 @@ public class MapDrawer : MonoBehaviour
                 }
             }
     }
+    
+    // Parse the map which is inspired by SVG syntax
+    private void ParseMapStringRelative(string mapData)
+    {
+        // Split data by lines
+        var lines = mapData.Split('\n');
+
+        // Each line represents a polygon
+        for (var lineIndex = 0; lineIndex < lines.Length; lineIndex++)
+            if (lines[lineIndex].Length > 0)
+            {
+                GameObject gameObject = new GameObject();
+                gameObject.transform.parent = transform;
+
+                LineRenderer lineRenderer = gameObject.AddComponent<LineRenderer>();
+                // lineRenderer.useWorldSpace = true;
+                lineRenderer.loop = true;
+
+                // Split the line to points
+                var positions = lines[lineIndex].Split(' ');
+                lineRenderer.positionCount = Mathf.CeilToInt(positions.Length);
+                int index = 0;
+
+                Vector2 pointer = Vector2.zero;
+
+                // Add the vertices to the wall
+                for (var i = 0; i <positions.Length; i++)
+                {
+                    // split the point to coordinates
+                    var point = positions[i].Split(',');
+                    
+                    // Vertex position
+                    var position = new Vector2(float.Parse(point[0]), -float.Parse(point[1]));
+
+                    // First point is the starting point
+                    if (i == 0)
+                        pointer = position;
+                    else
+                    {
+                        position = pointer + position;
+                        pointer = position;
+                    }
+
+                    position = transform.TransformPoint(position);
+                    
+
+                    // Add the point to the current wall
+                    lineRenderer.SetPosition(index++, position);
+                }
+            }
+    }
+
 
     // Parse the map data where the map is stored in absolute coordinates 
     private void ParseCSVMapString(string mapData)
