@@ -740,7 +740,7 @@ MonoBehaviour:
   gameView: 0
   showSurvey: 0
   IsOnlineBuild: 0
-  loggingMethod: 0
+  loggingMethod: 2
   RecordHeatMap: 0
   RecordRunningTimes: 0
   RecordNpcLocations: 0

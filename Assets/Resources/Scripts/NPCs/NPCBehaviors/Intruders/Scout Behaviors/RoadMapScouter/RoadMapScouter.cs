@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
@@ -7,6 +8,7 @@ using Vector2 = UnityEngine.Vector2;
 public class RoadMapScouter : Scouter
 {
     private Intruder _intruder;
+    [SerializeField]
     private RoadMapScouterParams _params;
 
     public bool showIntruderGoal;
@@ -394,30 +396,31 @@ public class RoadMapScouter : Scouter
     }
 }
 
+[Serializable]
 public class RoadMapScouterParams : ScouterParams
 {
-    public readonly SpotsNeighbourhoods spotsNeighbourhood;
+    public SpotsNeighbourhoods spotsNeighbourhood;
 
     /// <summary>
     /// Path Cancelling method
     /// </summary>
-    public readonly PathCanceller pathCancel;
+    public PathCanceller pathCancel;
 
-    public readonly RiskThresholdType thresholdType;
+    public RiskThresholdType thresholdType;
 
-    public readonly TrajectoryType trajectoryType;
+    public TrajectoryType trajectoryType;
 
-    public readonly float maxRiskAsSafe;
+    public float maxRiskAsSafe;
 
-    public readonly GoalPriority goalPriority;
+    public GoalPriority goalPriority;
 
-    public readonly RoadMapScouterWeights safeWeights;
+    public RoadMapScouterWeights safeWeights;
 
-    public readonly SafetyPriority safetyPriority;
+    public SafetyPriority safetyPriority;
     
-    public readonly RoadMapScouterWeights unsafeWeights;
+    public RoadMapScouterWeights unsafeWeights;
 
-    public readonly float fovProjectionMultiplier;
+    public float fovProjectionMultiplier;
 
     public RoadMapScouterParams(SpotsNeighbourhoods spotsNeighbourhood, PathCanceller pathCancel,
         RiskThresholdType thresholdType, TrajectoryType trajectoryType, float maxRiskAsSafe, GoalPriority goalPriority, RoadMapScouterWeights safeWeights,
@@ -476,6 +479,7 @@ public class RoadMapScouterParams : ScouterParams
     }
 }
 
+[Serializable]
 public class RoadMapScouterWeights
 {
     public float Goal;

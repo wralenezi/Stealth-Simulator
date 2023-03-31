@@ -1,11 +1,12 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public static class CompareScouterMethods
+public static class StealthSecondTuningMethods
 {
     private static int _episodeLength = 120;
-    private static int _episodeCount = 15;
+    private static int _episodeCount = 50;
 
 
     public static List<Session> GetSessions()
@@ -16,11 +17,14 @@ public static class CompareScouterMethods
         guardTeams.Add(4);
 
         List<MapData> maps = new List<MapData>();
+        maps.Add(new MapData("AlienIsolation"));
         maps.Add(new MapData("amongUs"));
-        // maps.Add(new MapData("bloodstainedAngle"));
-        // maps.Add(new MapData("MgsDock"));
-        // maps.Add(new MapData("Boxes"));
-        // maps.Add(new MapData("AlienIsolation"));
+        maps.Add(new MapData("valorantAscent"));
+        maps.Add(new MapData("MgsDock"));
+        maps.Add(new MapData("Arkham"));
+        // maps.Add(new MapData("CoD"));
+        maps.Add(new MapData("Boxes"));
+        maps.Add(new MapData("dragonAge2"));
 
         List<PatrolerParams> patrolerMethods = new List<PatrolerParams>();
 
@@ -34,62 +38,45 @@ public static class CompareScouterMethods
 
         patrolParams = new RandomPatrolerParams();
         patrolerMethods.Add(patrolParams);
-        
-        
-                // Add scouter methods
+
+        // Add scouter methods
         List<ScouterParams> scouterMethods = new List<ScouterParams>();
         ScouterParams scouterMethod = null;
 
-        List<float> weights = new List<float>()
-        {
-            0f,1f
-        };
-        
-        List<float> safetyThresholds = new List<float>()
-        {
-            0f,0.5f
-        };        
+        List<string> scouterParams = new List<string>();
+        scouterParams.Add("Danger_0.75_0_0_1_0_0_1_1_1_1_0_0.5");
+        scouterParams.Add("Fixed_0.75_1_0_0_1_1_0_1_1_0_0_0.5");
+        scouterParams.Add("Fixed_0.25_1_0_1_0_0_0_0_0_1_1_0");
+        scouterParams.Add("Fixed_0.75_1_0_0_0_1_1_0_1_1_0_0.5");
+        scouterParams.Add("Fixed_0.75_1_0_1_0_0_1_0_1_1_0_0.5");
+        scouterParams.Add("Danger_0.75_1_0_1_0_0_0_0_1_1_0_0.5");
+        scouterParams.Add("Fixed_0.25_1_1_1_0_0_0_1_0_1_0_0.5");
+        scouterParams.Add("Danger_0.75_1_0_0_0_0_0_0_1_1_0_0.5");
+        scouterParams.Add("Fixed_0.25_1_1_1_0_0_0_1_0_1_0_0.5");
+        scouterParams.Add("Fixed_0.25_1_1_1_0_0_0_1_0_1_0_0.5");
 
-        List<float> projectionMulitpliers = new List<float>()
-        {
-            0.25f,0.75f
-        }; 
-        
-        
-        List<RiskThresholdType> thresholdTypes = new List<RiskThresholdType>()
-        {
-            RiskThresholdType.Fixed,
-            RiskThresholdType.Danger
-        };
 
-        foreach (var goalWeight in weights)
-        foreach (var costWeight in weights)
-        foreach (var coverWeight in weights)
-        foreach (var occlusionWeight in weights)
-        foreach (var proximityWeight in weights)
-        foreach (var goalWeight1 in weights)
-        foreach (var costWeight1 in weights)
-        foreach (var coverWeight1 in weights)
-        foreach (var occlusionWeight1 in weights)
-        foreach (var proximityWeight1 in weights)
-        foreach (var safetyThreshold in safetyThresholds)
-        foreach (var projectionMulitplier in projectionMulitpliers)
-        foreach (var thresholdType in thresholdTypes)
+        foreach (var scouterParam in scouterParams)
         {
-            RoadMapScouterWeights safeWeights = new RoadMapScouterWeights(goalWeight, costWeight, coverWeight, occlusionWeight, proximityWeight);    
+            string[] tokens = scouterParam.Split('_');
+
+            Enum.TryParse(tokens[0], true, out RiskThresholdType parsedEnumValue);
             
-            RoadMapScouterWeights unsafeWeights = new RoadMapScouterWeights(goalWeight1, costWeight1, coverWeight1, occlusionWeight1, proximityWeight1);
+            RoadMapScouterWeights safeWeights =
+                new RoadMapScouterWeights(float.Parse(tokens[2]), float.Parse(tokens[3]), float.Parse(tokens[4]),
+                    float.Parse(tokens[5]), float.Parse(tokens[6]));
+
+            RoadMapScouterWeights unsafeWeights = new RoadMapScouterWeights(float.Parse(tokens[7]),
+                float.Parse(tokens[8]), float.Parse(tokens[9]), float.Parse(tokens[10]), float.Parse(tokens[11]));
 
             scouterMethod = new RoadMapScouterParams(SpotsNeighbourhoods.LineOfSight, PathCanceller.DistanceCalculation,
-                thresholdType, TrajectoryType.Simple, safetyThreshold, GoalPriority.Weighted, safeWeights, SafetyPriority.Weighted,
+                parsedEnumValue, TrajectoryType.Simple, float.Parse(tokens[12]), GoalPriority.Weighted, safeWeights,
+                SafetyPriority.Weighted,
                 unsafeWeights,
-                projectionMulitplier);
-            
+                float.Parse(tokens[1]));
+
             scouterMethods.Add(scouterMethod);
         }
-  
-
-
 
 
         AddPatrolSessions("", ref sessions, maps, patrolerMethods, scouterMethods, "blue", guardTeams);
