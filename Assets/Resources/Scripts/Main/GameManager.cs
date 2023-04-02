@@ -142,8 +142,8 @@ public class GameManager : MonoBehaviour
     {
         m_VoiceParamses = new List<VoiceParams>();
 
-        int[] voiceIndices = { 0, 1 };
-        float[] pitches = { 0f, 1f, 2f };
+        int[] voiceIndices = {0, 1};
+        float[] pitches = {0f, 1f, 2f};
 
         foreach (var vI in voiceIndices)
         foreach (var p in pitches)
@@ -165,7 +165,7 @@ public class GameManager : MonoBehaviour
     public static int GetDateTimestamp()
     {
         DateTime epochStart = new DateTime(2022, 3, 15, 0, 0, 0, DateTimeKind.Utc);
-        return (int)(DateTime.UtcNow - epochStart).TotalSeconds;
+        return (int) (DateTime.UtcNow - epochStart).TotalSeconds;
     }
 
     public static int GetRunId()
@@ -175,9 +175,8 @@ public class GameManager : MonoBehaviour
 
     private void LoadSavedSessions()
     {
-        
         // List<Session> sessions = AdHocMethods.GetSessions();
-        
+
         // Sessions set up for evaluating the hyper parameters  of the patrol behaviors 
         // List<Session> sessions = PatrolSessionsAssessment.GetSessions();
 
@@ -187,9 +186,14 @@ public class GameManager : MonoBehaviour
         // Sessions set up for evaluating the search behaviors
         // List<Session> sessions = CompareSearchMethods.GetSessions();
 
-        List<Session> sessions = StealthSecondTuningMethods.GetSessions();
-       
-        // List<Session> sessions = CompareScouterMethods.GetSessions();
+        // Stealthy tests
+        // List<Session> sessions = StealthFirstTuningMethods.GetSessions();
+        //
+        // // List<Session> 
+        // List<Session> sessions = StealthSecondTuningMethods.GetSessions();
+
+        // List<Session> 
+        List<Session> sessions = CompareScouterMethods.GetSessions();
 
         // Sessions set up for evaluating the efficiency of the search behaviors
         // List<Session> sessions = SearchSessionAssessment.GetSessions();
@@ -285,7 +289,7 @@ public class GameManager : MonoBehaviour
     private void CreateArea(Session scenario)
     {
         // Get the area prefab
-        var areaPrefab = (GameObject)Resources.Load(StealthArea);
+        var areaPrefab = (GameObject) Resources.Load(StealthArea);
         GameObject activeArea = Instantiate(areaPrefab, transform, true);
 
         // Get the script
@@ -316,7 +320,7 @@ public class GameManager : MonoBehaviour
 
             // Get the first session
             Session currentSession = _remainingSessions[0];
-            
+
             if (!Equals(currentSession.gameCode, "tutorial")) _closedSessions.Add(currentSession);
 
             // Load the map data
@@ -570,7 +574,7 @@ public class Session
     public int guardsCount;
 
     public float guardFov;
-    
+
     // Guards Data
     public List<NpcData> guardsList;
 
@@ -581,7 +585,7 @@ public class Session
     public int intruderCount;
 
     public float intruderFov;
-    
+
     // dialog flag if enabled
     public SpeechType speechType;
 
@@ -700,7 +704,7 @@ public class Session
         // Guards count 
         sessionInfo += guardsCount;
         sessionInfo += sep;
-        
+
         sessionInfo += episodeLengthSec;
         sessionInfo += sep;
 
@@ -708,7 +712,7 @@ public class Session
         {
             sessionInfo += guardBehaviorParams.ToString();
             sessionInfo += sep;
-            
+
             sessionInfo += (guardFov * 100f).ToString();
             sessionInfo += sep;
         }
@@ -804,7 +808,7 @@ public class IntruderBehaviorParams
             if (!Equals(output, "")) output += sep;
             output += searchEvaderParams;
         }
-        
+
         return output;
     }
 }

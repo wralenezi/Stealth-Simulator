@@ -5,7 +5,7 @@ using UnityEngine;
 public static class CompareSearchMethods
 {
     private static int _episodeLength = 99;
-    private static int _episodeCount = 20;
+    private static int _episodeCount = 50;
 
 
     public static List<Session> GetSessions()
@@ -42,14 +42,14 @@ public static class CompareSearchMethods
         List<SearcherParams> searcherMethods = new List<SearcherParams>();
         SearcherParams searcherMethod = null;
 
-        // Grid searchers
-        searcherMethod =
-            new GridSearcherParams(0.5f, ProbabilityFlowMethod.Diffuse, 1f, 0.5f, 0.5f);
-        searcherMethods.Add(searcherMethod);
-        
-        searcherMethod =
-            new GridSearcherParams(0.5f, ProbabilityFlowMethod.Propagation, 1f, 0.5f, 0.5f);
-        searcherMethods.Add(searcherMethod);
+        // // Grid searchers
+        // searcherMethod =
+        //     new GridSearcherParams(0.5f, ProbabilityFlowMethod.Diffuse, 1f, 0.5f, 0.5f);
+        // searcherMethods.Add(searcherMethod);
+        //
+        // searcherMethod =
+        //     new GridSearcherParams(0.5f, ProbabilityFlowMethod.Propagation, 1f, 0.5f, 0.5f);
+        // searcherMethods.Add(searcherMethod);
 
         // // Road Map Searchers
         searcherMethod = new RoadMapSearcherParams(0.5f, 1f, 1f, 0.5f, RMDecision.DijkstraPath,
@@ -63,12 +63,11 @@ public static class CompareSearchMethods
         searcherMethod = new RoadMapSearcherParams(0.5f, 1f, 1f, 0.5f, RMDecision.DijkstraPath,
             RMPassingGuardsSenstivity.Max, 0f, 0f, 0f, ProbabilityFlowMethod.Propagation);
         searcherMethods.Add(searcherMethod);
-
+        
         searcherMethod = new RoadMapSearcherParams(1f, 1f, 0.5f, 0f, RMDecision.DijkstraPath,
             RMPassingGuardsSenstivity.Max, 0f, 0.5f, 0.5f, ProbabilityFlowMethod.Propagation);
         searcherMethods.Add(searcherMethod);
-        
-        
+
         searcherMethod = new RoadMapSearcherParams(1f, 1f, 0.5f, 0f, RMDecision.EndPoint,
             RMPassingGuardsSenstivity.Max, 0f, 0.5f, 0.5f, ProbabilityFlowMethod.Diffuse);
         searcherMethods.Add(searcherMethod);
@@ -76,7 +75,7 @@ public static class CompareSearchMethods
         searcherMethod = new RoadMapSearcherParams(1f, 1f, 0.5f, 0f, RMDecision.EndPoint,
             RMPassingGuardsSenstivity.Max, 0f, 0.5f, 0.5f, ProbabilityFlowMethod.Propagation);
         searcherMethods.Add(searcherMethod);
-
+        
         // Basic searchers
         
         searcherMethod = new RandomSearcherParams();
@@ -98,19 +97,20 @@ public static class CompareSearchMethods
         searchEvader = new SimpleSearchEvaderParams(DestinationType.Heurisitic,5f,10f);
         searchEvaders.Add(searchEvader);
         
-        AddPatrolSessions("", ref sessions, maps, searcherMethods, searchEvaders, "blue", guardTeams);
+        AddPatrolSessions("", ref sessions, maps, searcherMethods,fovLengths, searchEvaders, "blue", guardTeams);
 
         return sessions;
     }
 
     private static void AddPatrolSessions(string gameCode, ref List<Session> sessions, List<MapData> maps,
-        List<SearcherParams> searchMethods, List<SearchEvaderParams> searchEvaders,
+        List<SearcherParams> searchMethods, List<float> guardsFov, List<SearchEvaderParams> searchEvaders,
         string teamColor, List<int> guardTeams)
     {
         foreach (var map in maps)
         foreach (var guardTeam in guardTeams)
         foreach (var searchMethod in searchMethods)
         foreach (var searchEvader in searchEvaders)
+        foreach (var guardFov in guardsFov)
         {
             GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(null,
                 searchMethod, null);
@@ -122,7 +122,7 @@ public static class CompareSearchMethods
 
             Session session = new Session(_episodeLength, gameCode, GameType.CoinCollection, Scenario.Chase,
                 teamColor,
-                GuardSpawnType.Separate, guardTeam, 0.1f, guardBehaviorParams, 1,
+                GuardSpawnType.Separate, guardTeam, guardFov, guardBehaviorParams, 1,
                 0.1f, intruderBehaviorParams,
                 map, SpeechType.Simple, SurveyType.EndEpisode);
 
