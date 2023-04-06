@@ -190,10 +190,10 @@ public class GameManager : MonoBehaviour
         // List<Session> sessions = StealthFirstTuningMethods.GetSessions();
         //
         // // List<Session> 
-        // List<Session> sessions = StealthSecondTuningMethods.GetSessions();
+        List<Session> sessions = StealthSecondTuningMethods.GetSessions();
 
         // List<Session> 
-        List<Session> sessions = CompareScouterMethods.GetSessions();
+        // List<Session> sessions = CompareScouterMethods.GetSessions();
 
         // Sessions set up for evaluating the efficiency of the search behaviors
         // List<Session> sessions = SearchSessionAssessment.GetSessions();

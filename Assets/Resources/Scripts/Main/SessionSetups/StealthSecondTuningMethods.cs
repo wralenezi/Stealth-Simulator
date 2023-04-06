@@ -54,6 +54,7 @@ public static class StealthSecondTuningMethods
         scouterParams.Add("Danger_0.75_1_0_0_0_0_0_0_1_1_0_0.5");
         scouterParams.Add("Fixed_0.25_1_1_1_0_0_0_1_0_1_0_0.5");
         scouterParams.Add("Fixed_0.25_1_1_1_0_0_0_1_0_1_0_0.5");
+        scouterParams.Add("Danger_0.5_0.5_0.5_0.5_0_0_1_1_1_1_0_0.5");
 
 
         foreach (var scouterParam in scouterParams)
@@ -88,10 +89,19 @@ public static class StealthSecondTuningMethods
         List<PatrolerParams> patrolMethods, List<ScouterParams> scouterMethods,
         string teamColor, List<int> guardTeams)
     {
+        List<GuardSpawnType> spawnTypes = new List<GuardSpawnType>()
+        {
+            GuardSpawnType.Separate,
+            GuardSpawnType.Goal,
+            GuardSpawnType.Random
+        };
+
+        
         foreach (var map in maps)
         foreach (var guardTeam in guardTeams)
         foreach (var patrolMethod in patrolMethods)
         foreach (var scouterMethod in scouterMethods)
+        foreach (var spawnType in spawnTypes)
         {
             GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolMethod,
                 null, null);
@@ -101,7 +111,7 @@ public static class StealthSecondTuningMethods
 
             Session session = new Session(_episodeLength, gameCode, GameType.CoinCollection, Scenario.Stealth,
                 teamColor,
-                GuardSpawnType.Separate, guardTeam, 0.1f, guardBehaviorParams, 1,
+                spawnType, guardTeam, 0.1f, guardBehaviorParams, 1,
                 0f, intruderBehaviorParams,
                 map, SpeechType.Simple, SurveyType.EndEpisode);
 

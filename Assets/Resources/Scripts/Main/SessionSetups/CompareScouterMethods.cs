@@ -14,6 +14,7 @@ public static class CompareScouterMethods
 
         List<int> guardTeams = new List<int>();
         guardTeams.Add(4);
+        
 
         List<MapData> maps = new List<MapData>();
         maps.Add(new MapData("AlienIsolation"));
@@ -71,10 +72,19 @@ public static class CompareScouterMethods
         List<PatrolerParams> patrolMethods, List<ScouterParams> scouterMethods,
         string teamColor, List<int> guardTeams)
     {
+
+        List<GuardSpawnType> spawnTypes = new List<GuardSpawnType>()
+        {
+            GuardSpawnType.Separate,
+            GuardSpawnType.Goal,
+            GuardSpawnType.Random
+        };
+
         foreach (var map in maps)
         foreach (var guardTeam in guardTeams)
         foreach (var patrolMethod in patrolMethods)
         foreach (var scouterMethod in scouterMethods)
+        foreach (var spawnType in spawnTypes)
         {
             GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolMethod,
                 null, null);
@@ -84,7 +94,7 @@ public static class CompareScouterMethods
 
             Session session = new Session(_episodeLength, gameCode, GameType.CoinCollection, Scenario.Stealth,
                 teamColor,
-                GuardSpawnType.Separate, guardTeam, 0.1f, guardBehaviorParams, 1,
+                spawnType, guardTeam, 0.1f, guardBehaviorParams, 1,
                 0f, intruderBehaviorParams,
                 map, SpeechType.Simple, SurveyType.EndEpisode);
 
