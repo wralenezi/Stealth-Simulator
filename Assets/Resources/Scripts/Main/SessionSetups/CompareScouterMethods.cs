@@ -102,9 +102,7 @@ public static class CompareScouterMethods
                 new IntruderBehaviorParams(scouterMethod, null, null);
 
             Session session = new Session(_episodeLength, gameCode, GameType.CoinCollection, Scenario.Stealth,
-                teamColor,
-                spawnType, guardTeam, fovLength, guardBehaviorParams, 1,
-                0f, intruderBehaviorParams,
+                teamColor, spawnType, guardTeam, fovLength, guardBehaviorParams, 1,0f, intruderBehaviorParams,
                 map, SpeechType.Simple, SurveyType.EndEpisode);
 
             session.sessionVariable = "VisMesh";
