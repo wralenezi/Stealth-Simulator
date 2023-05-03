@@ -13,17 +13,27 @@ public static class CompareScouterMethods
         List<Session> sessions = new List<Session>();
 
         List<int> guardTeams = new List<int>();
+        // guardTeams.Add(3);
         guardTeams.Add(4);
+        // guardTeams.Add(5);
+        // guardTeams.Add(6);
 
         List<MapData> maps = new List<MapData>();
         maps.Add(new MapData("AlienIsolation"));
+        maps.Add(new MapData("AlienIsolationMod"));
         maps.Add(new MapData("amongUs"));
+        maps.Add(new MapData("amongUsMod"));
         maps.Add(new MapData("valorantAscent"));
         maps.Add(new MapData("MgsDock"));
         maps.Add(new MapData("Arkham"));
         // maps.Add(new MapData("CoD"));
         maps.Add(new MapData("Boxes"));
         maps.Add(new MapData("dragonAge2"));
+
+        List<float> fovLengths = new List<float>();
+        fovLengths.Add(0.1f);
+        // fovLengths.Add(0.3f);
+        // fovLengths.Add(0.5f);
 
         List<PatrolerParams> patrolerMethods = new List<PatrolerParams>();
 
@@ -54,27 +64,36 @@ public static class CompareScouterMethods
             0.25f);
 
         scouterMethods.Add(scouterMethod);
-        
-        
+
+
         scouterMethod = new SimpleGreedyScouterParams();
         scouterMethods.Add(scouterMethod);
-        
+
         scouterMethod = new GreedyToGoalScouterParams();
-        scouterMethods.Add(scouterMethod);        
-        
-        AddPatrolSessions("", ref sessions, maps, patrolerMethods, scouterMethods, "blue", guardTeams);
+        scouterMethods.Add(scouterMethod);
+
+        AddPatrolSessions("", ref sessions, maps, patrolerMethods, scouterMethods, "blue", guardTeams, fovLengths);
 
         return sessions;
     }
 
     private static void AddPatrolSessions(string gameCode, ref List<Session> sessions, List<MapData> maps,
         List<PatrolerParams> patrolMethods, List<ScouterParams> scouterMethods,
-        string teamColor, List<int> guardTeams)
+        string teamColor, List<int> guardTeams, List<float> fovLengths)
     {
+        List<GuardSpawnType> spawnTypes = new List<GuardSpawnType>()
+        {
+            GuardSpawnType.Separate,
+            GuardSpawnType.Goal,
+            GuardSpawnType.Random
+        };
+
         foreach (var map in maps)
         foreach (var guardTeam in guardTeams)
         foreach (var patrolMethod in patrolMethods)
         foreach (var scouterMethod in scouterMethods)
+        foreach (var fovLength in fovLengths)
+        foreach (var spawnType in spawnTypes)
         {
             GuardBehaviorParams guardBehaviorParams = new GuardBehaviorParams(patrolMethod,
                 null, null);
@@ -84,7 +103,7 @@ public static class CompareScouterMethods
 
             Session session = new Session(_episodeLength, gameCode, GameType.CoinCollection, Scenario.Stealth,
                 teamColor,
-                GuardSpawnType.Separate, guardTeam, 0.1f, guardBehaviorParams, 1,
+                spawnType, guardTeam, fovLength, guardBehaviorParams, 1,
                 0f, intruderBehaviorParams,
                 map, SpeechType.Simple, SurveyType.EndEpisode);
 

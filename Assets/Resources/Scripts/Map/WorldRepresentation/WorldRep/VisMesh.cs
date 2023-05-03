@@ -354,7 +354,8 @@ public class VisMesh : MonoBehaviour
         {
             foreach (var poly in _curUnseenPolygons)
             {
-                poly.Draw(poly.GetStaleness().ToString());
+                float staleness = Mathf.Round(poly.GetStaleness() * 100) * 0.01f;
+                poly.Draw(staleness.ToString());
             }
         }
     }

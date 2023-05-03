@@ -5,7 +5,7 @@ using UnityEngine;
 public static class AdHocMethods
 {
     private static int _episodeLength = 220;
-    private static int _episodeCount = 2;
+    private static int _episodeCount = 10;
 
 
     public static List<Session> GetSessions()
@@ -13,23 +13,26 @@ public static class AdHocMethods
         List<Session> sessions = new List<Session>();
 
         List<int> guardTeams = new List<int>();
-        guardTeams.Add(3);
+        guardTeams.Add(1);
 
         List<MapData> maps = new List<MapData>();
-        // maps.Add(new MapData("amongUs"));
+        // maps.Add(new MapData("AlienIsolation"));
+        maps.Add(new MapData("amongUs"));
         // maps.Add(new MapData("MgsDock"));
         // maps.Add(new MapData("dragonAgeBrc202d"));
+        // maps.Add(new MapData("Arkham"));
         // maps.Add(new MapData("Boxes"));
         // maps.Add(new MapData("CoD"));
-        maps.Add(new MapData("dragon_age2"));
+        // maps.Add(new MapData("dragonAge2"));
+        // maps.Add(new MapData("valorantAscent"));
         // maps.Add(new MapData("bloodstainedAngle"));
 
         List<PatrolerParams> patrolerMethods = new List<PatrolerParams>();
         PatrolerParams patrolParams;
 
-        patrolParams = new VisMeshPatrolerParams(0.5f, 1f, 1f,
+        patrolParams = new VisMeshPatrolerParams(0.15f, 1f, 1f,
             1f, 1f, VMDecision.Weighted);
-        // patrolerMethods.Add(patrolParams);
+        patrolerMethods.Add(patrolParams);
         //
         // patrolParams =
         //     new GridPatrolerParams(0.5f, 1f, 1f, 1f);
@@ -107,7 +110,7 @@ public static class AdHocMethods
 
             Session session = new Session(_episodeLength, gameCode, GameType.CoinCollection, Scenario.Chase,
                 teamColor,
-                GuardSpawnType.Separate, guardTeam, 0.1f,guardBehaviorParams, 0,
+                GuardSpawnType.Separate, guardTeam, 0.2f,guardBehaviorParams, 0,
                 0.1f, intruderBehaviorParams,
                 map, SpeechType.Simple, SurveyType.EndEpisode);
 

@@ -8,9 +8,6 @@ public class FloorTileManager : MonoBehaviour
     [SerializeField] 
     private bool isRender;
 
-    // The color of the floor
-    private Color32 m_MeshColor;
-
     // List of the materials of the nodes in the grid
     private List<Material> m_materials;
 
@@ -27,9 +24,6 @@ public class FloorTileManager : MonoBehaviour
     public void Initiate(List<MeshPolygon> navMesh)
     {
         m_AreaMeshPrefab = (GameObject) Resources.Load(MeshPrefabAddress);
-    
-        m_MeshColor = new Color32(180, 180, 180, 255);
-
         TileFloor(navMesh);
         // TileColoredFloor(navMesh);
     }
@@ -38,12 +32,15 @@ public class FloorTileManager : MonoBehaviour
     // Tile the walkable area with meshes
     public void TileFloor(List<MeshPolygon> navMesh)
     {
+        Color32 meshColor = new Color32(0, 0, 0, 255);
+        // Color32 meshColor = new Color32(180, 180, 180, 255);
+
         m_walkableAreaMeshes = new List<GameObject>();
         
         foreach (var p in navMesh)
         {
             GameObject areaMesh = Instantiate(m_AreaMeshPrefab, transform, true);
-            areaMesh.GetComponent<AreaMesh>().Draw(GetVertices(p), m_MeshColor);
+            areaMesh.GetComponent<AreaMesh>().Draw(GetVertices(p), meshColor);
             areaMesh.GetComponent<Renderer>().sortingOrder = -2;
             m_walkableAreaMeshes.Add(areaMesh);
         }
@@ -103,7 +100,6 @@ public class FloorTileManager : MonoBehaviour
             }
         }
     }
-
 
     public void ClearMeshes()
     {
@@ -171,7 +167,6 @@ public class FloorTileManager : MonoBehaviour
         }
     }
 
-
     public void InitiateNode(Vector2 position, float value)
     {
         var sphere = new GameObject();
@@ -189,7 +184,6 @@ public class FloorTileManager : MonoBehaviour
         m_materials.Add(material);
         material.color = Properties.GetStalenessColor(value);
     }
-
 
     private void RenderNode(Node n, Material material)
     {

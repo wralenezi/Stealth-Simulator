@@ -184,7 +184,7 @@ public class GameManager : MonoBehaviour
         // List<Session> sessions = ComparePatrolMethods.GetSessions();
 
         // Sessions set up for evaluating the search behaviors
-        // List<Session> sessions = CompareSearchMethods.GetSessions();
+        List<Session> sessions = CompareSearchMethods.GetSessions();
 
         // Stealthy tests
         // List<Session> sessions = StealthFirstTuningMethods.GetSessions();
@@ -193,7 +193,7 @@ public class GameManager : MonoBehaviour
         // List<Session> sessions = StealthSecondTuningMethods.GetSessions();
 
         // List<Session> 
-        List<Session> sessions = CompareScouterMethods.GetSessions();
+        // List<Session> sessions = CompareScouterMethods.GetSessions();
 
         // Sessions set up for evaluating the efficiency of the search behaviors
         // List<Session> sessions = SearchSessionAssessment.GetSessions();

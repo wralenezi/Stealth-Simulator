@@ -57,7 +57,7 @@ public static class Properties
         switch (npcType)
         {
             case NpcType.Guard:
-                return new Color32(0, 100, 100, 100);
+                return new Color32(0, 100, 100, 255);
 
             case NpcType.Intruder:
                 return new Color32(255, 255, 255, 150);

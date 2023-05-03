@@ -32,8 +32,7 @@ public class FieldOfView : MonoBehaviour
 
     // Obstacle Layer
     private LayerMask m_ObstacleMask;
-
-
+    
     // Initiate Vision
     public void Initiate(float viewAngle, float viewRadius, Color viewConeColor)
     {
