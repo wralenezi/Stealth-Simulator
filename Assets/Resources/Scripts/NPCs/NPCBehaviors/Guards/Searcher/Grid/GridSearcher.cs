@@ -21,8 +21,6 @@ public class GridSearcher : Searcher
         _nodeDimensions = new Vector3(_params.CellSide, _params.CellSide, _params.CellSide);
         SetupGrid(MapManager.Instance.mapRenderer.GetMapBoundingBox(), _params.CellSide);
         _decisionMaker = new GridSearcherDecisionMaker();
-
-        RenderGrid = true;
     }
 
     private void SetupGrid(Bounds bounds, float cellSide)

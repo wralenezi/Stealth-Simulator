@@ -32,8 +32,8 @@ public class FloorTileManager : MonoBehaviour
     // Tile the walkable area with meshes
     public void TileFloor(List<MeshPolygon> navMesh)
     {
-        Color32 meshColor = new Color32(0, 0, 0, 255);
-        // Color32 meshColor = new Color32(180, 180, 180, 255);
+        // Color32 meshColor = new Color32(0, 0, 0, 255);
+        Color32 meshColor = new Color32(180, 180, 180, 255);
 
         m_walkableAreaMeshes = new List<GameObject>();
         

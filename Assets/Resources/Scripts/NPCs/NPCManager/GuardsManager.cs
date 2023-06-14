@@ -181,8 +181,6 @@ public class GuardsManager : MonoBehaviour
         // 
         npc.Initiate(session, npcData, GameManager.Instance.GetVoice());
 
-        // npc.ControlledByUser = session.guardBehaviorParams.alertPlanner == AlertPlanner.UserInput;
-
         NpcsManager.Instance.GetIntruders();
 
         // Allocate the NPC based on the specified scenario
