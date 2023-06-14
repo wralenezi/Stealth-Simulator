@@ -173,6 +173,12 @@ public class GameManager : MonoBehaviour
         return _timeStamp;
     }
 
+    private void LoadSession()
+    {
+        
+    }
+
+
     private void LoadSavedSessions()
     {
         // List<Session> sessions = AdHocMethods.GetSessions();
