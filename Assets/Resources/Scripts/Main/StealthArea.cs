@@ -89,7 +89,7 @@ public class StealthArea : MonoBehaviour
 
         float mapWidth = bounds.max.x - bounds.min.x + 5f;
         float unitsPerPixel = mapWidth / Screen.width;
-        float desiredHalfHeight = 0.5f * unitsPerPixel * Screen.height;
+        float desiredHalfHeight = 0.6f * unitsPerPixel * Screen.height;
         GameManager.MainCamera.orthographicSize = desiredHalfHeight;
 
         ColorUtility.TryParseHtmlString(SessionInfo.guardColor, out Color parsedColor);

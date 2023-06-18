@@ -25,9 +25,6 @@ public abstract class NPC : MonoBehaviour
     // show the NPCs path to take
     public bool ShowPath;
 
-    // Is Controlled by user
-    public bool ControlledByUser;
-
     // The path the agent is meant to follow
     private List<Vector2> _pathToTake;
     private List<Vector2> _fullPath;
@@ -84,7 +81,7 @@ public abstract class NPC : MonoBehaviour
         Data = data;
         m_NpcRb = GetComponent<Rigidbody2D>();
         m_FovPolygon = new List<Polygon>() {new Polygon()};
-        
+
         // ShowPath = true;
     }
 
@@ -557,7 +554,7 @@ public abstract class NPC : MonoBehaviour
         // Update the total distance traveled
         UpdateDistance();
 
-        if (ControlledByUser)
+        if (Data.isControlledByUser)
             MoveByInput(deltaTime);
         else if (_pathToTake.Count > 0)
             if (GoStraightTo(_pathToTake[0], deltaTime))
@@ -605,7 +602,7 @@ public abstract class NPC : MonoBehaviour
 
         // How to behavior when heading for the last way point (goal)
         // ReSharper disable once PossibleInvalidOperationException
-        if ( (GetGoal().Value == (Vector2) target) && (Equals(GetType(), typeof(Guard))))
+        if ((GetGoal().Value == (Vector2) target) && (Equals(GetType(), typeof(Guard))))
         {
             if (!m_hasToReach) distanceLeft -= m_FovRadius * 0.7f;
         }

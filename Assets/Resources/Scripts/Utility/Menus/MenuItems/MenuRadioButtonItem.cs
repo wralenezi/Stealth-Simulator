@@ -12,7 +12,7 @@ public class MenuRadioButtonItem : MenuItem
 
     private List<MenuOption> choices;
     private List<Button> buttons;
-    
+
     public override void Initiate(string name, Menu menu, string code)
     {
         base.Initiate(name, menu, code);
@@ -23,13 +23,26 @@ public class MenuRadioButtonItem : MenuItem
         buttons = new List<Button>();
     }
 
+    public HorizontalLayoutGroup GetHLG()
+    {
+        return inputPanel.gameObject.GetComponent<HorizontalLayoutGroup>();
+    }
+
     public void AddChoice(MenuOption choice)
     {
         choices.Add(choice);
         GameObject btnGo = Instantiate(BtnPrefab, inputPanel);
         btnGo.name = choice.value + "_btn";
         btnGo.transform.Find("Text").GetComponent<TextMeshProUGUI>().text = choice.label;
+
         Button btn = btnGo.GetComponent<Button>();
+
+        if (!Equals(choice.imagePath, ""))
+        {
+            btn.image.sprite = Resources.Load<Sprite>("Sprites/thumbnails/" + choice.imagePath);
+            // GetHLG().childForceExpandWidth = false;
+        }
+
         MenuButton btnCon = btnGo.GetComponent<MenuButton>();
         btnCon.Initiate(this, choice);
 
@@ -41,11 +54,10 @@ public class MenuRadioButtonItem : MenuItem
         difference = -0.3f;
         colorBlock.highlightedColor = new Color(difference + colorBlock.normalColor.r,
             difference + colorBlock.normalColor.g, difference + colorBlock.normalColor.b, 1);
-        
+
         btn.colors = colorBlock;
         btn.transform.GetChild(0).GetComponent<TextMeshProUGUI>().color = new Color(1 - colorBlock.normalColor.r,
             1 - colorBlock.normalColor.g, 1 - colorBlock.normalColor.b, 1);
-
 
         buttons.Add(btn);
     }

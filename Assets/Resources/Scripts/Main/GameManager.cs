@@ -119,7 +119,8 @@ public class GameManager : MonoBehaviour
         if (IsOnlineBuild) StartCoroutine(FileUploader.GetFile(DialogLines, "dialogs"));
 
         // Load the sessions to play
-        LoadSavedSessions();
+        // LoadSavedSessions();
+        LoadGameSession();
 
         StartCoroutine(LoadGamesWhenReady());
 
@@ -131,6 +132,27 @@ public class GameManager : MonoBehaviour
         // show the survey for new users
         SurveyManager.CreateSurvey(_timeStamp, SurveyType.NewUser, 0f);
         SurveyManager.ShowSurvey();
+    }
+
+    public void LoadGameSession()
+    {
+        SessionSetup setup = GameObject.Find("MenuCanvas").transform.Find("Menu").GetComponent<SessionSetup>();
+
+        List<Session> sessions = new List<Session>() {setup.GetSession()};
+
+        foreach (var sc in sessions)
+        {
+            if (Equals(loggingMethod, Logging.Local))
+            {
+                // Set the number of recorded session
+                SetEpisodeCount(sc);
+
+                // Check if the required number of Episodes is logged already or skip if logging is not required.
+                if (PerformanceLogger.IsLogged(sc)) continue;
+            }
+
+            _remainingSessions.Add(sc);
+        }
     }
 
     public GameType GetGameType()
@@ -173,15 +195,10 @@ public class GameManager : MonoBehaviour
         return _timeStamp;
     }
 
-    private void LoadSession()
-    {
-        
-    }
-
 
     private void LoadSavedSessions()
     {
-        // List<Session> sessions = AdHocMethods.GetSessions();
+        List<Session> sessions = AdHocMethods.GetSessions();
 
         // Sessions set up for evaluating the hyper parameters  of the patrol behaviors 
         // List<Session> sessions = PatrolSessionsAssessment.GetSessions();
@@ -190,7 +207,7 @@ public class GameManager : MonoBehaviour
         // List<Session> sessions = ComparePatrolMethods.GetSessions();
 
         // Sessions set up for evaluating the search behaviors
-        List<Session> sessions = CompareSearchMethods.GetSessions();
+        // List<Session> sessions = CompareSearchMethods.GetSessions();
 
         // Stealthy tests
         // List<Session> sessions = StealthFirstTuningMethods.GetSessions();
@@ -512,12 +529,14 @@ public struct NpcData
     // Initial position for the NPC
     public NpcLocation? location;
 
+    public bool isControlledByUser;
 
-    public NpcData(int _id, NpcType pNpcType, NpcLocation? _location)
+    public NpcData(int _id, NpcType pNpcType, NpcLocation? _location, bool _isControlledByUser = false)
     {
         id = _id;
         npcType = pNpcType;
         location = _location;
+        isControlledByUser = _isControlledByUser;
     }
 
     public static string Headers = "NpcType,ID";
@@ -652,7 +671,7 @@ public class Session
     }
 
     // Add a NPC to the list
-    public void AddNpc(int id, NpcType _type, NpcLocation? npcLocation)
+    public void AddNpc(int id, NpcType _type, NpcLocation? npcLocation, bool isControlledByUser = false)
     {
         switch (_type)
         {
@@ -661,7 +680,7 @@ public class Session
                 break;
 
             case NpcType.Intruder:
-                intrudersList.Add(new NpcData(id, _type, npcLocation));
+                intrudersList.Add(new NpcData(id, _type, npcLocation, isControlledByUser));
                 break;
         }
     }

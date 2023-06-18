@@ -18,6 +18,7 @@ public class MenuButton : MonoBehaviour
 
     public void OnClick()
     {
+        _choice.onClick();
         m_buttonItem.Answer(_choice.value);
     }
 }

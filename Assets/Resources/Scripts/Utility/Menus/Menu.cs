@@ -26,7 +26,7 @@ public class Menu : MonoBehaviour
         }
     }
 
-    public void AddRadioButtons(string id, string code, string question, List<MenuOption> choices)
+    public void AddRadioButtons(string id, string code, string question, List<MenuOption> choices, bool expandButtons = true)
     {
         // Create the item object and hide it
         GameObject menuItemGo = Instantiate(_menuItemPrefab, transform);
@@ -34,6 +34,9 @@ public class Menu : MonoBehaviour
 
         MenuRadioButtonItem menuMultiple = menuItemGo.AddComponent<MenuRadioButtonItem>();
         menuMultiple.Initiate(id, this, code);
+
+        if (!expandButtons)
+            menuMultiple.GetHLG().childForceExpandWidth = false;
 
         // Add the question
         menuMultiple.SetQuestion(question);
