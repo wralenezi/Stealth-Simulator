@@ -739,7 +739,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gameView: 0
   showSurvey: 0
-  IsOnlineBuild: 0
+  IsOnlineBuild: 1
   loggingMethod: 2
   RecordHeatMap: 0
   RecordRunningTimes: 0

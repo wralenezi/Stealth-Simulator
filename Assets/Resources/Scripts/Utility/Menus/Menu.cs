@@ -7,7 +7,7 @@ public class Menu : MonoBehaviour
 {
     private string _menuItemPath = "Prefabs/UIs/MenuItem";
     private GameObject _menuItemPrefab;
-    
+
     private List<MenuItem> _items;
 
     private int currentMenuIndex;
@@ -17,7 +17,14 @@ public class Menu : MonoBehaviour
         _menuItemPrefab = (GameObject) Resources.Load(_menuItemPath);
         _items = new List<MenuItem>();
     }
-    
+
+    public void Reset()
+    {
+        foreach (var item in _items)
+            Destroy(item.gameObject);
+        _items.Clear();
+    }
+
     public void StartSurvey()
     {
         if (_items.Count > 0)
@@ -26,7 +33,8 @@ public class Menu : MonoBehaviour
         }
     }
 
-    public void AddRadioButtons(string id, string code, string question, List<MenuOption> choices, bool expandButtons = true)
+    public void AddRadioButtons(string id, string code, string question, List<MenuOption> choices,
+        bool expandButtons = true)
     {
         // Create the item object and hide it
         GameObject menuItemGo = Instantiate(_menuItemPrefab, transform);
@@ -48,7 +56,7 @@ public class Menu : MonoBehaviour
         _items.Add(menuMultiple);
     }
 
-    
+
     public void NextItem()
     {
         currentMenuIndex++;
@@ -58,7 +66,7 @@ public class Menu : MonoBehaviour
         // else
         //     EndSurvey();
     }
-    
+
     private void ActiveItem()
     {
         _items[currentMenuIndex].gameObject.SetActive(true);
@@ -66,8 +74,6 @@ public class Menu : MonoBehaviour
         if (Equals(_items[currentMenuIndex].name, "End"))
         {
             string surveyJson = JsonConvert.SerializeObject(this);
-
         }
-        
     }
 }

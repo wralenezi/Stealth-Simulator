@@ -97,7 +97,7 @@ public class StealthArea : MonoBehaviour
 
         scoreController.Reset();
         AreaUiManager.Reset();
-        AreaUiManager.UpdateGuardLabel(SessionInfo.guardColor, parsedColor);
+        // AreaUiManager.UpdateGuardLabel(SessionInfo.guardColor, parsedColor);
     }
 
     public static float GetElapsedTimeInSeconds()
@@ -199,6 +199,10 @@ public class StealthArea : MonoBehaviour
     {
         // End the episode
         performanceMonitor.FinalizeLogging(GameManager.Instance.loggingMethod);
+        
+        Camera.main.backgroundColor = Color.black;
+
+        MenuManager.Instance.ShowEndGame();
 
         if (GameManager.Instance.showSurvey)
         {

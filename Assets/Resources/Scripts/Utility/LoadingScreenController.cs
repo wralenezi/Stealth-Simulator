@@ -39,12 +39,20 @@ public class LoadingScreenController : MonoBehaviour
 
     IEnumerator AddDots()
     {
+        int count = 0;
         while (gameObject.activeInHierarchy)
         {
-            yield return new WaitForSeconds(0.5f);
-            m_Label.text += ".";    
+            if (count < 4)
+            {
+                yield return new WaitForSeconds(1f);
+                m_Label.text += ".";
+                count++;
+            }
+            else
+            {
+                m_Label.text = "Loading";
+                count = 0;
+            }
         }
-        
     }
-
 }

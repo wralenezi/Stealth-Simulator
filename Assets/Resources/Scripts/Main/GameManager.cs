@@ -275,21 +275,21 @@ public class GameManager : MonoBehaviour
     /// <param name="map"> The name of the map</param>
     /// <param name="mapScale"> The scale multiplier of the map</param>
     // private void LoadMapData(MapData map)
-    private void LoadMapData(string mapName)
+    private void LoadMapData(MapData map)
     {
         if (IsOnlineBuild)
         {
             // Load the map data
-            StartCoroutine(FileUploader.GetFile(mapName, "map"));
+            StartCoroutine(FileUploader.GetFile(map.name, "map",map.size));
 
             // Load the road map data
-            // StartCoroutine(FileUploader.GetFile(mapName, "roadMap", map.size));
+            StartCoroutine(FileUploader.GetFile(map.name, "roadMap", map.size));
         }
         else
         {
             // Get the map data
             // currentMapData = CsvController.ReadString(GetMapPath(map.name, "csv"));
-            currentMapData = CsvController.ReadString(GetMapPath(mapName, "json"));
+            currentMapData = CsvController.ReadString(GetMapPath(map.name, "json"));
             // currentRoadMapData = CsvController.ReadString(GetRoadMapPath(mapName, map.size));
         }
     }
@@ -349,19 +349,20 @@ public class GameManager : MonoBehaviour
             // Load the map data
             currentMapData = "";
             currentRoadMapData = "";
-            LoadMapData(currentSession.GetMap().name);
-
+            LoadMapData(currentSession.GetMap());
+            
             // wait until the map data is loaded.
             while ((Equals(currentMapData, "") || Equals(currentRoadMapData, "") ||
                     Equals(DialogLines, "")) && IsOnlineBuild)
             {
+                
                 yield return new WaitForSecondsRealtime(0.1f);
             }
 
             LoadingScreen.Deactivate();
 
             FillVoices();
-
+            
             // Create the session
             CreateArea(currentSession);
 
@@ -618,8 +619,8 @@ public class Session
     public List<NpcData> intrudersList;
 
     public IntruderBehaviorParams IntruderBehaviorParams;
-
-    private MapData map;
+    
+    public MapData map;
 
     public List<ScoreRecord> _scores;
 

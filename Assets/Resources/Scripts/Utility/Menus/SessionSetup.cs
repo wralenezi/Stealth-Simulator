@@ -4,13 +4,14 @@ using UnityEngine;
 
 public class SessionSetup : MonoBehaviour
 {
+    [SerializeField]
     private Session _session;
 
     private PatrolerParams _patrolerParams;
     private SearcherParams _searcherParams;
     private SearchEvaderParams _searchEvader;
 
-    private float length = 120f;
+    private float length = 10f;
 
     private int _guardCount;
     private MapData _map;
@@ -45,6 +46,8 @@ public class SessionSetup : MonoBehaviour
             0.1f, intruderBehaviorParams, _map, SpeechType.Simple, SurveyType.EndEpisode);
 
         _session.coinCount = 1;
+        _session.MinScore = Mathf.NegativeInfinity;
+        _session.MaxScore = Mathf.Infinity;
 
         // Add guards
         for (int i = 0; i < _session.guardsCount; i++)
@@ -57,6 +60,7 @@ public class SessionSetup : MonoBehaviour
 
     public Session GetSession()
     {
+        CreateSession();
         return _session;
     }
 }

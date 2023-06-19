@@ -18,8 +18,11 @@ public class MenuManager : MonoBehaviour
     // Temp
     private List<MenuOption> _choices;
 
+    public static MenuManager Instance;
+
     public void Start()
     {
+        Instance = this;
         _currentMenu = gameObject.AddComponent<Menu>();
         _currentMenu.Initiate();
 
@@ -47,6 +50,12 @@ public class MenuManager : MonoBehaviour
         StartCoroutine(FadeInSurvey());
     }
 
+    public void ShowEndGame()
+    {
+        EndGame();
+        ShowSurvey();
+    }
+
     private IEnumerator FadeInSurvey()
     {
         float alpha = 1f;
@@ -69,6 +78,7 @@ public class MenuManager : MonoBehaviour
 
     private void CreateMainMenu()
     {
+        _currentMenu.Reset();
         _choices.Clear();
         _choices.Add(new MenuOption("start", "start", delegate() { }, ""));
         _currentMenu.AddRadioButtons("start", "", "Stealth Simulator", _choices);
@@ -78,14 +88,14 @@ public class MenuManager : MonoBehaviour
         {
             _setup.AssignPatrolBehavior(new RoadMapPatrolerParams(1f, 1f, 1f, 0.5f, RMDecision.DijkstraPath,
                 RMPassingGuardsSenstivity.Max, 0f, 0f, 0f));
-        },""));
+        }, ""));
         _choices.Add(new MenuOption("VisMesh", "VisMesh", delegate()
         {
             _setup.AssignPatrolBehavior(new VisMeshPatrolerParams(0.9f, 1f, 1f,
                 1f, 1f, VMDecision.Weighted));
-        },""));
+        }, ""));
         _choices.Add(new MenuOption("Random", "Random",
-            delegate() { _setup.AssignPatrolBehavior(new RandomPatrolerParams()); },""));
+            delegate() { _setup.AssignPatrolBehavior(new RandomPatrolerParams()); }, ""));
         _currentMenu.AddRadioButtons("patrol", "", "Choose the patrol behavior of the guards.", _choices);
 
         _choices.Clear();
@@ -93,31 +103,39 @@ public class MenuManager : MonoBehaviour
         {
             _setup.AssignSearchBehavior(new RoadMapSearcherParams(1f, 1f, 0.5f, 0f, RMDecision.DijkstraPath,
                 RMPassingGuardsSenstivity.Max, 0f, 0.5f, 0.5f, ProbabilityFlowMethod.Propagation));
-        },""));
+        }, ""));
         _choices.Add(new MenuOption("Cheating", "Cheating",
-            delegate { _setup.AssignSearchBehavior(new CheatingSearcherParams()); },""));
+            delegate { _setup.AssignSearchBehavior(new CheatingSearcherParams()); }, ""));
         _choices.Add(new MenuOption("Random", "Random",
-            delegate { _setup.AssignSearchBehavior(new RandomSearcherParams()); },""));
+            delegate { _setup.AssignSearchBehavior(new RandomSearcherParams()); }, ""));
         _currentMenu.AddRadioButtons("search", "", "Choose the search behavior of the guards.", _choices);
 
         _choices.Clear();
         _choices.Add(new MenuOption("MgsDock", "",
-            () => { _setup.SetMapGuards(new MapData("MgsDock"), 3); },"MgsDock"));
-        _choices.Add(new MenuOption("AmongUs", "",
-            () => { _setup.SetMapGuards(new MapData("AmongUs"), 3); },"AmongUs"));
-        _choices.Add(new MenuOption("Warehouse", "",
-            () => { _setup.SetMapGuards(new MapData("Boxes"), 3); },"Warehouse"));
+            () => { _setup.SetMapGuards(new MapData("MgsDock", 2f), 3); }, "MgsDock"));
         _choices.Add(new MenuOption("AlienIsolation", "",
-            () => { _setup.SetMapGuards(new MapData("AlienIsolation"), 3); },"AlienIsolation"));
+            () => { _setup.SetMapGuards(new MapData("AlienIsolation", 3f), 3); }, "AlienIsolation"));
+        _choices.Add(new MenuOption("AmongUs", "",
+            () => { _setup.SetMapGuards(new MapData("AmongUs",0.5f), 5); }, "AmongUs"));
+        _choices.Add(new MenuOption("Warehouse", "",
+            () => { _setup.SetMapGuards(new MapData("Boxes", 1f), 6); }, "Warehouse"));
         _currentMenu.AddRadioButtons("map", "", "Choose the game level layout.", _choices);
 
         _choices.Clear();
-        _choices.Add(new MenuOption("start", "Start", () =>
-        {
-            _setup.CreateSession();
-            SceneManager.LoadScene("Main");
-        },""));
+        _choices.Add(new MenuOption("start", "Start", () => { SceneManager.LoadScene("Main"); }, ""));
         _currentMenu.AddRadioButtons("ready", "", "Ready to play?.", _choices);
+    }
+
+    public void EndGame()
+    {
+        _currentMenu.Reset();
+        _choices.Clear();
+        _choices.Add(new MenuOption("end", "Play Again", delegate()
+        {
+            Destroy(transform.parent.gameObject);
+            SceneManager.LoadScene("MainMenu");
+        }, ""));
+        _currentMenu.AddRadioButtons("start", "", "You scored " + ScoreController.Instance.Score, _choices);
     }
 }
 
@@ -134,9 +152,10 @@ public struct MenuOption
     public string imagePath;
 
     public delegate void Chosen();
+
     public Chosen onClick;
 
-    public MenuOption(string _value, string _label, Chosen _onClick, string _imagePath ,Color _color = default)
+    public MenuOption(string _value, string _label, Chosen _onClick, string _imagePath, Color _color = default)
     {
         value = _value;
         label = _label;

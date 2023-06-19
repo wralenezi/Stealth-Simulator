@@ -100,16 +100,16 @@ public static class FileUploader
     public static IEnumerator GetFile(string fileName, string type, float scale = 0f)
     {
         string requestAddress = server + "get_map.php?name=" + fileName + "&type=" + type + "&size=" + scale;
-
+        
         UnityWebRequest www = UnityWebRequest.Get(requestAddress);
-
+        
         yield return www.SendWebRequest();
-
+        
         if (www.result != UnityWebRequest.Result.Success || www.responseCode != 200)
         {
             string error = ResponseCodeLookUp.GetMeaning(www.responseCode);
             Debug.LogError("Error with requesting " + type + " - " + www.responseCode + " - Map:" + fileName +
-                           " - MapScale:" + scale + " - " + error);
+                           " - MapScale: " + scale + " - " + error);
         }
         else
         {

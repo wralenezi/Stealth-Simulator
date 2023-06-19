@@ -58,7 +58,6 @@ public class AreaUIManager : MonoBehaviour
         timeLabel.gameObject.SetActive(true);
         UpdateLabel();
         Instance = this;
-        
     }
 
     // Update the label of the status of the game.
@@ -83,8 +82,8 @@ public class AreaUIManager : MonoBehaviour
 
     public void UpdateGuardLabel(string name, Color color)
     {
-        guardsLabel.color = Color.white;//color;
-        name = char.ToUpper(name[0]) + name.Substring(1); 
+        guardsLabel.color = Color.white; //color;
+        name = char.ToUpper(name[0]) + name.Substring(1);
         guardsLabel.text = name + " Team";
     }
 
@@ -143,7 +142,7 @@ public class AreaUIManager : MonoBehaviour
 
     public void UpdateSeenArea(float timeDelta)
     {
-        ScoreController.Instance.IncrementSeenTime(timeDelta);
+        ScoreController.Instance.IncrementSeenTime(timeDelta * 0.25f);
         ShakeScore(-1);
         UpdateLabel();
     }
