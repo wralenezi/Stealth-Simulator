@@ -23,7 +23,7 @@ public class RoadMapSearcher : Searcher
 
         _decisionMaker = new RoadMapSearcherDecisionMaker();
         _decisionMaker.Initiate();
-        RenderSearchSegments = true;
+        // RenderSearchSegments = true;
     }
 
     public override void CommenceSearch(NPC target)

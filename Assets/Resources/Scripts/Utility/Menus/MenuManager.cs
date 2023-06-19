@@ -39,7 +39,9 @@ public class MenuManager : MonoBehaviour
         Color bKColor = Camera.main.backgroundColor;
         bKColor.a = 0f;
         m_FadeInScreen.color = bKColor;
-
+        
+        Debug.Log("Start");
+        
         DontDestroyOnLoad(transform.parent.gameObject);
         CreateMainMenu();
         ShowSurvey();
@@ -123,7 +125,7 @@ public class MenuManager : MonoBehaviour
 
         _choices.Clear();
         _choices.Add(new MenuOption("start", "Start", () => { SceneManager.LoadScene("Main"); }, ""));
-        _currentMenu.AddRadioButtons("ready", "", "Ready to play?.", _choices);
+        _currentMenu.AddRadioButtons("ready", "", "Ready to play?", _choices);
     }
 
     public void EndGame()

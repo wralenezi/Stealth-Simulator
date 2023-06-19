@@ -124,15 +124,15 @@ public class StealthArea : MonoBehaviour
         AreaUiManager.UpdateTime(GetRemainingTime());
         
         // Let the agents cast their visions
-        NpcManager.CastVision();
+        // NpcManager.CastVision();
 
         // Update the guards vision and apply the vision affects (seeing intruders,etc) 
-        NpcManager.ProcessNpcsVision();
+        // NpcManager.ProcessNpcsVision();
 
         // Idle NPCs make decisions
-        NpcManager.MakeDecisions(GetSessionInfo().gameType, deltaTime);
+        // NpcManager.MakeDecisions(GetSessionInfo().gameType, deltaTime);
         
-        heatMap?.IncrementHeatMapVisibility(NpcManager.GetGuards(), deltaTime);
+        // heatMap?.IncrementHeatMapVisibility(NpcManager.GetGuards(), deltaTime);
         
         // Check for game end
         CheckGameEnd();
@@ -160,16 +160,18 @@ public class StealthArea : MonoBehaviour
     // At higher timescale speeds the LateUpdate is not useful
     private void LateUpdate()
     {
-        // // Let the agents cast their visions
-        // NpcManager.CastVision();
-        //
-        // // Update the guards vision and apply the vision affects (seeing intruders,etc) 
-        // NpcManager.ProcessNpcsVision();
+        float deltaTime = Time.deltaTime;
 
-        // // Idle NPCs make decisions
-        // NpcManager.MakeDecisions(GetSessionInfo().gameType);
-        //
-        // heatMap?.IncrementHeatMapVisibility(NpcManager.GetGuards(), Time.deltaTime);
+        // Let the agents cast their visions
+        NpcManager.CastVision();
+        
+        // Update the guards vision and apply the vision affects (seeing intruders,etc) 
+        NpcManager.ProcessNpcsVision();
+
+        // Idle NPCs make decisions
+        NpcManager.MakeDecisions(GetSessionInfo().gameType, deltaTime);
+        
+        heatMap?.IncrementHeatMapVisibility(NpcManager.GetGuards(), deltaTime);
     }
 
     public Session GetSessionInfo()

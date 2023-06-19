@@ -11,7 +11,7 @@ public class SessionSetup : MonoBehaviour
     private SearcherParams _searcherParams;
     private SearchEvaderParams _searchEvader;
 
-    private float length = 10f;
+    private float length = 120f;
 
     private int _guardCount;
     private MapData _map;
