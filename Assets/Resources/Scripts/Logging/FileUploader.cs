@@ -8,8 +8,8 @@ using UnityEngine.Networking;
 public static class FileUploader
 {
     // public static string server = "http://cgi64-1.cs.mcgill.ca/~walene/";
-    // public static string server = "https://www.cs.mcgill.ca/~walene/";
-    public static string server = "https://isavage.cs.mcgill.ca/";
+    public static string server = "https://www.cs.mcgill.ca/~walene/";
+    // public static string server = "https://isavage.cs.mcgill.ca/";
     // public static string server = "http://localhost/isavage/";
 
 
@@ -77,7 +77,7 @@ public static class FileUploader
 
     public static IEnumerator UploadScore(Session? sessionInfo, float score)
     {
-        string requestAddress = server + "get_scores.php?behavior=" + sessionInfo.sessionVariable + "&name=" +
+        string requestAddress = server+ "games/Stealth Simulator/game/" + "get_scores.php?behavior=" + sessionInfo.sessionVariable + "&name=" +
                                 PlayerData.PlayerName + "&score=" + score;
 
         UnityWebRequest www = UnityWebRequest.Get(requestAddress);
@@ -99,7 +99,7 @@ public static class FileUploader
 
     public static IEnumerator GetFile(string fileName, string type, float scale = 0f)
     {
-        string requestAddress = server + "get_map.php?name=" + fileName + "&type=" + type + "&size=" + scale;
+        string requestAddress = server + "files/games/Stealth_Simulator/game/"+"get_map.php?name=" + fileName + "&type=" + type + "&size=" + scale;
         
         UnityWebRequest www = UnityWebRequest.Get(requestAddress);
         

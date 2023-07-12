@@ -67,6 +67,7 @@
       <Path>Library</Path>
       <Path>Logs</Path>
       <Path>PerformanceLogs</Path>
+      <Path>Temp</Path>
       <Path>UserSettings</Path>
       <Path>obj</Path>
     </explicitExcludes>
