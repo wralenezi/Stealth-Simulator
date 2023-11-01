@@ -739,13 +739,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gameView: 0
   showSurvey: 0
-  IsOnlineBuild: 1
+  IsOnlineBuild: 0
   loggingMethod: 2
   RecordHeatMap: 0
   RecordRunningTimes: 0
   RecordNpcLocations: 0
   SimulationSpeed: 1
-  Render: 0
+  Render: 1
 --- !u!4 &1776927360
 Transform:
   m_ObjectHideFlags: 0

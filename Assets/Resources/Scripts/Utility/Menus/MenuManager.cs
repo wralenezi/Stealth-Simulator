@@ -118,7 +118,7 @@ public class MenuManager : MonoBehaviour
         _choices.Add(new MenuOption("AlienIsolation", "",
             () => { _setup.SetMapGuards(new MapData("AlienIsolation", 3f), 3); }, "AlienIsolation"));
         _choices.Add(new MenuOption("AmongUs", "",
-            () => { _setup.SetMapGuards(new MapData("AmongUs",0.5f), 5); }, "AmongUs"));
+            () => { _setup.SetMapGuards(new MapData("AmongUs",0.5f), 4); }, "AmongUs"));
         _choices.Add(new MenuOption("Warehouse", "",
             () => { _setup.SetMapGuards(new MapData("Boxes", 1f), 6); }, "Warehouse"));
         _currentMenu.AddRadioButtons("map", "", "Choose the game level layout.", _choices);

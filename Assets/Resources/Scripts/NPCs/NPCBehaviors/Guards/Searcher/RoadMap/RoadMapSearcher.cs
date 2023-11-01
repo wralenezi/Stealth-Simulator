@@ -182,7 +182,8 @@ public class RoadMapSearcher : Searcher
             {
                 foreach (var line in _RoadMap.GetLines(false))
                 {
-                    float label = Mathf.Round(line.GetUtility() * 100f) / 100f;
+                    // float label = Mathf.Round(line.GetUtility() * 100f) / 100f;
+                    // line.DrawSearchSegment(label.ToString());
                     line.DrawSearchSegment("");
                 }
             }

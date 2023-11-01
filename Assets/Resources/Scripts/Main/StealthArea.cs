@@ -122,7 +122,7 @@ public class StealthArea : MonoBehaviour
 
         // Update the time label
         AreaUiManager.UpdateTime(GetRemainingTime());
-        
+
         // Let the agents cast their visions
         // NpcManager.CastVision();
 
@@ -131,9 +131,9 @@ public class StealthArea : MonoBehaviour
 
         // Idle NPCs make decisions
         // NpcManager.MakeDecisions(GetSessionInfo().gameType, deltaTime);
-        
+
         // heatMap?.IncrementHeatMapVisibility(NpcManager.GetGuards(), deltaTime);
-        
+
         // Check for game end
         CheckGameEnd();
     }
@@ -141,7 +141,7 @@ public class StealthArea : MonoBehaviour
     private void FixedUpdate()
     {
         float deltaTime = Time.deltaTime;
-        
+
         // // Let the agents cast their visions
         // NpcManager.CastVision();
         //
@@ -154,7 +154,6 @@ public class StealthArea : MonoBehaviour
         NpcManager.Move(deltaTime);
         //
         // heatMap?.IncrementHeatMapVisibility(NpcManager.GetGuards(), deltaTime);
-
     }
 
     // At higher timescale speeds the LateUpdate is not useful
@@ -164,13 +163,13 @@ public class StealthArea : MonoBehaviour
 
         // Let the agents cast their visions
         NpcManager.CastVision();
-        
+
         // Update the guards vision and apply the vision affects (seeing intruders,etc) 
         NpcManager.ProcessNpcsVision();
 
         // Idle NPCs make decisions
         NpcManager.MakeDecisions(GetSessionInfo().gameType, deltaTime);
-        
+
         heatMap?.IncrementHeatMapVisibility(NpcManager.GetGuards(), deltaTime);
     }
 
@@ -201,10 +200,11 @@ public class StealthArea : MonoBehaviour
     {
         // End the episode
         performanceMonitor.FinalizeLogging(GameManager.Instance.loggingMethod);
-        
+
         Camera.main.backgroundColor = Color.black;
 
-        MenuManager.Instance.ShowEndGame();
+        if (!Equals(MenuManager.Instance, null))
+            MenuManager.Instance.ShowEndGame();
 
         if (GameManager.Instance.showSurvey)
         {

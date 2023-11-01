@@ -119,8 +119,8 @@ public class GameManager : MonoBehaviour
         if (IsOnlineBuild) StartCoroutine(FileUploader.GetFile(DialogLines, "dialogs"));
 
         // Load the sessions to play
-        // LoadSavedSessions();
-        LoadGameSession();
+        LoadSavedSessions();
+        // LoadGameSession();
 
         StartCoroutine(LoadGamesWhenReady());
 

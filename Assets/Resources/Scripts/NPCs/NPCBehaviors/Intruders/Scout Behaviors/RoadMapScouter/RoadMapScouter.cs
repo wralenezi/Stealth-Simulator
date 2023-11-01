@@ -382,7 +382,7 @@ public class RoadMapScouter : Scouter
             // Draw the nodes
             foreach (var t in _roadMap.GetPossibleGuardPositions())
             {
-                float value = Mathf.Round(t.GetProbability() * 100f) * 0.01f;
+                float value = Mathf.Round(t.GetProbability() * 10f) * 0.1f;
                 t.Draw(value.ToString());
             }
         }

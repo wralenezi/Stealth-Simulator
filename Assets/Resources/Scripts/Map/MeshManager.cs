@@ -16,6 +16,9 @@ public class FloorTileManager : MonoBehaviour
 
     // Area Mesh GameObject (for rendering)
     GameObject m_AreaMeshPrefab;
+    
+    // Render the vismesh
+    private
 
     string MeshPrefabAddress = "Prefabs/MeshArea";
     string PixelPath = "Sprites/white_pixel";
