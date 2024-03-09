@@ -246,7 +246,7 @@ public abstract class NPC : MonoBehaviour
 
                     case Scenario.Stealth:
                         GetTransform().position = PathFinding.Instance.GetCornerFurthestFromPoint(
-                            CollectablesManager.Instance.GetGoalPosition(GameType.CoinCollection).Value,
+                            CollectablesManager.Instance.GetGoalPosition(GameType.CoinCollection),
                             Properties.NpcRadius * 2f);
 
                         break;

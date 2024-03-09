@@ -145,6 +145,8 @@ public class RoadMapScouter : Scouter
     /// <param name="minSafeRisk"></param>
     private void PathFindToDestination(Vector2? destination)
     {
+        if(Equals(destination, null)) return;
+        
         int numOfPossibleRmNodes = 8;
         bool doAstar = _riskEvaluator.GetRisk() <= _params.maxRiskAsSafe && !Equals(destination, null);
 
