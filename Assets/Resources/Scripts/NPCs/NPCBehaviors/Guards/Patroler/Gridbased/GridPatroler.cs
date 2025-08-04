@@ -14,7 +14,7 @@ public class GridPatroler : Patroler
     private Vector3 _nodeDimensions;
     private MapGrid<Node> _heatMap;
     private List<Node> _heatNodes;
-
+    
     public override void Initiate(MapManager mapManager, GuardBehaviorParams patrolParams)
     {
         _params = (GridPatrolerParams)patrolParams.patrolerParams;
@@ -30,6 +30,8 @@ public class GridPatroler : Patroler
         _heatNodes = new List<Node>();
 
         Node[,] map = _heatMap.GetGrid();
+        
+        print(map.GetLength(0) + "\\times" + map.GetLength(1));
 
         for (int i = 0; i < map.GetLength(0); i++)
         for (int j = 0; j < map.GetLength(1); j++)

@@ -156,17 +156,23 @@ public class NpcsManager : MonoBehaviour
             GetIntruders()[0].IncrementAlertTime();
             AreaUIManager.Instance.UpdateSeenArea(Time.deltaTime);
             // ScoreController.Instance.IncrementScore(-1f);
-            
+
             // Guards knows the intruders location
-            ChangeState<Chase>();
-            
+            if (_state.GetState().GetType() != typeof(Chase))
+            {
+                ChangeState<Chase>();
+                CollectablesManager.Instance.Disable();
+            }
+
             Speak(spotter, "Spot", 1f);
         }
         else if (GetState() is Chase)
             // if the intruder is not seen and the guards were chasing then start searching
         {
             // Change the guard state
+
             ChangeState<Search>();
+            CollectablesManager.Instance.SpreadCollectables();
         }
     }
 }

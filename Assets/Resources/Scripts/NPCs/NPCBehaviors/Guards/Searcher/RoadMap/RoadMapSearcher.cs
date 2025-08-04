@@ -23,7 +23,7 @@ public class RoadMapSearcher : Searcher
 
         _decisionMaker = new RoadMapSearcherDecisionMaker();
         _decisionMaker.Initiate();
-        RenderSearchSegments = true;
+        // RenderSearchSegments = true;
     }
 
     public override void CommenceSearch(NPC target)
@@ -182,7 +182,8 @@ public class RoadMapSearcher : Searcher
             {
                 foreach (var line in _RoadMap.GetLines(false))
                 {
-                    float label = Mathf.Round(line.GetUtility() * 100f) / 100f;
+                    // float label = Mathf.Round(line.GetUtility() * 100f) / 100f;
+                    // line.DrawSearchSegment(label.ToString());
                     line.DrawSearchSegment("");
                 }
             }

@@ -18,6 +18,16 @@ public class CollectablesManager : MonoBehaviour
     {
         m_coinManager.Reset(session, MapManager.Instance.GetNavMesh());
     }
+    
+    public void Disable()
+    {
+        m_coinManager.DisableCoins();
+    }
+
+    public void SpreadCollectables()
+    {
+        m_coinManager.SpawnCoins(MapManager.Instance.GetNavMesh());
+    }
 
     public Vector2? GetGoalPosition(GameType gameType)
     {

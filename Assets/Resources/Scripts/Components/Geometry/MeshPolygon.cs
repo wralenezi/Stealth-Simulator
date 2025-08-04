@@ -128,7 +128,7 @@ public class MeshPolygon : Polygon
 
     public override void Draw(string label)
     {
-        Gizmos.color = Color.green;
+        Gizmos.color = Color.blue;
         
         base.Draw(label);
     }

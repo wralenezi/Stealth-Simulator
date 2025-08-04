@@ -145,6 +145,8 @@ public class RoadMapScouter : Scouter
     /// <param name="minSafeRisk"></param>
     private void PathFindToDestination(Vector2? destination)
     {
+        if(Equals(destination, null)) return;
+        
         int numOfPossibleRmNodes = 8;
         bool doAstar = _riskEvaluator.GetRisk() <= _params.maxRiskAsSafe && !Equals(destination, null);
 
@@ -382,7 +384,7 @@ public class RoadMapScouter : Scouter
             // Draw the nodes
             foreach (var t in _roadMap.GetPossibleGuardPositions())
             {
-                float value = Mathf.Round(t.GetProbability() * 100f) * 0.01f;
+                float value = Mathf.Round(t.GetProbability() * 10f) * 0.1f;
                 t.Draw(value.ToString());
             }
         }

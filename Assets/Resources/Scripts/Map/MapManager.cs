@@ -40,7 +40,7 @@ public class MapManager : MonoBehaviour
         Instance = this;
 
         mapData = _mapData;
-
+        
         // Draw the map
         mapRenderer = gameObject.AddComponent<MapRenderer>();
         mapRenderer.Initiate();

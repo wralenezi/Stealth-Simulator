@@ -9,12 +9,14 @@ public class MapRenderer : MonoBehaviour
 
     // List of the walls in the map
     public bool showWalls;
+
     // the first polygon is the outer wall and the rest are the obstacles.
     private List<Polygon> m_walls;
-    
+
     private float m_MapBoundingBoxMaxWith;
 
     public bool showInteriorWalls;
+
     // inner walls which are on an offset from the actual wall.
     private List<Polygon> m_interiorWalls;
 
@@ -69,13 +71,12 @@ public class MapRenderer : MonoBehaviour
 
     private void RenderMap(MapData mapData)
     {
-        
         // Each line represents a polygon
         for (int lineIndex = 0; lineIndex < mapData.walls.Count; lineIndex++)
             if (mapData.walls[lineIndex].points.Count > 0)
             {
                 List<MapPoint> wallPoints = mapData.walls[lineIndex].points;
-                
+
                 // Wall 
                 var wall = new Polygon();
 
@@ -212,9 +213,9 @@ public class MapRenderer : MonoBehaviour
         float mapSize = StealthArea.SessionInfo.GetMap().size;
         GameManager.Instance.currentMap = JsonConvert.DeserializeObject<MapData>(mapData);
         MapData map = GameManager.Instance.currentMap;
-        
+
         RenderMap(map);
-        
+
         // Parse the map data
         // if the file name has the world "_relative" then it is an SVG inspired coordinate system
         // if (!map.name.Contains("_relative"))
@@ -223,11 +224,12 @@ public class MapRenderer : MonoBehaviour
         //     ParseMapStringRelative(mapData);
 
         // Scale the map
-        mapSize = Equals(mapSize, 0f) ? map.size: mapSize; 
+        mapSize = Equals(mapSize, 0f) ? map.size : mapSize;
         ScaleMap(mapSize);
-        
-        GameManager.Instance.currentRoadMapData = CsvController.ReadString(GetRoadMapPath(map.name, map.size));
-        
+
+        if (!GameManager.Instance.IsOnlineBuild)
+            GameManager.Instance.currentRoadMapData = CsvController.ReadString(GetRoadMapPath(map.name, map.size));
+
         // Create the collider for the wall
         CreateCollider();
 
@@ -292,13 +294,12 @@ public class MapRenderer : MonoBehaviour
 
     public void OnDrawGizmos()
     {
-        
         if (showWalls)
         {
             foreach (var poly in GetWalls())
                 poly.Draw("");
         }
-        
+
         if (showInteriorWalls)
         {
             foreach (var poly in GetInteriorWalls())
@@ -336,11 +337,9 @@ public class MapData
     {
         name = _name;
         size = _size;
-        
+
         walls = new List<WallData>();
     }
-    
-    
 }
 
 [Serializable]

@@ -119,9 +119,9 @@ public class GameManager : MonoBehaviour
         if (IsOnlineBuild) StartCoroutine(FileUploader.GetFile(DialogLines, "dialogs"));
 
         // Load the sessions to play
-        // LoadSavedSessions();
-        _remainingSessions.Add(GetComponent<SessionController>().GetSession());
-            
+        LoadSavedSessions();
+        // LoadGameSession();
+
         StartCoroutine(LoadGamesWhenReady());
 
         // Set the simulation speed
@@ -132,6 +132,27 @@ public class GameManager : MonoBehaviour
         // show the survey for new users
         SurveyManager.CreateSurvey(_timeStamp, SurveyType.NewUser, 0f);
         SurveyManager.ShowSurvey();
+    }
+
+    public void LoadGameSession()
+    {
+        SessionSetup setup = GameObject.Find("MenuCanvas").transform.Find("Menu").GetComponent<SessionSetup>();
+
+        List<Session> sessions = new List<Session>() {setup.GetSession()};
+
+        foreach (var sc in sessions)
+        {
+            if (Equals(loggingMethod, Logging.Local))
+            {
+                // Set the number of recorded session
+                SetEpisodeCount(sc);
+
+                // Check if the required number of Episodes is logged already or skip if logging is not required.
+                if (PerformanceLogger.IsLogged(sc)) continue;
+            }
+
+            _remainingSessions.Add(sc);
+        }
     }
 
     public GameType GetGameType()
@@ -174,16 +195,10 @@ public class GameManager : MonoBehaviour
         return _timeStamp;
     }
 
-    private void LoadSession()
-    {
-        // Session session = new Session()
-        
-    }
-
 
     private void LoadSavedSessions()
     {
-        // List<Session> sessions = AdHocMethods.GetSessions();
+        List<Session> sessions = AdHocMethods.GetSessions();
 
         // Sessions set up for evaluating the hyper parameters  of the patrol behaviors 
         // List<Session> sessions = PatrolSessionsAssessment.GetSessions();
@@ -227,19 +242,19 @@ public class GameManager : MonoBehaviour
         //         PatrolUserStudy.GetPairsString()));
 
         // Each line represents a session
-        // foreach (var sc in sessions)
-        // {
-        //     if (Equals(loggingMethod, Logging.Local))
-        //     {
-        //         // Set the number of recorded session
-        //         SetEpisodeCount(sc);
-        //
-        //         // Check if the required number of Episodes is logged already or skip if logging is not required.
-        //         if (PerformanceLogger.IsLogged(sc)) continue;
-        //     }
-        //
-        //     _remainingSessions.Add(sc);
-        // }
+        foreach (var sc in sessions)
+        {
+            if (Equals(loggingMethod, Logging.Local))
+            {
+                // Set the number of recorded session
+                SetEpisodeCount(sc);
+
+                // Check if the required number of Episodes is logged already or skip if logging is not required.
+                if (PerformanceLogger.IsLogged(sc)) continue;
+            }
+
+            _remainingSessions.Add(sc);
+        }
     }
 
     private bool IsAreaLoaded()
@@ -260,21 +275,21 @@ public class GameManager : MonoBehaviour
     /// <param name="map"> The name of the map</param>
     /// <param name="mapScale"> The scale multiplier of the map</param>
     // private void LoadMapData(MapData map)
-    private void LoadMapData(string mapName)
+    private void LoadMapData(MapData map)
     {
         if (IsOnlineBuild)
         {
             // Load the map data
-            StartCoroutine(FileUploader.GetFile(mapName, "map"));
+            StartCoroutine(FileUploader.GetFile(map.name, "map",map.size));
 
             // Load the road map data
-            // StartCoroutine(FileUploader.GetFile(mapName, "roadMap", map.size));
+            StartCoroutine(FileUploader.GetFile(map.name, "roadMap", map.size));
         }
         else
         {
             // Get the map data
             // currentMapData = CsvController.ReadString(GetMapPath(map.name, "csv"));
-            currentMapData = CsvController.ReadString(GetMapPath(mapName, "json"));
+            currentMapData = CsvController.ReadString(GetMapPath(map.name, "json"));
             // currentRoadMapData = CsvController.ReadString(GetRoadMapPath(mapName, map.size));
         }
     }
@@ -334,19 +349,20 @@ public class GameManager : MonoBehaviour
             // Load the map data
             currentMapData = "";
             currentRoadMapData = "";
-            LoadMapData(currentSession.GetMap().name);
-
+            LoadMapData(currentSession.GetMap());
+            
             // wait until the map data is loaded.
             while ((Equals(currentMapData, "") || Equals(currentRoadMapData, "") ||
                     Equals(DialogLines, "")) && IsOnlineBuild)
             {
+                
                 yield return new WaitForSecondsRealtime(0.1f);
             }
 
             LoadingScreen.Deactivate();
 
             FillVoices();
-
+            
             // Create the session
             CreateArea(currentSession);
 
@@ -514,12 +530,14 @@ public struct NpcData
     // Initial position for the NPC
     public NpcLocation? location;
 
+    public bool isControlledByUser;
 
-    public NpcData(int _id, NpcType pNpcType, NpcLocation? _location)
+    public NpcData(int _id, NpcType pNpcType, NpcLocation? _location, bool _isControlledByUser = false)
     {
         id = _id;
         npcType = pNpcType;
         location = _location;
+        isControlledByUser = _isControlledByUser;
     }
 
     public static string Headers = "NpcType,ID";
@@ -601,8 +619,8 @@ public class Session
     public List<NpcData> intrudersList;
 
     public IntruderBehaviorParams IntruderBehaviorParams;
-
-    private MapData map;
+    
+    public MapData map;
 
     public List<ScoreRecord> _scores;
 
@@ -654,7 +672,7 @@ public class Session
     }
 
     // Add a NPC to the list
-    public void AddNpc(int id, NpcType _type, NpcLocation? npcLocation)
+    public void AddNpc(int id, NpcType _type, NpcLocation? npcLocation, bool isControlledByUser = false)
     {
         switch (_type)
         {
@@ -663,7 +681,7 @@ public class Session
                 break;
 
             case NpcType.Intruder:
-                intrudersList.Add(new NpcData(id, _type, npcLocation));
+                intrudersList.Add(new NpcData(id, _type, npcLocation, isControlledByUser));
                 break;
         }
     }

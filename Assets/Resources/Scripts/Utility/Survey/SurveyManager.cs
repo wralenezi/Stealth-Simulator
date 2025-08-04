@@ -31,6 +31,7 @@ public class SurveyManager : MonoBehaviour
         Color bKColor = GameManager.MainCamera.backgroundColor;
         bKColor.a = 0f;
         m_FadeInScreen.color = bKColor;
+        gameObject.SetActive(false);
     }
 
     public void CreateSurvey(int timeStamp, SurveyType type, float score, Session session = null)

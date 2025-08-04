@@ -94,7 +94,7 @@ public class PathFinding : MonoBehaviour
     }
 
 
-    public Vector2 GetCornerFurthestFromPoint(Vector2 point, float radius)
+    public Vector2 GetCornerFurthestFromPoint(Vector2? point, float radius)
     {
         Polygon wall = MapManager.Instance.mapRenderer.GetInteriorWalls()[0];
 
@@ -109,7 +109,9 @@ public class PathFinding : MonoBehaviour
         for (int i = 0; i < wall.GetVerticesCount(); i++)
         {
             Vector2 cornerWall = -wall.GetAngelNormal(i) * radius + wall.GetPoint(i);
-            float distance = GetShortestPathDistance(point, cornerWall);
+            
+            
+            float distance = Equals(point, null)?0f:GetShortestPathDistance(point.Value, cornerWall);
 
             bool isSafe = true;
             foreach (var guard in NpcsManager.Instance.GetGuards())

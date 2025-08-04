@@ -50,12 +50,16 @@ public class CoinSpawner : MonoBehaviour
         }
     }
 
+    public void SwitchActive()
+    {
+        foreach (var coin in m_coins)
+            coin.gameObject.SetActive(!gameObject.activeSelf);
+    }
+    
     public void DisableCoins()
     {
         foreach (var coin in m_coins)
-        {
             coin.gameObject.SetActive(false);
-        }
     }
 
     public void SpawnCoins(List<MeshPolygon> navMesh)
