@@ -23,6 +23,7 @@ public class CollectablesManager : MonoBehaviour
     {
         List<Coin> coins = m_coinManager.GetCoins();
 
+        print(coins.Count);
         if (coins.Count > 0)
             return coins[0].gameObject.transform.position;
 

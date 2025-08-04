@@ -248,10 +248,12 @@ public abstract class NPC : MonoBehaviour
                         return;
 
                     case Scenario.Stealth:
-                        GetTransform().position = PathFinding.Instance.GetCornerFurthestFromPoint(
-                            CollectablesManager.Instance.GetGoalPosition(GameType.CoinCollection).Value,
-                            Properties.NpcRadius * 2f);
-
+                        GetTransform().position = MapManager.Instance.mapDecomposer.GetRandomPolygonInNavMesh()
+                            .GetRandomPosition();
+                        
+                        // GetTransform().position = PathFinding.Instance.GetCornerFurthestFromPoint(
+                        //     CollectablesManager.Instance.GetGoalPosition(GameType.CoinCollection).Value,
+                        //     Properties.NpcRadius * 2f);
                         break;
                 }
             }
