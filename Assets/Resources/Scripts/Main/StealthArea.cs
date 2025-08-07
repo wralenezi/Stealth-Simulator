@@ -194,6 +194,8 @@ public class StealthArea : MonoBehaviour
         if (GameManager.Instance.RecordHeatMap) heatMap.End();
 
         FinishArea();
+
+        EditorApplication.isPlaying = false;
     }
 
     public void FinishArea()

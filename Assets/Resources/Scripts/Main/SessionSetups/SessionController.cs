@@ -73,11 +73,12 @@ public class SessionController : MonoBehaviour
         GuardBehaviorParams guardBehaviorParameters = new GuardBehaviorParams(patrolParams,searchParams,null);
         
         ScouterParams scoutParams = null;
-
+        SearchEvaderParams searcherParams = null;
+        ChaseEvaderParams chaseEvaderParams = null;
 
         switch (intruderMethod)
         {
-            case IntruderMethod.RoadMap:
+            case IntruderMethod.AI:
                 RoadMapScouterWeights safeWeights = new RoadMapScouterWeights(1f, 1f, 1f, 0f, 0f);
 
                 RoadMapScouterWeights unsafeWeights = new RoadMapScouterWeights(0f, 1f, 0f, 1f, 0f);
@@ -88,11 +89,15 @@ public class SessionController : MonoBehaviour
                     SafetyPriority.Weighted,
                     unsafeWeights,
                     0.25f);
+
+                searcherParams = new SimpleSearchEvaderParams(DestinationType.Heurisitic, 3, 6);
+
+                chaseEvaderParams = new SimpleChaseEvaderParams();
                 break;
             
         }
         
-        IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(scoutParams, null, null);
+        IntruderBehaviorParams intruderBehaviorParams = new IntruderBehaviorParams(scoutParams, searcherParams, chaseEvaderParams);
 
         string mapName;
 
@@ -119,16 +124,19 @@ public class SessionController : MonoBehaviour
                 break;
         }
         
-    
         _session = new Session(gameDurationInSeconds, "Test", gameType, scenario, "red", GuardSpawnType.Random,numberOfGuards, GuardFOV, guardBehaviorParameters, 1, 0.1f,intruderBehaviorParams, new MapData(mapName), SpeechType.None);
         
+        _session.coinCount = 1;
+        _session.MinScore = Mathf.NegativeInfinity;
+        _session.MaxScore = Mathf.Infinity;
+
         // Add guards
         for (int i = 0; i < _session.guardsCount; i++)
             _session.AddNpc(i + 1, NpcType.Guard, null);
 
         // Add intruders
         for (int i = 0; i < _session.intruderCount; i++)
-            _session.AddNpc(i + 1, NpcType.Intruder, null);
+            _session.AddNpc(i + 1, NpcType.Intruder, null, intruderMethod == IntruderMethod.Player);
 
         
         return _session;
@@ -146,7 +154,7 @@ public enum SearchMethod
 public enum IntruderMethod
 {
     Player,
-    RoadMap
+    AI
 }
 
 public enum Map
